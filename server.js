@@ -11,6 +11,27 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// 安全头
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options','nosniff');
+  res.setHeader('X-Frame-Options','DENY');
+  res.setHeader('X-XSS-Protection','1; mode=block');
+  next();
+});
+
+// 简易限速 (内存计数器)
+const rateMap = new Map();
+function rateLimit(max=60, windowMs=60000) {
+  return (req, res, next) => {
+    const key = req.ip + ':' + Math.floor(Date.now()/windowMs);
+    const cnt = (rateMap.get(key)||0) + 1;
+    rateMap.set(key, cnt);
+    if (cnt > max) return res.status(429).json({ error: '请求过于频繁，请稍后再试' });
+    next();
+  };
+}
+app.use(rateLimit(60, 60000));
+
 // 本地默认路径，Railway部署时设置 DB_PATH=/data/lazy_station.db
 const dbPath = process.env.DB_PATH || path.join(__dirname, 'lazy_station.db');
 const db = new Database(dbPath);
@@ -205,6 +226,24 @@ app.get('/api/users', (req, res) => JSON_RES(res, () =>
 ));
 
 app.get('/api/users/:phone', (req, res) => JSON_RES(res, () => {
+  const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(req.params.phone);
+  return { ...user, phone: fmtPhone(user.phone) };
+}));
+
+// 用户资料更新
+app.put('/api/users/:phone', (req, res) => JSON_RES(res, () => {
+  const { nickname, name, avatar, bio, dormitory, room } = req.body;
+  const sets = [];
+  const vals = [];
+  if (nickname !== undefined) { sets.push('nickname=?'); vals.push(nickname); }
+  if (name !== undefined) { sets.push('name=?'); vals.push(name); }
+  if (avatar !== undefined) { sets.push('avatar=?'); vals.push(avatar); }
+  if (bio !== undefined) { sets.push('bio=?'); vals.push(bio); }
+  if (dormitory !== undefined) { sets.push('dormitory=?'); vals.push(dormitory); }
+  if (room !== undefined) { sets.push('room=?'); vals.push(room); }
+  if (!sets.length) return { error: '无更新内容' };
+  vals.push(req.params.phone);
+  db.prepare('UPDATE users SET ' + sets.join(',') + ' WHERE phone=?').run(...vals);
   const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(req.params.phone);
   return { ...user, phone: fmtPhone(user.phone) };
 }));

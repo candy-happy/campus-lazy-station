@@ -813,10 +813,11 @@
         </div>
       </div>
       <div style="margin-top: -24px; padding: 0 16px;">
-        <div style="background: var(--card); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); text-align: center;">
-          <div style="font-size: 64px; margin-bottom: 12px;">🦥</div>
-          <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">校园懒人</div>
-          <div style="font-size: 13px; color: var(--text-secondary);">UID: 10086</div>
+        <div style="background: var(--card); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); text-align: center; cursor: pointer;" onclick="showUserProfile()">
+          <div style="font-size: 64px; margin-bottom: 12px;" id="meAvatar">🦥</div>
+          <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;" id="meName">校园懒人</div>
+          <div style="font-size: 13px; color: var(--text-secondary);" id="mePhone">UID: 10086</div>
+          <div style="font-size: 11px; color: var(--text-light); margin-top: 4px">点击编辑资料 ›</div>
         </div>
         
         <div style="display: flex; gap: 12px; margin-top: 16px;">
@@ -992,9 +993,14 @@
           <button class="modal-close" onclick="closeModal('chatConvModal')">✕</button>
         </div>
         <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px;min-height:300px"></div>
-        <div style="display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--border);background:var(--card)">
+        <div style="display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--border);background:var(--card);align-items:center;position:relative">
+          <span style="font-size:22px;cursor:pointer" onclick="toggleEmojiPicker()">😊</span>
           <input id="chatInput" placeholder="输入消息..." style="flex:1;padding:10px;border:1px solid var(--border);border-radius:20px;outline:none;background:var(--bg);color:var(--text)" onkeydown="if(event.key==='Enter')sendChatMsg()" />
           <button onclick="sendChatMsg()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer">发送</button>
+          <div id="emojiPicker" style="display:none;position:absolute;bottom:60px;left:8px;right:8px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow-lg);z-index:9999;max-height:200px;overflow-y:auto">
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;font-weight:600">常用表情</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px" id="emojiGrid"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1301,13 +1307,25 @@
         </div>
         <div style="margin-top:16px">
           <div style="font-weight:700;margin-bottom:8px">评论 (${comments.length})</div>
-          ${comments.length ? comments.map(c => `
-            <div class="comment-item">
-              <span class="comment-nickname">${escHtml(c.nickname||'匿名')}</span>
-              <div class="comment-text">${escHtml(c.content)}</div>
-              <div class="comment-time">${timeAgo(c.created_at)}</div>
-            </div>
-          `).join('') : '<div style="color:var(--text-secondary);font-size:13px;padding:8px 0">暂无评论</div>'}
+          ${comments.length ? (() => {
+            const show = comments.slice(0, 3);
+            const rest = comments.slice(3);
+            let h = show.map(c => `
+              <div class="comment-item">
+                <span class="comment-nickname">${escHtml(c.nickname||'匿名')}</span>
+                <div class="comment-text">${escHtml(c.content)}</div>
+                <div class="comment-time">${timeAgo(c.created_at)}</div>
+              </div>
+            `).join('');
+            if (rest.length) h += `<div id="moreComments" style="display:none">${rest.map(c => `
+              <div class="comment-item">
+                <span class="comment-nickname">${escHtml(c.nickname||'匿名')}</span>
+                <div class="comment-text">${escHtml(c.content)}</div>
+                <div class="comment-time">${timeAgo(c.created_at)}</div>
+              </div>
+            `).join('')}</div><div onclick="document.getElementById('moreComments').style.display='block';this.style.display='none'" style="color:var(--primary);font-size:13px;cursor:pointer;padding:8px 0">展开更多 ${rest.length} 条评论</div>`;
+            return h;
+          })() : '<div style="color:var(--text-secondary);font-size:13px;padding:8px 0">暂无评论</div>'}
         </div>
         <div class="comment-input-bar">
           <input id="wallCommentInput" placeholder="写评论..." />
@@ -1667,6 +1685,14 @@
         if (el2) el2.textContent = userPoints.total;
         const el3 = document.getElementById('totalCoupons');
         if (el3) el3.textContent = coupons.filter(c => !c.used).length;
+        // 更新资料卡
+        const avatars = ['🦥','🐱','🐶','🦊','🐼','🐨','🦄','🐸','🐧','🦋','🌸','⭐','🔥','💎','🎭'];
+        const nameEl = document.getElementById('meName');
+        const phoneEl = document.getElementById('mePhone');
+        const avatarEl = document.getElementById('meAvatar');
+        if (nameEl) nameEl.textContent = pdata?.nickname || pdata?.name || '校园懒人';
+        if (phoneEl) phoneEl.textContent = fmtPhone(currentUser.phone);
+        if (avatarEl) avatarEl.textContent = pdata?.avatar || avatars[parseInt(currentUser.phone.slice(-2)) % avatars.length];
       } catch(e) {
         console.error('updateMePage error:', e);
       }
@@ -1855,7 +1881,7 @@
     // ═══════════════════════════════════════════════════════
     function showSettings() {
       if (!currentUser) return showToast('请先登录');
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const isDark = document.body.classList.contains('dark');
       const html = '<div class="modal-overlay active" id="settingsModal" onclick="if(event.target===this)closeModal(\'settingsModal\')">' +
         '<div class="modal-content" style="max-height:80vh;overflow-y:auto">' +
         '<div class="modal-header"><span class="modal-title">⚙️ 设置</span><button class="modal-close" onclick="closeModal(\'settingsModal\')">✕</button></div>' +
@@ -1880,10 +1906,81 @@
       document.body.style.overflow = 'hidden';
     }
     function toggleDark(on) {
-      document.documentElement.setAttribute('data-theme', on ? 'dark' : 'light');
-      localStorage.setItem('theme', on ? 'dark' : 'light');
+      if (on) { document.body.classList.add('dark'); } else { document.body.classList.remove('dark'); }
+      localStorage.setItem('lazyTheme', on ? 'dark' : 'light');
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.textContent = on ? '☀️' : '🌙';
       closeModal('settingsModal');
       setTimeout(() => showSettings(), 200);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 👤 用户资料编辑
+    // ═══════════════════════════════════════════════════════
+    async function showUserProfile() {
+      if (!currentUser) return showToast('请先登录');
+      const u = await API.getUser(currentUser.phone);
+      if (!u) return showToast('加载失败');
+      const avatars = ['🦥','🐱','🐶','🦊','🐼','🐨','🦄','🐸','🐧','🦋','🌸','⭐','🔥','💎','🎭'];
+      const html = '<div class="modal-overlay active" id="profileModal" onclick="if(event.target===this)closeModal(\'profileModal\')">' +
+        '<div class="modal-content" style="max-height:85vh;overflow-y:auto">' +
+        '<div class="modal-header"><span class="modal-title">👤 个人资料</span><button class="modal-close" onclick="closeModal(\'profileModal\')">✕</button></div>' +
+        '<div class="modal-body">' +
+        '<div style="text-align:center;padding:16px 0;border-bottom:1px solid var(--border)">' +
+        '<div style="font-size:64px" id="profileAvatarPreview">' + escHtml(u.avatar || '🦥') + '</div>' +
+        '<div style="margin-top:8px">' +
+        avatars.map(a => '<span style="font-size:28px;cursor:pointer;margin:2px;display:inline-block;padding:4px;border-radius:8px" onclick="document.getElementById(\'profileAvatar\').value=\'' + a + '\';document.getElementById(\'profileAvatarPreview\').textContent=\'' + a + '\'">' + a + '</span>').join('') +
+        '</div></div>' +
+        '<div class="form-group"><label class="form-label">昵称</label><input type="text" class="form-input" id="profileNickname" value="' + escHtml(u.nickname || '') + '" placeholder="给自己取个昵称" maxlength="20" /></div>' +
+        '<div class="form-group"><label class="form-label">真实姓名</label><input type="text" class="form-input" id="profileName" value="' + escHtml(u.name || '') + '" placeholder="选填" /></div>' +
+        '<div class="form-group"><label class="form-label">个性签名</label><input type="text" class="form-input" id="profileBio" value="' + escHtml(u.bio || '') + '" placeholder="一句话介绍自己" maxlength="50" /></div>' +
+        '<div class="form-group"><label class="form-label">宿舍楼</label><input type="text" class="form-input" id="profileDorm" value="' + escHtml(u.dormitory || '') + '" placeholder="例如：3号宿舍楼" /></div>' +
+        '<div class="form-group"><label class="form-label">房间号</label><input type="text" class="form-input" id="profileRoom" value="' + escHtml(u.room || '') + '" placeholder="例如：301" /></div>' +
+        '<input type="hidden" id="profileAvatar" value="' + escHtml(u.avatar || '') + '" />' +
+        '<button onclick="saveProfile()" style="width:100%;padding:14px;border:none;border-radius:12px;background:var(--primary);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px">保存修改</button>' +
+        '</div></div></div>';
+      document.body.insertAdjacentHTML('beforeend', html);
+      document.body.style.overflow = 'hidden';
+    }
+    async function saveProfile() {
+      if (!currentUser) return;
+      const data = {
+        nickname: document.getElementById('profileNickname').value.trim(),
+        name: document.getElementById('profileName').value.trim(),
+        bio: document.getElementById('profileBio').value.trim(),
+        dormitory: document.getElementById('profileDorm').value.trim(),
+        room: document.getElementById('profileRoom').value.trim(),
+        avatar: document.getElementById('profileAvatar').value
+      };
+      try {
+        const res = await API.updateUser(currentUser.phone, data);
+        if (res.error) return showToast(res.error);
+        showToast('保存成功');
+        closeModal('profileModal');
+        updateMePage();
+      } catch(e) { showToast('保存失败'); }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 😊 表情选择器
+    // ═══════════════════════════════════════════════════════
+    const emojiList = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','🥰','😘','😗','😙','😚','🙂','🤗','🤩','🤔','🤨','😐','😑','😶','🙄','😏','😣','😥','😮','🤐','😯','😪','😫','😴','😌','😛','😜','😝','🤤','😒','😓','😔','😕','🙃','🤑','😲','🙁','😖','😞','😟','😤','😢','😭','😦','😧','😨','😩','🤯','😬','😰','😱','🥵','🥶','😳','🤪','😵','😡','😠','🤬','😷','🤒','🤕','🤢','🤮','🥴','😇','🥳','🥺','🤠','🤡','🤥','🤫','🤭','🧐','🤓','💪','👍','👎','👏','🙏','🤝','❤️','💔','🔥','💯','✨','🎉','🎊','⭐','🌟','💬','💭','🤷','🤦','👋','✌️','🤞','🤟','🤘','👌','🤙','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','🤌','🫶','🫡','🫣','🫠'];
+    let emojiInited = false;
+    function toggleEmojiPicker() {
+      const picker = document.getElementById('emojiPicker');
+      if (!picker) return;
+      if (!emojiInited) {
+        const grid = document.getElementById('emojiGrid');
+        if (grid) grid.innerHTML = emojiList.map(e => '<span style="font-size:24px;cursor:pointer;padding:4px;border-radius:6px;display:inline-block" onclick="insertEmoji(\''+e+'\')">' + e + '</span>').join('');
+        emojiInited = true;
+      }
+      picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+    }
+    function insertEmoji(emoji) {
+      const input = document.getElementById('chatInput');
+      if (input) { input.value += emoji; input.focus(); }
+      const picker = document.getElementById('emojiPicker');
+      if (picker) picker.style.display = 'none';
     }
 </script>
 

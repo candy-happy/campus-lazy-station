@@ -85,6 +85,7 @@ const API = {
   // ─── 用户数据 ───
   async getUsers() { return fetch('/api/users').then(r => r.json()); },
   async getUser(phone) { return fetch('/api/users/' + phone).then(r => r.json()); },
+  async updateUser(phone, data) { return fetch('/api/users/' + phone, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }).then(r => r.json()); },
 
   // ─── 优惠券 ───
   async getCoupons() { return fetch('/api/coupons').then(r => r.json()); },

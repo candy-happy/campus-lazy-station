@@ -16,6 +16,11 @@
  --shadow: 0 4px 24px rgba(26,26,46,0.08);
  --shadow-lg: 0 12px 48px rgba(26,26,46,0.14);
  }
+ body.dark {
+ --bg: #0D1117; --card-bg: #161B22; --text: #E6EDF3;
+ --text-muted: #8B949E; --border: #30363D; --orange-pale: #1C2333;
+ --shadow: 0 4px 24px rgba(0,0,0,0.4); --shadow-lg: 0 12px 48px rgba(0,0,0,0.5);
+ }
  * { box-sizing: border-box; margin: 0; padding: 0; }
  html { scroll-behavior: smooth; }
  body {
@@ -395,6 +400,8 @@
  const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
 
  document.addEventListener('DOMContentLoaded', async () => {
+ // 暗色模式初始化
+ if (localStorage.getItem('lazyTheme') === 'dark') document.body.classList.add('dark');
  const saved = API.restoreSession();
  if (saved && saved.role === 'rider' && saved.phone) {
  await restoreRiderSession(saved.phone, saved.name);
@@ -865,7 +872,7 @@
  }
  function showSettingsModal() {
    if (!currentRider) return showToast('请先登录');
-   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+   const isDark = document.body.classList.contains('dark');
    const modal = document.createElement('div');
    modal.id = 'settingsModal2';
    modal.className = 'modal-overlay active';
@@ -895,8 +902,8 @@
    document.body.style.overflow = 'hidden';
  }
  function riderToggleDark(on) {
-   document.documentElement.setAttribute('data-theme', on ? 'dark' : 'light');
-   localStorage.setItem('theme', on ? 'dark' : 'light');
+   if (on) { document.body.classList.add('dark'); } else { document.body.classList.remove('dark'); }
+   localStorage.setItem('lazyTheme', on ? 'dark' : 'light');
    closeModal('settingsModal2');
  }
  function logout() { API.logout(); location.reload(); }
