@@ -410,17 +410,17 @@
 
  function renderRecentOrders() {
  document.getElementById('recentOrdersTable').innerHTML = orders.slice(0,5).map(o => `
- <tr><td>${o.id||o.order_no}</td><td>${services[o.type]?.icon||'📦'} ${services[o.type]?.name||o.type}</td><td>${o.pickupLocation||o.pickup_location}</td><td>¥${(o.price||0).toFixed(2)}</td><td><span class="status-badge ${statusMap[o.status]?.class||''}">${statusMap[o.status]?.label||o.status}</span></td></tr>`).join('');
+ <tr><td>${o.id||o.order_no}</td><td>${services[o.type]?.icon||'📦'} ${services[o.type]?.name||o.type}</td><td>${escHtml(o.pickupLocation||o.pickup_location)}</td><td>¥${(o.price||0).toFixed(2)}</td><td><span class="status-badge ${statusMap[o.status]?.class||''}">${statusMap[o.status]?.label||o.status}</span></td></tr>`).join('');
  }
 
  function renderOrdersTable() {
  document.getElementById('ordersTable').innerHTML = orders.map(o => `
- <tr><td>${o.id||o.order_no}</td><td>${services[o.type]?.icon||'📦'} ${services[o.type]?.name||o.type}</td><td>${o.pickupLocation||o.pickup_location}</td><td>${o.deliveryLocation||o.delivery_location}</td><td>${o.phone}</td><td>¥${(o.price||0).toFixed(2)}</td><td><span class="status-badge ${statusMap[o.status]?.class||''}">${statusMap[o.status]?.label||o.status}</span></td><td>${o.riderName||o.rider_name||'-'}</td><td><div class="table-actions">${o.status==='pending'?`<button class="btn btn-secondary btn-sm" onclick="cancelOrder('${o.id||o.order_no}')">取消</button>`:''}</div></td></tr>`).join('');
+ <tr><td>${o.id||o.order_no}</td><td>${services[o.type]?.icon||'📦'} ${services[o.type]?.name||o.type}</td><td>${escHtml(o.pickupLocation||o.pickup_location)}</td><td>${escHtml(o.deliveryLocation||o.delivery_location)}</td><td>${escHtml(o.phone)}</td><td>¥${(o.price||0).toFixed(2)}</td><td><span class="status-badge ${statusMap[o.status]?.class||''}">${statusMap[o.status]?.label||o.status}</span></td><td>${escHtml(o.riderName||o.rider_name||'-')}</td><td><div class="table-actions">${o.status==='pending'?`<button class="btn btn-secondary btn-sm" onclick="cancelOrder('${o.id||o.order_no}')">取消</button>`:''}</div></td></tr>`).join('');
  }
 
  function renderRidersTable() {
  document.getElementById('ridersTable').innerHTML = riders.map(r => `
- <tr><td>${r.uid||'-'}</td><td>${r.name}</td><td>${r.student_id||'-'}</td><td>${r.phone}</td><td>${r.total_orders||0}</td><td>¥${(r.total_earnings||0).toFixed(2)}</td><td>${r.rating||5.0}</td><td><span class="status-badge status-completed">${r.status||'active'}</span></td><td><button class="btn btn-danger btn-sm" onclick="removeRider(${r.id})">移除</button></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center">暂无骑手</td></tr>';
+ <tr><td>${r.uid||'-'}</td><td>${escHtml(r.name)}</td><td>${escHtml(r.student_id||'-')}</td><td>${escHtml(r.phone)}</td><td>${r.total_orders||0}</td><td>¥${(r.total_earnings||0).toFixed(2)}</td><td>${r.rating||5.0}</td><td><span class="status-badge status-completed">${r.status||'active'}</span></td><td><button class="btn btn-danger btn-sm" onclick="removeRider(${r.id})">移除</button></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center">暂无骑手</td></tr>';
  }
 
  function renderAdminsTable() {
@@ -428,7 +428,7 @@
  const tbody = document.getElementById('adminsTable');
  if (!admins.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">暂无管理员</td></tr>'; return; }
  tbody.innerHTML = admins.map(a => `
- <tr><td>${a.username}</td><td>${a.name||'-'}</td><td>${a.phone||'-'}</td><td><span class="status-badge ${a.role==='super'?'status-running':'status-completed'}">${a.role==='super'?'总管理员':'管理员'}</span></td><td>${a.created_at?new Date(a.created_at).toLocaleDateString('zh-CN'):'-'}</td><td>${a.role!=='super'&&currentAdmin?.role==='super'?`<button class="btn btn-danger btn-sm" onclick="deleteAdmin(${a.id})">删除</button>`:'-'}</td></tr>`).join('');
+ <tr><td>${escHtml(a.username)}</td><td>${a.name||'-'}</td><td>${a.phone||'-'}</td><td><span class="status-badge ${a.role==='super'?'status-running':'status-completed'}">${a.role==='super'?'总管理员':'管理员'}</span></td><td>${a.created_at?new Date(a.created_at).toLocaleDateString('zh-CN'):'-'}</td><td>${a.role!=='super'&&currentAdmin?.role==='super'?`<button class="btn btn-danger btn-sm" onclick="deleteAdmin(${a.id})">删除</button>`:'-'}</td></tr>`).join('');
  }
 
  async function cancelOrder(id) {
@@ -496,7 +496,7 @@
  if (!list || !list.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-secondary)">暂无提现申请</td></tr>'; return; }
  const statusMap = { pending:'审核中', approved:'已通过', rejected:'已驳回' };
  const colorMap = { pending:'#F39C12', approved:'#2ECC71', rejected:'#E74C3C' };
- tbody.innerHTML = list.map(w => '<tr><td>' + (w.rider_name||w.phone) + '</td><td>¥' + (w.amount||0).toFixed(2) + '</td><td style="color:' + (colorMap[w.status]||'') + ';font-weight:600">' + (statusMap[w.status]||w.status) + '</td><td>' + (w.created_at||'') + '</td><td>' + (w.status==='pending' ? '<button onclick="approveWithdraw('+w.id+',\'approved\')" style="background:#2ECC71;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;margin-right:6px">通过</button><button onclick="approveWithdraw('+w.id+',\'rejected\')" style="background:#E74C3C;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer">驳回</button>' : (w.reason||'-')) + '</td></tr>').join('');
+ tbody.innerHTML = list.map(w => '<tr><td>' + (escHtml(w.rider_name||w.phone)) + '</td><td>¥' + (w.amount||0).toFixed(2) + '</td><td style="color:' + (colorMap[w.status]||'') + ';font-weight:600">' + (statusMap[w.status]||w.status) + '</td><td>' + (w.created_at||'') + '</td><td>' + (w.status==='pending' ? '<button onclick="approveWithdraw('+w.id+',\'approved\')" style="background:#2ECC71;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;margin-right:6px">通过</button><button onclick="approveWithdraw('+w.id+',\'rejected\')" style="background:#E74C3C;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer">驳回</button>' : (w.reason||'-')) + '</td></tr>').join('');
  // 更新待审核徽章
  const pendingCount = list.filter(w => w.status === 'pending').length;
  const badge = document.getElementById('withdrawBadge');
@@ -564,6 +564,9 @@
  try { await API.deleteAd(id); showToast('已删除'); await loadAds(); } catch(err) { showToast(err.message); }
  }
  function escHtml(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+  function safeObj(o) {
+    return Object.fromEntries(Object.entries(o).map(([k,v]) => [k, typeof v === 'string' ? escHtml(v) : v]));
+  }
 
  document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', (e) => { if (e.target === o) o.classList.remove('active'); }));
  window.login = login; window.switchPage = switchPage; window.addAdmin = addAdmin; window.deleteAdmin = deleteAdmin;

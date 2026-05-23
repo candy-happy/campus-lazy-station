@@ -498,7 +498,7 @@
  list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>暂无新订单</p></div>';
  return;
  }
- list.innerHTML = newOrders.map(o => '<div style="background:var(--card-bg);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer" data-order="'+o.order_no+'" onclick="showOrderDetail(this.dataset.order,\'accept\')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:18px">'+(typeEmoji[o.type]||'📦')+'</span><span style="font-size:16px;font-weight:700;color:#FF6B35">¥'+((o.price||0).toFixed(2))+'</span></div><div style="font-size:14px;margin-bottom:6px">📍 '+o.pickup_location+' → 📍 '+o.delivery_location+'</div><div style="font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between"><span>'+fmtTime(o.created_at)+'</span><span style="color:#2ECC71;font-weight:600">点击接单 →</span></div></div>').join('');
+ list.innerHTML = newOrders.map(o => '<div style="background:var(--card-bg);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer" data-order="'+o.order_no+'" onclick="showOrderDetail(this.dataset.order,\'accept\')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:18px">'+(typeEmoji[o.type]||'📦')+'</span><span style="font-size:16px;font-weight:700;color:#FF6B35">¥'+((o.price||0).toFixed(2))+'</span></div><div style="font-size:14px;margin-bottom:6px">📍 '+escHtml(o.pickup_location)+' → 📍 '+escHtml(o.delivery_location)+'</div><div style="font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between"><span>'+fmtTime(o.created_at)+'</span><span style="color:#2ECC71;font-weight:600">点击接单 →</span></div></div>').join('');
  }
 
  function renderMyOrders() {
@@ -508,7 +508,7 @@
  list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>暂无进行中的订单</p></div>';
  return;
  }
- list.innerHTML = myOrders.map(o => '<div style="background:var(--card-bg);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer" data-order="'+o.order_no+'" onclick="showOrderDetail(this.dataset.order,\'manage\')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:18px">'+(typeEmoji[o.type]||'📦')+'</span><span style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;color:white;background:'+(o.status==='accepted'?'#3498DB':'#2ECC71')+'">'+(statusLabel[o.status]||o.status)+'</span></div><div style="font-size:14px;margin-bottom:4px">📍 '+o.pickup_location+' → 📍 '+o.delivery_location+'</div><div style="font-size:12px;color:var(--text-muted)">¥'+((o.price||0).toFixed(2))+' · '+fmtTime(o.created_at)+'</div></div>').join('');
+ list.innerHTML = myOrders.map(o => '<div style="background:var(--card-bg);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer" data-order="'+o.order_no+'" onclick="showOrderDetail(this.dataset.order,\'manage\')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:18px">'+(typeEmoji[o.type]||'📦')+'</span><span style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;color:white;background:'+(o.status==='accepted'?'#3498DB':'#2ECC71')+'">'+(statusLabel[o.status]||o.status)+'</span></div><div style="font-size:14px;margin-bottom:4px">📍 '+escHtml(o.pickup_location)+' → 📍 '+escHtml(o.delivery_location)+'</div><div style="font-size:12px;color:var(--text-muted)">¥'+((o.price||0).toFixed(2))+' · '+fmtTime(o.created_at)+'</div></div>').join('');
  }
 
  function showOrderDetail(orderNo, mode) {
@@ -516,7 +516,7 @@
  const o = arr.find(x => x.order_no === orderNo);
  if (!o) return;
  const content = $('detailContent');
- content.innerHTML = '<div style="margin-bottom:16px"><div style="font-size:24px;margin-bottom:4px">'+(typeEmoji[o.type]||'📦')+' '+(serviceNames[o.type]||'服务')+'</div><div class="order-info"><p>📍 取货：'+o.pickup_location+'</p><p>📍 送达：'+o.delivery_location+'</p><p>📝 备注：'+(o.details||'无')+'</p><p>💰 金额：¥'+((o.price||0).toFixed(2))+'</p></div><div style="font-size:12px;color:var(--text-muted)">订单号：'+o.order_no+' · '+fmtTime(o.created_at)+'</div></div>'+(mode==='accept'?'<button data-order="'+o.order_no+'" onclick="acceptOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#2ECC71;color:white;font-size:16px;font-weight:700;cursor:pointer">接单 🛵</button>':(o.status==='accepted'?'<button data-order="'+o.order_no+'" onclick="startDelivery(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#3498DB;color:white;font-size:16px;font-weight:700;cursor:pointer">开始配送 🚀</button>':(o.status==='running'?'<button data-order="'+o.order_no+'" onclick="completeOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#2ECC71;color:white;font-size:16px;font-weight:700;cursor:pointer">确认送达 ✅</button>':'<p style="text-align:center;color:var(--text-muted)">订单已结束</p>')));
+ content.innerHTML = '<div style="margin-bottom:16px"><div style="font-size:24px;margin-bottom:4px">'+(typeEmoji[o.type]||'📦')+' '+(serviceNames[o.type]||'服务')+'</div><div class="order-info"><p>📍 取货：'+escHtml(o.pickup_location)+'</p><p>📍 送达：'+escHtml(o.delivery_location)+'</p><p>📝 备注：'+escHtml(o.details||'无')+'</p><p>💰 金额：¥'+((o.price||0).toFixed(2))+'</p></div><div style="font-size:12px;color:var(--text-muted)">订单号：'+o.order_no+' · '+fmtTime(o.created_at)+'</div></div>'+(mode==='accept'?'<button data-order="'+o.order_no+'" onclick="acceptOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#2ECC71;color:white;font-size:16px;font-weight:700;cursor:pointer">接单 🛵</button>':(o.status==='accepted'?'<button data-order="'+o.order_no+'" onclick="startDelivery(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#3498DB;color:white;font-size:16px;font-weight:700;cursor:pointer">开始配送 🚀</button>':(o.status==='running'?'<button data-order="'+o.order_no+'" onclick="completeOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#2ECC71;color:white;font-size:16px;font-weight:700;cursor:pointer">确认送达 ✅</button>':'<p style="text-align:center;color:var(--text-muted)">订单已结束</p>')));
  $('detailModal').classList.add('active');
  document.body.style.overflow = 'hidden';
  }
@@ -569,7 +569,7 @@
  const levels = { bronze:{name:'青铜骑手',icon:'🥉',next:20,nextName:'银骑手'}, silver:{name:'银骑手',icon:'🥈',next:50,nextName:'金骑手'}, gold:{name:'金骑手',icon:'🥇',next:100,nextName:'钻石骑手'}, diamond:{name:'钻石骑手',icon:'💎',next:Infinity,nextName:''} };
  const info = levels[r.level||'bronze'] || levels.bronze;
  const progress = Math.min((r.total_orders||0)/info.next*100, 100);
- $('levelBadge').innerHTML = '<div class="level-icon level-'+(r.level||'bronze')+'">'+info.icon+'</div><div class="level-info"><div class="level-name">'+info.name+'</div><div class="level-progress"><div class="level-progress-bar" style="width:'+progress+'%"></div></div><div class="level-next">'+(info.nextName?'再接'+(info.next-(r.total_orders||0))+'单升级'+info.nextName:'已达最高等级')+'</div></div>';
+ $('levelBadge').innerHTML = '<div class="level-icon level-'+(r.level||'bronze')+'">'+info.icon+'</div><div class="level-info"><div class="level-name">'+escHtml(info.name)+'</div><div class="level-progress"><div class="level-progress-bar" style="width:'+progress+'%"></div></div><div class="level-next">'+(info.nextName?'再接'+(info.next-(r.total_orders||0))+'单升级'+info.nextName:'已达最高等级')+'</div></div>';
  } catch(e){ console.error(e); }
  }
 
@@ -599,7 +599,7 @@
  document.querySelector('.app-main .section-title:first-child').textContent = '📜 历史订单';
  $('myOrdersList').style.display = 'none';
  if (!history.length) { list.innerHTML = '<div class="empty-state"><p>暂无历史订单</p></div>'; return; }
- list.innerHTML = history.map(o => '<div style="background:var(--card-bg);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)"><div>'+(typeEmoji[o.type]||'📦')+' '+o.pickup_location+' → '+o.delivery_location+'</div><div style="font-size:12px;color:var(--text-muted)">¥'+((o.price||0).toFixed(2))+' · '+fmtTime(o.completed_at||o.cancelled_at)+'</div></div>').join('');
+ list.innerHTML = history.map(o => '<div style="background:var(--card-bg);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)"><div>'+(typeEmoji[o.type]||'📦')+' '+escHtml(o.pickup_location)+' → '+escHtml(o.delivery_location)+'</div><div style="font-size:12px;color:var(--text-muted)">¥'+((o.price||0).toFixed(2))+' · '+fmtTime(o.completed_at||o.cancelled_at)+'</div></div>').join('');
  }
 
  function closeModal(id) { $(id).classList.remove('active'); document.body.style.overflow = ''; }
@@ -750,6 +750,10 @@
  }
 
  function escHtml(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+  // Sanitize order object for safe HTML rendering
+  function safeOrder(o) {
+    return Object.fromEntries(Object.entries(o).map(([k,v]) => [k, typeof v === 'string' ? escHtml(v) : v]));
+  }
  function showOrderHistory() { switchTab('history'); }
  async function showReviewsModal() {
    if (!currentRider) return showToast('请先登录');

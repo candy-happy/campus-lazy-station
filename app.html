@@ -1815,8 +1815,8 @@
         <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start">
           <span style="font-size:20px">${n.type==='order'?'...':'...'}</span>
           <div style="flex:1">
-            <div style="font-weight:600;font-size:14px">${n.title}</div>
-            <div style="font-size:13px;color:var(--text-secondary);margin-top:2px">${n.content}</div>
+            <div style="font-weight:600;font-size:14px">${escHtml(n.title)}</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-top:2px">${escHtml(n.content)}</div>
             <div style="font-size:12px;color:var(--text-light);margin-top:4px">${fmtTime(new Date(n.created_at).getTime())}</div>
           </div>
         </div>`).join('') : '';
