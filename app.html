@@ -30,8 +30,9 @@
     }
     body.dark {
       --bg: #0D1117; --card: #161B22; --text: #E6EDF3;
-      --text-secondary: #8B949E; --border: #30363D;
-      --shadow: 0 2px 12px rgba(0,0,0,0.4);
+      --text-secondary: #8B949E; --text-light: #6E7681; --border: #30363D;
+      --shadow: 0 2px 12px rgba(0,0,0,0.4); --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+      --primary-light: #FF8C5A; --gradient: linear-gradient(135deg, #FF6B35, #E55A25);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html { scroll-behavior: smooth; }
@@ -666,7 +667,8 @@
       padding: 10px 18px; border: none; border-radius: 20px; background: var(--gradient);
       color: white; font-size: 14px; font-weight: 600; cursor: pointer;
     }
-  </style>
+  @keyframes animBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes animShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-10deg)}75%{transform:rotate(10deg)}}@keyframes animWave{0%,100%{transform:rotate(0)}25%{transform:rotate(20deg)}75%{transform:rotate(-15deg)}}@keyframes animHeartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}.anim-bounce{animation:animBounce 1s infinite}.anim-shake{animation:animShake 0.6s infinite}.anim-wave{animation:animWave 1s infinite}.anim-heartbeat{animation:animHeartbeat 1s infinite}
+</style>
 <script src="api.js"></script>
 </head>
 <body>
@@ -997,9 +999,25 @@
           <span style="font-size:22px;cursor:pointer" onclick="toggleEmojiPicker()">😊</span>
           <input id="chatInput" placeholder="输入消息..." style="flex:1;padding:10px;border:1px solid var(--border);border-radius:20px;outline:none;background:var(--bg);color:var(--text)" onkeydown="if(event.key==='Enter')sendChatMsg()" />
           <button onclick="sendChatMsg()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer">发送</button>
-          <div id="emojiPicker" style="display:none;position:absolute;bottom:60px;left:8px;right:8px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow-lg);z-index:9999;max-height:200px;overflow-y:auto">
-            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;font-weight:600">常用表情</div>
-            <div style="display:flex;flex-wrap:wrap;gap:4px" id="emojiGrid"></div>
+          <div id="emojiPicker" style="display:none;position:absolute;bottom:60px;left:8px;right:8px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow-lg);z-index:9999;max-height:260px;overflow-y:auto">
+            <div style="display:flex;gap:8px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:8px">
+              <span id="tabEmoji" style="font-size:13px;font-weight:600;color:var(--primary);cursor:pointer;padding:4px 8px;border-radius:8px;background:var(--bg)">😊 表情</span>
+              <span id="tabGif" style="font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:8px" onclick="switchPickerTab('gif')">🖼️ GIF</span>
+            </div>
+            <div id="emojiTabContent"><div style="display:flex;flex-wrap:wrap;gap:4px" id="emojiGrid"></div></div>
+            <div id="gifTabContent" style="display:none">
+              <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('hello')">👋 打招呼</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('thanks')">🙏 感谢</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('happy')">😊 开心</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('funny')">😂 搞笑</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('cool')">😎 酷</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('love')">❤️ 爱</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('sad')">😢 难过</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('food')">🍔 美食</span>
+              </div>
+              <div id="gifResults" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -1433,7 +1451,7 @@
           <div style="display:flex;justify-content:${isMe?'flex-end':'flex-start'};margin-bottom:10px">
             <div style="max-width:70%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;
               background:${isMe?'var(--primary)':'var(--card)'};color:${isMe?'#fff':'var(--text)'};border:1px solid ${isMe?'transparent':'var(--border)'}">
-              ${escHtml(m.content)}
+              ${(() => { const c=m.content; if(c.startsWith('[ANIM:')){const p=c.slice(6,c.length-1).split(':');return '<span class="anim-'+p[1]+'" style="font-size:36px;display:inline-block">'+p[0]+'</span>'} if(c.startsWith('[GIF]'))return '<img src="'+escHtml(c.slice(5))+'" style="max-width:160px;border-radius:12px;display:block" />'; return escHtml(c) })()}
             </div>
           </div>
         `;
@@ -1979,6 +1997,44 @@
     function insertEmoji(emoji) {
       const input = document.getElementById('chatInput');
       if (input) { input.value += emoji; input.focus(); }
+      const picker = document.getElementById('emojiPicker');
+      if (picker) picker.style.display = 'none';
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 🖼️ GIF搜索
+    // ═══════════════════════════════════════════════════════
+    function switchPickerTab(tab) {
+      const emojiTab = document.getElementById('emojiTabContent');
+      const gifTab = document.getElementById('gifTabContent');
+      const tabEmoji = document.getElementById('tabEmoji');
+      const tabGif = document.getElementById('tabGif');
+      if (tab === 'gif') {
+        emojiTab.style.display = 'none'; gifTab.style.display = 'block';
+        tabEmoji.style.color = 'var(--text-secondary)'; tabEmoji.style.background = 'transparent';
+        tabGif.style.color = 'var(--primary)'; tabGif.style.background = 'var(--bg)';
+      } else {
+        emojiTab.style.display = 'block'; gifTab.style.display = 'none';
+        tabEmoji.style.color = 'var(--primary)'; tabEmoji.style.background = 'var(--bg)';
+        tabGif.style.color = 'var(--text-secondary)'; tabGif.style.background = 'transparent';
+      }
+    }
+    async function searchGif(keyword) {
+      const container = document.getElementById('gifResults');
+      if (!container) return;
+      container.innerHTML = '<div style="color:var(--text-secondary);font-size:13px;padding:8px">搜索中...</div>';
+      try {
+        const res = await fetch('/api/gif/search?q=' + encodeURIComponent(keyword));
+        const data = await res.json();
+        if (!data.gifs || !data.gifs.length) { container.innerHTML = '<div style="color:var(--text-secondary);font-size:13px;padding:8px">暂无结果</div>'; return; }
+        container.innerHTML = data.gifs.map(g =>
+          '<img src="' + g.preview + '" style="width:80px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer" onclick="insertGif(\'' + g.url + '\')" title="' + escHtml(g.title || '') + '" />'
+        ).join('');
+      } catch(e) { container.innerHTML = '<div style="color:var(--text-secondary);font-size:13px;padding:8px">GIF服务暂不可用</div>'; }
+    }
+    function insertGif(url) {
+      const input = document.getElementById('chatInput');
+      if (input) { input.value = '[GIF]' + url; sendChatMsg(); }
       const picker = document.getElementById('emojiPicker');
       if (picker) picker.style.display = 'none';
     }
