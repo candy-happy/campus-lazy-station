@@ -851,7 +851,7 @@
             <span>⭐ 积分明细</span>
             <span style="color: var(--text-light);">›</span>
           </div>
-          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="showToast('开发中...')">
+          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="showSettings()">
             <span>⚙️ 设置</span>
             <span style="color: var(--text-light);">›</span>
           </div>
@@ -1848,6 +1848,42 @@
     async function deleteAddr(id) {
       if (!confirm('确定删除此地址？')) return;
       try { await API.deleteAddress(id); showToast('已删除'); showAddresses(); } catch(e) { showToast(e.message); }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // ⚙️ 设置
+    // ═══════════════════════════════════════════════════════
+    function showSettings() {
+      if (!currentUser) return showToast('请先登录');
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const html = '<div class="modal-overlay active" id="settingsModal" onclick="if(event.target===this)closeModal(\'settingsModal\')">' +
+        '<div class="modal-content" style="max-height:80vh;overflow-y:auto">' +
+        '<div class="modal-header"><span class="modal-title">⚙️ 设置</span><button class="modal-close" onclick="closeModal(\'settingsModal\')">✕</button></div>' +
+        '<div class="modal-body">' +
+        '<div style="padding:16px 0;border-bottom:1px solid var(--border)">' +
+        '<div style="font-weight:600;margin-bottom:12px">外观</div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">' +
+        '<span>🌙 深色模式</span>' +
+        '<label style="position:relative;width:48px;height:26px;display:inline-block"><input type="checkbox" id="darkToggle" ' + (isDark ? 'checked' : '') + ' onchange="toggleDark(this.checked)" style="opacity:0;width:0;height:0"><span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:' + (isDark ? 'var(--primary)' : '#ccc') + ';border-radius:26px;transition:.3s"></span><span style="position:absolute;height:20px;width:20px;left:' + (isDark ? '24px' : '3px') + ';bottom:3px;background:#fff;border-radius:50%;transition:.3s"></span></label>' +
+        '</div></div>' +
+        '<div style="padding:16px 0;border-bottom:1px solid var(--border)">' +
+        '<div style="font-weight:600;margin-bottom:12px">账户</div>' +
+        '<div style="font-size:14px;color:var(--text-secondary);margin-bottom:8px">手机号: ' + escHtml(currentUser.phone) + '</div>' +
+        '<div style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">注册时间: ' + (currentUser.created_at || '未知') + '</div>' +
+        '</div>' +
+        '<div style="padding:16px 0">' +
+        '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyUser\');location.reload()}" style="width:100%;padding:12px;border:none;border-radius:12px;background:var(--danger);color:#fff;font-size:15px;font-weight:600;cursor:pointer">退出登录</button>' +
+        '</div>' +
+        '<div style="text-align:center;padding:16px 0;color:var(--text-light);font-size:12px">校园懒人效率站 v1.0</div>' +
+        '</div></div></div>';
+      document.body.insertAdjacentHTML('beforeend', html);
+      document.body.style.overflow = 'hidden';
+    }
+    function toggleDark(on) {
+      document.documentElement.setAttribute('data-theme', on ? 'dark' : 'light');
+      localStorage.setItem('theme', on ? 'dark' : 'light');
+      closeModal('settingsModal');
+      setTimeout(() => showSettings(), 200);
     }
 </script>
 
