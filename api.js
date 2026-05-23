@@ -145,6 +145,15 @@ const API = {
   async chatMessages(conversationId, phone, before) { let url = '/api/chat/messages/' + conversationId + '?phone=' + phone; if (before) url += '&before=' + before; return fetch(url).then(r => r.json()); },
   async chatUnread(phone) { return fetch('/api/chat/unread?phone=' + phone).then(r => r.json()); },
 
+  // ─── 骑手钱包 ───
+  async riderWallet(phone) { return fetch('/api/rider/wallet?phone=' + phone).then(r => r.json()); },
+  async riderWithdraw(phone, amount) { return fetch('/api/rider/withdraw', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone, amount}) }).then(r => r.json()); },
+  async riderWithdrawLogs(phone) { return fetch('/api/rider/withdraw/logs?phone=' + phone).then(r => r.json()); },
+  async riderEarnings(phone) { return fetch('/api/rider/earnings?phone=' + phone).then(r => r.json()); },
+  async adminWithdrawList() { return fetch('/api/admin/withdraw').then(r => r.json()); },
+  async adminWithdrawAction(id, status, reason) { return fetch('/api/admin/withdraw/' + id, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({status, reason}) }).then(r => r.json()); },
+
+
   // ─── 会话恢复 ───
   restoreSession() {
     try {

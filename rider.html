@@ -323,6 +323,32 @@
  </div>
  </div>
 
+ <!-- 骑手提现弹窗 -->
+ <div class="modal-overlay" id="withdrawModal">
+ <div class="modal-content">
+ <div class="modal-header"><span class="modal-title">💸 申请提现</span><button class="modal-close" onclick="closeModal('withdrawModal')">✕</button></div>
+ <div class="modal-body">
+ <div style="text-align:center;padding:16px 0">
+ <div style="font-size:13px;color:var(--text-secondary)">可提现余额</div>
+ <div style="font-size:32px;font-weight:900;color:var(--green)">¥<span id="walletAvail">0.00</span></div>
+ <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">审核中: ¥<span id="walletPending">0.00</span></div>
+ </div>
+ <div style="padding:0 16px">
+ <label style="font-size:13px;color:var(--text-secondary)">提现金额（最低1元，最多¥<span id="withdrawMax">0.00</span>）</label>
+ <input type="number" id="withdrawInput" min="1" step="0.01" placeholder="输入提现金额" style="width:100%;padding:12px;margin-top:8px;border:1px solid var(--border);border-radius:12px;font-size:18px;outline:none;text-align:center" />
+ <button onclick="doWithdraw()" style="width:100%;margin-top:16px;padding:14px;background:var(--green);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer">确认提现</button>
+ </div>
+ </div>
+ </div>
+ </div>
+ <!-- 骑手收入明细 -->
+ <div class="modal-overlay" id="earningsModal">
+ <div class="modal-content" style="max-height:85vh">
+ <div class="modal-header"><span class="modal-title">💰 收入明细</span><button class="modal-close" onclick="closeModal('earningsModal')">✕</button></div>
+ <div id="earningsBody" style="overflow-y:auto;max-height:calc(85vh - 56px)"></div>
+ </div>
+ </div>
+
  <!-- 骑手聊天列表 -->
  <div class="modal-overlay" id="chatListModal">
  <div class="modal-content" style="max-height:90vh">
@@ -569,8 +595,63 @@
 
  function showProfile() { switchTab('profile'); }
  function showSettings() { showToast('设置开发中'); }
- function showWithdrawModal() { showToast('提现功能开发中'); }
- function showEarningsDetail() { showToast('收入明细开发中'); }
+ function showWithdrawModal() {
+   if (!currentRider) return;
+   // 直接打开提现弹窗
+   document.getElementById('withdrawModal').classList.add('active');
+   document.body.style.overflow = 'hidden';
+   loadWalletInfo();
+ }
+
+ async function loadWalletInfo() {
+   const w = await API.riderWallet(currentRider.phone);
+   if (w.error) return showToast(w.error);
+   $('walletAvail').textContent = (w.available||0).toFixed(2);
+   $('walletPending').textContent = (w.pending||0).toFixed(2);
+   $('withdrawMax').textContent = (w.available||0).toFixed(2);
+   $('withdrawInput').max = w.available || 0;
+ }
+
+ async function doWithdraw() {
+   const amt = parseFloat($('withdrawInput').value);
+   if (!amt || amt < 1) return showToast('最低提现1元');
+   const res = await API.riderWithdraw(currentRider.phone, amt);
+   if (res.error) return showToast(res.error);
+   showToast(res.message || '提现申请已提交');
+   closeModal('withdrawModal');
+   // 刷新钱包数据
+   const rider = await API.getRider(currentRider.phone);
+   if (rider) { $('walletBalance').textContent = (rider.total_earnings||0).toFixed(2); }
+ }
+
+ function showEarningsDetail() {
+   if (!currentRider) return;
+   document.getElementById('earningsModal').classList.add('active');
+   document.body.style.overflow = 'hidden';
+   loadEarningsDetail();
+ }
+
+ async function loadEarningsDetail() {
+   const [earnings, logs] = await Promise.all([
+     API.riderEarnings(currentRider.phone),
+     API.riderWithdrawLogs(currentRider.phone)
+   ]);
+   let html = '<div style="padding:12px 16px">';
+   // 收入记录
+   html += '<div style="font-weight:700;font-size:16px;margin-bottom:12px">📦 配送收入</div>';
+   if (earnings && earnings.length) {
+     html += earnings.map(e => '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-secondary);font-size:13px">订单 ' + e.order_no + '<br>' + fmtTime(e.time) + '</span><span style="color:var(--green);font-weight:600">+' + (e.amount||0).toFixed(2) + '</span></div>').join('');
+   } else { html += '<div style="text-align:center;padding:20px;color:var(--text-secondary)">暂无收入</div>'; }
+   // 提现记录
+   html += '<div style="font-weight:700;font-size:16px;margin:16px 0 12px">💸 提现记录</div>';
+   if (logs && logs.length) {
+     const statusMap = { pending:'审核中', approved:'已通过', rejected:'已驳回' };
+     const colorMap = { pending:'#F39C12', approved:'#2ECC71', rejected:'#E74C3C' };
+     html += logs.map(l => '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px"><span style="color:' + (colorMap[l.status]||'#999') + ';font-weight:600">' + (statusMap[l.status]||l.status) + '</span><br><span style="color:var(--text-secondary)">' + fmtTime(l.created_at) + '</span></span><span style="color:var(--text);font-weight:600">-' + (l.amount||0).toFixed(2) + '</span></div>').join('');
+   } else { html += '<div style="text-align:center;padding:20px;color:var(--text-secondary)">暂无提现记录</div>'; }
+   html += '</div>';
+   $('earningsBody').innerHTML = html;
+ }
  function showActivityModal() { showToast('活动详情开发中'); }
 
  // ═══════════════════════════════════════════════════════
@@ -664,6 +745,10 @@
  window.openRiderChatList = openRiderChatList;
  window.openRiderConv = openRiderConv;
  window.sendChatMsg = sendChatMsg;
+ window.loadWalletInfo = loadWalletInfo;
+ window.doWithdraw = doWithdraw;
+ window.showEarningsDetail = showEarningsDetail;
+ window.loadEarningsDetail = loadEarningsDetail;
  window.logout = logout;
  </script>
 </body>
