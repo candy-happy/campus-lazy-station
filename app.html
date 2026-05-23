@@ -839,6 +839,10 @@
         </div>
 
         <div style="background: var(--card); border-radius: var(--radius); margin-top: 16px; overflow: hidden; box-shadow: var(--shadow);">
+          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); cursor: pointer;" onclick="openChatList()">
+            <span>💬 我的消息</span>
+            <span style="color: var(--text-light);">›</span>
+          </div>
           <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); cursor: pointer;" onclick="showAddresses()">
             <span>📍 常用地址</span>
             <span style="color: var(--text-light);">›</span>
@@ -970,6 +974,32 @@
           <button class="modal-close" onclick="closeModal('wallDetailModal')">✕</button>
         </div>
         <div class="modal-body" id="wallDetailContent"></div>
+      </div>
+    </div>
+
+    <!-- 聊天列表页 -->
+    <div class="modal-overlay" id="chatListModal">
+      <div class="modal-content" style="max-height:90vh">
+        <div class="modal-header">
+          <span class="modal-title">💬 我的消息</span>
+          <button class="modal-close" onclick="closeModal('chatListModal')">✕</button>
+        </div>
+        <div class="modal-body" id="chatListBody" style="padding:0;overflow-y:auto;max-height:calc(90vh - 56px)"></div>
+      </div>
+    </div>
+
+    <!-- 聊天对话页 -->
+    <div class="modal-overlay" id="chatConvModal">
+      <div class="modal-content" style="max-height:95vh;display:flex;flex-direction:column">
+        <div class="modal-header">
+          <span class="modal-title" id="chatConvTitle">对话</span>
+          <button class="modal-close" onclick="closeModal('chatConvModal')">✕</button>
+        </div>
+        <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px;min-height:300px"></div>
+        <div style="display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--border);background:var(--card)">
+          <input id="chatInput" placeholder="输入消息..." style="flex:1;padding:10px;border:1px solid var(--border);border-radius:20px;outline:none;background:var(--bg);color:var(--text)" onkeydown="if(event.key==='Enter')sendChatMsg()" />
+          <button onclick="sendChatMsg()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer">发送</button>
+        </div>
       </div>
     </div>
 
@@ -1299,6 +1329,98 @@
       if (res.ok) showToast(res.following ? '已关注' : '已取消关注');
     }
 
+    // ═══════════════════════════════════════════════════════
+    // 💬 聊天
+    // ═══════════════════════════════════════════════════════
+    let currentConvId = null;
+    let currentConvPhone = null;
+    let chatRefreshTimer = null;
+
+    async function openChatList() {
+      if (!currentUser) return showLoginPage();
+      document.getElementById('chatListModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      await loadChatList();
+    }
+
+    async function loadChatList() {
+      const list = await API.chatConversations(currentUser.phone);
+      const el = document.getElementById('chatListBody');
+      if (!list || !list.length) {
+        el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary)">暂无消息</div>';
+        return;
+      }
+      el.innerHTML = list.map(c => `
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer" onclick="openChatConv(${c.id},'${escHtml(c.other_phone)}','${escHtml(c.other_name)}')">
+          <div style="width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${(c.other_name||'?')[0]}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(c.other_name||c.other_phone)}</span>
+              <span style="font-size:11px;color:var(--text-secondary);flex-shrink:0">${timeAgo(c.last_message_at)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+              <span style="font-size:13px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml((c.last_sender===currentUser.phone?'我:':'')+ (c.last_message||''))}</span>
+              ${c.unread? '<span style="background:var(--primary);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">' + c.unread + '</span>':''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function openChatConv(convId, otherPhone, otherName) {
+      currentConvId = convId;
+      currentConvPhone = otherPhone;
+      document.getElementById('chatConvTitle').textContent = otherName || otherPhone;
+      document.getElementById('chatListModal').classList.remove('active');
+      document.getElementById('chatConvModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      await loadChatMessages();
+      // 自动刷新
+      if (chatRefreshTimer) clearInterval(chatRefreshTimer);
+      chatRefreshTimer = setInterval(loadChatMessages, 5000);
+    }
+
+    async function loadChatMessages() {
+      if (!currentConvId) return;
+      const msgs = await API.chatMessages(currentConvId, currentUser.phone);
+      const el = document.getElementById('chatMessages');
+      el.innerHTML = msgs.map(m => {
+        const isMe = m.sender_phone === currentUser.phone;
+        return `
+          <div style="display:flex;justify-content:${isMe?'flex-end':'flex-start'};margin-bottom:10px">
+            <div style="max-width:70%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;
+              background:${isMe?'var(--primary)':'var(--card)'};color:${isMe?'#fff':'var(--text)'};border:1px solid ${isMe?'transparent':'var(--border)'}">
+              ${escHtml(m.content)}
+            </div>
+          </div>
+        `;
+      }).join('');
+      el.scrollTop = el.scrollHeight;
+    }
+
+    async function sendChatMsg() {
+      const input = document.getElementById('chatInput');
+      const content = input.value.trim();
+      if (!content || !currentConvId) return;
+      const res = await API.chatSend({ conversation_id: currentConvId, sender_phone: currentUser.phone, content });
+      if (res.error) return showToast(res.error);
+      input.value = '';
+      await loadChatMessages();
+    }
+
+    // 从订单卡片打开聊天（供订单列表调用）
+    async function openChatFromOrder(orderId, riderPhone, riderName) {
+      if (!currentUser) return showLoginPage();
+      const conv = await API.chatGetOrCreateConversation({
+        user_phone: currentUser.phone,
+        rider_phone: riderPhone,
+        order_id: orderId,
+        order_title: '订单 ' + orderId
+      });
+      if (conv.error) return showToast(conv.error);
+      openChatConv(conv.id, riderPhone, riderName || riderPhone);
+    }
+
     function timeAgo(ts) {
       if (!ts) return '';
       const diff = Date.now() - new Date(ts).getTime();
@@ -1440,12 +1562,30 @@
       let o = orders.find(x => (x.order_no || x.id) == id);
       if (!o) { o = await API.getOrder(id); }
       if (!o) return;
-      const statusLabel = { pending:'...', accepted:'...', running:'...', completed:'...', cancelled:'...' };
+      const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
       const statusColor = { pending:'#F39C12', accepted:'#3498DB', running:'#2ECC71', completed:'#95A5A6', cancelled:'#E74C3C' };
+      const typeLabel = { delivery:'代取外卖', express:'代取快递', purchase:'代买东西', laundry:'代取洗衣', errand:'跑腿办事', other:'其他服务' };
+      const canChat = o.rider_phone && ['accepted','running'].includes(o.status);
       const content = document.getElementById('detailContent');
-      content.innerHTML = '<div class="detail-card"><p>#' + (o.order_no||o.id) + '</p><p>¥' + ((o.price||0).toFixed(2)) + '</p></div>';
+      content.innerHTML = `
+        <div class="detail-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <b>${typeLabel[o.type]||o.type} #${o.order_no||o.id}</b>
+            <span style="padding:4px 10px;border-radius:8px;background:${statusColor[o.status]||'#ddd'};color:#fff;font-size:12px">${statusLabel[o.status]||o.status}</span>
+          </div>
+          <div style="font-size:13px;line-height:2">
+            <div>📍 取件: ${escHtml(o.pickup_location||'')}</div>
+            <div>📍 送达: ${escHtml(o.delivery_location||'')}</div>
+            <div>💰 费用: ¥${(o.price||0).toFixed(2)}${o.tip?' + 小费¥'+o.tip:''}</div>
+            <div>📝 备注: ${escHtml(o.note||'无')}</div>
+            ${o.rider_name?'<div>🚴 骑手: '+escHtml(o.rider_name)+'</div>':''}
+          </div>
+          ${canChat?'<button onclick="openChatFromOrder(\''+o.id+'\',\''+o.rider_phone+'\',\''+escHtml(o.rider_name||'')+'\')" style="width:100%;margin-top:12px;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius);font-size:14px;cursor:pointer">💬 联系骑手</button>':''}
+        </div>
+      `;
       document.getElementById('detailModal').classList.add('active');
-      document.body.style.overflow = 'hidden';}
+      document.body.style.overflow = 'hidden';
+    }
 
     async function cancelOrder(id) {
       if (!confirm('确定取消璇ヨ鍗曞悧锛')) return;

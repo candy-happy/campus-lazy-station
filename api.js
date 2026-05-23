@@ -138,6 +138,13 @@ const API = {
   async wallUserProfile(phone) { return fetch('/api/wall/user/' + phone).then(r => r.json()); },
   async wallDeletePost(id) { return fetch('/api/wall/posts/' + id, { method: 'DELETE' }).then(r => r.json()); },
 
+  // ─── 聊天 ───
+  async chatGetOrCreateConversation(data) { return fetch('/api/chat/conversation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()); },
+  async chatConversations(phone) { return fetch('/api/chat/conversations?phone=' + phone).then(r => r.json()); },
+  async chatSend(data) { return fetch('/api/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()); },
+  async chatMessages(conversationId, phone, before) { let url = '/api/chat/messages/' + conversationId + '?phone=' + phone; if (before) url += '&before=' + before; return fetch(url).then(r => r.json()); },
+  async chatUnread(phone) { return fetch('/api/chat/unread?phone=' + phone).then(r => r.json()); },
+
   // ─── 会话恢复 ───
   restoreSession() {
     try {
