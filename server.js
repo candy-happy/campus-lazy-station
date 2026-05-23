@@ -505,7 +505,13 @@ app.get('/api/wall/feed', (req, res) => JSON_RES(res, () => {
       try { insExp.run(post.id, phone); updExp.run(post.id); } catch(e) {}
     });
   }
-  return posts.map(p => ({ ...p, images: p.images ? p.images.split(',').filter(Boolean).map(u => ({ url: u, isVideo: /\.mp4|\.mov|\.webm/i.test(u) })) : [], gif_urls: safeJSON(p.gif_urls) }));
+  // 查询关注状态
+  const followSet = new Set();
+  if (phone) {
+    const followed = db.prepare('SELECT following_phone FROM wall_follows WHERE follower_phone = ?').all(phone);
+    followed.forEach(f => followSet.add(f.following_phone));
+  }
+  return posts.map(p => ({ ...p, images: p.images ? p.images.split(',').filter(Boolean).map(u => ({ url: u, isVideo: /\.mp4|\.mov|\.webm/i.test(u) })) : [], gif_urls: safeJSON(p.gif_urls), isFollowing: followSet.has(p.phone) }));
 }));
 
 // 帖子详情
