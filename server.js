@@ -273,6 +273,129 @@ app.patch('/api/admins/:id', (req, res) => JSON_RES(res, () => {
   return { ok: true };
 }));
 
+// ═══════════════════════════════════════════════
+// 🧱 校园墙
+// ═══════════════════════════════════════════════
+
+// 发帖
+app.post('/api/wall/posts', (req, res) => JSON_RES(res, () => {
+  const { phone, nickname, avatar, content, images, gif_urls } = req.body;
+  if (!phone || !content) return { error: '缺少手机号或内容' };
+  const r = db.prepare(`INSERT INTO wall_posts (phone, nickname, avatar, content, images, gif_urls, like_count, comment_count, exposure_count, exposure_done, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now','localtime'), datetime('now','localtime'))`)
+    .run(phone, nickname || '匿名', avatar || '', content, images || '', gif_urls || '');
+  return { ok: true, id: r.lastInsertRowid };
+}));
+
+// 信息流
+app.get('/api/wall/feed', (req, res) => JSON_RES(res, () => {
+  const { tab, phone, page, limit } = req.query;
+  const p = Math.max(1, parseInt(page) || 1);
+  const l = Math.min(50, parseInt(limit) || 20);
+  const offset = (p - 1) * l;
+  let posts;
+  if (tab === 'following' && phone) {
+    posts = db.prepare(`SELECT p.* FROM wall_posts p
+      JOIN wall_follows f ON f.following_phone = p.phone AND f.follower_phone = ?
+      ORDER BY p.created_at DESC LIMIT ? OFFSET ?`).all(phone, l, offset);
+  } else if (tab === 'hot') {
+    posts = db.prepare(`SELECT * FROM wall_posts WHERE exposure_done = 1 ORDER BY like_count DESC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
+  } else {
+    // 最新 + 曝光算法：exposure_done=0的帖子优先
+    posts = db.prepare(`SELECT * FROM wall_posts ORDER BY exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
+  }
+  // 更新曝光
+  if (phone) {
+    const insExp = db.prepare("INSERT OR IGNORE INTO wall_exposures (post_id, phone, created_at) VALUES (?, ?, datetime('now','localtime'))");
+    const updExp = db.prepare('UPDATE wall_posts SET exposure_count = exposure_count + 1, exposure_done = CASE WHEN exposure_count >= 2 THEN 1 ELSE 0 END WHERE id = ?');
+    posts.forEach(post => {
+      try { insExp.run(post.id, phone); updExp.run(post.id); } catch(e) {}
+    });
+  }
+  return posts.map(p => ({ ...p, images: p.images ? p.images.split(',').filter(Boolean) : [], gif_urls: safeJSON(p.gif_urls) }));
+}));
+
+// 帖子详情
+app.get('/api/wall/posts/:id', (req, res) => JSON_RES(res, () => {
+  const post = db.prepare('SELECT * FROM wall_posts WHERE id = ?').get(req.params.id);
+  if (!post) return { error: '帖子不存在' };
+  const comments = db.prepare('SELECT * FROM wall_comments WHERE post_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id);
+  return { ...post, images: post.images ? post.images.split(',').filter(Boolean) : [], gif_urls: safeJSON(post.gif_urls), comments };
+}));
+
+// 点赞
+app.post('/api/wall/posts/:id/like', (req, res) => JSON_RES(res, () => {
+  const { phone } = req.body;
+  if (!phone) return { error: '缺少手机号' };
+  const existing = db.prepare('SELECT id FROM wall_likes WHERE post_id = ? AND phone = ?').get(req.params.id, phone);
+  if (existing) {
+    db.prepare('DELETE FROM wall_likes WHERE id = ?').run(existing.id);
+    db.prepare('UPDATE wall_posts SET like_count = MAX(0, like_count - 1) WHERE id = ?').run(req.params.id);
+    return { ok: true, liked: false };
+  } else {
+    db.prepare("INSERT INTO wall_likes (post_id, phone, created_at) VALUES (?, ?, datetime('now','localtime'))").run(req.params.id, phone);
+    db.prepare('UPDATE wall_posts SET like_count = like_count + 1 WHERE id = ?').run(req.params.id);
+    return { ok: true, liked: true };
+  }
+}));
+
+// 评论
+app.post('/api/wall/posts/:id/comments', (req, res) => JSON_RES(res, () => {
+  const { phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname } = req.body;
+  if (!phone || !content) return { error: '缺少手机号或内容' };
+  db.prepare(`INSERT INTO wall_comments (post_id, phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname, like_count, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now','localtime'))`)
+    .run(req.params.id, phone, nickname || '匿名', avatar || '', content, parent_id || null, reply_to_phone || '', reply_to_nickname || '');
+  db.prepare('UPDATE wall_posts SET comment_count = comment_count + 1 WHERE id = ?').run(req.params.id);
+  return { ok: true };
+}));
+
+// 关注
+app.post('/api/wall/follow', (req, res) => JSON_RES(res, () => {
+  const { follower_phone, following_phone } = req.body;
+  if (!follower_phone || !following_phone) return { error: '缺少手机号' };
+  if (follower_phone === following_phone) return { error: '不能关注自己' };
+  const existing = db.prepare('SELECT id FROM wall_follows WHERE follower_phone = ? AND following_phone = ?').get(follower_phone, following_phone);
+  if (existing) {
+    db.prepare('DELETE FROM wall_follows WHERE id = ?').run(existing.id);
+    return { ok: true, following: false };
+  } else {
+    db.prepare("INSERT INTO wall_follows (follower_phone, following_phone, created_at) VALUES (?, ?, datetime('now','localtime'))").run(follower_phone, following_phone);
+    return { ok: true, following: true };
+  }
+}));
+
+// 用户主页
+app.get('/api/wall/user/:phone', (req, res) => JSON_RES(res, () => {
+  const phone = req.params.phone;
+  const posts = db.prepare('SELECT * FROM wall_posts WHERE phone = ? ORDER BY created_at DESC LIMIT 20').all(phone);
+  const followers = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE following_phone = ?').get(phone).n;
+  const following = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE follower_phone = ?').get(phone).n;
+  const user = db.prepare('SELECT name, phone FROM users WHERE phone = ?').get(phone);
+  return {
+    nickname: user?.name || '匿名',
+    phone,
+    followers,
+    following,
+    postCount: posts.length,
+    posts: posts.map(p => ({ ...p, images: p.images ? p.images.split(',').filter(Boolean) : [], gif_urls: safeJSON(p.gif_urls) }))
+  };
+}));
+
+// 删除帖子
+app.delete('/api/wall/posts/:id', (req, res) => JSON_RES(res, () => {
+  db.prepare('DELETE FROM wall_posts WHERE id = ?').run(req.params.id);
+  db.prepare('DELETE FROM wall_comments WHERE post_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM wall_likes WHERE post_id = ?').run(req.params.id);
+  return { ok: true };
+}));
+
+// 安全JSON解析
+function safeJSON(str) {
+  if (!str) return [];
+  try { return JSON.parse(str); } catch(e) { return []; }
+}
+
 // 删除骑手
 app.delete('/api/riders/:id', (req, res) => JSON_RES(res, () => {
  db.prepare('DELETE FROM riders WHERE id = ?').run(req.params.id);

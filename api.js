@@ -117,6 +117,27 @@ const API = {
     body: JSON.stringify({ status })
   }).then(r => r.json()); },
 
+  // ─── 校园墙 ───
+  async wallPost(data) { return fetch('/api/wall/posts', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+  }).then(r => r.json()); },
+  async wallFeed(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return fetch('/api/wall/feed' + (qs ? '?' + qs : '')).then(r => r.json());
+  },
+  async wallPostDetail(id) { return fetch('/api/wall/posts/' + id).then(r => r.json()); },
+  async wallLike(postId, phone) { return fetch('/api/wall/posts/' + postId + '/like', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone })
+  }).then(r => r.json()); },
+  async wallComment(postId, data) { return fetch('/api/wall/posts/' + postId + '/comments', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+  }).then(r => r.json()); },
+  async wallFollow(follower_phone, following_phone) { return fetch('/api/wall/follow', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ follower_phone, following_phone })
+  }).then(r => r.json()); },
+  async wallUserProfile(phone) { return fetch('/api/wall/user/' + phone).then(r => r.json()); },
+  async wallDeletePost(id) { return fetch('/api/wall/posts/' + id, { method: 'DELETE' }).then(r => r.json()); },
+
   // ─── 会话恢复 ───
   restoreSession() {
     try {
