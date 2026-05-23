@@ -701,19 +701,15 @@
         <!-- Banner -->
         <div class="banner-wrap">
           <div class="banner" id="banner1">
-            <div class="banner-content">
+            <div class="banner-content" id="bannerContent">
               <span class="banner-tag">限时活动</span>
               <div class="banner-title">新人专享福利</div>
               <div class="banner-desc">首单立减5元，配送费全免</div>
               <button class="banner-btn" onclick="openOrderModal('delivery')">立即体验</button>
             </div>
-            <div class="banner-illustration">🎁</div>
+            <div class="banner-illustration" id="bannerIcon">🎁</div>
           </div>
-          <div class="banner-dots">
-            <span class="banner-dot active"></span>
-            <span class="banner-dot"></span>
-            <span class="banner-dot"></span>
-          </div>
+          <div class="banner-dots" id="bannerDots" style="display:none"></div>
         </div>
 
         <!-- 服务分类 -->
@@ -1063,18 +1059,47 @@
     };
 
     // ══════ 加载数据 ══════
+    let adsList = [];
+    let adsIdx = 0, adsTimer = null;
+    function renderAds(ads) {
+      adsList = ads;
+      const dots = document.getElementById('bannerDots');
+      if (!ads.length) { if (dots) dots.style.display = 'none'; return; }
+      if (dots) { dots.style.display = 'flex'; dots.innerHTML = ads.map((_,i)=>'<span class="banner-dot'+(i===0?' active':'')+'"></span>').join(''); }
+      showAd(0);
+      if (ads.length > 1) { clearInterval(adsTimer); adsTimer = setInterval(()=>showAd((adsIdx+1)%adsList.length), 4000); }
+    }
+    function showAd(idx) {
+      adsIdx = idx;
+      const ad = adsList[idx]; if (!ad) return;
+      const content = document.getElementById('bannerContent');
+      const icon = document.getElementById('bannerIcon');
+      const dots = document.getElementById('bannerDots');
+      if (content) content.innerHTML = '<span class="banner-tag">'+escHtml(ad.link_type==='order'?'下单立减':ad.link_type==='page'?'活动':'广告')+'</span><div class="banner-title">'+escHtml(ad.title)+'</div><div class="banner-desc">'+escHtml(ad.description)+'</div><button class="banner-btn" onclick="clickAd('+idx+')">立即查看</button>';
+      if (icon) icon.textContent = ad.image || '\ud83c\udf81';
+      if (dots) dots.querySelectorAll('.banner-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+    }
+    function clickAd(idx) {
+      const ad = adsList[idx]; if (!ad) return;
+      if (ad.link_type==='order' && ad.link_value) openOrderModal(ad.link_value);
+      else if (ad.link_type==='coupon') showCoupons();
+      else showToast(ad.description || ad.title);
+    }
+
     async function loadData() {
       try {
-        const [o, c, p, n] = await Promise.all([
+        const [o, c, p, n, ads] = await Promise.all([
           API.getOrders({ phone: currentUser.phone }),
           API.getCoupons(),
           API.getPoints(currentUser.phone),
-          API.getNotifications(currentUser.phone)
+          API.getNotifications(currentUser.phone),
+          API.getAds()
         ]);
         orders = Array.isArray(o) ? o : [];
         coupons = Array.isArray(c) ? c : [];
         userPoints = p || { total: 0, history: [] };
         notifications = Array.isArray(n) ? n : [];
+        renderAds(Array.isArray(ads) ? ads : []);
         renderOrders();
         updateMePage();
         updateNotifBadge();

@@ -116,6 +116,25 @@ const API = {
     return res;
   },
 
+  // ─── 广告 ───
+  async getAds() { return fetch('/api/ads').then(r => r.json()); },
+  async getAdminAds() { return fetch('/api/admin/ads').then(r => r.json()); },
+  async addAd(data) {
+    const res = await fetch('/api/admin/ads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    return res;
+  },
+  async updateAd(id, data) {
+    const res = await fetch('/api/admin/ads/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    return res;
+  },
+  async deleteAd(id) {
+    const res = await fetch('/api/admin/ads/' + id, { method: 'DELETE' }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    return res;
+  },
+
   // ─── 通知 ───
   async getNotifications(phone) { return fetch('/api/notifications/' + phone).then(r => r.json()); },
   async markRead(phone, ids) { return fetch('/api/notifications/' + phone + '/read', {
