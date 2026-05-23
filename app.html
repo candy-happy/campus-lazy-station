@@ -582,7 +582,7 @@
       padding: 14px 28px;
       border-radius: var(--radius);
       font-size: 14px;
-      z-index: 2000;
+      z-index: 10000;
       opacity: 0;
       transition: all 0.3s;
       pointer-events: none;
@@ -1048,11 +1048,29 @@
   </div>
 
   <script>
-
+    // 全局错误捕获 - 页面右上角显示JS错误
+    window.onerror = function(msg, src, line, col, err) {
+      console.error('JS Error:', msg, src, line);
+      const d = document.createElement('div');
+      d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#e74c3c;color:#fff;padding:8px 12px;font-size:12px;z-index:99999;white-space:pre-wrap;';
+      d.textContent = 'JS错误: ' + msg + ' (行' + line + ')';
+      document.body.appendChild(d);
+      setTimeout(() => d.remove(), 8000);
+    };
+    window.onunhandledrejection = function(e) {
+      console.error('Promise Error:', e.reason);
+      const d = document.createElement('div');
+      d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#e67e22;color:#fff;padding:8px 12px;font-size:12px;z-index:99999;';
+      d.textContent = '异步错误: ' + (e.reason && e.reason.message || e.reason);
+      document.body.appendChild(d);
+      setTimeout(() => d.remove(), 8000);
+    };
 
     // ═══════════════════════════════════════════════════════    // 🚀 校园懒人效率站 - 数据库版 (API驱动)
     // ═══════════════════════════════════════════════════════
     // ══════ 状态══════
+    // JS加载成功标记（页面加载后会在控制台输出）
+    console.log('[校园懒人效率站] JS加载成功 v2.1-' + new Date().toISOString().slice(0,10));
     let currentUser = null;
     let orders = [];
     let coupons = [];
@@ -1199,20 +1217,24 @@
       const btn = document.getElementById('loginBtn');
       const name = document.getElementById('loginName').value.trim();
       const phone = document.getElementById('loginPhone').value.trim();
-      if (!name) return showToast('请输入您的称呼');
-      if (!phoneRegex.test(phone)) return showToast('请输入正确的手机号码');
+      if (!name) { showToast('请输入您的称呼'); return; }
+      if (!phoneRegex.test(phone)) { showToast('请输入正确的手机号码'); return; }
       btn.textContent = '登录中...';
       btn.disabled = true;
       try {
-        const user = await API.userLogin(name, phone);
-        currentUser = { name: user.name, phone: user.phone };
+        const res = await API.userLogin(name, phone);
+        const userPhone = res.phone || phone;
+        const userName = res.name || name;
+        currentUser = { name: userName, phone: userPhone };
+        localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', phone: userPhone, name: userName }));
         document.getElementById('loginOverlay').style.display = 'none';
-        var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + name;
+        var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + userName;
         showMainApp();
         await loadData();
         showToast('欢迎回来！');
       } catch(e) {
-        showToast(e.message || '登录失败，请重试');
+        showToast('登录失败: ' + (e.message || '请重试'));
+        console.error('doLogin error:', e);
       } finally {
         btn.textContent = '登录 / 注册';
         btn.disabled = false;
