@@ -1,25 +1,4 @@
-
-    // 关注/取消关注（用户主页按钮）
-    async function doWallFollow(phone) {
-      if (!currentUser) return showLoginPage();
-      const res = await API.wallFollow(currentUser.phone, phone);
-      if (res.error) return showToast(res.error);
-      showToast(res.following ? '已关注' : '已取消关注');
-      showWallUser(phone);
-    }
-
-    // 关注/取消关注（feed卡片内按钮）
-    async function doWallFollowFeed(postId, phone, btn) {
-      if (!currentUser) return showLoginPage();
-      const res = await API.wallFollow(currentUser.phone, phone);
-      if (res.error) return showToast(res.error);
-      btn.textContent = res.following ? '已关注' : '+ 关注';
-      btn.classList.toggle('followed', res.following);
-      showToast(res.following ? '已关注' : '已取消关注');
-      const post = wallPosts.find(p => p.id === postId);
-      if (post) post.isFollowing = res.following;
-    }
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
