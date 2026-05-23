@@ -88,9 +88,33 @@ const API = {
 
   // ─── 优惠券 ───
   async getCoupons() { return fetch('/api/coupons').then(r => r.json()); },
+  async claimCoupon(phone, coupon_id) {
+    const res = await fetch('/api/coupons/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, coupon_id }) }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    return res;
+  },
+  async getMyCoupons(phone) { return fetch('/api/coupons/mine?phone=' + phone).then(r => r.json()); },
 
   // ─── 积分 ───
   async getPoints(phone) { return fetch('/api/points/' + phone).then(r => r.json()); },
+
+  // ─── 地址管理 ───
+  async getAddresses(phone) { return fetch('/api/addresses?phone=' + phone).then(r => r.json()); },
+  async addAddress(data) {
+    const res = await fetch('/api/addresses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    return res;
+  },
+  async updateAddress(id, data) {
+    const res = await fetch('/api/addresses/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    return res;
+  },
+  async deleteAddress(id) {
+    const res = await fetch('/api/addresses/' + id, { method: 'DELETE' }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    return res;
+  },
 
   // ─── 通知 ───
   async getNotifications(phone) { return fetch('/api/notifications/' + phone).then(r => r.json()); },

@@ -1683,6 +1683,20 @@
       document.getElementById(id)?.classList.remove('active');
       document.body.style.overflow = '';
     }
+    function openModal(title, bodyHtml) {
+      let m = document.getElementById('genericModal');
+      if (!m) {
+        m = document.createElement('div');
+        m.id = 'genericModal';
+        m.className = 'modal-overlay';
+        m.innerHTML = '<div class="modal-content" style="max-height:85vh"><div class="modal-header"><span class="modal-title" id="genericModalTitle"></span><button class="modal-close" onclick="closeModal(\'genericModal\')">\u2715</button></div><div id="genericModalBody" style="overflow-y:auto;max-height:calc(85vh - 56px)"></div></div>';
+        document.body.appendChild(m);
+      }
+      document.getElementById('genericModalTitle').textContent = title;
+      document.getElementById('genericModalBody').innerHTML = bodyHtml;
+      m.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
 
     // ══════ 关闭寮圭獥浜嬩欢 ══════
     document.addEventListener('click', e => {
@@ -1705,9 +1719,111 @@
       updatePrice();
     }
     // 快捷入口
-    function showCoupons() { switchPage('me'); showToast('请在优惠券栏查看可用优惠券'); }
-    function showPoints() { switchPage('me'); showToast('请在积分栏查看积分明细'); }
-    function showAddresses() { switchPage('me'); showToast('请在地址栏管理常用地址'); }
+    async function showCoupons() {
+      try {
+        const [available, mine] = await Promise.all([API.getCoupons(), currentUser ? API.getMyCoupons(currentUser.phone) : []]);
+        const mineIds = new Set((mine||[]).map(c=>c.id));
+        let h = '<div style="padding:16px">';
+        h += '<h3 style="margin:0 0 12px;font-size:16px">🎟️ 可领取优惠券</h3>';
+        if (!available.length) h += '<div style="text-align:center;color:var(--text-secondary);padding:20px">暂无可用优惠券</div>';
+        available.forEach(c => {
+          const cl = mineIds.has(c.id);
+          h += '<div style="display:flex;align-items:center;padding:12px;margin-bottom:8px;background:var(--bg-secondary);border-radius:12px;'+(cl?'opacity:0.5':'')+'">';
+          h += '<div style="flex:1"><div style="font-weight:700;font-size:15px">'+escHtml(c.name)+'</div><div style="font-size:12px;color:var(--text-secondary)">满'+c.min_amount+'可用 | 有效期至'+c.expire_at.slice(0,10)+'</div></div>';
+          h += '<div style="font-size:20px;font-weight:900;color:var(--red);margin:0 8px">\u00a5'+c.value+'</div>';
+          h += '<button onclick="claimCoupon('+c.id+')" '+(cl?'disabled style="opacity:0.5"':'style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:6px 12px;cursor:pointer"')+'>'+(cl?'已领取':'领取')+'</button></div>';
+        });
+        h += '<h3 style="margin:16px 0 12px;font-size:16px">🎒 我的优惠券</h3>';
+        if (!mine||!mine.length) h += '<div style="text-align:center;color:var(--text-secondary);padding:20px">暂无已领取优惠券</div>';
+        (mine||[]).forEach(c => {
+          h += '<div style="display:flex;align-items:center;padding:12px;margin-bottom:8px;background:var(--bg-secondary);border-radius:12px;'+(c.used?'opacity:0.4':'')+'">';
+          h += '<div style="flex:1"><div style="font-weight:700;font-size:15px">'+escHtml(c.name)+'</div><div style="font-size:12px;color:var(--text-secondary)">满'+c.min_amount+'可用 | '+(c.used?'已使用':'可用')+' | 有效期至'+c.expire_at.slice(0,10)+'</div></div>';
+          h += '<div style="font-size:20px;font-weight:900;color:'+(c.used?'var(--text-secondary)':'var(--red)')+'">\u00a5'+c.value+'</div></div>';
+        });
+        h += '</div>';
+        openModal('\u00a5 优惠券', h);
+      } catch(e) { showToast('加载失败'); }
+    }
+    async function claimCoupon(id) {
+      if (!currentUser) return showToast('请先登录');
+      try { await API.claimCoupon(currentUser.phone, id); showToast('领取成功！'); showCoupons(); } catch(e) { showToast(e.message); }
+    }
+    async function showPoints() {
+      if (!currentUser) return showToast('请先登录');
+      try {
+        const data = await API.getPoints(currentUser.phone);
+        let h = '<div style="padding:16px;text-align:center">';
+        h += '<div style="font-size:13px;color:var(--text-secondary)">我的积分</div>';
+        h += '<div style="font-size:42px;font-weight:900;color:var(--primary);margin:8px 0">'+(data.total||0)+'</div>';
+        h += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px">积分可在下单时抵扣</div>';
+        h += '<h3 style="text-align:left;margin:0 0 12px;font-size:15px">📜 积分明细</h3>';
+        if (!data.history||!data.history.length) h += '<div style="text-align:center;color:var(--text-secondary);padding:20px">暂无积分记录</div>';
+        (data.history||[]).forEach(l => {
+          const isAdd = l.amount > 0;
+          h += '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">';
+          h += '<div><div style="font-size:14px">'+escHtml(l.description||l.type)+'</div><div style="font-size:11px;color:var(--text-secondary)">'+l.created_at+'</div></div>';
+          h += '<div style="font-size:16px;font-weight:700;color:'+(isAdd?'var(--green)':'var(--red)')+'">'+(isAdd?'+':'')+l.amount+'</div></div>';
+        });
+        h += '</div>';
+        openModal('\u2b50 积分', h);
+      } catch(e) { showToast('加载失败'); }
+    }
+    async function showAddresses() {
+      if (!currentUser) return showToast('请先登录');
+      try {
+        const list = await API.getAddresses(currentUser.phone);
+        let h = '<div style="padding:16px">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
+        h += '<h3 style="margin:0;font-size:16px">📍 我的地址</h3>';
+        h += '<button onclick="editAddress()" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px">+ 新增</button></div>';
+        if (!list||!list.length) h += '<div style="text-align:center;color:var(--text-secondary);padding:30px">暂无地址，点击右上角新增</div>';
+        (list||[]).forEach(a => {
+          h += '<div style="padding:12px;margin-bottom:8px;background:var(--bg-secondary);border-radius:12px;position:relative">';
+          if (a.is_default) h += '<span style="position:absolute;top:8px;right:8px;font-size:11px;background:var(--primary);color:#fff;padding:2px 8px;border-radius:4px">默认</span>';
+          h += '<div style="font-weight:700;font-size:15px">'+escHtml(a.name)+'</div>';
+          h += '<div style="font-size:13px;color:var(--text-secondary);margin-top:4px">'+escHtml(a.location)+'</div>';
+          if (a.note) h += '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px">备注: '+escHtml(a.note)+'</div>';
+          h += '<div style="display:flex;gap:8px;margin-top:8px">';
+          h += '<button onclick="editAddress('+a.id+')" style="font-size:12px;background:none;border:1px solid var(--primary);color:var(--primary);border-radius:6px;padding:4px 10px;cursor:pointer">编辑</button>';
+          if (!a.is_default) h += '<button onclick="setDefaultAddr('+a.id+')" style="font-size:12px;background:none;border:1px solid var(--green);color:var(--green);border-radius:6px;padding:4px 10px;cursor:pointer">设为默认</button>';
+          h += '<button onclick="deleteAddr('+a.id+')" style="font-size:12px;background:none;border:1px solid var(--red);color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer">删除</button>';
+          h += '</div></div>';
+        });
+        h += '</div>';
+        openModal('📍 地址管理', h);
+      } catch(e) { showToast('加载失败'); }
+    }
+    async function editAddress(id) {
+      let addr = {};
+      if (id) { const list = await API.getAddresses(currentUser.phone); addr = list.find(a=>a.id===id)||{}; }
+      let h = '<div style="padding:16px">';
+      h += '<div style="margin-bottom:12px"><label style="font-size:13px;color:var(--text-secondary)">名称</label><input id="addrName" value="'+escHtml(addr.name||'')+'" placeholder="如：宿舍楼" style="width:100%;padding:10px;margin-top:4px;border:1px solid var(--border);border-radius:8px;font-size:14px"></div>';
+      h += '<div style="margin-bottom:12px"><label style="font-size:13px;color:var(--text-secondary)">详细地址</label><input id="addrLocation" value="'+escHtml(addr.location||'')+'" placeholder="如：3号楼405" style="width:100%;padding:10px;margin-top:4px;border:1px solid var(--border);border-radius:8px;font-size:14px"></div>';
+      h += '<div style="margin-bottom:12px"><label style="font-size:13px;color:var(--text-secondary)">备注</label><input id="addrNote" value="'+escHtml(addr.note||'')+'" placeholder="如：放门口" style="width:100%;padding:10px;margin-top:4px;border:1px solid var(--border);border-radius:8px;font-size:14px"></div>';
+      h += '<label style="font-size:13px;display:flex;align-items:center;gap:6px"><input type="checkbox" id="addrDefault" '+(addr.is_default?'checked':'')+' style="width:16px;height:16px"> 设为默认地址</label>';
+      h += '<button onclick="saveAddress('+(id||'null')+')" style="width:100%;margin-top:16px;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">保存</button>';
+      h += '</div>';
+      openModal(id?'编辑地址':'新增地址', h);
+    }
+    async function saveAddress(id) {
+      const name = document.getElementById('addrName').value.trim();
+      const location = document.getElementById('addrLocation').value.trim();
+      const note = document.getElementById('addrNote').value.trim();
+      const is_default = document.getElementById('addrDefault').checked;
+      if (!name||!location) return showToast('请填写名称和地址');
+      try {
+        if (id) await API.updateAddress(id, { name, location, note, is_default, phone: currentUser.phone });
+        else await API.addAddress({ phone: currentUser.phone, name, location, note, is_default });
+        showToast('保存成功'); showAddresses();
+      } catch(e) { showToast(e.message); }
+    }
+    async function setDefaultAddr(id) {
+      try { await API.updateAddress(id, { is_default: true, phone: currentUser.phone }); showAddresses(); } catch(e) { showToast(e.message); }
+    }
+    async function deleteAddr(id) {
+      if (!confirm('确定删除此地址？')) return;
+      try { await API.deleteAddress(id); showToast('已删除'); showAddresses(); } catch(e) { showToast(e.message); }
+    }
 </script>
 
 </body>

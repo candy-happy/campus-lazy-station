@@ -216,6 +216,26 @@ app.get('/api/coupons', (req, res) => JSON_RES(res, () =>
   db.prepare("SELECT * FROM coupons WHERE usable=1 AND expire_at > datetime('now','localtime')").all()
 ));
 
+// 用户领取优惠券
+app.post('/api/coupons/claim', (req, res) => JSON_RES(res, () => {
+  const { phone, coupon_id } = req.body;
+  if (!phone || !coupon_id) return { error: '参数缺失' };
+  const coupon = db.prepare('SELECT * FROM coupons WHERE id = ? AND usable=1').get(coupon_id);
+  if (!coupon) return { error: '优惠券不存在或已失效' };
+  // 检查是否已领取（phone非null表示已领）
+  const claimed = db.prepare('SELECT * FROM coupons WHERE id = ? AND phone = ?').get(coupon_id, phone);
+  if (claimed) return { error: '已领取该优惠券' };
+  db.prepare('UPDATE coupons SET phone = ? WHERE id = ? AND phone IS NULL').run(phone, coupon_id);
+  return { ok: true, msg: '领取成功' };
+}));
+
+// 我的优惠券列表
+app.get('/api/coupons/mine', (req, res) => JSON_RES(res, () => {
+  const phone = req.query.phone;
+  if (!phone) return { error: '缺少phone' };
+  return db.prepare("SELECT * FROM coupons WHERE phone = ? ORDER BY used ASC, expire_at ASC").all(phone);
+}));
+
 // ═══════════════════════════════════════════════
 // ⭐ 积分
 // ═══════════════════════════════════════════════
@@ -224,6 +244,37 @@ app.get('/api/points/:phone', (req, res) => JSON_RES(res, () => {
   const logs = db.prepare('SELECT * FROM point_logs WHERE phone = ? ORDER BY created_at DESC LIMIT 20').all(req.params.phone);
   return { total: pts?.total || 0, history: logs };
 }));
+
+// ═══════════════════════════════════════════════
+// 📍 地址管理
+// ═══════════════════════════════════════════════
+app.get('/api/addresses', (req, res) => JSON_RES(res, () => {
+  const phone = req.query.phone;
+  if (!phone) return { error: '缺少phone' };
+  return db.prepare('SELECT * FROM addresses WHERE phone = ? ORDER BY is_default DESC, created_at DESC').all(phone);
+}));
+
+app.post('/api/addresses', (req, res) => JSON_RES(res, () => {
+  const { phone, name, location, note, is_default } = req.body;
+  if (!phone || !name || !location) return { error: '请填写必填项' };
+  if (is_default) db.prepare('UPDATE addresses SET is_default = 0 WHERE phone = ?').run(phone);
+  const r = db.prepare('INSERT INTO addresses (phone, name, location, note, is_default, created_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\', \'localtime\'))').run(phone, name, location, note || '', is_default ? 1 : 0);
+  return { ok: true, id: r.lastInsertRowid };
+}));
+
+app.put('/api/addresses/:id', (req, res) => JSON_RES(res, () => {
+  const { name, location, note, is_default, phone } = req.body;
+  const addr = db.prepare('SELECT * FROM addresses WHERE id = ?').get(req.params.id);
+  if (!addr) return { error: '地址不存在' };
+  if (is_default && phone) db.prepare('UPDATE addresses SET is_default = 0 WHERE phone = ?').run(phone);
+  db.prepare('UPDATE addresses SET name=?, location=?, note=?, is_default=? WHERE id=?').run(name || addr.name, location || addr.location, note !== undefined ? note : addr.note, is_default ? 1 : 0, req.params.id);
+  return { ok: true };
+}));
+
+app.delete('/api/addresses/:id', (req, res) => JSON_RES(res, () => {
+  db.prepare('DELETE FROM addresses WHERE id = ?').run(req.params.id);
+  return { ok: true };
+}));;
 
 // ═══════════════════════════════════════════════
 // 🔔 通知
