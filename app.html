@@ -1169,7 +1169,7 @@
           showLoginPage();
         } else {
           currentUser = { phone: saved.phone, name: saved.name };
-          document.getElementById('userName').textContent = saved.name || '...';
+          var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + (saved.name || '...');
           showMainApp();
           await loadData();
         }
