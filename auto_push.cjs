@@ -7,7 +7,12 @@ const projectDir = path.resolve(__dirname);
 
 function run(cmd) {
   try {
-    return execSync(cmd, { cwd: projectDir, encoding: 'utf-8', timeout: 30000 }).trim();
+    return execSync(cmd, {
+      cwd: projectDir,
+      encoding: 'utf-8',
+      timeout: 30000,
+      env: { ...process.env, https_proxy: 'http://127.0.0.1:7890', http_proxy: 'http://127.0.0.1:7890' }
+    }).trim();
   } catch (e) {
     return `ERROR: ${e.message.split('\n')[0]}`;
   }
