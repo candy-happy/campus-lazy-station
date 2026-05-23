@@ -218,7 +218,7 @@
  <div class="user-avatar-lg" id="userAvatarLg">🛵</div>
  <div class="user-details">
  <div class="user-name-lg" id="userNameLg">未登录</div>
- <div class="user-id-badge"><span>📱</span><span id="userPhoneDisplay">--</span></div>
+ <div class="user-id-badge"><span>🔑</span><span id="userUidDisplay">--</span> &nbsp; <span>📱</span><span id="userPhoneDisplay">--</span></div>
  </div>
  </div>
  <div class="user-rating">
@@ -313,6 +313,7 @@
  <div class="login-form">
  <div class="login-logo">🛵</div><div class="login-title">骑手端</div><div class="login-subtitle">登录后即可接单配送</div>
  <form onsubmit="login(event)">
+ <div class="form-group"><input type="text" class="form-input" id="loginUid" placeholder="请输入UID编号" required></div>
  <div class="form-group"><input type="text" class="form-input" id="loginName" placeholder="请输入姓名" required></div>
  <div class="form-group"><input type="text" class="form-input" id="loginStudentId" placeholder="请输入学号" required></div>
  <div class="form-group"><input type="tel" class="form-input" id="loginPhone" placeholder="请输入11位手机号" maxlength="11" required><div class="form-error" id="loginPhoneError" style="display: none;">请输入正确的11位手机号码</div></div>
@@ -411,6 +412,7 @@
  $('userName').textContent = name || r.name;
  $('userNameLg').textContent = name || r.name;
  $('userPhoneDisplay').textContent = phone;
+ $('userUidDisplay').textContent = r.uid || '--';
  $('mainContent').style.display = 'block';
  $('loginModal').classList.remove('active');
  updateStatusUI(currentRider.status);
@@ -421,17 +423,20 @@
 
  async function login(e) {
  e.preventDefault();
+ const uid = $('loginUid').value.trim();
  const name = $('loginName').value.trim();
  const sid = $('loginStudentId').value.trim();
  const phone = $('loginPhone').value.trim();
+ if (!uid) return showToast('请输入UID编号');
  if (!name) return showToast('请输入姓名');
  if (!phoneRegex.test(phone)) return showToast('请输入正确手机号码');
  try {
- const r = await API.riderLogin(name, sid, phone);
+ const r = await API.riderLogin(uid, name, sid, phone);
  currentRider = { ...r, phone };
  $('userName').textContent = name;
  $('userNameLg').textContent = name;
  $('userPhoneDisplay').textContent = phone;
+ $('userUidDisplay').textContent = r.uid || uid;
  $('mainContent').style.display = 'block';
  $('loginModal').classList.remove('active');
  updateStatusUI('online');

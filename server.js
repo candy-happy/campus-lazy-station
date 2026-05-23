@@ -39,14 +39,23 @@ app.post('/api/user/login', (req, res) => JSON_RES(res, () => {
 }));
 
 app.post('/api/rider/login', (req, res) => JSON_RES(res, () => {
-  const { name, student_id, phone } = req.body;
+  const { uid, name, student_id, phone } = req.body;
+  if (!uid) return { error: '请输入UID编号' };
   if (!phone || phone.length !== 11) return { error: '请输入正确手机号' };
   let rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(phone);
   if (!rider) {
-    db.prepare('INSERT INTO riders (name, student_id, phone, status) VALUES (?, ?, ?, ?)')
-      .run(name, student_id, phone, 'online');
+    db.prepare('INSERT INTO riders (uid, name, student_id, phone, status) VALUES (?, ?, ?, ?, ?)')
+      .run(uid, name || '', student_id || '', phone, 'online');
     rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(phone);
+  } else {
+    // 已有骑手更新uid（如果为空）
+    if (!rider.uid && uid) {
+      db.prepare('UPDATE riders SET uid = ? WHERE phone = ?').run(uid, phone);
+      rider.uid = uid;
+    }
   }
+  // 验证UID（已有骑手必须匹配）
+  if (rider.uid && rider.uid !== uid) return { error: 'UID编号不匹配，请联系管理员' };
   return { ok: true, rider: { ...rider, phone: fmtPhone(rider.phone) } };
 }));
 

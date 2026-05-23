@@ -21,15 +21,15 @@ const API = {
   },
 
   // ─── 骑手 ───
-  async riderLogin(name, student_id, phone) {
+  async riderLogin(uid, name, student_id, phone) {
     const res = await fetch('/api/rider/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, student_id, phone })
+      body: JSON.stringify({ uid, name, student_id, phone })
     }).then(r => r.json());
     if (res.error) throw new Error(res.error);
     this._rider = { ...res.rider, phone_original: phone };
     this._role = 'rider';
-    localStorage.setItem('lazy_session', JSON.stringify({ role: 'rider', phone, name }));
+    localStorage.setItem('lazy_session', JSON.stringify({ role: 'rider', phone, name, uid }));
     return this._rider;
   },
 

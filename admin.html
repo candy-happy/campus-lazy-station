@@ -193,7 +193,7 @@
  <div class="page-section" id="page-riders">
  <div class="page-header"><h1 class="page-title">骑手管理</h1></div>
  <div class="table-card">
- <table class="data-table"><thead><tr><th>姓名</th><th>学号</th><th>联系电话</th><th>总接单</th><th>总收入</th><th>评分</th><th>状态</th><th>操作</th></tr></thead><tbody id="ridersTable"></tbody></table>
+ <table class="data-table"><thead><tr><th>UID</th><th>姓名</th><th>学号</th><th>联系电话</th><th>总接单</th><th>总收入</th><th>评分</th><th>状态</th><th>操作</th></tr></thead><tbody id="ridersTable"></tbody></table>
  </div>
  </div>
  <div class="page-section" id="page-admins">
@@ -393,7 +393,7 @@
 
  function renderRidersTable() {
  document.getElementById('ridersTable').innerHTML = riders.map(r => `
- <tr><td>${r.name}</td><td>${r.student_id||'-'}</td><td>${r.phone}</td><td>${r.total_orders||0}</td><td>¥${(r.total_earnings||0).toFixed(2)}</td><td>${r.rating||5.0}</td><td><span class="status-badge status-completed">${r.status||'active'}</span></td><td><button class="btn btn-danger btn-sm" onclick="removeRider(${r.id})">移除</button></td></tr>`).join('') || '<tr><td colspan="8" style="text-align:center">暂无骑手</td></tr>';
+ <tr><td>${r.uid||'-'}</td><td>${r.name}</td><td>${r.student_id||'-'}</td><td>${r.phone}</td><td>${r.total_orders||0}</td><td>¥${(r.total_earnings||0).toFixed(2)}</td><td>${r.rating||5.0}</td><td><span class="status-badge status-completed">${r.status||'active'}</span></td><td><button class="btn btn-danger btn-sm" onclick="removeRider(${r.id})">移除</button></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center">暂无骑手</td></tr>';
  }
 
  function renderAdminsTable() {
