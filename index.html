@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>校园懒人效率站 — 校园跑腿服务平台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --orange: #FF6B2B;
+      --orange-light: #FF8C55;
+      --orange-pale: #FFF0E8;
+      --dark: #1A1A2E;
+      --dark-2: #16213E;
+      --mid: #2D3561;
+      --text: #2C2C3E;
+      --text-muted: #7A7A9A;
+      --white: #FFFFFF;
+      --bg: #F8F6F2;
+      --card-bg: #FFFFFF;
+      --border: #EDEAE4;
+      --green: #2ECC71;
+      --yellow: #F39C12;
+      --radius: 16px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(26,26,46,0.08);
+      --shadow-lg: 0 12px 48px rgba(26,26,46,0.14);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 3px; }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 5vw;
+      height: 64px;
+      background: rgba(248,246,242,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      transition: box-shadow 0.3s;
+    }
+    nav.scrolled { box-shadow: var(--shadow); }
+
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 900; font-size: 1.1rem; color: var(--dark);
+      text-decoration: none;
+    }
+    .nav-logo .logo-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--orange);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .nav-links {
+      display: flex; gap: 32px; list-style: none;
+    }
+    .nav-links a {
+      text-decoration: none; color: var(--text-muted);
+      font-size: 0.9rem; font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--orange); }
+
+    .nav-cta {
+      background: var(--orange); color: var(--white);
+      border: none; border-radius: 24px;
+      padding: 8px 22px; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,107,43,0.35); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding: 100px 5vw 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 80% 40%, rgba(255,107,43,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 10% 80%, rgba(255,107,43,0.06) 0%, transparent 60%);
+    }
+
+    .hero-grid {
+      position: absolute; inset: 0; z-index: 0; opacity: 0.04;
+      background-image:
+        linear-gradient(var(--dark) 1px, transparent 1px),
+        linear-gradient(90deg, var(--dark) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .hero-content {
+      position: relative; z-index: 1;
+      max-width: 640px;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--orange-pale); color: var(--orange);
+      border: 1px solid rgba(255,107,43,0.2);
+      border-radius: 24px; padding: 6px 16px;
+      font-size: 0.82rem; font-weight: 700;
+      margin-bottom: 28px;
+      animation: fadeUp 0.6s ease both;
+    }
+    .hero-badge .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--orange);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      font-weight: 900;
+      line-height: 1.15;
+      color: var(--dark);
+      margin-bottom: 20px;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+    .hero h1 .accent { color: var(--orange); }
+
+    .hero-sub {
+      font-size: 1.05rem; color: var(--text-muted);
+      max-width: 480px; margin-bottom: 36px;
+      animation: fadeUp 0.6s 0.2s ease both;
+      line-height: 1.8;
+    }
+
+    .hero-actions {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .btn-primary {
+      background: var(--orange); color: var(--white);
+      border: none; border-radius: 28px;
+      padding: 14px 32px; font-size: 1rem; font-weight: 700;
+      cursor: pointer; transition: all 0.25s;
+      font-family: inherit; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255,107,43,0.4); }
+
+    .btn-outline {
+      background: transparent; color: var(--dark);
+      border: 2px solid var(--border); border-radius: 28px;
+      padding: 12px 28px; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: all 0.25s;
+      font-family: inherit; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+
+    .hero-stats {
+      display: flex; gap: 40px; margin-top: 56px;
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+    .stat-item { text-align: left; }
+    .stat-num {
+      font-size: 2rem; font-weight: 900; color: var(--dark);
+      font-family: 'Space Mono', monospace;
+      line-height: 1;
+    }
+    .stat-num span { color: var(--orange); }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* Hero visual */
+    .hero-visual {
+      position: absolute; right: 5vw; top: 50%;
+      transform: translateY(-50%);
+      z-index: 1;
+      animation: fadeLeft 0.8s 0.3s ease both;
+    }
+
+    @keyframes fadeLeft {
+      from { opacity: 0; transform: translateY(-50%) translateX(40px); }
+      to { opacity: 1; transform: translateY(-50%) translateX(0); }
+    }
+
+    .phone-mockup {
+      width: 280px;
+      background: var(--dark);
+      border-radius: 36px;
+      padding: 16px;
+      box-shadow: 0 30px 80px rgba(26,26,46,0.3), 0 0 0 1px rgba(255,255,255,0.05);
+      position: relative;
+    }
+    .phone-screen {
+      background: var(--white);
+      border-radius: 24px;
+      overflow: hidden;
+      min-height: 480px;
+    }
+    .phone-header {
+      background: var(--orange);
+      padding: 20px 16px 16px;
+      color: white;
+    }
+    .phone-header-top {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px;
+    }
+    .phone-title { font-weight: 900; font-size: 1rem; }
+    .phone-badge {
+      background: rgba(255,255,255,0.25);
+      border-radius: 12px; padding: 3px 10px;
+      font-size: 0.72rem; font-weight: 700;
+    }
+    .phone-search {
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px; padding: 8px 14px;
+      font-size: 0.8rem; color: rgba(255,255,255,0.8);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .phone-body { padding: 14px; }
+    .phone-section-title {
+      font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+    .service-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; margin-bottom: 16px;
+    }
+    .service-card {
+      background: var(--bg);
+      border-radius: 12px; padding: 12px;
+      text-align: center;
+    }
+    .service-card .icon { font-size: 1.4rem; margin-bottom: 4px; }
+    .service-card .name { font-size: 0.72rem; font-weight: 700; color: var(--text); }
+    .service-card .price { font-size: 0.65rem; color: var(--orange); font-weight: 600; }
+
+    .order-card {
+      background: var(--bg); border-radius: 12px; padding: 12px;
+      margin-bottom: 8px;
+    }
+    .order-top {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px;
+    }
+    .order-type { font-size: 0.75rem; font-weight: 700; }
+    .order-status {
+      font-size: 0.65rem; font-weight: 700;
+      padding: 2px 8px; border-radius: 8px;
+    }
+    .status-running { background: #FFF3E0; color: var(--yellow); }
+    .status-done { background: #E8F8F0; color: var(--green); }
+    .order-info { font-size: 0.68rem; color: var(--text-muted); }
+    .order-progress {
+      margin-top: 8px;
+      height: 4px; background: var(--border); border-radius: 2px;
+      overflow: hidden;
+    }
+    .order-progress-bar {
+      height: 100%; background: var(--orange); border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    /* ─── SECTIONS ─── */
+    section { padding: 80px 5vw; }
+
+    .section-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--orange); font-size: 0.82rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      margin-bottom: 14px;
+    }
+    .section-label::before {
+      content: ''; display: block;
+      width: 20px; height: 2px; background: var(--orange);
+    }
+
+    .section-title {
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 900; color: var(--dark);
+      line-height: 1.2; margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 1rem; color: var(--text-muted);
+      max-width: 520px; line-height: 1.8;
+    }
+
+    /* ─── SERVICES ─── */
+    .services-bg {
+      background: var(--dark);
+      position: relative; overflow: hidden;
+    }
+    .services-bg .section-title { color: var(--white); }
+    .services-bg .section-sub { color: rgba(255,255,255,0.5); }
+    .services-bg .section-label { color: var(--orange-light); }
+    .services-bg .section-label::before { background: var(--orange-light); }
+
+    .services-bg-deco {
+      position: absolute; top: -100px; right: -100px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,107,43,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px; margin-top: 48px;
+    }
+
+    .service-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      transition: all 0.3s;
+      cursor: default;
+      position: relative; overflow: hidden;
+    }
+    .service-item::before {
+      content: ''; position: absolute;
+      inset: 0; border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(255,107,43,0.1), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .service-item:hover { transform: translateY(-6px); border-color: rgba(255,107,43,0.3); }
+    .service-item:hover::before { opacity: 1; }
+
+    .service-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: rgba(255,107,43,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 18px;
+    }
+    .service-name {
+      font-size: 1.05rem; font-weight: 700; color: var(--white);
+      margin-bottom: 8px;
+    }
+    .service-desc {
+      font-size: 0.85rem; color: rgba(255,255,255,0.45);
+      line-height: 1.7;
+    }
+    .service-tag {
+      display: inline-block; margin-top: 14px;
+      background: rgba(255,107,43,0.2); color: var(--orange-light);
+      border-radius: 12px; padding: 3px 12px;
+      font-size: 0.75rem; font-weight: 700;
+    }
+
+    /* ─── FLOW ─── */
+    .flow-section { background: var(--white); }
+
+    .flow-steps {
+      display: flex; gap: 0;
+      margin-top: 48px;
+      position: relative;
+    }
+    .flow-steps::before {
+      content: ''; position: absolute;
+      top: 32px; left: 32px; right: 32px; height: 2px;
+      background: linear-gradient(90deg, var(--orange), var(--orange-light), var(--border));
+      z-index: 0;
+    }
+
+    .flow-step {
+      flex: 1; text-align: center;
+      position: relative; z-index: 1;
+      padding: 0 12px;
+    }
+    .step-circle {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--white); border: 3px solid var(--orange);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; margin: 0 auto 16px;
+      box-shadow: 0 0 0 6px var(--white);
+      transition: all 0.3s;
+    }
+    .flow-step:hover .step-circle {
+      background: var(--orange); transform: scale(1.1);
+    }
+    .step-num {
+      position: absolute; top: -4px; right: calc(50% - 40px);
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--orange); color: white;
+      font-size: 0.65rem; font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Space Mono', monospace;
+    }
+    .step-title { font-size: 0.95rem; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+    .step-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* ─── TEAM ─── */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px; margin-top: 48px;
+    }
+
+    .team-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      text-align: center;
+      transition: all 0.3s;
+      box-shadow: var(--shadow);
+    }
+    .team-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); border-color: var(--orange); }
+
+    .team-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; font-weight: 900;
+      color: white;
+    }
+    .avatar-1 { background: linear-gradient(135deg, #FF6B2B, #FF8C55); }
+    .avatar-2 { background: linear-gradient(135deg, #3498DB, #5DADE2); }
+    .avatar-3 { background: linear-gradient(135deg, #2ECC71, #58D68D); }
+    .avatar-4 { background: linear-gradient(135deg, #9B59B6, #BB8FCE); }
+
+    .team-name { font-size: 1.05rem; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+    .team-role {
+      display: inline-block;
+      background: var(--orange-pale); color: var(--orange);
+      border-radius: 12px; padding: 3px 12px;
+      font-size: 0.78rem; font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .team-duties {
+      font-size: 0.82rem; color: var(--text-muted);
+      line-height: 1.7; text-align: left;
+    }
+    .team-duties li { list-style: none; padding-left: 14px; position: relative; }
+    .team-duties li::before {
+      content: '·'; position: absolute; left: 0;
+      color: var(--orange); font-weight: 900;
+    }
+
+    /* ─── TIMELINE ─── */
+    .timeline-section { background: var(--bg); }
+
+    .timeline {
+      margin-top: 48px;
+      position: relative;
+    }
+    .timeline::before {
+      content: ''; position: absolute;
+      left: 120px; top: 0; bottom: 0; width: 2px;
+      background: linear-gradient(to bottom, var(--orange), var(--border));
+    }
+
+    .timeline-item {
+      display: flex; gap: 32px;
+      margin-bottom: 28px;
+      align-items: flex-start;
+    }
+    .timeline-weeks {
+      width: 88px; text-align: right; flex-shrink: 0;
+      padding-top: 14px;
+    }
+    .weeks-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.78rem; font-weight: 700;
+      color: var(--orange);
+    }
+    .weeks-sub { font-size: 0.7rem; color: var(--text-muted); }
+
+    .timeline-dot {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--orange); flex-shrink: 0;
+      margin-top: 18px; margin-left: -9px;
+      box-shadow: 0 0 0 4px var(--bg);
+      position: relative; z-index: 1;
+    }
+
+    .timeline-content {
+      flex: 1;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s;
+    }
+    .timeline-content:hover { border-color: var(--orange); transform: translateX(4px); }
+
+    .timeline-phase {
+      font-size: 0.75rem; font-weight: 700;
+      color: var(--orange); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 4px;
+    }
+    .timeline-title { font-size: 0.95rem; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+    .timeline-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.7; }
+
+    /* ─── RISKS ─── */
+    .risks-section { background: var(--white); }
+
+    .risks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px; margin-top: 48px;
+    }
+
+    .risk-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: all 0.3s;
+    }
+    .risk-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+
+    .risk-header {
+      padding: 18px 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .risk-1 .risk-header { background: linear-gradient(135deg, #FFF3E0, #FFE0B2); }
+    .risk-2 .risk-header { background: linear-gradient(135deg, #FCE4EC, #F8BBD9); }
+    .risk-3 .risk-header { background: linear-gradient(135deg, #E3F2FD, #BBDEFB); }
+    .risk-4 .risk-header { background: linear-gradient(135deg, #E8F5E9, #C8E6C9); }
+
+    .risk-icon { font-size: 1.5rem; }
+    .risk-title { font-size: 0.95rem; font-weight: 700; color: var(--dark); }
+    .risk-level {
+      margin-left: auto;
+      font-size: 0.7rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 10px;
+    }
+    .level-high { background: rgba(231,76,60,0.15); color: #E74C3C; }
+    .level-mid { background: rgba(243,156,18,0.15); color: var(--yellow); }
+    .level-low { background: rgba(46,204,113,0.15); color: var(--green); }
+
+    .risk-body { padding: 16px 20px; }
+    .risk-problem { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.7; }
+    .risk-measures { list-style: none; }
+    .risk-measures li {
+      font-size: 0.82rem; color: var(--text);
+      padding: 5px 0 5px 18px; position: relative;
+      border-bottom: 1px solid var(--border);
+      line-height: 1.6;
+    }
+    .risk-measures li:last-child { border-bottom: none; }
+    .risk-measures li::before {
+      content: '✓'; position: absolute; left: 0;
+      color: var(--green); font-weight: 700; font-size: 0.75rem;
+    }
+
+    /* ─── GOALS ─── */
+    .goals-section { background: var(--dark); position: relative; overflow: hidden; }
+    .goals-section .section-title { color: var(--white); }
+    .goals-section .section-sub { color: rgba(255,255,255,0.5); }
+    .goals-section .section-label { color: var(--orange-light); }
+    .goals-section .section-label::before { background: var(--orange-light); }
+
+    .goals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px; margin-top: 48px;
+    }
+
+    .goal-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius);
+      padding: 24px;
+      transition: all 0.3s;
+    }
+    .goal-card:hover { background: rgba(255,107,43,0.08); border-color: rgba(255,107,43,0.3); }
+
+    .goal-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 2.5rem; font-weight: 700;
+      color: var(--orange); line-height: 1;
+      margin-bottom: 12px;
+    }
+    .goal-title { font-size: 0.95rem; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+    .goal-desc { font-size: 0.82rem; color: rgba(255,255,255,0.45); line-height: 1.7; }
+
+    /* ─── DEMO LINKS ─── */
+    .demo-section {
+      background: linear-gradient(135deg, var(--orange), var(--orange-light));
+      padding: 60px 5vw;
+      text-align: center;
+    }
+    .demo-title {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: white;
+      margin-bottom: 16px;
+    }
+    .demo-subtitle {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 32px;
+    }
+    .demo-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .demo-btn {
+      background: white;
+      color: var(--orange);
+      border: none;
+      border-radius: 28px;
+      padding: 16px 32px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .demo-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .demo-btn-outline {
+      background: transparent;
+      color: white;
+      border: 2px solid rgba(255,255,255,0.5);
+    }
+    .demo-btn-outline:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: white;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--dark-2);
+      padding: 48px 5vw 32px;
+      color: rgba(255,255,255,0.4);
+    }
+    .footer-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      flex-wrap: wrap; gap: 32px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 24px;
+    }
+    .footer-brand .nav-logo { color: var(--white); margin-bottom: 12px; }
+    .footer-brand p { font-size: 0.85rem; max-width: 280px; line-height: 1.7; }
+    .footer-info { font-size: 0.82rem; }
+    .footer-info h4 { color: var(--white); font-size: 0.9rem; margin-bottom: 12px; }
+    .footer-info p { margin-bottom: 6px; }
+    .footer-bottom {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px;
+      font-size: 0.8rem;
+    }
+    .footer-bottom span { color: var(--orange); }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      .hero-visual { display: none; }
+      .flow-steps { flex-direction: column; }
+      .flow-steps::before { display: none; }
+      .timeline::before { left: 80px; }
+      .timeline-weeks { width: 60px; }
+    }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .hero-stats { gap: 24px; }
+      .timeline { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">
+    <div class="logo-icon">🦥</div>
+    懒人效率站
+  </a>
+  <ul class="nav-links">
+    <li><a href="#services">服务</a></li>
+    <li><a href="#flow">流程</a></li>
+    <li><a href="#team">团队</a></li>
+    <li><a href="#timeline">计划</a></li>
+    <li><a href="#risks">风险</a></li>
+  </ul>
+  <button class="nav-cta" onclick="window.location.href='app.html'">立即体验 →</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      校园创新创业项目 · 2025
+    </div>
+    <h1>
+      校园<span class="accent">懒人</span><br/>
+      效率站
+    </h1>
+    <p class="hero-sub">
+      标准化 · 安全认证 · 时效承诺<br/>
+      让校园跑腿服务更透明、更高效、更可靠。<br/>
+      取快递 · 买饭 · 打印 · 代办，一站搞定。
+    </p>
+    <div class="hero-actions">
+      <a href="app.html" class="btn-primary">🚀 立即体验</a>
+      <a href="#services" class="btn-outline">了解详情</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num">15<span>min</span></div>
+        <div class="stat-label">快递代取时效</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">4<span>类</span></div>
+        <div class="stat-label">核心服务</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">4.5<span>+</span></div>
+        <div class="stat-label">目标满意度</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone Mockup -->
+  <div class="hero-visual">
+    <div class="phone-mockup">
+      <div class="phone-screen">
+        <div class="phone-header">
+          <div class="phone-header-top">
+            <div class="phone-title">🦥 懒人效率站</div>
+            <div class="phone-badge">实名认证</div>
+          </div>
+          <div class="phone-search">🔍 搜索服务或宿舍楼...</div>
+        </div>
+        <div class="phone-body">
+          <div class="phone-section-title">核心服务</div>
+          <div class="service-grid">
+            <div class="service-card">
+              <div class="icon">📦</div>
+              <div class="name">代取快递</div>
+              <div class="price">¥2起</div>
+            </div>
+            <div class="service-card">
+              <div class="icon">🍱</div>
+              <div class="name">代买饭</div>
+              <div class="price">¥3起</div>
+            </div>
+            <div class="service-card">
+              <div class="icon">🖨️</div>
+              <div class="name">代打印</div>
+              <div class="price">¥1起</div>
+            </div>
+            <div class="service-card">
+              <div class="icon">📋</div>
+              <div class="name">代办事</div>
+              <div class="price">¥5起</div>
+            </div>
+          </div>
+          <div class="phone-section-title">我的订单</div>
+          <div class="order-card">
+            <div class="order-top">
+              <div class="order-type">📦 代取快递</div>
+              <div class="order-status status-running">进行中</div>
+            </div>
+            <div class="order-info">菜鸟驿站 → 3号宿舍楼 · 预计15分钟</div>
+            <div class="order-progress">
+              <div class="order-progress-bar" style="width:65%"></div>
+            </div>
+          </div>
+          <div class="order-card">
+            <div class="order-top">
+              <div class="order-type">🍱 代买饭</div>
+              <div class="order-status status-done">已完成</div>
+            </div>
+            <div class="order-info">食堂二楼 · 满意度 ⭐⭐⭐⭐⭐</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section class="services-bg" id="services">
+  <div class="services-bg-deco"></div>
+  <div class="section-label">核心服务</div>
+  <h2 class="section-title">四大服务，覆盖校园日常</h2>
+  <p class="section-sub">明码标价，时效承诺，超时赔付。每一笔订单都有保障。</p>
+  <div class="services-grid reveal">
+    <div class="service-item">
+      <div class="service-icon">📦</div>
+      <div class="service-name">代取快递</div>
+      <div class="service-desc">从菜鸟驿站、丰巢等快递点代取，送达宿舍门口，15分钟时效承诺。</div>
+      <div class="service-tag">⏱ 15min达</div>
+    </div>
+    <div class="service-item">
+      <div class="service-icon">🍱</div>
+      <div class="service-name">代买饭</div>
+      <div class="service-desc">食堂、校内餐厅均可代购，保温配送，上课自习不用担心错过饭点。</div>
+      <div class="service-tag">🔥 保温配送</div>
+    </div>
+    <div class="service-item">
+      <div class="service-icon">🖨️</div>
+      <div class="service-name">代打印</div>
+      <div class="service-desc">发送文件即可，支持黑白/彩色/双面，打印完毕送到宿舍或指定地点。</div>
+      <div class="service-tag">📄 多规格</div>
+    </div>
+    <div class="service-item">
+      <div class="service-icon">📋</div>
+      <div class="service-name">代办事</div>
+      <div class="service-desc">图书馆还书、行政楼盖章、超市代购等校内各类跑腿需求均可接单。</div>
+      <div class="service-tag">✨ 灵活定制</div>
+    </div>
+  </div>
+</section>
+
+<!-- FLOW -->
+<section class="flow-section" id="flow">
+  <div class="section-label">服务流程</div>
+  <h2 class="section-title">五步完成，全程透明</h2>
+  <p class="section-sub">基于简道云流程表单，实现下单→派单→处理→完成→评价的全链路线上化流转。</p>
+  <div class="flow-steps reveal">
+    <div class="flow-step">
+      <div class="step-circle">📝</div>
+      <div class="step-num">1</div>
+      <div class="step-title">提交订单</div>
+      <div class="step-desc">填写服务类型、地点、时间要求，实名认证后提交</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-circle">⚡</div>
+      <div class="step-num">2</div>
+      <div class="step-title">自动派单</div>
+      <div class="step-desc">系统自动匹配最近宿舍楼合伙人，推送接单通知</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-circle">🏃</div>
+      <div class="step-num">3</div>
+      <div class="step-title">执行服务</div>
+      <div class="step-desc">合伙人接单后实时更新进度，超时自动预警提醒</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-circle">✅</div>
+      <div class="step-num">4</div>
+      <div class="step-title">确认完成</div>
+      <div class="step-desc">送达后拍照确认，用户签收，订单自动关闭</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-circle">⭐</div>
+      <div class="step-num">5</div>
+      <div class="step-title">评价反馈</div>
+      <div class="step-desc">5分制评分，评价数据用于合伙人考核与服务优化</div>
+    </div>
+  </div>
+</section>
+
+<!-- GOALS -->
+<section class="goals-section" id="goals">
+  <div class="section-label">预期成果</div>
+  <h2 class="section-title">一学期，五大交付物</h2>
+  <p class="section-sub">从需求分析到上线运营，完整验证校园跑腿服务的可行性。</p>
+  <div class="goals-grid reveal">
+    <div class="goal-card">
+      <div class="goal-num">01</div>
+      <div class="goal-title">需求规格说明书</div>
+      <div class="goal-desc">完成校园懒人效率站需求规格说明书1份，明确服务边界与功能要求</div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-num">02</div>
+      <div class="goal-title">系统设计文档</div>
+      <div class="goal-desc">完成系统架构设计、流程设计文档1套，含权限设计与自动化规则</div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-num">03</div>
+      <div class="goal-title">简道云流程表单</div>
+      <div class="goal-desc">上线可直接使用的简道云流程表单，支持下单、派单、追踪、评价4类核心服务</div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-num">50+</div>
+      <div class="goal-title">订单测试运营</div>
+      <div class="goal-desc">完成至少50笔订单的测试与运营，用户满意度目标≥4.5分（5分制）</div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-num">05</div>
+      <div class="goal-title">项目总结报告</div>
+      <div class="goal-desc">形成项目总结报告与运营复盘文档1份，为后续推广提供数据支撑</div>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team" style="background: var(--bg);">
+  <div class="section-label">项目团队</div>
+  <h2 class="section-title">四人精英小队</h2>
+  <p class="section-sub">分工明确，各司其职，共同推进校园懒人效率站从0到1落地。</p>
+  <div class="team-grid reveal">
+    <div class="team-card">
+      <div class="team-avatar avatar-1">丁</div>
+      <div class="team-name">丁卫星</div>
+      <div class="team-role">项目经理</div>
+      <ul class="team-duties">
+        <li>统筹协调与进度管理</li>
+        <li>资源对接与风险把控</li>
+        <li>对外沟通与汇报答辩</li>
+      </ul>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar avatar-2">吴</div>
+      <div class="team-name">吴强</div>
+      <div class="team-role">需求分析员</div>
+      <ul class="team-duties">
+        <li>需求调研与用户访谈</li>
+        <li>文档编写与需求梳理</li>
+        <li>用户反馈整理分析</li>
+      </ul>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar avatar-3">陈</div>
+      <div class="team-name">陈志建</div>
+      <div class="team-role">系统设计师</div>
+      <ul class="team-duties">
+        <li>流程设计与表单字段设计</li>
+        <li>权限与自动化规则配置</li>
+        <li>数据联动方案设计</li>
+      </ul>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar avatar-4">陈</div>
+      <div class="team-name">陈荣凯</div>
+      <div class="team-role">开发/测试</div>
+      <ul class="team-duties">
+        <li>简道云表单搭建</li>
+        <li>流程调试与功能测试</li>
+        <li>用户反馈收集与优化</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section class="timeline-section" id="timeline">
+  <div class="section-label">项目计划</div>
+  <h2 class="section-title">16周学期，六大阶段</h2>
+  <p class="section-sub">对齐学期节奏，分阶段推进，确保每个里程碑按时交付。</p>
+  <div class="timeline reveal">
+    <div class="timeline-item">
+      <div class="timeline-weeks">
+        <div class="weeks-label">W1-3</div>
+        <div class="weeks-sub">第1-3周</div>
+      </div>
+      <div class="timeline-dot"></div>
+      <div class="timeline-content">
+        <div class="timeline-phase">Phase 1</div>
+        <div class="timeline-title">需求分析</div>
+        <div class="timeline-desc">校园用户调研与需求梳理，确定服务类型与流程，输出需求规格说明书</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-weeks">
+        <div class="weeks-label">W4-6</div>
+        <div class="weeks-sub">第4-6周</div>
+      </div>
+      <div class="timeline-dot"></div>
+      <div class="timeline-content">
+        <div class="timeline-phase">Phase 2</div>
+        <div class="timeline-title">总体设计</div>
+        <div class="timeline-desc">完成系统流程设计、表单字段设计和权限与自动化规则设计，输出系统设计文档</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-weeks">
+        <div class="weeks-label">W7-8</div>
+        <div class="weeks-sub">第7-8周</div>
+      </div>
+      <div class="timeline-dot"></div>
+      <div class="timeline-content">
+        <div class="timeline-phase">Phase 3</div>
+        <div class="timeline-title">数据库设计</div>
+        <div class="timeline-desc">设计合伙人信息表、订单数据表，完成简道云数据联动配置</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-weeks">
+        <div class="weeks-label">W9-12</div>
+        <div class="weeks-sub">第9-12周</div>
+      </div>
+      <div class="timeline-dot"></div>
+      <div class="timeline-content">
+        <div class="timeline-phase">Phase 4</div>
+        <div class="timeline-title">功能模块开发</div>
+        <div class="timeline-desc">搭建简道云流程表单，配置节点流转、权限分配和消息提醒，完成核心功能开发</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-weeks">
+        <div class="weeks-label">W13-15</div>
+        <div class="weeks-sub">第13-15周</div>
+      </div>
+      <div class="timeline-dot"></div>
+      <div class="timeline-content">
+        <div class="timeline-phase">Phase 5</div>
+        <div class="timeline-title">测试与运营验证</div>
+        <div class="timeline-desc">完成功能测试、小范围运营验证，收集用户反馈、优化流程，输出测试报告</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-weeks">
+        <div class="weeks-label">W16</div>
+        <div class="weeks-sub">第16周</div>
+      </div>
+      <div class="timeline-dot"></div>
+      <div class="timeline-content">
+        <div class="timeline-phase">Phase 6</div>
+        <div class="timeline-title">项目总结</div>
+        <div class="timeline-desc">整理项目成果，撰写复盘报告，准备汇报答辩</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RISKS -->
+<section class="risks-section" id="risks">
+  <div class="section-label">风险管理</div>
+  <h2 class="section-title">四大风险，提前应对</h2>
+  <p class="section-sub">识别潜在风险，制定应对措施，确保项目顺利推进。</p>
+  <div class="risks-grid reveal">
+    <div class="risk-card risk-1">
+      <div class="risk-header">
+        <div class="risk-icon">📉</div>
+        <div class="risk-title">用户需求不足</div>
+        <div class="risk-level level-mid">中风险</div>
+      </div>
+      <div class="risk-body">
+        <div class="risk-problem">订单量过少，无法验证服务可行性</div>
+        <ul class="risk-measures">
+          <li>校园群、宿舍海报精准推广，突出时效与安全优势</li>
+          <li>推出首单优惠、邀请好友返现等激励活动</li>
+          <li>优先覆盖需求集中的宿舍楼（考研楼、女生宿舍）</li>
+        </ul>
+      </div>
+    </div>
+    <div class="risk-card risk-2">
+      <div class="risk-header">
+        <div class="risk-icon">⏰</div>
+        <div class="risk-title">合伙人响应不及时</div>
+        <div class="risk-level level-high">高风险</div>
+      </div>
+      <div class="risk-body">
+        <div class="risk-problem">超时赔付影响用户体验与平台口碑</div>
+        <ul class="risk-measures">
+          <li>建立合伙人考核机制，月度统计接单率与评分</li>
+          <li>配置简道云超时预警，提前提醒合伙人处理</li>
+          <li>每栋宿舍楼储备1-2名备用合伙人</li>
+        </ul>
+      </div>
+    </div>
+    <div class="risk-card risk-3">
+      <div class="risk-header">
+        <div class="risk-icon">⚙️</div>
+        <div class="risk-title">技术开发进度滞后</div>
+        <div class="risk-level level-mid">中风险</div>
+      </div>
+      <div class="risk-body">
+        <div class="risk-problem">简道云流程配置复杂，功能开发延期</div>
+        <ul class="risk-measures">
+          <li>提前学习官方教程，先做最小可行版本</li>
+          <li>分阶段开发，核心流程优先，评价统计后续迭代</li>
+          <li>遇到问题及时查阅帮助中心或联系客服</li>
+        </ul>
+      </div>
+    </div>
+    <div class="risk-card risk-4">
+      <div class="risk-header">
+        <div class="risk-icon">🏫</div>
+        <div class="risk-title">校园政策限制</div>
+        <div class="risk-level level-low">低风险</div>
+      </div>
+      <div class="risk-body">
+        <div class="risk-problem">无法正常在校内推广运营</div>
+        <ul class="risk-measures">
+          <li>提前向团委/辅导员报备，说明服务性质与合规性</li>
+          <li>避免涉及违规服务（如代占座），调整服务范围</li>
+          <li>以创新创业实践项目名义推进，争取学校支持</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO SECTION -->
+<section class="demo-section" id="demo">
+  <div class="demo-title">🚀 三端入口，完整体验</div>
+  <div class="demo-subtitle">用户下单 · 骑手配送 · 管理员运营</div>
+  <div class="demo-buttons">
+    <a href="app.html" class="demo-btn">📱 用户端</a>
+    <a href="rider.html" class="demo-btn demo-btn-outline">🛵 骑手端</a>
+    <a href="admin.html" class="demo-btn demo-btn-outline">🔒 管理后台</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <a href="#" class="nav-logo">
+        <div class="logo-icon">🦥</div>
+        懒人效率站
+      </a>
+      <p>校园跑腿服务平台 · 标准化 · 安全认证 · 时效承诺<br/>让校园生活更高效，让每一分钟都有价值。</p>
+    </div>
+    <div class="footer-info">
+      <h4>项目信息</h4>
+      <p>📅 项目周期：16周（一学期）</p>
+      <p>🏫 试点范围：2-3栋宿舍楼</p>
+      <p>👥 团队规模：4人</p>
+      <p>🛠️ 技术平台：简道云</p>
+    </div>
+    <div class="footer-info">
+      <h4>核心指标</h4>
+      <p>📦 目标订单：≥50笔</p>
+      <p>⭐ 满意度目标：≥4.5分</p>
+      <p>⏱️ 快递时效：15分钟</p>
+      <p>🔒 认证方式：校园实名</p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div>© 2025 校园懒人效率站 · 校园创新创业实践项目</div>
+    <div>项目经理：<span>丁卫星</span> · 团队成员：吴强 · 陈志建 · 陈荣凯</div>
+  </div>
+</footer>
+
+<script>
+  // Nav scroll effect
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 20);
+  });
+
+  // Reveal on scroll
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+
+  // Animate progress bar
+  setTimeout(() => {
+    const bar = document.querySelector('.order-progress-bar');
+    if (bar) {
+      bar.style.width = '65%';
+      setInterval(() => {
+        const current = parseInt(bar.style.width);
+        if (current < 95) bar.style.width = (current + 1) + '%';
+      }, 800);
+    }
+  }, 1000);
+</script>
+</body>
+</html>

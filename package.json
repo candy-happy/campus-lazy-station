@@ -1,0 +1,20 @@
+{
+  "name": "campus-lazy-station",
+  "version": "2.0.0",
+  "description": "校园懒人效率站 - 数据库版",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "db:init": "node db-init.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.6.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "iconv-lite": "^0.7.2"
+  },
+  "devDependencies": {
+    "acorn": "^8.16.0"
+  }
+}

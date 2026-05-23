@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>校园懒人效率站</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #FF6B35;
+      --primary-light: #FF8C5A;
+      --primary-dark: #E55A25;
+      --secondary: #2ECC71;
+      --accent: #3498DB;
+      --warning: #F39C12;
+      --danger: #E74C3C;
+      --text: #2C3E50;
+      --text-secondary: #7F8C8D;
+      --text-light: #BDC3C7;
+      --bg: #F5F6FA;
+      --card: #FFFFFF;
+      --border: #E8E9ED;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+      --gradient: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+      --gradient-green: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-lg: 24px;
+    }
+    body.dark {
+      --bg: #0D1117; --card: #161B22; --text: #E6EDF3;
+      --text-secondary: #8B949E; --border: #30363D;
+      --shadow: 0 2px 12px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .app { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg); }
+
+    /* ═══════════════════════════════════════════════════════
+       🎯 顶部导航
+    ═══════════════════════════════════════════════════════ */
+    .header {
+      background: var(--gradient);
+      padding: 12px 16px 20px;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .logo-text {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .logo-badge {
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .header-btn {
+      width: 36px;
+      height: 36px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      position: relative;
+      border: none;
+      transition: all 0.2s;
+    }
+    .header-btn:active { transform: scale(0.95); }
+    .header-btn .badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 18px;
+      height: 18px;
+      background: #E74C3C;
+      border-radius: 9px;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .search-bar {
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,0.95);
+      border-radius: 24px;
+      padding: 0 16px;
+      height: 40px;
+      gap: 10px;
+    }
+    .search-bar input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+    }
+    .search-bar input::placeholder { color: var(--text-light); }
+    .search-icon { color: var(--text-secondary); font-size: 16px; }
+
+    /* ═══════════════════════════════════════════════════════
+       🎠 轮播Banner
+    ═══════════════════════════════════════════════════════ */
+    .banner-wrap {
+      padding: 16px;
+      margin-top: -8px;
+    }
+    .banner {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: var(--radius-lg);
+      height: 140px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      padding: 20px 24px;
+    }
+    .banner-content { color: white; z-index: 1; flex: 1; }
+    .banner-tag {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .banner-title {
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+    .banner-desc { font-size: 13px; opacity: 0.9; margin-bottom: 12px; }
+    .banner-btn {
+      background: white;
+      color: #667eea;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .banner-illustration {
+      position: absolute;
+      right: 20px;
+      bottom: 0;
+      font-size: 100px;
+      opacity: 0.3;
+      transform: rotate(-10deg);
+    }
+    .banner-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .banner-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--border);
+      transition: all 0.3s;
+    }
+    .banner-dot.active { width: 20px; background: var(--primary); }
+
+    /* ═══════════════════════════════════════════════════════
+       📱 服务分类网格
+    ═══════════════════════════════════════════════════════ */
+    .section { padding: 0 16px 20px; }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-more {
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px 12px;
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px 12px;
+      box-shadow: var(--shadow);
+    }
+    .service-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .service-item:active { transform: scale(0.95); }
+    .service-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      transition: all 0.2s;
+    }
+    .service-item:nth-child(1) .service-icon { background: linear-gradient(135deg, #FF6B6B, #FF8E8E); }
+    .service-item:nth-child(2) .service-icon { background: linear-gradient(135deg, #4ECDC4, #6EE7DE); }
+    .service-item:nth-child(3) .service-icon { background: linear-gradient(135deg, #45B7D1, #6DD5ED); }
+    .service-item:nth-child(4) .service-icon { background: linear-gradient(135deg, #96CEB4, #B8E0C8); }
+    .service-item:nth-child(5) .service-icon { background: linear-gradient(135deg, #DDA0DD, #E8B8E8); }
+    .service-item:nth-child(6) .service-icon { background: linear-gradient(135deg, #F7DC6F, #F9E79F); }
+    .service-item:nth-child(7) .service-icon { background: linear-gradient(135deg, #BB8FCE, #D7BDE2); }
+    .service-item:nth-child(8) .service-icon { background: linear-gradient(135deg, #85C1E9, #AED6F1); }
+    .service-name { font-size: 12px; font-weight: 500; color: var(--text); text-align: center; }
+
+    /* ═══════════════════════════════════════════════════════
+       🎁 快捷入口
+    ═══════════════════════════════════════════════════════ */
+    .quick-entry {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .quick-card {
+      flex: 1;
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .quick-card:active { transform: scale(0.98); }
+    .quick-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .quick-card.discount .quick-icon { background: linear-gradient(135deg, #FF6B6B, #FF8E8E); }
+    .quick-card.points .quick-icon { background: linear-gradient(135deg, #F7DC6F, #F9E79F); }
+    .quick-info { flex: 1; }
+    .quick-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .quick-desc { font-size: 11px; color: var(--text-secondary); }
+    .quick-value {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--primary);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       📦 订单区块
+    ═══════════════════════════════════════════════════════ */
+    .order-section {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .order-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin: -16px -16px 16px;
+      padding: 0 16px;
+    }
+    .order-tab {
+      flex: 1;
+      text-align: center;
+      padding: 14px 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+    .order-tab.active {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .order-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+    .order-card {
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid var(--border);
+    }
+    .order-card:last-child { margin-bottom: 0; }
+    .order-card:active { background: var(--border); }
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .order-type {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .order-type-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      background: var(--primary-pale, #FFF0EB);
+    }
+    .order-status {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+    .status-pending { background: #FFF3E0; color: #EF6C00; }
+    .status-running { background: #E3F2FD; color: #1565C0; }
+    .status-completed { background: #E8F5E9; color: #2E7D32; }
+    .status-cancelled { background: #FFEBEE; color: #C62828; }
+    .order-route {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .order-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .order-time { font-size: 12px; color: var(--text-light); }
+    .order-price { font-size: 16px; font-weight: 900; color: var(--primary); }
+
+    /* ═══════════════════════════════════════════════════════
+       📝 下单弹窗
+    ═══════════════════════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: var(--card);
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      overflow: hidden;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; }
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      max-height: calc(90vh - 140px);
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .form-label span { color: var(--danger); margin-left: 2px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      background: var(--card);
+      color: var(--text);
+      transition: all 0.2s;
+      outline: none;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(255,107,53,0.1);
+    }
+    .form-textarea { min-height: 100px; resize: none; }
+    .form-select { cursor: pointer; }
+    
+    .price-display {
+      background: linear-gradient(135deg, #FFF0EB, #FFF5F0);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .price-label { font-size: 12px; color: var(--text-secondary); }
+    .price-value { font-size: 32px; font-weight: 900; color: var(--primary); }
+    
+    .submit-btn {
+      width: 100%;
+      background: var(--gradient);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .submit-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+    /* ═══════════════════════════════════════════════════════
+       🔽 底部导航
+    ═══════════════════════════════════════════════════════ */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: var(--card);
+      display: flex;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      z-index: 100;
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .nav-item::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 50%;
+      transform: translateX(-50%) scaleX(0);
+      width: 24px;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 2px;
+      transition: transform 0.2s;
+    }
+    .nav-item.active::before { transform: translateX(-50%) scaleX(1); }
+    .nav-item.active .nav-icon { color: var(--primary); }
+    .nav-item.active .nav-text { color: var(--primary); font-weight: 700; }
+    .nav-icon { font-size: 22px; margin-bottom: 4px; color: var(--text-secondary); transition: color 0.2s; }
+    .nav-text { font-size: 11px; color: var(--text-secondary); transition: color 0.2s; }
+
+    /* 内容区域底部留白 */
+    .content-area { padding-bottom: 80px; }
+
+    /* ═══════════════════════════════════════════════════════
+       🎨 通用样式
+    ═══════════════════════════════════════════════════════ */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+    .empty-text { font-size: 14px; }
+    
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 14px 28px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      z-index: 2000;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* 订单详情 */
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: var(--text-secondary); font-size: 14px; }
+    .detail-value { font-weight: 600; font-size: 14px; }
+
+    /* 页面切换动画 */
+    .page { display: none; animation: fadeIn 0.3s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+<script src="api.js"></script>
+</head>
+<body>
+  <div class="app">
+    <!-- ═══════════════════════════════════════════════════════
+         🏠 首页
+    ═══════════════════════════════════════════════════════ -->
+    <div class="page active" id="homePage">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-top">
+          <div class="logo">
+            <div class="logo-icon">🦥</div>
+            <span class="logo-text">懒人效率站</span>
+            <span class="logo-badge">校园版</span>
+          </div>
+          <div class="header-actions">
+            <button class="header-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+            <button class="header-btn" onclick="openNotifModal()">
+              🔔
+              <span class="badge" id="notifBadge" style="display:none">0</span>
+            </button>
+          </div>
+        </div>
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="搜索服务、订单..." id="searchInput" />
+        </div>
+      </div>
+
+      <div class="content-area">
+        <!-- Banner -->
+        <div class="banner-wrap">
+          <div class="banner" id="banner1">
+            <div class="banner-content">
+              <span class="banner-tag">限时活动</span>
+              <div class="banner-title">新人专享福利</div>
+              <div class="banner-desc">首单立减5元，配送费全免</div>
+              <button class="banner-btn" onclick="openOrderModal('delivery')">立即体验</button>
+            </div>
+            <div class="banner-illustration">🎁</div>
+          </div>
+          <div class="banner-dots">
+            <span class="banner-dot active"></span>
+            <span class="banner-dot"></span>
+            <span class="banner-dot"></span>
+          </div>
+        </div>
+
+        <!-- 服务分类 -->
+        <div class="section">
+          <div class="service-grid">
+            <div class="service-item" onclick="openOrderModal('delivery')">
+              <div class="service-icon">🍱</div>
+              <div class="service-name">代取外卖</div>
+            </div>
+            <div class="service-item" onclick="openOrderModal('express')">
+              <div class="service-icon">📦</div>
+              <div class="service-name">代取快递</div>
+            </div>
+            <div class="service-item" onclick="openOrderModal('print')">
+              <div class="service-icon">🖨️</div>
+              <div class="service-name">打印复印</div>
+            </div>
+            <div class="service-item" onclick="openOrderModal('purchase')">
+              <div class="service-icon">🛒</div>
+              <div class="service-name">代买东西</div>
+            </div>
+            <div class="service-item" onclick="openOrderModal('laundry')">
+              <div class="service-icon">👕</div>
+              <div class="service-name">代取洗衣</div>
+            </div>
+            <div class="service-item" onclick="openOrderModal('errand')">
+              <div class="service-icon">🏃</div>
+              <div class="service-name">跑腿办事</div>
+            </div>
+            <div class="service-item" onclick="openOrderModal('other')">
+              <div class="service-icon">💡</div>
+              <div class="service-name">其他服务</div>
+            </div>
+            <div class="service-item" onclick="showToast('更多服务开发中...')">
+              <div class="service-icon">➕</div>
+              <div class="service-name">更多服务</div>
+            </div>
+          </div>
+
+          <!-- 快捷入口 -->
+          <div class="quick-entry">
+            <div class="quick-card discount" onclick="showCoupons()">
+              <div class="quick-icon">🎫</div>
+              <div class="quick-info">
+                <div class="quick-title">优惠券</div>
+                <div class="quick-desc">查看可用优惠</div>
+              </div>
+              <div class="quick-value" id="couponCount">2</div>
+            </div>
+            <div class="quick-card points" onclick="showPoints()">
+              <div class="quick-icon">⭐</div>
+              <div class="quick-info">
+                <div class="quick-title">我的积分</div>
+                <div class="quick-desc">积分可抵现金</div>
+              </div>
+              <div class="quick-value" id="pointsCount">168</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 我的订单 -->
+        <div class="section">
+          <div class="order-section">
+            <div class="order-tabs">
+              <div class="order-tab active" onclick="switchTab('all')">全部</div>
+              <div class="order-tab" onclick="switchTab('pending')">待接单</div>
+              <div class="order-tab" onclick="switchTab('running')">进行中</div>
+              <div class="order-tab" onclick="switchTab('completed')">已完成</div>
+            </div>
+            <div id="orderList">
+              <!-- 动态渲染 -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         📋 订单页
+    ═══════════════════════════════════════════════════════ -->
+    <div class="page" id="orderPage">
+      <div class="header">
+        <div class="header-top">
+          <div class="logo"><span class="logo-text">全部订单</span></div>
+        </div>
+      </div>
+      <div class="content-area section">
+        <div class="order-section">
+          <div id="allOrderList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         👤 我的页
+    ═══════════════════════════════════════════════════════ -->
+    <div class="page" id="mePage">
+      <div class="header" style="padding-bottom: 40px;">
+        <div class="header-top">
+          <div class="logo"><span class="logo-text">个人中心</span></div>
+        </div>
+      </div>
+      <div style="margin-top: -24px; padding: 0 16px;">
+        <div style="background: var(--card); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); text-align: center;">
+          <div style="font-size: 64px; margin-bottom: 12px;">🦥</div>
+          <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">校园懒人</div>
+          <div style="font-size: 13px; color: var(--text-secondary);">UID: 10086</div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-top: 16px;">
+          <div style="flex: 1; background: var(--card); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: var(--shadow);">
+            <div style="font-size: 28px; font-weight: 900; color: var(--primary);" id="totalOrders">0</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">总订单</div>
+          </div>
+          <div style="flex: 1; background: var(--card); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: var(--shadow);">
+            <div style="font-size: 28px; font-weight: 900; color: var(--warning);" id="totalPoints">168</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">积分</div>
+          </div>
+          <div style="flex: 1; background: var(--card); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: var(--shadow);">
+            <div style="font-size: 28px; font-weight: 900; color: var(--secondary);" id="totalCoupons">2</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">优惠券</div>
+          </div>
+        </div>
+
+        <div style="background: var(--card); border-radius: var(--radius); margin-top: 16px; overflow: hidden; box-shadow: var(--shadow);">
+          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); cursor: pointer;" onclick="showAddresses()">
+            <span>📍 常用地址</span>
+            <span style="color: var(--text-light);">›</span>
+          </div>
+          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); cursor: pointer;" onclick="showCoupons()">
+            <span>🎫 我的优惠券</span>
+            <span style="color: var(--text-light);">›</span>
+          </div>
+          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); cursor: pointer;" onclick="showPoints()">
+            <span>⭐ 积分明细</span>
+            <span style="color: var(--text-light);">›</span>
+          </div>
+          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="showToast('开发中...')">
+            <span>⚙️ 设置</span>
+            <span style="color: var(--text-light);">›</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         📝 下单弹窗
+    ═══════════════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="orderModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title" id="modalTitle">代取外卖</span>
+          <button class="modal-close" onclick="closeModal('orderModal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <form id="orderForm">
+            <div class="form-group">
+              <label class="form-label">取货地点 <span>*</span></label>
+              <input type="text" class="form-input" id="pickupLocation" placeholder="例如：西门外卖柜" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">送达地点 <span>*</span></label>
+              <input type="text" class="form-input" id="deliveryLocation" placeholder="例如：3号宿舍楼301室" required />
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;cursor:pointer;display:none" id="addrHint" onclick="showAddresses()">💡 点击选择常用地址</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">详细说明 <span>*</span></label>
+              <textarea class="form-textarea" id="orderDetails" placeholder="请描述物品信息、取件码、备注等..." required></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">联系电话 <span>*</span></label>
+              <input type="tel" class="form-input" id="phone" placeholder="您的手机号" required />
+            </div>
+            
+            <!-- 小费 -->
+            <div class="form-group" id="tipSection" style="display:none">
+              <label class="form-label">🪙 加小费（骑手优先接单）</label>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button type="button" class="tip-btn active" onclick="setTip(0)">无小费</button>
+                <button type="button" class="tip-btn" onclick="setTip(2)">+2元</button>
+                <button type="button" class="tip-btn" onclick="setTip(5)">+5元</button>
+                <button type="button" class="tip-btn" onclick="setTip(10)">+10元</button>
+              </div>
+              <style>
+                .tip-btn { flex:1; padding:10px 0; border:2px solid var(--border); background:var(--card); border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+                .tip-btn.active { border-color:var(--primary); background:#FFF0EB; color:var(--primary); }
+              </style>
+            </div>
+            
+            <div class="price-display">
+              <div class="price-label">预估费用</div>
+              <div class="price-value" id="priceValue">¥2.00</div>
+            </div>
+            
+            <button type="submit" class="submit-btn">提交订单</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         📋 订单详情弹窗
+    ═══════════════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="detailModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">订单详情</span>
+          <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+        </div>
+        <div class="modal-body" id="detailContent"></div>
+      </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="switchPage('home')">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-text">首页</span>
+      </div>
+      <div class="nav-item" onclick="switchPage('order')">
+        <span class="nav-icon">📋</span>
+        <span class="nav-text">订单</span>
+      </div>
+      <div class="nav-item" onclick="switchPage('me')">
+        <span class="nav-icon">👤</span>
+        <span class="nav-text">我的</span>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script>
+
+
+    // ═══════════════════════════════════════════════════════    // 🚀 校园懒人效率站 - 数据库版 (API驱动)
+    // ═══════════════════════════════════════════════════════
+    // ══════ 状态══════
+    let currentUser = null;
+    let orders = [];
+    let coupons = [];
+    let userPoints = { total: 0, history: [] };
+    let notifications = [];
+    let addresses = [];
+    let currentTip = 0;
+    let currentService = 'delivery';
+    let currentTab = 'all';
+
+    // ══════ 工具 ══════
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    const fmtPhone = (p) => p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : '...';
+    const fmtTime = (ts) => {
+      const d = new Date(ts);
+      const now = new Date();
+      const diff = now - d;
+      if (diff < 60000) return '...';
+      if (diff < 3600000) return Math.floor(diff/60000) + '...';
+      if (diff < 86400000) return Math.floor(diff/3600000) + '...';
+      if (diff < 604800000) return Math.floor(diff/86400000) + '...';
+    };
+    const showToast = (msg, duration = 2500) => {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), duration);
+    };
+
+    // ══════ 加载数据 ══════
+    async function loadData() {
+      try {
+        const [o, c, p, n] = await Promise.all([
+          API.getOrders({ phone: currentUser.phone }),
+          API.getCoupons(),
+          API.getPoints(currentUser.phone),
+          API.getNotifications(currentUser.phone)
+        ]);
+        orders = Array.isArray(o) ? o : [];
+        coupons = Array.isArray(c) ? c : [];
+        userPoints = p || { total: 0, history: [] };
+        notifications = Array.isArray(n) ? n : [];
+        renderOrders();
+        updateMePage();
+        updateNotifBadge();
+      } catch(e) {
+        console.error('loadData error:', e);
+        orders = [];
+      }
+    }
+
+    // ══════ INIT ══════
+    document.addEventListener('DOMContentLoaded', async () => {
+      const saved = API.restoreSession();
+      if (saved && saved.phone) {
+        currentUser = { phone: saved.phone, name: saved.name };
+        document.getElementById('userName').textContent = saved.name || '...';
+        showMainApp();
+        await loadData();
+      } else {
+        showLoginPage();
+      }
+      // 主题
+      if (localStorage.getItem('lazyTheme') === 'dark') {
+        document.body.classList.add('dark');
+        const btn = document.getElementById('themeBtn');
+        if (btn) btn.textContent = '...';
+      }
+    });
+
+    // ══════ 登录页面 ══════
+    function showLoginPage() {
+      let overlay = document.getElementById('loginOverlay');
+      if (!overlay) {
+        const app = document.querySelector('.app');
+        overlay = document.createElement('div');
+        overlay.id = 'loginOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+        overlay.innerHTML = `
+          <div style="width:100%;max-width:380px;text-align:center">
+            <div style="font-size:56px;margin-bottom:8px">🦥</div>
+            <h1 style="font-size:22px;font-weight:900;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px">校园懒人效率站</h1>
+            <p style="color:var(--text-secondary);font-size:13px;margin-bottom:32px">随时随地，帮我干活</p>
+            <div style="background:var(--card);border-radius:20px;padding:28px 24px;box-shadow:var(--shadow)">
+              <div style="text-align:left;margin-bottom:20px">
+                <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">您的称呼</label>
+                <input id="loginName" type="text" placeholder="怎么称呼您？" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
+              </div>
+              <div style="text-align:left;margin-bottom:24px">
+                <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">手机号码</label>
+                <input id="loginPhone" type="tel" placeholder="请输入手机号" maxlength="11" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
+              </div>
+              <button id="loginBtn" onclick="doLogin()" style="width:100%;padding:14px;border:none;border-radius:14px;background:var(--gradient);color:white;font-size:16px;font-weight:700;cursor:pointer">
+                登录 / 注册
+              </button>
+              <p style="font-size:12px;color:var(--text-light);margin-top:14px">登录即表示同意《用户协议》</p>
+            </div>
+          </div>`;
+        app.parentNode.insertBefore(overlay, app.nextSibling);
+        // 暗色模式样式
+        const s = document.createElement('style');
+        s.textContent = `body.dark #loginOverlay{background:#0D1117!important}body.dark #loginOverlay input{background:#161B22!important;border-color:#30363D!important;color:#E6EDF3!important}`;
+        document.head.appendChild(s);
+      }
+      overlay.style.display = 'flex';
+    }
+
+    async function doLogin() {
+      const btn = document.getElementById('loginBtn');
+      const name = document.getElementById('loginName').value.trim();
+      const phone = document.getElementById('loginPhone').value.trim();
+      if (!name) return showToast('请输入您的称呼');
+      if (!phoneRegex.test(phone)) return showToast('请输入正确的手机号码');
+      btn.textContent = '登录中...';
+      btn.disabled = true;
+      try {
+        const user = await API.userLogin(name, phone);
+        currentUser = { name: user.name, phone: user.phone };
+        document.getElementById('loginOverlay').style.display = 'none';
+        var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + name;
+        showMainApp();
+        await loadData();
+        showToast('欢迎回来！');
+      } catch(e) {
+        showToast(e.message || '登录失败，请重试');
+      } finally {
+        btn.textContent = '登录 / 注册';
+        btn.disabled = false;
+      }
+    }
+
+    function showMainApp() {
+      document.getElementById('homePage').classList.add('active');
+      document.querySelectorAll('.nav-item')[0].classList.add('active');
+    }
+
+    // ══════ 退出登录══════
+    async function logout() {
+      API.logout();
+      location.reload();
+    }
+
+    // ══════ 主题鍒囨崲 ══════
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      document.getElementById('themeBtn').textContent = isDark ? '...' : '...';
+      localStorage.setItem('lazyTheme', isDark ? 'dark' : 'light');
+    }
+
+    // ══════ 椤甸潰鍒囨崲 ══════
+    function switchPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      if (page === 'home') {
+        document.getElementById('homePage').classList.add('active');
+        document.querySelectorAll('.nav-item')[0]?.classList.add('active');
+      } else if (page === 'order') {
+        document.getElementById('orderPage').classList.add('active');
+        document.querySelectorAll('.nav-item')[1]?.classList.add('active');
+        renderOrders();
+      } else if (page === 'me') {
+        document.getElementById('mePage').classList.add('active');
+        document.querySelectorAll('.nav-item')[2]?.classList.add('active');
+        updateMePage();
+      }
+    }
+
+    // ══════ Tab鍒囨崲 ══════
+    function switchTab(tab) {
+ currentTab = tab;
+ document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
+ // 根据当前tab文本匹配高亮
+ const labelMap = { all: '全部', pending: '待接单', running: '进行中', completed: '已完成' };
+ const targetText = labelMap[tab] || '';
+ document.querySelectorAll('.order-tab').forEach(t => {
+ if (t.textContent.includes(targetText)) t.classList.add('active');
+ });
+ renderOrders();
+}
+
+    // ══════ 涓嬪崟寮圭獥 ══════
+    function openOrderModal(type) {
+      if (!currentUser) return showLoginPage();
+      currentService = type;
+      currentTip = 0;
+      const svc = { delivery:{name:'...',price:2}, express:{name:'...',price:2}, print:{name:'...',price:1}, purchase:{name:'...',price:3}, laundry:{name:'...',price:2}, errand:{name:'...',price:5}, other:{name:'...',price:3} };
+      const s = svc[type] || { name: '...', price: 2 };
+      document.getElementById('modalTitle').textContent = s.icon + ' ' + s.name;
+      document.getElementById('priceValue').textContent = '...' + s.price.toFixed(2);
+      document.getElementById('tipSection').style.display = 'block';
+      document.getElementById('orderForm').reset();
+      document.getElementById('orderModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function updatePrice() {
+      const svc = { delivery:{price:2}, express:{price:2}, print:{price:1}, purchase:{price:3}, laundry:{price:2}, errand:{price:5}, other:{price:3} };
+      const s = svc[currentService] || { price: 2 };
+      currentTip = parseInt(document.getElementById('tipInput')?.value || '0');
+      const total = s.price + currentTip;
+      document.getElementById('priceValue').textContent = '...' + total.toFixed(2);
+    }
+
+    async function submitOrder() {
+      const pickup = document.getElementById('pickupLocation').value.trim();
+      const delivery = document.getElementById('deliveryLocation').value.trim();
+      const details = document.getElementById('orderDetails').value.trim();
+      if (!pickup) return showToast('...');
+      if (!delivery) return showToast('...');
+      if (!currentUser) return showLoginPage();
+      const btn = document.querySelector('button[type=submit]');
+      btn.textContent = '...';
+      btn.disabled = true;
+      try {
+        const res = await API.createOrder({
+          type: currentService,
+          pickup_location: pickup,
+          delivery_location: delivery,
+          details: details,
+          phone: currentUser.phone,
+          tip: currentTip
+        });
+        if (res.error) throw new Error(res.error);
+        orders.unshift(res.order || res);
+        closeModal('orderModal');
+        renderOrders();
+        updateMePage();
+        showToast('...');
+      } catch(e) {
+        showToast(e.message || '...');
+      } finally {
+        btn.textContent = '...';
+        btn.disabled = false;
+      }
+    }
+
+    function renderOrders() {
+ const homeList = document.getElementById('orderList');
+ const allList = document.getElementById('allOrderList');
+ if (!currentUser) return;
+ let filtered = orders;
+ if (currentTab === 'pending') filtered = orders.filter(o => o.status === 'pending');
+ else if (currentTab === 'active' || currentTab === 'running') filtered = orders.filter(o => o.status === 'accepted' || o.status === 'running');
+ else if (currentTab === 'completed') filtered = orders.filter(o => o.status === 'completed');
+
+ const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
+ const statusColor = { pending:'#F39C12', accepted:'#3498DB', running:'#2ECC71', completed:'#95A5A6', cancelled:'#E74C3C' };
+ const typeIcon = { delivery:'🍱', express:'📦', purchase:'🛒', laundry:'👕', errand:'🏃', other:'💡' };
+ const typeLabel = { delivery:'代取外卖', express:'代取快递', purchase:'代买东西', laundry:'代取洗衣', errand:'跑腿办事', other:'其他服务' };
+
+ const html = filtered.length ? filtered.map(o => `
+ <div class="order-card" onclick="showOrderDetail('${o.order_no||o.id}')" style="padding:12px;border-bottom:1px solid var(--border);cursor:pointer">
+ <div style="display:flex;justify-content:space-between;align-items:center">
+ <b>${typeIcon[o.type]||'📦'} ${typeLabel[o.type]||o.type}</b>
+ <span style="font-size:12px;padding:4px 8px;border-radius:8px;background:${statusColor[o.status]||'#ddd'};color:white">${statusLabel[o.status]||o.status}</span>
+ </div>
+ <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">📍 ${o.pickup_location} → 📍 ${o.delivery_location}</div>
+ <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${fmtTime(o.created_at)} · ¥${(o.price||0).toFixed(2)}</div>
+ </div>
+ `).join('') : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">暂无订单</div></div>`;
+
+ if (homeList) homeList.innerHTML = html;
+ if (allList) allList.innerHTML = html;
+}
+
+
+    // ══════ 订单详情 ══════
+    async function showOrderDetail(id) {
+      let o = orders.find(x => (x.order_no || x.id) == id);
+      if (!o) { o = await API.getOrder(id); }
+      if (!o) return;
+      const statusLabel = { pending:'...', accepted:'...', running:'...', completed:'...', cancelled:'...' };
+      const statusColor = { pending:'#F39C12', accepted:'#3498DB', running:'#2ECC71', completed:'#95A5A6', cancelled:'#E74C3C' };
+      const content = document.getElementById('detailContent');
+      content.innerHTML = '<div class="detail-card"><p>#' + (o.order_no||o.id) + '</p><p>¥' + ((o.price||0).toFixed(2)) + '</p></div>';
+      document.getElementById('detailModal').classList.add('active');
+      document.body.style.overflow = 'hidden';}
+
+    async function cancelOrder(id) {
+      if (!confirm('确定取消璇ヨ鍗曞悧锛')) return;
+      try {
+        await API.cancelOrder(id, '鐢ㄦ埛取消');
+        const idx = orders.findIndex(o => (o.order_no||o.id) == id);
+        if (idx >= 0) { orders[idx].status = 'cancelled'; }
+        closeModal('detailModal');
+        renderOrders();
+        showToast('订单已取消');
+      } catch(e) { showToast(e.message || '取消澶辫触'); }
+    }
+
+    function openRateModal(id) {
+      document.getElementById('rateOrderId').value = id;
+      document.getElementById('rateComment').value = '';
+      document.querySelectorAll('.star').forEach((s,i) => s.textContent = i < 5 ? '...' : '...');
+      document.getElementById('rateModal').classList.add('active');
+    }
+
+    async function setStar(n) {
+      document.querySelectorAll('.star').forEach((s,i) => s.textContent = i < n ? '...' : '...');
+      document.getElementById('starCount').value = n;
+    }
+
+    async function submitRating() {
+      const id = document.getElementById('rateOrderId').value;
+      const stars = parseInt(document.getElementById('starCount').value || '5');
+      const comment = document.getElementById('rateComment').value.trim();
+      try {
+        await API.rateOrder(id, stars, comment, currentUser.phone);
+        const idx = orders.findIndex(o => (o.order_no||o.id) == id);
+        if (idx >= 0) { orders[idx].rating_stars = stars; orders[idx].rating_comment = comment; }
+        closeModal('rateModal');
+        closeModal('detailModal');
+        renderOrders();
+        showToast('...');
+      } catch(e) { showToast(e.message || '...'); }
+    }
+
+    // ══════ 我的页面 ══════
+    async function updateMePage() {
+      if (!currentUser) return;
+      try {
+        const [pts, pdata] = await Promise.all([
+          API.getPoints(currentUser.phone),
+          fetch('/api/users/' + currentUser.phone).then(r => r.json()).catch(() => null)
+        ]);
+        userPoints = pts || { total: 0, history: [] };
+        const totalOrders = pdata?.total_orders || orders.length;
+        const el = document.getElementById('totalOrders');
+        if (el) el.textContent = totalOrders;
+        const el2 = document.getElementById('totalPoints');
+        if (el2) el2.textContent = userPoints.total;
+        const el3 = document.getElementById('totalCoupons');
+        if (el3) el3.textContent = coupons.filter(c => !c.used).length;
+      } catch(e) {
+        console.error('updateMePage error:', e);
+      }
+    }
+
+    function updateNotifBadge() {
+      const unread = notifications.filter(n => !n.read).length;
+      const badge = document.getElementById('notifBadge');
+      if (badge) {
+        badge.textContent = unread;
+        badge.style.display = unread > 0 ? 'flex' : 'none';
+      }
+    }
+
+    async function openNotifModal() {
+      const list = document.getElementById('notifList');
+      if (!list) return;
+      if (!notifications.length) {
+        await API.getNotifications(currentUser.phone).then(n => { notifications = n || []; });
+      }
+      await API.markRead(currentUser.phone);
+      notifications.forEach(n => n.read = true);
+      updateNotifBadge();
+      list.innerHTML = notifications.length ? notifications.map(n => `
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start">
+          <span style="font-size:20px">${n.type==='order'?'...':'...'}</span>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">${n.title}</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-top:2px">${n.content}</div>
+            <div style="font-size:12px;color:var(--text-light);margin-top:4px">${fmtTime(new Date(n.created_at).getTime())}</div>
+          </div>
+        </div>`).join('') : '';
+      document.getElementById('notifModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    // ══════ 关闭寮圭獥 ══════
+    function closeModal(id) {
+      document.getElementById(id)?.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // ══════ 关闭寮圭獥浜嬩欢 ══════
+    document.addEventListener('click', e => {
+      if (e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+
+
+    // 小费选择
+    function setTip(n) {
+      currentTip = n;
+      var input = document.getElementById('tipInput');
+      if (input) input.value = n;
+      document.querySelectorAll('.tip-btn').forEach(b => { b.classList.remove('active');
+        var v = parseInt(b.textContent.replace(/[^0-9]/g, ''));
+        if ((n === 0 && b.textContent.includes('无')) || v === n) b.classList.add('active');
+      });
+      updatePrice();
+    }
+    // 快捷入口
+    function showCoupons() { switchPage('me'); showToast('请在优惠券栏查看可用优惠券'); }
+    function showPoints() { switchPage('me'); showToast('请在积分栏查看积分明细'); }
+    function showAddresses() { switchPage('me'); showToast('请在地址栏管理常用地址'); }
+</script>
+
+</body>
+</html>
