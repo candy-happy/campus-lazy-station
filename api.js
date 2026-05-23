@@ -173,9 +173,17 @@ const API = {
   }).then(r => r.json()); },
 
   // ─── 校园墙 ───
-  async wallPost(data) { return fetch('/api/wall/posts', {
-    method: 'POST', headers: this._headers(), body: JSON.stringify(data)
-  }).then(r => r.json()); },
+  async wallPost(data, files) {
+    if (files && files.length) {
+      const fd = new FormData();
+      Object.entries(data).forEach(([k, v]) => fd.append(k, v));
+      files.forEach(f => fd.append('files', f));
+      return fetch('/api/wall/posts', { method: 'POST', body: fd }).then(r => r.json());
+    }
+    return fetch('/api/wall/posts', {
+      method: 'POST', headers: this._headers(), body: JSON.stringify(data)
+    }).then(r => r.json());
+  },
   async wallFeed(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return fetch('/api/wall/feed' + (qs ? '?' + qs : '')).then(r => r.json());

@@ -959,8 +959,16 @@
           <button class="modal-close" onclick="closeModal('wallPostModal')">✕</button>
         </div>
         <div class="modal-body">
-          <textarea id="wallPostContent" class="form-textarea" placeholder="分享你的校园生活..." style="min-height:120px"></textarea>
-          <button onclick="submitWallPost()" class="submit-btn" style="margin-top:16px">发布</button>
+          <textarea id="wallPostContent" class="form-textarea" placeholder="分享你的校园生活..." style="min-height:100px"></textarea>
+          <div id="wallFilePreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+          <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+            <label style="cursor:pointer;display:flex;align-items:center;gap:4px;padding:8px 16px;background:var(--bg,#f5f5f5);border-radius:20px;font-size:13px">
+              📷 <span>图片/视频</span>
+              <input type="file" id="wallFileInput" accept="image/*,video/*" multiple style="display:none" onchange="previewWallFiles(this)" />
+            </label>
+            <button onclick="submitWallPost()" class="submit-btn" style="flex:1">发布</button>
+          </div>
+          
         </div>
       </div>
     </div>
@@ -1301,6 +1309,11 @@
             </div>
           </div>
           <div class="wall-content" onclick="showWallDetail(${p.id})">${escHtml(p.content)}</div>
+          ${p.images && p.images.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + (Array.isArray(p.images) ? p.images : p.images.split(',').filter(Boolean)).map(img => {
+            const url = typeof img === 'object' ? img.url : img;
+            const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
+            return isVid ? '<video src="' + url + '" style="width:100px;height:100px;object-fit:cover;border-radius:8px" muted></video>' : '<img src="' + url + '" style="width:100px;height:100px;object-fit:cover;border-radius:8px" loading="lazy" />';
+          }).join('') + '</div>' : ''}
           <div class="wall-actions">
             <button class="wall-action" onclick="doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button>
             <button class="wall-action" onclick="showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button>
@@ -1311,7 +1324,7 @@
 
     function openWallPostModal() {
       if (!currentUser) return showLoginPage();
-      document.getElementById('wallPostContent').value = '';
+      document.getElementById('wallPostContent').value = ''; wallSelectedFiles = []; document.getElementById('wallFilePreview').innerHTML = ''; if(document.getElementById('wallFileInput'))document.getElementById('wallFileInput').value = '';
       document.getElementById('wallPostModal').classList.add('active');
       document.body.style.overflow = 'hidden';
     }
@@ -1349,6 +1362,11 @@
             <div><div class="wall-nickname">${escHtml(data.nickname||'匿名')}</div><div class="wall-time">${timeAgo(data.created_at)}</div></div>
           </div>
           <div class="wall-content">${escHtml(data.content)}</div>
+        ${data.images && data.images.length ? '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">' + (Array.isArray(data.images) ? data.images : data.images.split(',').filter(Boolean)).map(img => {
+          const url = typeof img === 'object' ? img.url : img;
+          const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
+          return isVid ? '<video src="' + url + '" controls style="width:100%;max-width:320px;border-radius:12px"></video>' : '<img src="' + url + '" style="width:100%;max-width:320px;border-radius:12px" loading="lazy" onclick="window.open(this.src)" />';
+        }).join('') + '</div>' : ''}
           <div class="wall-actions"><button class="wall-action" onclick="doWallLike(${data.id},this)">❤️ <span>${data.like_count||0}</span></button></div>
         </div>
         <div style="margin-top:16px">
@@ -1396,28 +1414,37 @@
     async function showWallUser(phone) {
       const data = await API.wallUserProfile(phone);
       if (data.error) return showToast(data.error);
-      const content = document.getElementById('detailContent');
-      content.innerHTML = `
-        <div style="text-align:center;padding:20px 0">
+      const posts = data.posts || [];
+      const el = document.getElementById('wallDetailContent');
+      el.innerHTML = `
+        <div style="text-align:center;padding:20px 0;border-bottom:1px solid var(--border,#eee);margin-bottom:16px">
           <div class="wall-avatar" style="width:64px;height:64px;font-size:28px;margin:0 auto 12px">${(data.nickname||'匿')[0]}</div>
           <div style="font-size:18px;font-weight:700">${escHtml(data.nickname)}</div>
           <div style="display:flex;justify-content:center;gap:24px;margin-top:12px">
-            <div><div style="font-size:18px;font-weight:900">${data.followers}</div><div style="font-size:12px;color:var(--text-secondary)">粉丝</div></div>
-            <div><div style="font-size:18px;font-weight:900">${data.following}</div><div style="font-size:12px;color:var(--text-secondary)">关注</div></div>
-            <div><div style="font-size:18px;font-weight:900">${data.postCount}</div><div style="font-size:12px;color:var(--text-secondary)">帖子</div></div>
+            <div><div style="font-size:18px;font-weight:900">${data.followers}</div><div style="font-size:12px;color:var(--text-secondary,#888)">粉丝</div></div>
+            <div><div style="font-size:18px;font-weight:900">${data.following}</div><div style="font-size:12px;color:var(--text-secondary,#888)">关注</div></div>
+            <div><div style="font-size:18px;font-weight:900">${data.postCount}</div><div style="font-size:12px;color:var(--text-secondary,#888)">帖子</div></div>
           </div>
-          ${phone !== currentUser.phone ? '<button onclick="doWallFollow(\''+phone+'\')" class="submit-btn" style="margin-top:16px;padding:10px">关注</button>' : ''}
+          ${phone !== currentUser.phone ? '<button onclick="doWallFollow(\''+phone+'\')" class="submit-btn" style="margin-top:16px;padding:10px 24px">' + (data.isFollowing ? '已关注' : '+ 关注') + '</button>' : ''}
         </div>
+        <div style="font-weight:700;margin-bottom:12px">📝 TA的帖子</div>
+        ${posts.length ? posts.map(p => `
+          <div class="wall-card" style="margin-bottom:12px">
+            <div class="wall-content" onclick="closeModal('wallDetailModal');showWallDetail(${p.id})">${escHtml(p.content)}</div>
+            ${p.images && p.images.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + (Array.isArray(p.images) ? p.images : []).map(img => {
+              const url = typeof img === 'object' ? img.url : img;
+              const isVid = typeof img === 'object' ? img.isVideo : false;
+              return isVid ? '<video src="' + url + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px" muted></video>' : '<img src="' + url + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px" loading="lazy" />';
+            }).join('') + '</div>' : ''}
+            <div class="wall-actions"><span style="font-size:12px;color:var(--text-secondary,#888)">❤️ ${p.like_count||0} · 💬 ${p.comment_count||0} · ${timeAgo(p.created_at)}</span></div>
+          </div>
+        `).join('') : '<div style="text-align:center;color:var(--text-secondary,#888);padding:20px">暂无帖子</div>'}
       `;
-      document.getElementById('detailModal').classList.add('active');
+      document.getElementById('wallDetailModal').classList.add('active');
       document.body.style.overflow = 'hidden';
     }
 
-    async function doWallFollow(phone) {
-      const res = await API.wallFollow(currentUser.phone, phone);
-      if (res.ok) showToast(res.following ? '已关注' : '已取消关注');
-    }
-
+    
     // ═══════════════════════════════════════════════════════
     // 💬 聊天
     // ═══════════════════════════════════════════════════════

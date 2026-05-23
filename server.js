@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const JWT_SECRET = process.env.JWT_SECRET || 'campus-lazy-secret-2026';
 function generateToken(payload) { return Buffer.from(JSON.stringify({...payload, exp: Date.now() + 86400000})).toString('base64url'); }
@@ -10,6 +12,28 @@ function verifyToken(token) { try { const d = JSON.parse(Buffer.from(token, 'bas
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+
+// 文件上传配置
+const multerStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, 'uploads', 'wall');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || (file.mimetype.startsWith('video') ? '.mp4' : '.jpg');
+    cb(null, Date.now() + '-' + Math.random().toString(36).slice(2, 8) + ext);
+  }
+});
+const wallUpload = multer({
+  storage: multerStorage,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) cb(null, true);
+    else cb(new Error('只支持图片和视频文件'));
+  }
+});
 
 app.use(cors());
 app.use(express.json());
@@ -443,12 +467,16 @@ app.patch('/api/admins/:id', (req, res) => JSON_RES(res, () => {
 // ═══════════════════════════════════════════════
 
 // 发帖
-app.post('/api/wall/posts', (req, res) => JSON_RES(res, () => {
-  const { phone, nickname, avatar, content, images, gif_urls } = req.body;
+app.post('/api/wall/posts', wallUpload.array('files', 9), (req, res) => JSON_RES(res, () => {
+  const { phone, nickname, avatar, content, gif_urls } = req.body;
   if (!phone || !content) return { error: '缺少手机号或内容' };
+  const files = req.files || [];
+  const imageUrls = files.filter(f => f.mimetype.startsWith('image/')).map(f => '/uploads/wall/' + f.filename);
+  const videoUrls = files.filter(f => f.mimetype.startsWith('video/')).map(f => '/uploads/wall/' + f.filename);
+  const images = [...imageUrls, ...videoUrls].join(',');
   const r = db.prepare(`INSERT INTO wall_posts (phone, nickname, avatar, content, images, gif_urls, like_count, comment_count, exposure_count, exposure_done, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now','localtime'), datetime('now','localtime'))`)
-    .run(phone, nickname || '匿名', avatar || '', content, images || '', gif_urls || '');
+    .run(phone, nickname || '匿名', avatar || '', content, images, gif_urls || '');
   return { ok: true, id: r.lastInsertRowid };
 }));
 
@@ -477,7 +505,7 @@ app.get('/api/wall/feed', (req, res) => JSON_RES(res, () => {
       try { insExp.run(post.id, phone); updExp.run(post.id); } catch(e) {}
     });
   }
-  return posts.map(p => ({ ...p, images: p.images ? p.images.split(',').filter(Boolean) : [], gif_urls: safeJSON(p.gif_urls) }));
+  return posts.map(p => ({ ...p, images: p.images ? p.images.split(',').filter(Boolean).map(u => ({ url: u, isVideo: /\.mp4|\.mov|\.webm/i.test(u) })) : [], gif_urls: safeJSON(p.gif_urls) }));
 }));
 
 // 帖子详情
@@ -485,7 +513,7 @@ app.get('/api/wall/posts/:id', (req, res) => JSON_RES(res, () => {
   const post = db.prepare('SELECT * FROM wall_posts WHERE id = ?').get(req.params.id);
   if (!post) return { error: '帖子不存在' };
   const comments = db.prepare('SELECT * FROM wall_comments WHERE post_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id);
-  return { ...post, images: post.images ? post.images.split(',').filter(Boolean) : [], gif_urls: safeJSON(post.gif_urls), comments };
+  return { ...post, images: post.images ? post.images.split(',').filter(Boolean).map(u => ({ url: u, isVideo: /\.mp4|\.mov|\.webm/i.test(u) })) : [], gif_urls: safeJSON(post.gif_urls), comments };
 }));
 
 // 点赞
@@ -543,7 +571,7 @@ app.get('/api/wall/user/:phone', (req, res) => JSON_RES(res, () => {
     followers,
     following,
     postCount: posts.length,
-    posts: posts.map(p => ({ ...p, images: p.images ? p.images.split(',').filter(Boolean) : [], gif_urls: safeJSON(p.gif_urls) }))
+    posts: posts.map(p => ({ ...p, images: p.images ? p.images.split(',').filter(Boolean).map(u => ({ url: u, isVideo: /\.mp4|\.mov|\.webm/i.test(u) })) : [], gif_urls: safeJSON(p.gif_urls) }))
   };
 }));
 
