@@ -229,6 +229,8 @@ const API = {
     this._user = null;
     this._rider = null;
     this._admin = null;
+    this._token = null;
+    localStorage.removeItem('lazy_token');
     localStorage.removeItem('lazy_session');
     localStorage.removeItem('lazyUser');
     localStorage.removeItem('lazyRider');
