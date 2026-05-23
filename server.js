@@ -3,6 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
 const path = require('path');
+const bcrypt = require('bcryptjs');
+const JWT_SECRET = process.env.JWT_SECRET || 'campus-lazy-secret-2026';
+function generateToken(payload) { return Buffer.from(JSON.stringify({...payload, exp: Date.now() + 86400000})).toString('base64url'); }
+function verifyToken(token) { try { const d = JSON.parse(Buffer.from(token, 'base64url').toString()); if (d.exp < Date.now()) return null; return d; } catch { return null; } }
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +36,17 @@ function rateLimit(max=60, windowMs=60000) {
 }
 app.use(rateLimit(60, 60000));
 
+// 认证中间件 (optionalAuth - 不强制)
+function optionalAuth(req, res, next) {
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith('Bearer ')) {
+    const decoded = verifyToken(auth.slice(7));
+    if (decoded) req.user = decoded;
+  }
+  next();
+}
+app.use(optionalAuth);
+
 // 本地默认路径，Railway部署时设置 DB_PATH=/data/lazy_station.db
 const dbPath = process.env.DB_PATH || path.join(__dirname, 'lazy_station.db');
 const db = new Database(dbPath);
@@ -56,7 +71,7 @@ app.post('/api/user/login', (req, res) => JSON_RES(res, () => {
     db.prepare('INSERT INTO points (phone, total) VALUES (?, 10)').run(phone);
     db.prepare(`INSERT INTO point_logs (phone, type, amount, description) VALUES (?, 'earn', 10, '注册奖励')`).run(phone);
   }
-  return { ok: true, user: { ...user, phone: fmtPhone(user.phone) } };
+  return { ok: true, user: { ...user, phone: fmtPhone(user.phone) }, token: generateToken({ type: 'user', phone: user.phone }) };
 }));
 
 app.post('/api/rider/login', (req, res) => JSON_RES(res, () => {
@@ -77,16 +92,29 @@ app.post('/api/rider/login', (req, res) => JSON_RES(res, () => {
   }
   // 验证UID（已有骑手必须匹配）
   if (rider.uid && rider.uid !== uid) return { error: 'UID编号不匹配，请联系管理员' };
-  return { ok: true, rider: { ...rider, phone: fmtPhone(rider.phone) } };
+  return { ok: true, rider: { ...rider, phone: fmtPhone(rider.phone) }, token: generateToken({ type: 'rider', phone: rider.phone }) };
 }));
 
 app.post('/api/admin/login', (req, res) => JSON_RES(res, () => {
   const { username, password } = req.body;
-  const admin = db.prepare('SELECT * FROM admins WHERE username = ? AND password = ?').get(username, password);
+  const admin = db.prepare('SELECT * FROM admins WHERE username = ?').get(username);
   if (!admin) return { error: '账号或密码错误' };
   if (admin.status !== 'active') return { error: '账号已被禁用' };
-  return { ok: true, admin: { ...admin, password: undefined } };
-}));
+  // 兼容明文和bcrypt哈希
+  let matched = false;
+  if (admin.password.startsWith('$2a$') || admin.password.startsWith('$2b$')) {
+    matched = bcrypt.compareSync(password, admin.password);
+  } else {
+    matched = admin.password === password;
+    // 自动升级明文→bcrypt
+    if (matched) {
+      const hash = bcrypt.hashSync(password, 10);
+      db.prepare('UPDATE admins SET password = ? WHERE id = ?').run(hash, admin.id);
+    }
+  }
+  if (!matched) return { error: '账号或密码错误' };
+  return { ok: true, admin: { ...admin, password: undefined }, token: generateToken({ type: 'admin', id: admin.id, username: admin.username }) };
+}));;
 
 // ═══════════════════════════════════════════════
 // 🏪 服务
@@ -398,7 +426,7 @@ app.post('/api/admins', (req, res) => JSON_RES(res, () => {
   if (!username || !password) return { error: '缺少账号密码' };
   const exist = db.prepare('SELECT id FROM admins WHERE username = ?').get(username);
   if (exist) return { error: '账号已存在' };
-  db.prepare('INSERT INTO admins (username, password, role) VALUES (?, ?, ?)').run(username, password, role || 'admin');
+  db.prepare('INSERT INTO admins (username, password, role) VALUES (?, ?, ?)').run(username, bcrypt.hashSync(password, 10), role || 'admin');
   return { ok: true };
 }));
 app.delete('/api/admins/:id', (req, res) => JSON_RES(res, () => {
