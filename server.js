@@ -148,7 +148,7 @@ app.post('/api/orders', (req, res) => JSON_RES(res, () => {
   riders.forEach(r => insNotif.run(r.phone, `新订单${orderNo}: ${pickup_location}→${delivery_location}`));
   
   const order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(orderNo);
-  return { ok: true, order: { ...order, phone: fmtPhone(order.phone) } };
+  return { ok: true, order: { ...order, phone: order.phone, phoneDisplay: fmtPhone(order.phone) } };
 }));
 
 app.get('/api/orders', (req, res) => JSON_RES(res, () => {
@@ -162,13 +162,13 @@ app.get('/api/orders', (req, res) => JSON_RES(res, () => {
     else { sql += ' AND status = ?'; params.push(status); }
   }
   sql += ' ORDER BY created_at DESC';
-  return db.prepare(sql).all(...params).map(o => ({ ...o, phone: fmtPhone(o.phone), rider_phone: fmtPhone(o.rider_phone) }));
+  return db.prepare(sql).all(...params).map(o => ({ ...o, phone: o.phone, phoneDisplay: fmtPhone(o.phone), rider_phone: o.rider_phone, rider_phoneDisplay: fmtPhone(o.rider_phone) }));
 }));
 
 app.get('/api/orders/:id', (req, res) => JSON_RES(res, () => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
   if (!order) return { error: '订单不存在' };
-  return { ...order, phone: fmtPhone(order.phone) };
+  return { ...order, phone: order.phone, phoneDisplay: fmtPhone(order.phone) };
 }));
 
 // 骑手接单
@@ -223,13 +223,13 @@ app.post('/api/orders/:id/rate', (req, res) => JSON_RES(res, () => {
 // 🚴 骑手
 // ═══════════════════════════════════════════════
 app.get('/api/riders', (req, res) => JSON_RES(res, () => 
-  db.prepare('SELECT * FROM riders ORDER BY total_orders DESC').all().map(r => ({ ...r, phone: fmtPhone(r.phone) }))
+  db.prepare('SELECT * FROM riders ORDER BY total_orders DESC').all().map(r => ({ ...r, phone: r.phone, phoneDisplay: fmtPhone(r.phone) }))
 ));
 
 app.get('/api/riders/:phone', (req, res) => JSON_RES(res, () => {
   const rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(req.params.phone);
   if (!rider) return { error: '骑手不存在' };
-  return { ...rider, phone: fmtPhone(rider.phone) };
+  return { ...rider, phone: rider.phone, phoneDisplay: fmtPhone(rider.phone) };
 }));
 
 app.patch('/api/riders/:phone', (req, res) => JSON_RES(res, () => {
@@ -250,12 +250,12 @@ function updateRiderLevel(phone, totalOrders) {
 // 👤 用户
 // ═══════════════════════════════════════════════
 app.get('/api/users', (req, res) => JSON_RES(res, () => 
-  db.prepare('SELECT * FROM users ORDER BY total_orders DESC').all().map(u => ({ ...u, phone: fmtPhone(u.phone) }))
+  db.prepare('SELECT * FROM users ORDER BY total_orders DESC').all().map(u => ({ ...u, phone: u.phone, phoneDisplay: fmtPhone(u.phone) }))
 ));
 
 app.get('/api/users/:phone', (req, res) => JSON_RES(res, () => {
   const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(req.params.phone);
-  return { ...user, phone: fmtPhone(user.phone) };
+  return { ...user, phone: user.phone, phoneDisplay: fmtPhone(user.phone) };
 }));
 
 // 用户资料更新
@@ -273,7 +273,7 @@ app.put('/api/users/:phone', (req, res) => JSON_RES(res, () => {
   vals.push(req.params.phone);
   db.prepare('UPDATE users SET ' + sets.join(',') + ' WHERE phone=?').run(...vals);
   const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(req.params.phone);
-  return { ...user, phone: fmtPhone(user.phone) };
+  return { ...user, phone: user.phone, phoneDisplay: fmtPhone(user.phone) };
 }));
 
 // ═══════════════════════════════════════════════
