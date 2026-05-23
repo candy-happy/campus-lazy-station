@@ -71,7 +71,7 @@ app.post('/api/user/login', (req, res) => JSON_RES(res, () => {
     db.prepare('INSERT INTO points (phone, total) VALUES (?, 10)').run(phone);
     db.prepare(`INSERT INTO point_logs (phone, type, amount, description) VALUES (?, 'earn', 10, '注册奖励')`).run(phone);
   }
-  return { ok: true, user: { ...user, phone: fmtPhone(user.phone) }, token: generateToken({ type: 'user', phone: user.phone }) };
+  return { ok: true, user: { ...user, phone: user.phone, phoneDisplay: fmtPhone(user.phone) }, token: generateToken({ type: 'user', phone: user.phone }) };
 }));
 
 app.post('/api/rider/login', (req, res) => JSON_RES(res, () => {
@@ -92,7 +92,7 @@ app.post('/api/rider/login', (req, res) => JSON_RES(res, () => {
   }
   // 验证UID（已有骑手必须匹配）
   if (rider.uid && rider.uid !== uid) return { error: 'UID编号不匹配，请联系管理员' };
-  return { ok: true, rider: { ...rider, phone: fmtPhone(rider.phone) }, token: generateToken({ type: 'rider', phone: rider.phone }) };
+  return { ok: true, rider: { ...rider, phone: rider.phone, phoneDisplay: fmtPhone(rider.phone) }, token: generateToken({ type: 'rider', phone: rider.phone }) };
 }));
 
 app.post('/api/admin/login', (req, res) => JSON_RES(res, () => {

@@ -404,7 +404,8 @@
  if (localStorage.getItem('lazyTheme') === 'dark') document.body.classList.add('dark');
  const saved = API.restoreSession();
  if (saved && saved.role === 'rider' && saved.phone) {
- await restoreRiderSession(saved.phone, saved.name);
+ if (saved.phone.includes('*')) { API.logout(); $('loginModal').classList.add('active'); $('mainContent').style.display = 'none'; }
+ else { await restoreRiderSession(saved.phone, saved.name); }
  } else {
  $('loginModal').classList.add('active');
  $('mainContent').style.display = 'none';

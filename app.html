@@ -1137,10 +1137,16 @@
     document.addEventListener('DOMContentLoaded', async () => {
       const saved = API.restoreSession();
       if (saved && saved.phone) {
-        currentUser = { phone: saved.phone, name: saved.name };
-        document.getElementById('userName').textContent = saved.name || '...';
-        showMainApp();
-        await loadData();
+        // 如果phone含脱敏标记，清除session要求重新登录
+        if (saved.phone.includes('*')) {
+          API.logout();
+          showLoginPage();
+        } else {
+          currentUser = { phone: saved.phone, name: saved.name };
+          document.getElementById('userName').textContent = saved.name || '...';
+          showMainApp();
+          await loadData();
+        }
       } else {
         showLoginPage();
       }
