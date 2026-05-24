@@ -897,7 +897,8 @@
           <button class="modal-close" onclick="closeModal('orderModal')">✕</button>
         </div>
         <div class="modal-body">
-          <form id="orderForm">
+          <form <input type="hidden" id="tipInput" value="0" />
+            id="orderForm">
             <div class="form-group">
               <label class="form-label">取货地点 <span>*</span></label>
               <input type="text" class="form-input" id="pickupLocation" placeholder="例如：西门外卖柜" required />
@@ -1055,6 +1056,48 @@
         </div>
       </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         ⭐ 评价弹窗
+    ═══════════════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="rateModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">评价订单</span>
+          <button class="modal-close" onclick="closeModal('rateModal')">&#10005;</button>
+        </div>
+        <div class="modal-body" style="text-align:center;padding:24px">
+          <div style="font-size:36px;margin-bottom:12px">⭐</div>
+          <div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px">
+            <span class="star" onclick="setStar(1)" style="font-size:28px;cursor:pointer">&#9733;</span>
+            <span class="star" onclick="setStar(2)" style="font-size:28px;cursor:pointer">&#9733;</span>
+            <span class="star" onclick="setStar(3)" style="font-size:28px;cursor:pointer">&#9733;</span>
+            <span class="star" onclick="setStar(4)" style="font-size:28px;cursor:pointer">&#9733;</span>
+            <span class="star" onclick="setStar(5)" style="font-size:28px;cursor:pointer">&#9733;</span>
+          </div>
+          <input type="hidden" id="starCount" value="5" />
+          <input type="hidden" id="rateOrderId" value="" />
+          <textarea id="rateComment" class="form-textarea" placeholder="写点评价吧..." style="width:100%;min-height:80px;margin-bottom:16px"></textarea>
+          <button onclick="submitRating()" class="submit-btn" style="width:100%">提交评价</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         🔔 通知弹窗
+    ═══════════════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="notifModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">通知</span>
+          <button class="modal-close" onclick="closeModal('notifModal')">&#10005;</button>
+        </div>
+        <div class="modal-body" style="padding:0;max-height:60vh;overflow-y:auto">
+          <div id="notifList"></div>
+        </div>
+      </div>
+    </div>
+
 
     <!-- 底部导航 -->
     <div class="bottom-nav">
