@@ -1,808 +1,119 @@
-// 校园懒人效率站 - API服务器
+// server.js - 校园懒人效率站 v3.0 (模块化架构)
+// 本文件只负责启动，所有业务逻辑在 routes/ 目录下
 const express = require('express');
-const cors = require('cors');
-const Database = require('better-sqlite3');
 const path = require('path');
-const fs = require('fs');
-const multer = require('multer');
-const bcrypt = require('bcryptjs');
-const JWT_SECRET = process.env.JWT_SECRET || 'campus-lazy-secret-2026';
-function generateToken(payload) { return Buffer.from(JSON.stringify({...payload, exp: Date.now() + 86400000})).toString('base64url'); }
-function verifyToken(token) { try { const d = JSON.parse(Buffer.from(token, 'base64url').toString()); if (d.exp < Date.now()) return null; return d; } catch { return null; } }
+const config = require('./config');
+const { securityHeaders, adminFallback } = require('./middleware/security');
+const rateLimit = require('./middleware/rateLimit');
+const { optionalAuth } = require('./middleware/auth');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.PORT;
 
-
-// 文件上传配置
-const multerStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, 'uploads', 'wall');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || (file.mimetype.startsWith('video') ? '.mp4' : '.jpg');
-    cb(null, Date.now() + '-' + Math.random().toString(36).slice(2, 8) + ext);
-  }
-});
-const wallUpload = multer({
-  storage: multerStorage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) cb(null, true);
-    else cb(new Error('只支持图片和视频文件'));
-  }
-});
-
-app.use(cors());
+// ─── 基础中间件 ────────────────────────────────────────
+app.use(securityHeaders);
+app.use(require('cors')());
 app.use(express.json());
-app.use(express.static(__dirname, { etag: false, maxAge: 0, setHeaders: (res) => { res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); res.setHeader('Pragma', 'no-cache'); } }));
+app.use(rateLimit());
 
-// 安全头
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options','nosniff');
-  res.setHeader('X-Frame-Options','DENY');
-  res.setHeader('X-XSS-Protection','1; mode=block');
-  next();
-});
-
-// 简易限速 (内存计数器)
-const rateMap = new Map();
-function rateLimit(max=60, windowMs=60000) {
-  return (req, res, next) => {
-    const key = req.ip + ':' + Math.floor(Date.now()/windowMs);
-    const cnt = (rateMap.get(key)||0) + 1;
-    rateMap.set(key, cnt);
-    if (cnt > max) return res.status(429).json({ error: '请求过于频繁，请稍后再试' });
-    next();
-  };
-}
-app.use(rateLimit(60, 60000));
-
-// 认证中间件
-function optionalAuth(req, res, next) {
-  const auth = req.headers.authorization;
-  if (auth && auth.startsWith('Bearer ')) {
-    const decoded = verifyToken(auth.slice(7));
-    if (decoded) req.user = decoded;
+// ─── 静态文件服务（禁用缓存） ────────────────────────────
+app.use(express.static(path.join(__dirname), {
+  etag: false,
+  maxAge: 0,
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
   }
-  next();
-}
+}));
+
+// ─── uploads 目录静态服务 ─────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '7d', // 上传文件可缓存7天
+}));
+
+// ─── 认证中间件（可选，全局挂载） ──────────────────────────
 app.use(optionalAuth);
 
-// 强制认证中间件 - 必须登录
-function requireAuth(req, res, next) {
-  if (!req.user) return res.status(401).json({ error: '请先登录' });
-  next();
-}
+// ─── 根路径重定向 ────────────────────────────────────────
+app.get('/', (req, res) => res.redirect('/app.html'));
 
-// 管理员认证中间件 - 必须是管理员
-function requireAdmin(req, res, next) {
-  if (!req.user) return res.status(401).json({ error: '请先登录' });
-  if (req.user.type !== 'admin') return res.status(403).json({ error: '需要管理员权限' });
-  next();
-}
+// ─── API 路由挂载 ────────────────────────────────────────
+// 认证
+app.use('/api', require('./routes/auth'));
 
-// 本地默认路径，Railway部署时设置 DB_PATH=/data/lazy_station.db
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'lazy_station.db');
-const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+// 服务
+app.use('/api/services', require('./routes/services'));
 
-// ─── 工具函数 ───
-const JSON_RES = (res, fn) => { try { res.json(fn()); } catch(e) { res.status(500).json({ error: e.message }); } };
-const genOrderNo = () => 'ORD' + Date.now().toString(36).toUpperCase().slice(-8);
-const fmtPhone = (p) => p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : '';
+// 订单
+app.use('/api/orders', require('./routes/orders'));
 
-// ═══════════════════════════════════════════════
-// 🔐 认证
-// ═══════════════════════════════════════════════
-app.post('/api/user/login', (req, res) => JSON_RES(res, () => {
-  const { name, phone } = req.body;
-  if (!phone || phone.length !== 11) return { error: '请输入正确手机号' };
-  let user = db.prepare('SELECT * FROM users WHERE phone = ?').get(phone);
-  if (!user) {
-    db.prepare('INSERT INTO users (name, phone) VALUES (?, ?)').run(name || '同学', phone);
-    user = db.prepare('SELECT * FROM users WHERE phone = ?').get(phone);
-    db.prepare('INSERT INTO points (phone, total) VALUES (?, 10)').run(phone);
-    db.prepare(`INSERT INTO point_logs (phone, type, amount, description) VALUES (?, 'earn', 10, '注册奖励')`).run(phone);
-  }
-  return { ok: true, user: { ...user, phone: user.phone, phoneDisplay: fmtPhone(user.phone) }, token: generateToken({ type: 'user', phone: user.phone }) };
-}));
+// 骑手
+app.use('/api/riders', require('./routes/riders'));
 
-app.post('/api/rider/login', (req, res) => JSON_RES(res, () => {
-  const { uid, name, student_id, phone } = req.body;
-  if (!uid) return { error: '请输入UID编号' };
-  if (!phone || phone.length !== 11) return { error: '请输入正确手机号' };
-  let rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(phone);
-  if (!rider) {
-    db.prepare('INSERT INTO riders (uid, name, student_id, phone, status) VALUES (?, ?, ?, ?, ?)')
-      .run(uid, name || '', student_id || '', phone, 'online');
-    rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(phone);
-  } else {
-    // 已有骑手更新uid（如果为空）
-    if (!rider.uid && uid) {
-      db.prepare('UPDATE riders SET uid = ? WHERE phone = ?').run(uid, phone);
-      rider.uid = uid;
-    }
-  }
-  // 验证UID（已有骑手必须匹配）
-  if (rider.uid && rider.uid !== uid) return { error: 'UID编号不匹配，请联系管理员' };
-  return { ok: true, rider: { ...rider, phone: rider.phone, phoneDisplay: fmtPhone(rider.phone) }, token: generateToken({ type: 'rider', phone: rider.phone }) };
-}));
+// 用户
+app.use('/api/users', require('./routes/users'));
 
-app.post('/api/admin/login', (req, res) => JSON_RES(res, () => {
-  const { username, password } = req.body;
-  const admin = db.prepare('SELECT * FROM admins WHERE username = ?').get(username);
-  if (!admin) return { error: '账号或密码错误' };
-  if (admin.status !== 'active') return { error: '账号已被禁用' };
-  // 兼容明文和bcrypt哈希
-  let matched = false;
-  if (admin.password.startsWith('$2a$') || admin.password.startsWith('$2b$')) {
-    matched = bcrypt.compareSync(password, admin.password);
-  } else {
-    matched = admin.password === password;
-    // 自动升级明文→bcrypt
-    if (matched) {
-      const hash = bcrypt.hashSync(password, 10);
-      db.prepare('UPDATE admins SET password = ? WHERE id = ?').run(hash, admin.id);
-    }
-  }
-  if (!matched) return { error: '账号或密码错误' };
-  return { ok: true, admin: { ...admin, password: undefined }, token: generateToken({ type: 'admin', id: admin.id, username: admin.username }) };
-}));;
+// 优惠券
+app.use('/api/coupons', require('./routes/coupons'));
 
-// ═══════════════════════════════════════════════
-// 🏪 服务
-// ═══════════════════════════════════════════════
-app.get('/api/services', (req, res) => JSON_RES(res, () => db.prepare('SELECT * FROM services').all()));
+// 积分
+app.use('/api/points', require('./routes/points'));
 
-// ═══════════════════════════════════════════════
-// 📦 订单
-// ═══════════════════════════════════════════════
-app.post('/api/orders', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { type, pickup_location, delivery_location, details, phone, tip } = req.body;
-  if (!phone || !pickup_location || !delivery_location) return { error: '缺少必填信息' };
-  const svc = db.prepare('SELECT * FROM services WHERE key = ?').get(type);
-  const price = (svc ? svc.base_price : 2) + (tip || 0);
-  const orderNo = genOrderNo();
-  db.prepare(`INSERT INTO orders (order_no, type, pickup_location, delivery_location, details, phone, price, tip, status, progress, created_at)
-    VALUES (?,?,?,?,?,?,?,?,'pending',10,datetime('now','localtime'))`).run(orderNo, type, pickup_location, delivery_location, details || '', phone, price, tip || 0);
-  
-  // 奖励积分
-  const pts = db.prepare('SELECT * FROM points WHERE phone = ?').get(phone);
-  if (pts) {
-    db.prepare('UPDATE points SET total = total + ? WHERE phone = ?').run(Math.floor(price), phone);
-  } else {
-    db.prepare('INSERT INTO points (phone, total) VALUES (?, ?)').run(phone, Math.floor(price));
-  }
-  db.prepare(`INSERT INTO point_logs (phone, type, amount, description) VALUES (?, 'earn', ?, '下单奖励')`).run(phone, Math.floor(price));
-  
-  // 通知骑手
-  const riders = db.prepare("SELECT phone FROM riders WHERE status = 'online'").all();
-  const insNotif = db.prepare(`INSERT INTO notifications (phone, type, title, content) VALUES (?, 'order', '新订单通知', ?)`);
-  riders.forEach(r => insNotif.run(r.phone, `新订单${orderNo}: ${pickup_location}→${delivery_location}`));
-  
-  const order = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(orderNo);
-  return { ok: true, order: { ...order, phone: order.phone, phoneDisplay: fmtPhone(order.phone) } };
-}));
+// 地址
+app.use('/api/addresses', require('./routes/addresses'));
 
-app.get('/api/orders', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { phone, rider_phone, status } = req.query;
-  let sql = 'SELECT * FROM orders WHERE 1=1'; const params = [];
-  if (phone) { sql += ' AND phone = ?'; params.push(phone); }
-  if (rider_phone) { sql += ' AND rider_phone = ?'; params.push(rider_phone); }
-  if (status) {
-    if (status === 'active') { sql += " AND status IN ('accepted','running')"; }
-    else if (status === 'my') { sql += " AND status NOT IN ('pending','cancelled')"; }
-    else { sql += ' AND status = ?'; params.push(status); }
-  }
-  sql += ' ORDER BY created_at DESC';
-  return db.prepare(sql).all(...params).map(o => ({ ...o, phone: o.phone, phoneDisplay: fmtPhone(o.phone), rider_phone: o.rider_phone, rider_phoneDisplay: fmtPhone(o.rider_phone) }));
-}));
+// 广告
+app.use('/api/ads', require('./routes/ads'));
 
-app.get('/api/orders/:id', requireAuth, (req, res) => JSON_RES(res, () => {
-  const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
-  if (!order) return { error: '订单不存在' };
-  return { ...order, phone: order.phone, phoneDisplay: fmtPhone(order.phone) };
-}));
+// 通知
+app.use('/api/notifications', require('./routes/notifications'));
 
-// 骑手接单
-app.post('/api/orders/:id/accept', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { rider_phone, rider_name } = req.body;
-  db.prepare(`UPDATE orders SET status='accepted', rider_phone=?, rider_name=?, progress=30, accepted_at=datetime('now','localtime') WHERE (id=? OR order_no=?) AND status='pending'`)
-    .run(rider_phone, rider_name, req.params.id, req.params.id);
-  db.prepare(`INSERT INTO notifications (phone, type, title, content) VALUES (?, 'order', '订单已接单', ?)`)
-    .run(rider_phone, `骑手${rider_name}已接单`);
-  return { ok: true };
-}));
+// 统计
+app.use('/api/stats', require('./routes/stats'));
 
-// 开始配送
-app.post('/api/orders/:id/start', requireAuth, (req, res) => JSON_RES(res, () => {
-  db.prepare(`UPDATE orders SET status='running', progress=60 WHERE (id=? OR order_no=?) AND status='accepted'`)
-    .run(req.params.id, req.params.id);
-  return { ok: true };
-}));
+// 管理员
+app.use('/api/admins', require('./routes/admins'));
 
-// 完成订单
-app.post('/api/orders/:id/complete', requireAuth, (req, res) => JSON_RES(res, () => {
-  const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
-  if (!order) return { error: '订单不存在' };
-  db.prepare(`UPDATE orders SET status='completed', progress=100, completed_at=datetime('now','localtime') WHERE id = ?`).run(order.id);
-  if (order.rider_phone) {
-    db.prepare('UPDATE riders SET total_orders = total_orders + 1, total_earnings = total_earnings + ? WHERE phone = ?')
-      .run(order.price, order.rider_phone);
-    const rider = db.prepare('SELECT total_orders FROM riders WHERE phone = ?').get(order.rider_phone);
-    updateRiderLevel(order.rider_phone, rider.total_orders);
-  }
-  return { ok: true };
-}));
+// 校园墙
+app.use('/api/wall', require('./routes/wall'));
 
-// 取消订单
-app.post('/api/orders/:id/cancel', requireAuth, (req, res) => JSON_RES(res, () => {
-  db.prepare(`UPDATE orders SET status='cancelled', cancelled_at=datetime('now','localtime'), cancel_reason=? WHERE (id=? OR order_no=?) AND status IN ('pending','accepted')`)
-    .run(req.body.reason || '用户取消', req.params.id, req.params.id);
-  return { ok: true };
-}));
+// 聊天
+app.use('/api/chat', require('./routes/chat'));
 
-// 评价
-app.post('/api/orders/:id/rate', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { stars, comment, phone } = req.body;
-  db.prepare(`UPDATE orders SET rating_stars=?, rating_comment=?, rating_at=datetime('now','localtime') WHERE (id=? OR order_no=?) AND status='completed'`)
-    .run(stars, comment || '', req.params.id, req.params.id);
-  db.prepare('UPDATE points SET total = total + 2 WHERE phone = ?').run(phone);
-  db.prepare(`INSERT INTO point_logs (phone, type, amount, description) VALUES (?, 'earn', 2, '评价奖励')`).run(phone);
-  return { ok: true };
-}));
+// 钱包 & 提现
+app.use('/api', require('./routes/wallet'));
 
-// ═══════════════════════════════════════════════
-// 🚴 骑手
-// ═══════════════════════════════════════════════
-app.get('/api/riders', requireAdmin, (req, res) => JSON_RES(res, () => 
-  db.prepare('SELECT * FROM riders ORDER BY total_orders DESC').all().map(r => ({ ...r, phone: r.phone, phoneDisplay: fmtPhone(r.phone) }))
-));
+// GIF
+app.use('/api/gif', require('./routes/gif'));
 
-app.get('/api/riders/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
-  const rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(req.params.phone);
-  if (!rider) return { error: '骑手不存在' };
-  return { ...rider, phone: rider.phone, phoneDisplay: fmtPhone(rider.phone) };
-}));
-
-app.patch('/api/riders/:phone', (req, res) => JSON_RES(res, () => {
-  const { status } = req.body;
-  if (status) db.prepare('UPDATE riders SET status = ? WHERE phone = ?').run(status, req.params.phone);
-  return { ok: true };
-}));
-
-function updateRiderLevel(phone, totalOrders) {
-  let level = 'bronze';
-  if (totalOrders >= 100) level = 'diamond';
-  else if (totalOrders >= 50) level = 'gold';
-  else if (totalOrders >= 20) level = 'silver';
-  db.prepare('UPDATE riders SET level = ? WHERE phone = ?').run(level, phone);
-}
-
-// ═══════════════════════════════════════════════
-// 👤 用户
-// ═══════════════════════════════════════════════
-app.get('/api/users', requireAdmin, (req, res) => JSON_RES(res, () => 
-  db.prepare('SELECT * FROM users ORDER BY total_orders DESC').all().map(u => ({ ...u, phone: u.phone, phoneDisplay: fmtPhone(u.phone) }))
-));
-
-app.get('/api/users/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
-  const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(req.params.phone);
-  return { ...user, phone: user.phone, phoneDisplay: fmtPhone(user.phone) };
-}));
-
-// 用户资料更新
-app.put('/api/users/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { nickname, name, avatar, bio, dormitory, room } = req.body;
-  const sets = [];
-  const vals = [];
-  if (nickname !== undefined) { sets.push('nickname=?'); vals.push(nickname); }
-  if (name !== undefined) { sets.push('name=?'); vals.push(name); }
-  if (avatar !== undefined) { sets.push('avatar=?'); vals.push(avatar); }
-  if (bio !== undefined) { sets.push('bio=?'); vals.push(bio); }
-  if (dormitory !== undefined) { sets.push('dormitory=?'); vals.push(dormitory); }
-  if (room !== undefined) { sets.push('room=?'); vals.push(room); }
-  if (!sets.length) return { error: '无更新内容' };
-  vals.push(req.params.phone);
-  db.prepare('UPDATE users SET ' + sets.join(',') + ' WHERE phone=?').run(...vals);
-  const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(req.params.phone);
-  return { ...user, phone: user.phone, phoneDisplay: fmtPhone(user.phone) };
-}));
-
-// ═══════════════════════════════════════════════
-// 🎫 优惠券
-// ═══════════════════════════════════════════════
-app.get('/api/coupons', (req, res) => JSON_RES(res, () => 
-  db.prepare("SELECT * FROM coupons WHERE usable=1 AND expire_at > datetime('now','localtime')").all()
-));
-
-// 用户领取优惠券
-app.post('/api/coupons/claim', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { phone, coupon_id } = req.body;
-  if (!phone || !coupon_id) return { error: '参数缺失' };
-  const coupon = db.prepare('SELECT * FROM coupons WHERE id = ? AND usable=1').get(coupon_id);
-  if (!coupon) return { error: '优惠券不存在或已失效' };
-  // 检查是否已领取（phone非null表示已领）
-  const claimed = db.prepare('SELECT * FROM coupons WHERE id = ? AND phone = ?').get(coupon_id, phone);
-  if (claimed) return { error: '已领取该优惠券' };
-  db.prepare('UPDATE coupons SET phone = ? WHERE id = ? AND phone IS NULL').run(phone, coupon_id);
-  return { ok: true, msg: '领取成功' };
-}));
-
-// 我的优惠券列表
-app.get('/api/coupons/mine', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = req.query.phone;
-  if (!phone) return { error: '缺少phone' };
-  return db.prepare("SELECT * FROM coupons WHERE phone = ? ORDER BY used ASC, expire_at ASC").all(phone);
-}));
-
-// ═══════════════════════════════════════════════
-// ⭐ 积分
-// ═══════════════════════════════════════════════
-app.get('/api/points/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
-  const pts = db.prepare('SELECT * FROM points WHERE phone = ?').get(req.params.phone);
-  const logs = db.prepare('SELECT * FROM point_logs WHERE phone = ? ORDER BY created_at DESC LIMIT 20').all(req.params.phone);
-  return { total: pts?.total || 0, history: logs };
-}));
-
-// ═══════════════════════════════════════════════
-// 📍 地址管理
-// ═══════════════════════════════════════════════
-app.get('/api/addresses', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = req.query.phone;
-  if (!phone) return { error: '缺少phone' };
-  return db.prepare('SELECT * FROM addresses WHERE phone = ? ORDER BY is_default DESC, created_at DESC').all(phone);
-}));
-
-app.post('/api/addresses', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { phone, name, location, note, is_default } = req.body;
-  if (!phone || !name || !location) return { error: '请填写必填项' };
-  if (is_default) db.prepare('UPDATE addresses SET is_default = 0 WHERE phone = ?').run(phone);
-  const r = db.prepare('INSERT INTO addresses (phone, name, location, note, is_default, created_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\', \'localtime\'))').run(phone, name, location, note || '', is_default ? 1 : 0);
-  return { ok: true, id: r.lastInsertRowid };
-}));
-
-app.put('/api/addresses/:id', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { name, location, note, is_default, phone } = req.body;
-  const addr = db.prepare('SELECT * FROM addresses WHERE id = ?').get(req.params.id);
-  if (!addr) return { error: '地址不存在' };
-  if (is_default && phone) db.prepare('UPDATE addresses SET is_default = 0 WHERE phone = ?').run(phone);
-  db.prepare('UPDATE addresses SET name=?, location=?, note=?, is_default=? WHERE id=?').run(name || addr.name, location || addr.location, note !== undefined ? note : addr.note, is_default ? 1 : 0, req.params.id);
-  return { ok: true };
-}));
-
-app.delete('/api/addresses/:id', requireAuth, (req, res) => JSON_RES(res, () => {
-  db.prepare('DELETE FROM addresses WHERE id = ?').run(req.params.id);
-  return { ok: true };
-}));;
-
-// ═══════════════════════════════════════════════
-// 🖼️ 广告轮播
-// ═══════════════════════════════════════════════
-// 前端获取活跃广告
-app.get('/api/ads', (req, res) => JSON_RES(res, () =>
-  db.prepare("SELECT * FROM ads WHERE status='active' AND (end_time IS NULL OR end_time > datetime('now','localtime')) ORDER BY sort_order ASC").all()
-));
-
-// 管理员：广告列表（全部）
-app.get('/api/admin/ads', requireAdmin, (req, res) => JSON_RES(res, () =>
-  db.prepare('SELECT * FROM ads ORDER BY sort_order ASC, created_at DESC').all()
-));
-
-// 管理员：新增广告
-app.post('/api/admin/ads', requireAdmin, (req, res) => JSON_RES(res, () => {
-  const { title, description, image, link_type, link_value, sort_order, status, start_time, end_time } = req.body;
-  if (!title) return { error: '请填写标题' };
-  db.prepare('INSERT INTO ads (title, description, image, link_type, link_value, sort_order, status, start_time, end_time, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime(\'now\', \'localtime\'), datetime(\'now\', \'localtime\'))')
-    .run(title, description||'', image||'', link_type||'none', link_value||'', sort_order||0, status||'active', start_time||null, end_time||null);
-  return { ok: true };
-}));
-
-// 管理员：更新广告
-app.put('/api/admin/ads/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
-  const ad = db.prepare('SELECT * FROM ads WHERE id = ?').get(req.params.id);
-  if (!ad) return { error: '广告不存在' };
-  const { title, description, image, link_type, link_value, sort_order, status, start_time, end_time } = req.body;
-  db.prepare('UPDATE ads SET title=?, description=?, image=?, link_type=?, link_value=?, sort_order=?, status=?, start_time=?, end_time=?, updated_at=datetime(\'now\', \'localtime\') WHERE id=?')
-    .run(title??ad.title, description??ad.description, image??ad.image, link_type??ad.link_type, link_value??ad.link_value, sort_order??ad.sort_order, status??ad.status, start_time??ad.start_time, end_time??ad.end_time, req.params.id);
-  return { ok: true };
-}));
-
-// 管理员：删除广告
-app.delete('/api/admin/ads/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
-  db.prepare('DELETE FROM ads WHERE id = ?').run(req.params.id);
-  return { ok: true };
-}));
-
-// ═══════════════════════════════════════════════
-// 🔔 通知
-// ═══════════════════════════════════════════════
-app.get('/api/notifications/:phone', requireAuth, (req, res) => JSON_RES(res, () => 
-  db.prepare('SELECT * FROM notifications WHERE phone = ? ORDER BY created_at DESC LIMIT 30').all(req.params.phone)
-));
-
-app.patch('/api/notifications/:phone/read', (req, res) => JSON_RES(res, () => {
-  const { ids } = req.body;
-  if (ids && ids.length) {
-    db.prepare(`UPDATE notifications SET read=1 WHERE phone=? AND id IN (${ids.map(()=>'?').join(',')})`).run(req.params.phone, ...ids);
-  } else {
-    db.prepare('UPDATE notifications SET read = 1 WHERE phone = ?').run(req.params.phone);
-  }
-  return { ok: true };
-}));
-
-// ═══════════════════════════════════════════════
-// 📊 统计
-// ═══════════════════════════════════════════════
-app.get('/api/stats', requireAdmin, (req, res) => JSON_RES(res, () => {
-  const today = new Date().toISOString().slice(0, 10);
-  return {
-    total_orders: db.prepare("SELECT COUNT(*) as n FROM orders").get().n,
-    today_orders: db.prepare("SELECT COUNT(*) as n FROM orders WHERE date(created_at) = ?").get(today).n,
-    total_revenue: db.prepare("SELECT COALESCE(SUM(price),0) as n FROM orders WHERE status='completed'").get().n,
-    today_revenue: db.prepare("SELECT COALESCE(SUM(price),0) as n FROM orders WHERE status='completed' AND date(completed_at) = ?").get(today).n,
-    total_riders: db.prepare("SELECT COUNT(*) as n FROM riders").get().n,
-    total_users: db.prepare("SELECT COUNT(*) as n FROM users").get().n,
-    active_orders: db.prepare("SELECT COUNT(*) as n FROM orders WHERE status IN ('pending','accepted','running')").get().n,
-    orders_by_status: db.prepare('SELECT status, COUNT(*) as count FROM orders GROUP BY status').all()
-  };
-}));
-
-// ═══════════════════════════════════════════════
-// 🔒 管理员
-// ═══════════════════════════════════════════════
-app.get('/api/admins', requireAdmin, (req, res) => JSON_RES(res, () => 
-  db.prepare('SELECT id, username, role, status FROM admins').all()
-));
-app.post('/api/admins', requireAdmin, (req, res) => JSON_RES(res, () => {
-  const { username, password, role } = req.body;
-  if (!username || !password) return { error: '缺少账号密码' };
-  const exist = db.prepare('SELECT id FROM admins WHERE username = ?').get(username);
-  if (exist) return { error: '账号已存在' };
-  db.prepare('INSERT INTO admins (username, password, role) VALUES (?, ?, ?)').run(username, bcrypt.hashSync(password, 10), role || 'admin');
-  return { ok: true };
-}));
-app.delete('/api/admins/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
-  db.prepare('DELETE FROM admins WHERE id = ? AND role != ?').run(req.params.id, 'super');
-  return { ok: true };
-}));
-app.patch('/api/admins/:id', (req, res) => JSON_RES(res, () => {
-  db.prepare('UPDATE admins SET status = ? WHERE id = ? AND role != ?').run(req.body.status, req.params.id, 'super');
-  return { ok: true };
-}));
-
-// ═══════════════════════════════════════════════
-// 🧱 校园墙
-// ═══════════════════════════════════════════════
-
-// 发帖
-app.post('/api/wall/posts', requireAuth, wallUpload.array('files', 9), (req, res) => JSON_RES(res, () => {
-  const { phone, nickname, avatar, content, gif_urls } = req.body;
-  if (!phone || !content) return { error: '缺少手机号或内容' };
-  const files = req.files || [];
-  const imageUrls = files.filter(f => f.mimetype.startsWith('image/')).map(f => '/uploads/wall/' + f.filename);
-  const videoUrls = files.filter(f => f.mimetype.startsWith('video/')).map(f => '/uploads/wall/' + f.filename);
-  const images = [...imageUrls, ...videoUrls].join(',');
-  const r = db.prepare(`INSERT INTO wall_posts (phone, nickname, avatar, content, images, gif_urls, like_count, comment_count, exposure_count, exposure_done, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now','localtime'), datetime('now','localtime'))`)
-    .run(phone, nickname || '匿名', avatar || '', content, images, gif_urls || '');
-  return { ok: true, id: r.lastInsertRowid };
-}));
-
-// 信息流
-app.get('/api/wall/feed', (req, res) => JSON_RES(res, () => {
-  const { tab, phone, page, limit } = req.query;
-  const p = Math.max(1, parseInt(page) || 1);
-  const l = Math.min(50, parseInt(limit) || 20);
-  const offset = (p - 1) * l;
-  let posts;
-  if (tab === 'following' && phone) {
-    posts = db.prepare(`SELECT p.* FROM wall_posts p
-      JOIN wall_follows f ON f.following_phone = p.phone AND f.follower_phone = ?
-      ORDER BY p.created_at DESC LIMIT ? OFFSET ?`).all(phone, l, offset);
-  } else if (tab === 'hot') {
-    posts = db.prepare(`SELECT * FROM wall_posts WHERE exposure_done = 1 ORDER BY like_count DESC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
-  } else {
-    // 最新 + 曝光算法：exposure_done=0的帖子优先
-    posts = db.prepare(`SELECT * FROM wall_posts ORDER BY exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
-  }
-  // 更新曝光
-  if (phone) {
-    const insExp = db.prepare("INSERT OR IGNORE INTO wall_exposures (post_id, phone, created_at) VALUES (?, ?, datetime('now','localtime'))");
-    const updExp = db.prepare('UPDATE wall_posts SET exposure_count = exposure_count + 1, exposure_done = CASE WHEN exposure_count >= 2 THEN 1 ELSE 0 END WHERE id = ?');
-    posts.forEach(post => {
-      try { insExp.run(post.id, phone); updExp.run(post.id); } catch(e) {}
-    });
-  }
-  // 查询关注状态
-  const followSet = new Set();
-  if (phone) {
-    const followed = db.prepare('SELECT following_phone FROM wall_follows WHERE follower_phone = ?').all(phone);
-    followed.forEach(f => followSet.add(f.following_phone));
-  }
-  return posts.map(p => ({ ...p, images: p.images ? p.images.split(',').filter(Boolean).map(u => ({ url: u, isVideo: /\.mp4|\.mov|\.webm/i.test(u) })) : [], gif_urls: safeJSON(p.gif_urls), isFollowing: followSet.has(p.phone) }));
-}));
-
-// 帖子详情
-app.get('/api/wall/posts/:id', (req, res) => JSON_RES(res, () => {
-  const post = db.prepare('SELECT * FROM wall_posts WHERE id = ?').get(req.params.id);
-  if (!post) return { error: '帖子不存在' };
-  const comments = db.prepare('SELECT * FROM wall_comments WHERE post_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id);
-  return { ...post, images: post.images ? post.images.split(',').filter(Boolean).map(u => ({ url: u, isVideo: /\.mp4|\.mov|\.webm/i.test(u) })) : [], gif_urls: safeJSON(post.gif_urls), comments };
-}));
-
-// 点赞
-app.post('/api/wall/posts/:id/like', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { phone } = req.body;
-  if (!phone) return { error: '缺少手机号' };
-  const existing = db.prepare('SELECT id FROM wall_likes WHERE post_id = ? AND phone = ?').get(req.params.id, phone);
-  if (existing) {
-    db.prepare('DELETE FROM wall_likes WHERE id = ?').run(existing.id);
-    db.prepare('UPDATE wall_posts SET like_count = MAX(0, like_count - 1) WHERE id = ?').run(req.params.id);
-    return { ok: true, liked: false };
-  } else {
-    db.prepare("INSERT INTO wall_likes (post_id, phone, created_at) VALUES (?, ?, datetime('now','localtime'))").run(req.params.id, phone);
-    db.prepare('UPDATE wall_posts SET like_count = like_count + 1 WHERE id = ?').run(req.params.id);
-    return { ok: true, liked: true };
-  }
-}));
-
-// 评论
-app.post('/api/wall/posts/:id/comments', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname } = req.body;
-  if (!phone || !content) return { error: '缺少手机号或内容' };
-  db.prepare(`INSERT INTO wall_comments (post_id, phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname, like_count, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now','localtime'))`)
-    .run(req.params.id, phone, nickname || '匿名', avatar || '', content, parent_id || null, reply_to_phone || '', reply_to_nickname || '');
-  db.prepare('UPDATE wall_posts SET comment_count = comment_count + 1 WHERE id = ?').run(req.params.id);
-  return { ok: true };
-}));
-
-// 关注
-app.post('/api/wall/follow', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { follower_phone, following_phone } = req.body;
-  if (!follower_phone || !following_phone) return { error: '缺少手机号' };
-  if (follower_phone === following_phone) return { error: '不能关注自己' };
-  const existing = db.prepare('SELECT id FROM wall_follows WHERE follower_phone = ? AND following_phone = ?').get(follower_phone, following_phone);
-  if (existing) {
-    db.prepare('DELETE FROM wall_follows WHERE id = ?').run(existing.id);
-    return { ok: true, following: false };
-  } else {
-    db.prepare("INSERT INTO wall_follows (follower_phone, following_phone, created_at) VALUES (?, ?, datetime('now','localtime'))").run(follower_phone, following_phone);
-    return { ok: true, following: true };
-  }
-}));
-
-// 用户主页
-app.get('/api/wall/user/:phone', (req, res) => JSON_RES(res, () => {
-  const phone = req.params.phone;
-  const posts = db.prepare('SELECT * FROM wall_posts WHERE phone = ? ORDER BY created_at DESC LIMIT 20').all(phone);
-  const followers = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE following_phone = ?').get(phone).n;
-  const following = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE follower_phone = ?').get(phone).n;
-  const user = db.prepare('SELECT name, phone FROM users WHERE phone = ?').get(phone);
-  return {
-    nickname: user?.name || '匿名',
-    phone,
-    followers,
-    following,
-    postCount: posts.length,
-    posts: posts.map(p => ({ ...p, images: p.images ? p.images.split(',').filter(Boolean).map(u => ({ url: u, isVideo: /\.mp4|\.mov|\.webm/i.test(u) })) : [], gif_urls: safeJSON(p.gif_urls) }))
-  };
-}));
-
-// 删除帖子
-app.delete('/api/wall/posts/:id', requireAuth, (req, res) => JSON_RES(res, () => {
-  db.prepare('DELETE FROM wall_posts WHERE id = ?').run(req.params.id);
-  db.prepare('DELETE FROM wall_comments WHERE post_id = ?').run(req.params.id);
-  db.prepare('DELETE FROM wall_likes WHERE post_id = ?').run(req.params.id);
-  return { ok: true };
-}));
-
-// ═══════════════════════════════════════════════
-// 💬 聊天
-// ═══════════════════════════════════════════════
-
-// 获取或创建会话（订单相关）
-app.post('/api/chat/conversation', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { user_phone, rider_phone, order_id, order_title } = req.body;
-  if (!user_phone || !rider_phone) return { error: '缺少手机号' };
-  // 查找已有会话
-  let conv = db.prepare(
-    "SELECT * FROM conversations WHERE ((user1_phone=? AND user2_phone=?) OR (user1_phone=? AND user2_phone=?)) AND (item_id=? OR 0=?)"
-  ).get(user_phone, rider_phone, rider_phone, user_phone, order_id||0, order_id?0:1);
-  if (!conv) {
-    const r = db.prepare(
-      "INSERT INTO conversations (user1_phone,user2_phone,item_id,item_title,created_at) VALUES (?,?,?,?,datetime('now','localtime'))"
-    ).run(user_phone, rider_phone, order_id||null, order_title||'');
-    conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(r.lastInsertRowid);
-  }
-  return conv;
-}));
-
-// 获取会话列表
-app.get('/api/chat/conversations', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = req.query.phone;
-  if (!phone) return [];
-  const convs = db.prepare(
-    "SELECT c.*, " +
-    "(SELECT COUNT(*) FROM messages WHERE conversation_id=c.id AND sender_phone!=? AND is_read=0) as unread " +
-    "FROM conversations c WHERE user1_phone=? OR user2_phone=? ORDER BY last_message_at DESC, created_at DESC"
-  ).all(phone, phone, phone);
-  return convs.map(c => {
-    const otherPhone = c.user1_phone === phone ? c.user2_phone : c.user1_phone;
-    const otherUser = db.prepare('SELECT name,phone FROM users WHERE phone=?').get(otherPhone)
-      || db.prepare('SELECT name,phone FROM riders WHERE phone=?').get(otherPhone)
-      || { name: '未知用户', phone: otherPhone };
-    return { ...c, other_name: otherUser.name, other_phone: otherPhone };
-  });
-}));
-
-// 发送消息
-app.post('/api/chat/send', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { conversation_id, sender_phone, content, type } = req.body;
-  if (!conversation_id || !sender_phone || !content) return { error: '参数不完整' };
-  const r = db.prepare(
-    "INSERT INTO messages (conversation_id,sender_phone,content,type,created_at) VALUES (?,?,?,?,datetime('now','localtime'))"
-  ).run(conversation_id, sender_phone, content, type || 'text');
-  // 更新会话最后消息
-  db.prepare(
-    "UPDATE conversations SET last_message=?, last_message_at=datetime('now','localtime'), last_sender=? WHERE id=?"
-  ).run(content.slice(0, 100), sender_phone, conversation_id);
-  return { ok: true, id: r.lastInsertRowid };
-}));
-
-// 获取消息列表
-app.get('/api/chat/messages/:conversation_id', requireAuth, (req, res) => JSON_RES(res, () => {
-  const cid = req.params.conversation_id;
-  const phone = req.query.phone;
-  const before = req.query.before; // message id for pagination
-  let msgs;
-  if (before) {
-    msgs = db.prepare('SELECT * FROM messages WHERE conversation_id=? AND id<? ORDER BY id DESC LIMIT 30').all(cid, before);
-  } else {
-    msgs = db.prepare('SELECT * FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT 30').all(cid);
-  }
-  // 标记已读
-  if (phone) {
-    db.prepare('UPDATE messages SET is_read=1 WHERE conversation_id=? AND sender_phone!=? AND is_read=0').run(cid, phone);
-  }
-  return msgs.reverse();
-}));
-
-// 获取未读消息数
-app.get('/api/chat/unread', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = req.query.phone;
-  if (!phone) return { count: 0 };
-  const count = db.prepare(
-    'SELECT COUNT(*) as n FROM messages WHERE sender_phone!=? AND is_read=0 AND conversation_id IN (SELECT id FROM conversations WHERE user1_phone=? OR user2_phone=?)'
-  ).get(phone, phone, phone).n;
-  return { count };
-}));
-
-// 安全JSON解析
-function safeJSON(str) {
-  if (!str) return [];
-  try { return JSON.parse(str); } catch(e) { return []; }
-}
-
-// ═══════════════════════════════════════════════════════
-// 💰 骑手钱包 + 提现
-// ═══════════════════════════════════════════════════════
-
-// 骑手钱包概览
-app.get('/api/rider/wallet', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = req.query.phone;
-  if (!phone) throw new Error('缺少phone');
-  const rider = db.prepare('SELECT total_earnings, total_orders FROM riders WHERE phone = ?').get(phone);
-  if (!rider) throw new Error('骑手不存在');
-  const pending = db.prepare("SELECT COALESCE(SUM(amount),0) as total FROM withdraw_logs WHERE phone = ? AND status = 'pending'").get(phone);
-  const withdrawn = db.prepare("SELECT COALESCE(SUM(amount),0) as total FROM withdraw_logs WHERE phone = ? AND status = 'approved'").get(phone);
-  const available = Math.max(0, rider.total_earnings - (withdrawn.total||0) - (pending.total||0));
-  return {
-    total_earnings: rider.total_earnings,
-    available: available.toFixed(2) * 1,
-    pending: pending.total || 0,
-    withdrawn: withdrawn.total || 0
-  };
-}));
-
-// 申请提现
-app.post('/api/rider/withdraw', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { phone, amount } = req.body;
-  if (!phone || !amount) throw new Error('缺少参数');
-  const amt = parseFloat(amount);
-  if (isNaN(amt) || amt < 1) throw new Error('最低提现1元');
-  if (amt > 500) throw new Error('单次最多提现500元');
-  const wallet = db.prepare('SELECT total_earnings FROM riders WHERE phone = ?').get(phone);
-  if (!wallet) throw new Error('骑手不存在');
-  const withdrawn = db.prepare("SELECT COALESCE(SUM(amount),0) as total FROM withdraw_logs WHERE phone = ? AND status IN ('pending','approved')").get(phone);
-  const available = wallet.total_earnings - (withdrawn.total||0);
-  if (amt > available) throw new Error('余额不足，可提现: ' + available.toFixed(2) + '元');
-  db.prepare("INSERT INTO withdraw_logs (phone, amount, status, created_at) VALUES (?, ?, 'pending', datetime('now'))").run(phone, amt);
-  return { ok: true, message: '提现申请已提交，等待审核' };
-}));
-
-// 提现记录
-app.get('/api/rider/withdraw/logs', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = req.query.phone;
-  if (!phone) throw new Error('缺少phone');
-  return db.prepare('SELECT * FROM withdraw_logs WHERE phone = ? ORDER BY created_at DESC').all(phone);
-}));
-
-// 收入明细（已完成订单的收入）
-app.get('/api/rider/earnings', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = req.query.phone;
-  if (!phone) throw new Error('缺少phone');
-  const orders = db.prepare("SELECT order_no, price, completed_at FROM orders WHERE rider_phone = ? AND status = 'completed' ORDER BY completed_at DESC").all(phone);
-  return orders.map(o => ({
-    order_no: o.order_no,
-    amount: Math.round(o.price * 0.8 * 100) / 100,
-    time: o.completed_at
-  }));
-}));
-
-// 管理员审核提现
-app.post('/api/admin/withdraw/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
-  const { status, reason } = req.body; // status: approved / rejected
-  if (!['approved','rejected'].includes(status)) throw new Error('无效状态');
-  const log = db.prepare('SELECT * FROM withdraw_logs WHERE id = ?').get(req.params.id);
-  if (!log) throw new Error('记录不存在');
-  if (log.status !== 'pending') throw new Error('该申请已处理');
-  db.prepare('UPDATE withdraw_logs SET status = ?, reason = ? WHERE id = ?').run(status, reason||'', req.params.id);
-  return { ok: true };
-}));
-
-// 管理员查看所有提现申请
-app.get('/api/admin/withdraw', requireAdmin, (req, res) => JSON_RES(res, () => {
-  return db.prepare('SELECT w.*, r.name as rider_name FROM withdraw_logs w LEFT JOIN riders r ON w.phone = r.phone ORDER BY w.created_at DESC').all();
-}));
-
-// 删除骑手
-app.delete('/api/riders/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
- db.prepare('DELETE FROM riders WHERE id = ?').run(req.params.id);
- return { ok: true };
-}));
-
-// ─── GIF搜索（纯CSS动画贴纸，无外部依赖） ───
-const GIF_COLLECTION = [
-  { tags: ['hello','hi','wave','greeting','hey'], emoji: '👋', anim: 'wave', title: '打招呼' },
-  { tags: ['thanks','thankyou','grateful'], emoji: '🙏', anim: 'bounce', title: '感谢' },
-  { tags: ['happy','celebrate','yay','excited'], emoji: '🎉', anim: 'shake', title: '开心' },
-  { tags: ['funny','laugh','lol'], emoji: '😂', anim: 'shake', title: '笑死' },
-  { tags: ['cool','awesome','swag'], emoji: '😎', anim: 'bounce', title: '酷' },
-  { tags: ['love','heart','romantic','kiss'], emoji: '❤️', anim: 'heartbeat', title: '爱' },
-  { tags: ['sad','cry','tears'], emoji: '😭', anim: 'wave', title: '难过' },
-  { tags: ['food','eating','pizza','hungry'], emoji: '🍔', anim: 'bounce', title: '吃货' },
-  { tags: ['thumbsup','good','nice'], emoji: '👍', anim: 'bounce', title: '赞' },
-  { tags: ['bye','goodbye','seeyou'], emoji: '👋', anim: 'wave', title: '再见' },
-  { tags: ['wow','omg','surprise'], emoji: '🤯', anim: 'shake', title: '哇' },
-  { tags: ['angry','mad','rage'], emoji: '😡', anim: 'shake', title: '生气' },
-  { tags: ['sleep','tired','zzz'], emoji: '😴', anim: 'wave', title: '困' },
-  { tags: ['dance','dancing','party'], emoji: '💃', anim: 'bounce', title: '跳舞' },
-  { tags: ['cat','kitten','cute'], emoji: '🐱', anim: 'bounce', title: '喵' },
-  { tags: ['dog','puppy','doggy'], emoji: '🐶', anim: 'bounce', title: '汪' },
-  { tags: ['ok','yes','agree'], emoji: '👌', anim: 'bounce', title: 'OK' },
-  { tags: ['fire','lit','hot'], emoji: '🔥', anim: 'shake', title: '火' },
-  { tags: ['star','shine','sparkle'], emoji: '⭐', anim: 'bounce', title: '星' },
-  { tags: ['flower','bloom','spring'], emoji: '🌸', anim: 'wave', title: '花' },
-];
-app.get('/api/gif/search', (req, res) => {
-  const q = (req.query.q || 'hello').toLowerCase();
-  const matched = GIF_COLLECTION.filter(g => g.tags.some(t => t.includes(q) || q.includes(t)));
-  const gifs = matched.length ? matched : GIF_COLLECTION.slice(0, 8);
-  res.json({ gifs: gifs.map(g => ({ emoji: g.emoji, anim: g.anim, title: g.title, code: `[ANIM:${g.emoji}:${g.anim}]` })) });
+// ─── 404 处理 ────────────────────────────────────────────
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: '接口不存在', code: 'SYS_004' });
 });
 
-// 启动
+// ─── 全局错误处理 ────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+  if (err.name === 'MulterError') {
+    return res.status(400).json({ error: '文件上传失败: ' + err.message, code: 'SYS_007' });
+  }
+  res.status(500).json({
+    error: '服务器内部错误',
+    code: 'SYS_001',
+    detail: config.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// ─── 启动 ────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`\n🦥 校园懒人效率站服务已启动！`);
+  console.log(`\n🦥 校园懒人效率站 v3.0 已启动！`);
   console.log(`🌐 http://localhost:${PORT}`);
   console.log(`📱 用户端: http://localhost:${PORT}/app.html`);
   console.log(`🚴 骑手端: http://localhost:${PORT}/rider.html`);
   console.log(`🔒 管理端: http://localhost:${PORT}/admin.html`);
-  console.log(`👤 总管理员: admin / admin123\n`);
+  console.log(`👤 总管理员: admin / admin123`);
+  console.log(`📦 架构: 模块化 (${require('fs').readdirSync(path.join(__dirname, 'routes')).length} 个路由模块)\n`);
 });
+
+module.exports = app;
