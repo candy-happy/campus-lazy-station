@@ -167,8 +167,8 @@ app.post('/api/orders', requireAuth, (req, res) => JSON_RES(res, () => {
   const svc = db.prepare('SELECT * FROM services WHERE key = ?').get(type);
   const price = (svc ? svc.base_price : 2) + (tip || 0);
   const orderNo = genOrderNo();
-  db.prepare(`INSERT INTO orders (order_no, type, pickup_location, delivery_location, details, phone, price, tip, status, progress)
-    VALUES (?,?,?,?,?,?,?,?,'pending',10)`).run(orderNo, type, pickup_location, delivery_location, details || '', phone, price, tip || 0);
+  db.prepare(`INSERT INTO orders (order_no, type, pickup_location, delivery_location, details, phone, price, tip, status, progress, created_at)
+    VALUES (?,?,?,?,?,?,?,?,'pending',10,datetime('now','localtime'))`).run(orderNo, type, pickup_location, delivery_location, details || '', phone, price, tip || 0);
   
   // 奖励积分
   const pts = db.prepare('SELECT * FROM points WHERE phone = ?').get(phone);
