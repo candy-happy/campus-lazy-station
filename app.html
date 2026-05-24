@@ -1186,6 +1186,24 @@
 
     // ══════ INIT ══════
     document.addEventListener('DOMContentLoaded', async () => {
+  // 全局401拦截：token过期自动跳转登录
+  const origFetch = window.fetch;
+  window.fetch = function(...args) {
+    return origFetch.apply(this, args).then(res => {
+      if (res.status === 401) {
+        const s = JSON.parse(localStorage.getItem('lazy_session') || '{}');
+        if (s.role) {
+          localStorage.removeItem('lazy_token');
+          localStorage.removeItem('lazy_session');
+          API._token = null;
+          if (typeof showToast === 'function') showToast('登录已过期，请重新登录');
+          setTimeout(() => location.reload(), 1000);
+        }
+      }
+      return res;
+    });
+  };
+
       const saved = API.restoreSession();
       if (saved && saved.phone) {
         // 如果phone含脱敏标记，清除session要求重新登录
@@ -1795,7 +1813,7 @@
       try {
         const [pts, pdata] = await Promise.all([
           API.getPoints(currentUser.phone),
-          fetch('/api/users/' + currentUser.phone).then(r => r.json()).catch(() => null)
+          fetch('/api/users/' + currentUser.phone, { headers: API._headers() }).then(r => r.json()).catch(() => null)
         ]);
         userPoints = pts || { total: 0, history: [] };
         const totalOrders = pdata?.total_orders || orders.length;
@@ -2126,7 +2144,7 @@
       if (!container) return;
       container.innerHTML = '<div style="color:var(--text-secondary);font-size:13px;padding:8px">搜索中...</div>';
       try {
-        const res = await fetch('/api/gif/search?q=' + encodeURIComponent(keyword));
+        const res = await fetch('/api/gif/search?q=' + encodeURIComponent(keyword), { headers: API._headers() });
         const data = await res.json();
         if (!data.gifs || !data.gifs.length) { container.innerHTML = '<div style="color:var(--text-secondary);font-size:13px;padding:8px">暂无结果</div>'; return; }
         container.innerHTML = data.gifs.map(g =>

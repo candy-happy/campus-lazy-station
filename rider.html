@@ -420,6 +420,24 @@
  const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
 
  document.addEventListener('DOMContentLoaded', async () => {
+  // 全局401拦截：token过期自动跳转登录
+  const origFetch = window.fetch;
+  window.fetch = function(...args) {
+    return origFetch.apply(this, args).then(res => {
+      if (res.status === 401) {
+        const s = JSON.parse(localStorage.getItem('lazy_session') || '{}');
+        if (s.role) {
+          localStorage.removeItem('lazy_token');
+          localStorage.removeItem('lazy_session');
+          API._token = null;
+          if (typeof showToast === 'function') showToast('登录已过期，请重新登录');
+          setTimeout(() => location.reload(), 1000);
+        }
+      }
+      return res;
+    });
+  };
+
  // 暗色模式初始化
  if (localStorage.getItem('lazyTheme') === 'dark') document.body.classList.add('dark');
  const saved = API.restoreSession();
