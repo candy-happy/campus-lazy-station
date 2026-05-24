@@ -244,7 +244,7 @@
  <div class="page-section" id="page-ads">
  <div class="page-header"><h1 class="page-title">广告管理</h1><div class="page-actions"><button class="btn btn-primary" onclick="showAdForm()">+ 新增广告</button></div></div>
  <div class="table-card">
- <table class="data-table"><thead><tr><th>ID</th><th>标题</th><th>排序</th><th>状态</th><th>类型</th><th>有效期</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="adsTable"></tbody></table>
+ <table class="data-table"><thead><tr><th>预览</th><th>标题</th><th>排序</th><th>状态</th><th>链接</th><th>有效期</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="adsTable"></tbody></table>
  </div>
  </div>
  <div class="page-section" id="page-withdraw">
@@ -278,8 +278,18 @@
  <input type="hidden" id="adEditId">
  <div class="form-group"><label class="form-label">标题</label><input type="text" class="form-input" id="adTitle" required></div>
  <div class="form-group"><label class="form-label">描述</label><textarea class="form-input" id="adDesc" rows="2"></textarea></div>
- <div class="form-group"><label class="form-label">图标(emoji)</label><input type="text" class="form-input" id="adImage" value="🎁" maxlength="4"></div>
- <div class="form-group"><label class="form-label">链接类型</label><select class="form-input" id="adLinkType"><option value="none">无</option><option value="order">下单</option><option value="coupon">优惠券</option><option value="page">页面</option></select></div>
+ <div class="form-group"><label class="form-label">图标(emoji，无媒体时显示)</label><input type="text" class="form-input" id="adImage" value="🎁" maxlength="4"></div>
+ <div class="form-group">
+  <label class="form-label">媒体文件（图片/视频）</label>
+  <div style="display:flex;gap:8px;align-items:center">
+   <input type="file" class="form-input" id="adMediaFile" accept="image/*,video/*" style="padding:4px">
+   <button type="button" class="btn btn-secondary btn-sm" onclick="uploadAdMedia()">上传</button>
+  </div>
+  <div id="adMediaPreview" style="margin-top:6px;display:none"></div>
+  <input type="hidden" id="adMediaUrl">
+ </div>
+ <div class="form-group"><label class="form-label">外部链接URL（点击跳转）</label><input type="url" class="form-input" id="adLinkUrl" placeholder="https://example.com （留空则使用下方链接类型）"></div>
+ <div class="form-group"><label class="form-label">内部链接类型</label><select class="form-input" id="adLinkType"><option value="none">无</option><option value="order">下单</option><option value="coupon">优惠券</option><option value="page">页面</option><option value="url">外部链接</option></select></div>
  <div class="form-group"><label class="form-label">链接值(服务类型/页面)</label><input type="text" class="form-input" id="adLinkValue" placeholder="delivery / print 等"></div>
  <div class="form-group"><label class="form-label">排序(小=靠前)</label><input type="number" class="form-input" id="adSort" value="0" min="0"></div>
  <div class="form-group"><label class="form-label">状态</label><select class="form-input" id="adStatus"><option value="active">启用</option><option value="inactive">停用</option></select></div>
@@ -554,7 +564,18 @@
  function renderAdsTable() {
  const tb = document.getElementById('adsTable'); if (!tb) return;
  const statusLabel = s => s === 'active' ? '<span style="color:#27AE60">启用</span>' : '<span style="color:#999">停用</span>';
- tb.innerHTML = adsList.map(a => `<tr><td>${a.id}</td><td>${escHtml(a.title)}</td><td>${a.sort_order}</td><td>${statusLabel(a.status)}</td><td>${a.link_type||'-'}</td><td>${a.end_time||'永久'}</td><td>${a.created_at||''}</td><td><button class="btn btn-sm" onclick="editAd(${a.id})">编辑</button> <button class="btn btn-sm btn-danger" onclick="deleteAd(${a.id})">删除</button></td></tr>`).join('');
+ const mediaPreview = (url, img) => {
+  if (!url) return '<span style="font-size:20px">'+(img||'🎁')+'</span>';
+  const isVid = url.match(/\.(mp4|webm|mov)$/i);
+  if (isVid) return '<video src="'+url+'" style="width:60px;height:36px;object-fit:cover;border-radius:6px" muted></video>';
+  return '<img src="'+url+'" style="width:60px;height:36px;object-fit:cover;border-radius:6px" onerror="this.style.display=none">';
+ };
+ const linkLabel = a => {
+  if (a.link_url) return '<a href="'+escHtml(a.link_url)+'" target="blank" style="color:var(--primary);font-size:12px">🔗外部链接</a>';
+  const lt = { order:'下单', coupon:'优惠券', page:'页面', url:'外部链接', none:'-' };
+  return lt[a.link_type] || '-';
+ };
+ tb.innerHTML = adsList.map(a => `<tr><td>${mediaPreview(a.media_url, a.image)}</td><td>${escHtml(a.title)}</td><td>${a.sort_order}</td><td>${statusLabel(a.status)}</td><td>${linkLabel(a)}</td><td>${a.end_time||'永久'}</td><td>${a.created_at||''}</td><td><button class="btn btn-sm" onclick="editAd(${a.id})">编辑</button> <button class="btn btn-sm btn-danger" onclick="deleteAd(${a.id})">删除</button></td></tr>`).join('');
  }
  function showAdForm(ad) {
  document.getElementById('adEditId').value = ad ? ad.id : '';
@@ -564,6 +585,17 @@
  document.getElementById('adImage').value = ad ? ad.image : '\ud83c\udf81';
  document.getElementById('adLinkType').value = ad ? ad.link_type : 'none';
  document.getElementById('adLinkValue').value = ad ? ad.link_value : '';
+ document.getElementById('adLinkUrl').value = ad ? (ad.link_url||'') : '';
+ document.getElementById('adMediaUrl').value = ad ? (ad.media_url||'') : '';
+ const preview = document.getElementById('adMediaPreview');
+ if (ad && ad.media_url) {
+  const isVid = ad.media_url.match(/\.(mp4|webm|mov)$/i);
+  preview.innerHTML = isVid
+   ? '<video src="'+ad.media_url+'" style="max-width:200px;max-height:100px;border-radius:8px" controls muted></video> <button type="button" class="btn btn-danger btn-sm" onclick="clearAdMedia()">移除</button>'
+   : '<img src="'+ad.media_url+'" style="max-width:200px;max-height:100px;border-radius:8px" onerror="this.style.display=\'none\'"> <button type="button" class="btn btn-danger btn-sm" onclick="clearAdMedia()">移除</button>';
+  preview.style.display = 'block';
+ } else { preview.innerHTML = ''; preview.style.display = 'none'; }
+ document.getElementById('adMediaFile').value = '';
  document.getElementById('adSort').value = ad ? ad.sort_order : 0;
  document.getElementById('adStatus').value = ad ? ad.status : 'active';
  document.getElementById('adStartTime').value = ad && ad.start_time ? ad.start_time.replace(' ','T') : '';
@@ -581,6 +613,8 @@
  title: document.getElementById('adTitle').value,
  description: document.getElementById('adDesc').value,
  image: document.getElementById('adImage').value,
+ media_url: document.getElementById('adMediaUrl').value,
+ link_url: document.getElementById('adLinkUrl').value,
  link_type: document.getElementById('adLinkType').value,
  link_value: document.getElementById('adLinkValue').value,
  sort_order: parseInt(document.getElementById('adSort').value) || 0,
@@ -594,7 +628,38 @@
  closeModal('adFormModal'); await loadAds();
  } catch(err) { showToast(err.message); }
  }
- async function deleteAd(id) {
+ // --- ad media upload ---
+ async function uploadAdMedia() {
+  const fileInput = document.getElementById('adMediaFile');
+  if (!fileInput.files.length) return showToast('请先选择文件');
+  const fd = new FormData();
+  fd.append('media', fileInput.files[0]);
+  try {
+   const res = await fetch('/api/ads/admin/upload', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token') || '') },
+    body: fd
+   }).then(r => r.json());
+   if (res.error) return showToast(res.error);
+   document.getElementById('adMediaUrl').value = res.url;
+   const preview = document.getElementById('adMediaPreview');
+   if (res.isVideo) {
+    preview.innerHTML = '<video src="'+res.url+'" style="max-width:200px;max-height:100px;border-radius:8px" controls muted></video> <button type="button" class="btn btn-danger btn-sm" onclick="clearAdMedia()">移除</button>';
+   } else {
+    preview.innerHTML = '<img src="'+res.url+'" style="max-width:200px;max-height:100px;border-radius:8px"> <button type="button" class="btn btn-danger btn-sm" onclick="clearAdMedia()">移除</button>';
+   }
+   preview.style.display = 'block';
+   showToast('媒体上传成功');
+  } catch(err) { showToast('上传失败: '+err.message); }
+ }
+ function clearAdMedia() {
+  document.getElementById('adMediaUrl').value = '';
+  document.getElementById('adMediaPreview').innerHTML = '';
+  document.getElementById('adMediaPreview').style.display = 'none';
+  document.getElementById('adMediaFile').value = '';
+ }
+
+  async function deleteAd(id) {
  if (!confirm('确定删除此广告？')) return;
  try { await API.deleteAd(id); showToast('已删除'); await loadAds(); } catch(err) { showToast(err.message); }
  }
@@ -608,7 +673,7 @@
  window.cancelOrder = cancelOrder; window.removeRider = removeRider; window.refreshData = refreshData; window.exportData = exportData;
  window.approveWithdraw = approveWithdraw;
  window.showAddAdminModal = () => showModal('addAdminModal'); window.closeModal = closeModal;
- window.showAdForm = showAdForm; window.editAd = editAd; window.saveAd = saveAd; window.deleteAd = deleteAd;
+ window.showAdForm = showAdForm; window.editAd = editAd; window.saveAd = saveAd; window.deleteAd = deleteAd; window.uploadAdMedia = uploadAdMedia; window.clearAdMedia = clearAdMedia;
  // 初始加载广告
  loadAds();
  

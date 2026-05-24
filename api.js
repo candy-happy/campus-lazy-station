@@ -130,19 +130,19 @@ const API = {
 
   // ─── 广告 ───
   async getAds() { return fetch('/api/ads', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
-  async getAdminAds() { return fetch('/api/admin/ads', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
+  async getAdminAds() { return fetch('/api/ads/admin', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
   async addAd(data) {
-    const res = await fetch('/api/admin/ads', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
+    const res = await fetch('/api/ads/admin', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
     if (res.error) throw new Error(res.error);
     return res;
   },
   async updateAd(id, data) {
-    const res = await fetch('/api/admin/ads/' + id, { method: 'PUT', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
+    const res = await fetch('/api/ads/admin/' + id, { method: 'PUT', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
     if (res.error) throw new Error(res.error);
     return res;
   },
   async deleteAd(id) {
-    const res = await fetch('/api/admin/ads/' + id, { method: 'DELETE', headers: this._headers() }).then(r => r.json());
+    const res = await fetch('/api/ads/admin/' + id, { method: 'DELETE', headers: this._headers() }).then(r => r.json());
     if (res.error) throw new Error(res.error);
     return res;
   },

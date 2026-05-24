@@ -120,6 +120,8 @@ db.exec(`
     title TEXT NOT NULL,
     description TEXT,
     image TEXT,
+    media_url TEXT,
+    link_url TEXT,
     link_type TEXT DEFAULT 'none',
     link_value TEXT,
     sort_order INTEGER DEFAULT 0,

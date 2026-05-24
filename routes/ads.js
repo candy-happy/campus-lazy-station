@@ -1,9 +1,33 @@
 // routes/ads.js - 广告轮播路由
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const db = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
+
+// ─── 广告媒体上传配置 ────────────────────────────────────
+const ADS_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'ads');
+if (!fs.existsSync(ADS_UPLOAD_DIR)) fs.mkdirSync(ADS_UPLOAD_DIR, { recursive: true });
+
+const adStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, ADS_UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || (file.mimetype.startsWith('video') ? '.mp4' : '.jpg');
+    cb(null, 'ad-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + ext);
+  }
+});
+
+const adUpload = multer({
+  storage: adStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) cb(null, true);
+    else cb(new Error('只支持图片(jpg/png/gif/webp)和视频(mp4/webm)文件'));
+  }
+});
 
 // ─── 前端：获取活跃广告 ───────────────────────────────────
 router.get('/', (req, res) => JSON_RES(res, () =>
@@ -15,13 +39,21 @@ router.get('/admin', requireAdmin, (req, res) => JSON_RES(res, () =>
   db.prepare('SELECT * FROM ads ORDER BY sort_order ASC, created_at DESC').all()
 ));
 
+// ─── 管理员：上传广告媒体（图片/视频） ─────────────────────
+router.post('/admin/upload', requireAdmin, adUpload.single('media'), (req, res) => JSON_RES(res, () => {
+  if (!req.file) return makeError('请选择文件', ErrorCode.PARAM_MISSING);
+  const url = '/uploads/ads/' + req.file.filename;
+  const isVideo = req.file.mimetype.startsWith('video/');
+  return { url, filename: req.file.filename, mimetype: req.file.mimetype, size: req.file.size, isVideo };
+}));
+
 // ─── 管理员：新增广告 ─────────────────────────────────────
 router.post('/admin', requireAdmin, (req, res) => JSON_RES(res, () => {
-  const { title, description, image, link_type, link_value, sort_order, status, start_time, end_time } = req.body;
+  const { title, description, image, media_url, link_url, link_type, link_value, sort_order, status, start_time, end_time } = req.body;
   if (!title) return makeError('请填写标题', ErrorCode.PARAM_MISSING);
-  db.prepare(`INSERT INTO ads (title, description, image, link_type, link_value, sort_order, status, start_time, end_time, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'), datetime('now','localtime'))`)
-    .run(title, description||'', image||'', link_type||'none', link_value||'', sort_order||0, status||'active', start_time||null, end_time||null);
+  db.prepare(`INSERT INTO ads (title, description, image, media_url, link_url, link_type, link_value, sort_order, status, start_time, end_time, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'), datetime('now','localtime'))`)
+    .run(title, description||'', image||'', media_url||'', link_url||'', link_type||'none', link_value||'', sort_order||0, status||'active', start_time||null, end_time||null);
   return { ok: true };
 }));
 
@@ -29,19 +61,24 @@ router.post('/admin', requireAdmin, (req, res) => JSON_RES(res, () => {
 router.put('/admin/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
   const ad = db.prepare('SELECT * FROM ads WHERE id = ?').get(req.params.id);
   if (!ad) return makeError('广告不存在', ErrorCode.NOT_FOUND);
-  const { title, description, image, link_type, link_value, sort_order, status, start_time, end_time } = req.body;
-  db.prepare(`UPDATE ads SET title=?, description=?, image=?, link_type=?, link_value=?, sort_order=?, status=?,
+  const { title, description, image, media_url, link_url, link_type, link_value, sort_order, status, start_time, end_time } = req.body;
+  db.prepare(`UPDATE ads SET title=?, description=?, image=?, media_url=?, link_url=?, link_type=?, link_value=?, sort_order=?, status=?,
     start_time=?, end_time=?, updated_at=datetime('now','localtime') WHERE id=?`)
     .run(
-      title??ad.title, description??ad.description, image??ad.image, link_type??ad.link_type,
-      link_value??ad.link_value, sort_order??ad.sort_order, status??ad.status,
-      start_time??ad.start_time, end_time??ad.end_time, req.params.id
+      title??ad.title, description??ad.description, image??ad.image, media_url??ad.media_url,
+      link_url??ad.link_url, link_type??ad.link_type, link_value??ad.link_value, sort_order??ad.sort_order,
+      status??ad.status, start_time??ad.start_time, end_time??ad.end_time, req.params.id
     );
   return { ok: true };
 }));
 
 // ─── 管理员：删除广告 ─────────────────────────────────────
 router.delete('/admin/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const ad = db.prepare('SELECT media_url FROM ads WHERE id = ?').get(req.params.id);
+  if (ad?.media_url) {
+    const fp = path.join(__dirname, '..', ad.media_url.replace(/^\//, ''));
+    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+  }
   db.prepare('DELETE FROM ads WHERE id = ?').run(req.params.id);
   return { ok: true };
 }));
