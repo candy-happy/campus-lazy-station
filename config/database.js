@@ -218,22 +218,28 @@ db.exec(`
 
 // ─── 基础数据初始化 ─────────────────────────────────────
 const initData = db.transaction(() => {
-  // 服务
-  const insertService = db.prepare(`INSERT OR IGNORE INTO services (key, name, icon, base_price) VALUES (?, ?, ?, ?)`);
-  [
-    ['delivery', '代取外卖', '🍱', 2],
-    ['express', '代取快递', '📦', 2],
-    ['print', '打印复印', '🖨️', 1],
-    ['purchase', '代买东西', '🛒', 3],
-    ['laundry', '代取洗衣', '👕', 2],
-    ['errand', '跑腿办事', '🏃', 5],
-    ['other', '其他服务', '💡', 3]
-  ].forEach(s => insertService.run(...s));
+  // 服务（仅在表为空时插入，避免旧表无UNIQUE约束导致重复）
+  const serviceCount = db.prepare('SELECT COUNT(*) as n FROM services').get().n;
+  if (serviceCount === 0) {
+    const insertService = db.prepare(`INSERT INTO services (key, name, icon, base_price) VALUES (?, ?, ?, ?)`);
+    [
+      ['delivery', '代取外卖', '🍱', 2],
+      ['express', '代取快递', '📦', 2],
+      ['print', '打印复印', '🖨️', 1],
+      ['purchase', '代买东西', '🛒', 3],
+      ['laundry', '代取洗衣', '👕', 2],
+      ['errand', '跑腿办事', '🏃', 5],
+      ['other', '其他服务', '💡', 3]
+    ].forEach(s => insertService.run(...s));
+  }
 
-  // 优惠券
-  const insertCoupon = db.prepare(`INSERT OR IGNORE INTO coupons (id, name, value, min_amount, expire_at) VALUES (?, ?, ?, ?, ?)`);
-  insertCoupon.run(1, '新用户专享', 5, 0, '2026-12-31 23:59');
-  insertCoupon.run(2, '满10减3', 3, 10, '2026-12-31 23:59');
+  // 优惠券（仅在表为空时插入）
+  const couponCount = db.prepare('SELECT COUNT(*) as n FROM coupons').get().n;
+  if (couponCount === 0) {
+    const insertCoupon = db.prepare(`INSERT INTO coupons (id, name, value, min_amount, expire_at) VALUES (?, ?, ?, ?, ?)`);
+    insertCoupon.run(1, '新用户专享', 5, 0, '2026-12-31 23:59');
+    insertCoupon.run(2, '满10减3', 3, 10, '2026-12-31 23:59');
+  }
 
   // 总管理员
   const bcrypt = require('bcryptjs');
