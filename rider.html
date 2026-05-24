@@ -495,6 +495,7 @@
  updateStatusUI('online');
  await Promise.all([refreshOrders(), updateProfile()]);
  setInterval(refreshOrders, 15000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && currentRider) refreshOrders(); });
  showToast('登录成功！');
  } catch (e) { showToast(e.message || '登录失败'); }
  }

@@ -1184,6 +1184,40 @@
       }
     }
 
+    // ══════ 订单数据同步 ══════
+    let _orderPollTimer = null;
+
+    async function refreshOrders() {
+      if (!currentUser) return;
+      try {
+        const o = await API.getOrders({ phone: currentUser.phone });
+        const newOrders = Array.isArray(o) ? o : [];
+        newOrders.forEach(no => {
+          const old = orders.find(o2 => o2.id === no.id);
+          if (old && old.status !== no.status) {
+            const labels = {accepted:"已接单",running:"配送中",completed:"已完成",cancelled:"已取消"};
+            if (labels[no.status]) showToast("订单 #" + (no.order_no||no.id) + " " + labels[no.status]);
+          }
+        });
+        orders = newOrders;
+        renderOrders();
+        updateMePage();
+      } catch(e) { console.error("refreshOrders error:", e); }
+    }
+
+    function startOrderPolling() {
+      stopOrderPolling();
+      _orderPollTimer = setInterval(refreshOrders, 10000);
+    }
+
+    function stopOrderPolling() {
+      if (_orderPollTimer) { clearInterval(_orderPollTimer); _orderPollTimer = null; }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && currentUser) refreshOrders();
+    });
+
     // ══════ INIT ══════
     document.addEventListener('DOMContentLoaded', async () => {
   // 全局401拦截：token过期自动跳转登录
@@ -1215,6 +1249,7 @@
           var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + (saved.name || '...');
           showMainApp();
           await loadData();
+          startOrderPolling();
         }
       } else {
         showLoginPage();
@@ -1282,6 +1317,7 @@
         var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + userName;
         showMainApp();
         await loadData();
+        startOrderPolling();
         showToast('欢迎回来！');
       } catch(e) {
         showToast('登录失败: ' + (e.message || '请重试'));
@@ -1642,6 +1678,7 @@
     // ══════ Tab鍒囨崲 ══════
     function switchTab(tab) {
  currentTab = tab;
+ if (currentUser) refreshOrders();
  document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
  // 根据当前tab文本匹配高亮
  const labelMap = { all: '全部', pending: '待接单', running: '进行中', completed: '已完成' };
@@ -1695,11 +1732,9 @@
           tip: currentTip
         });
         if (res.error) throw new Error(res.error);
-        orders.unshift(res.order || res);
         closeModal('orderModal');
-        renderOrders();
-        updateMePage();
-        showToast('...');
+        await refreshOrders();
+        showToast('下单成功！');
       } catch(e) {
         showToast(e.message || '...');
       } finally {
@@ -1773,9 +1808,8 @@
       try {
         await API.cancelOrder(id, '鐢ㄦ埛取消');
         const idx = orders.findIndex(o => (o.order_no||o.id) == id);
-        if (idx >= 0) { orders[idx].status = 'cancelled'; }
         closeModal('detailModal');
-        renderOrders();
+        await refreshOrders();
         showToast('订单已取消');
       } catch(e) { showToast(e.message || '取消澶辫触'); }
     }
