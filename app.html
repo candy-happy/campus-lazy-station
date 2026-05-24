@@ -414,264 +414,7 @@
     /* ═══════════════════════════════════════════════════════
        📝 下单弹窗
     ═══════════════════════════════════════════════════════ */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-      backdrop-filter: blur(4px);
-    }
-    .modal-overlay.active { display: flex; }
-    .modal-content {
-      background: var(--card);
-      width: 100%;
-      max-width: 480px;
-      max-height: 90vh;
-      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-      overflow: hidden;
-      animation: slideUp 0.3s ease;
-    }
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-    .modal-header {
-      padding: 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .modal-title { font-size: 18px; font-weight: 700; }
-    .modal-close {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--bg);
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-body {
-      padding: 20px;
-      overflow-y: auto;
-      max-height: calc(90vh - 140px);
-    }
-    .form-group { margin-bottom: 20px; }
-    .form-label {
-      display: block;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: var(--text);
-    }
-    .form-label span { color: var(--danger); margin-left: 2px; }
-    .form-input, .form-select, .form-textarea {
-      width: 100%;
-      padding: 14px 16px;
-      border: 2px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 15px;
-      background: var(--card);
-      color: var(--text);
-      transition: all 0.2s;
-      outline: none;
-    }
-    .form-input:focus, .form-select:focus, .form-textarea:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(255,107,53,0.1);
-    }
-    .form-textarea { min-height: 100px; resize: none; }
-    .form-select { cursor: pointer; }
-    
-    .price-display {
-      background: linear-gradient(135deg, #FFF0EB, #FFF5F0);
-      border-radius: var(--radius);
-      padding: 16px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .price-label { font-size: 12px; color: var(--text-secondary); }
-    .price-value { font-size: 32px; font-weight: 900; color: var(--primary); }
-    
-    .submit-btn {
-      width: 100%;
-      background: var(--gradient);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      padding: 16px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .submit-btn:active { transform: scale(0.98); opacity: 0.9; }
-
-    /* ═══════════════════════════════════════════════════════
-       🔽 底部导航
-    ═══════════════════════════════════════════════════════ */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 480px;
-      background: var(--card);
-      display: flex;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
-      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-      z-index: 100;
-    }
-    .nav-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 12px 0;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-    }
-    .nav-item::before {
-      content: '';
-      position: absolute;
-      top: 4px;
-      left: 50%;
-      transform: translateX(-50%) scaleX(0);
-      width: 24px;
-      height: 3px;
-      background: var(--primary);
-      border-radius: 2px;
-      transition: transform 0.2s;
-    }
-    .nav-item.active::before { transform: translateX(-50%) scaleX(1); }
-    .nav-item.active .nav-icon { color: var(--primary); }
-    .nav-item.active .nav-text { color: var(--primary); font-weight: 700; }
-    .nav-icon { font-size: 22px; margin-bottom: 4px; color: var(--text-secondary); transition: color 0.2s; }
-    .nav-text { font-size: 11px; color: var(--text-secondary); transition: color 0.2s; }
-
-    /* 内容区域底部留白 */
-    .content-area { padding-bottom: 80px; }
-
-    /* ═══════════════════════════════════════════════════════
-       🎨 通用样式
-    ═══════════════════════════════════════════════════════ */
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-secondary);
-    }
-    .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
-    .empty-text { font-size: 14px; }
-    
-    .toast {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0.9);
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 14px 28px;
-      border-radius: var(--radius);
-      font-size: 14px;
-      z-index: 10000;
-      opacity: 0;
-      transition: all 0.3s;
-      pointer-events: none;
-    }
-    .toast.show {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-
-    /* 订单详情 */
-    .detail-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .detail-row:last-child { border-bottom: none; }
-    .detail-label { color: var(--text-secondary); font-size: 14px; }
-    .detail-value { font-weight: 600; font-size: 14px; }
-
-    /* 页面切换动画 */
-    .page { display: none; animation: fadeIn 0.3s ease; }
-    .page.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    /* ═══════════════════════════════════════════════════════
-       🧱 校园墙样式
-    ═══════════════════════════════════════════════════════ */
-    .wall-tab {
-      flex: 1; text-align: center; padding: 12px 0; font-size: 14px; font-weight: 500;
-      color: var(--text-secondary); cursor: pointer; position: relative; transition: all 0.2s;
-    }
-    .wall-tab.active { color: var(--primary); font-weight: 700; }
-    .wall-tab.active::after {
-      content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-      width: 24px; height: 3px; background: var(--primary); border-radius: 2px;
-    }
-    .wall-card {
-      background: var(--card); border-radius: var(--radius); padding: 16px;
-      box-shadow: var(--shadow); margin-bottom: 12px;
-    }
-    .wall-card-header {
-      display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
-    }
-    .wall-avatar {
-      width: 40px; height: 40px; border-radius: 50%; background: var(--gradient);
-      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px;
-    }
-    .wall-nickname { font-weight: 700; font-size: 14px; }
-    .wall-time { font-size: 12px; color: var(--text-light); }
-    .wall-content { font-size: 15px; line-height: 1.6; margin-bottom: 10px; word-break: break-word; }
-    .wall-images {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px;
-    }
-    .wall-images img {
-      width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px;
-    }
-    .wall-actions {
-      display: flex; gap: 24px; padding-top: 10px; border-top: 1px solid var(--border);
-    }
-    .wall-action {
-      display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-secondary);
-      cursor: pointer; transition: color 0.2s; background: none; border: none; padding: 4px 0;
-    }
-    .wall-action:active { color: var(--primary); }
-    .wall-action.liked { color: var(--danger); }
-    .comment-item {
-      padding: 10px 0; border-bottom: 1px solid var(--border);
-    }
-    .comment-item:last-child { border-bottom: none; }
-    .comment-nickname { font-weight: 600; font-size: 13px; color: var(--primary); }
-    .comment-text { font-size: 13px; line-height: 1.5; margin-top: 2px; }
-    .comment-time { font-size: 11px; color: var(--text-light); margin-top: 2px; }
-    .comment-input-bar {
-      display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
-    }
-    .comment-input-bar input {
-      flex: 1; padding: 10px 14px; border: 2px solid var(--border); border-radius: 20px;
-      font-size: 14px; background: var(--card); color: var(--text); outline: none;
-    }
-    .comment-input-bar button {
-      padding: 10px 18px; border: none; border-radius: 20px; background: var(--gradient);
-      color: white; font-size: 14px; font-weight: 600; cursor: pointer;
-    }
-  @keyframes animBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes animShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-10deg)}75%{transform:rotate(10deg)}}@keyframes animWave{0%,100%{transform:rotate(0)}25%{transform:rotate(20deg)}75%{transform:rotate(-15deg)}}@keyframes animHeartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}.anim-bounce{animation:animBounce 1s infinite}.anim-shake{animation:animShake 0.6s infinite}.anim-wave{animation:animWave 1s infinite}.anim-heartbeat{animation:animHeartbeat 1s infinite}
-
-    /* === Dark Mode Detail Overrides === */
-    body.dark .banner-btn { background: var(--card); color: var(--accent); border: 1px solid var(--border); }
-    body.dark .modal-content { background: var(--card); }
+    /* modal-overlay 已移除，改用 sub-page */
     body.dark .tab-bar { background: var(--card); border-top: 1px solid var(--border); }
     body.dark .service-card { background: var(--card); border-color: var(--border); }
     body.dark .order-card { background: var(--card); border-color: var(--border); }
@@ -887,73 +630,64 @@
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════
-         📝 下单弹窗
-    ═══════════════════════════════════════════════════════ -->
-    <div class="modal-overlay" id="orderModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <span class="modal-title" id="modalTitle">代取外卖</span>
-          <button class="modal-close" onclick="closeModal('orderModal')">✕</button>
-        </div>
-        <div class="modal-body">
-          <form <input type="hidden" id="tipInput" value="0" />
-            id="orderForm">
-            <div class="form-group">
-              <label class="form-label">取货地点 <span>*</span></label>
-              <input type="text" class="form-input" id="pickupLocation" placeholder="例如：西门外卖柜" required />
+    <!-- 📝 下单子页面 -->
+    <div class="sub-page" id="orderPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('orderPage_sub')">←</button>
+        <span class="sub-page-title" id="modalTitle">代取外卖</span>
+      </div>
+      <div class="sub-page-body">
+        <form id="orderForm">
+          <input type="hidden" id="tipInput" value="0" />
+          <div class="form-group">
+            <label class="form-label">取货地点 <span>*</span></label>
+            <input type="text" class="form-input" id="pickupLocation" placeholder="例如：西门外卖柜" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">送达地点 <span>*</span></label>
+            <input type="text" class="form-input" id="deliveryLocation" placeholder="例如：3号宿舍楼301室" required />
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;cursor:pointer;display:none" id="addrHint" onclick="closeSubPage('orderPage_sub');showAddresses()">💡 点击选择常用地址</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">详细说明 <span>*</span></label>
+            <textarea class="form-textarea" id="orderDetails" placeholder="请描述物品信息、取件码、备注等..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">联系电话 <span>*</span></label>
+            <input type="tel" class="form-input" id="phone" placeholder="您的手机号" required />
+          </div>
+          <div class="form-group" id="tipSection" style="display:none">
+            <label class="form-label">🪙 加小费（骑手优先接单）</label>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button type="button" class="tip-btn active" onclick="setTip(0)">无小费</button>
+              <button type="button" class="tip-btn" onclick="setTip(2)">+2元</button>
+              <button type="button" class="tip-btn" onclick="setTip(5)">+5元</button>
+              <button type="button" class="tip-btn" onclick="setTip(10)">+10元</button>
             </div>
-            <div class="form-group">
-              <label class="form-label">送达地点 <span>*</span></label>
-              <input type="text" class="form-input" id="deliveryLocation" placeholder="例如：3号宿舍楼301室" required />
-              <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;cursor:pointer;display:none" id="addrHint" onclick="showAddresses()">💡 点击选择常用地址</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">详细说明 <span>*</span></label>
-              <textarea class="form-textarea" id="orderDetails" placeholder="请描述物品信息、取件码、备注等..." required></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">联系电话 <span>*</span></label>
-              <input type="tel" class="form-input" id="phone" placeholder="您的手机号" required />
-            </div>
-            
-            <!-- 小费 -->
-            <div class="form-group" id="tipSection" style="display:none">
-              <label class="form-label">🪙 加小费（骑手优先接单）</label>
-              <div style="display:flex;gap:8px;margin-top:8px">
-                <button type="button" class="tip-btn active" onclick="setTip(0)">无小费</button>
-                <button type="button" class="tip-btn" onclick="setTip(2)">+2元</button>
-                <button type="button" class="tip-btn" onclick="setTip(5)">+5元</button>
-                <button type="button" class="tip-btn" onclick="setTip(10)">+10元</button>
-              </div>
-              <style>
-                .tip-btn { flex:1; padding:10px 0; border:2px solid var(--border); background:var(--card); border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
-                .tip-btn.active { border-color:var(--primary); background:#FFF0EB; color:var(--primary); }
-              </style>
-            </div>
-            
-            <div class="price-display">
-              <div class="price-label">预估费用</div>
-              <div class="price-value" id="priceValue">¥2.00</div>
-            </div>
-            
-            <button type="submit" class="submit-btn">提交订单</button>
-          </form>
-        </div>
+            <style>
+              .tip-btn { flex:1; padding:10px 0; border:2px solid var(--border); background:var(--card); border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+              .tip-btn.active { border-color:var(--primary); background:#FFF0EB; color:var(--primary); }
+            </style>
+          </div>
+          <div class="price-display">
+            <div class="price-label">预估费用</div>
+            <div class="price-value" id="priceValue">¥2.00</div>
+          </div>
+          <button type="submit" class="submit-btn">提交订单</button>
+        </form>
       </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
          📋 订单详情弹窗
     ═══════════════════════════════════════════════════════ -->
-    <div class="modal-overlay" id="detailModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <span class="modal-title">订单详情</span>
-          <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
-        </div>
-        <div class="modal-body" id="detailContent"></div>
+    <!-- 📋 订单详情子页面 -->
+    <div class="sub-page" id="detailPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('detailPage_sub')">←</button>
+        <span class="sub-page-title">订单详情</span>
       </div>
+      <div class="sub-page-body" id="detailContent"></div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
@@ -977,68 +711,77 @@
       <button id="wallFab" onclick="openWallPostModal()" style="position:fixed;bottom:80px;right:calc(50% - 210px);width:52px;height:52px;border-radius:50%;background:var(--gradient);color:white;font-size:24px;border:none;box-shadow:var(--shadow-lg);cursor:pointer;z-index:90">✏️</button>
     </div>
 
-    <!-- 校园墙发帖弹窗 -->
-    <div class="modal-overlay" id="wallPostModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <span class="modal-title">发帖</span>
-          <button class="modal-close" onclick="closeModal('wallPostModal')">✕</button>
+    <!-- 校园墙发帖子页面 -->
+    <div class="sub-page" id="wallPostPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('wallPostPage_sub')">←</button>
+        <span class="sub-page-title">发帖</span>
+      </div>
+      <div class="sub-page-body">
+        <textarea id="wallPostContent" class="form-textarea" placeholder="分享你的校园生活..." style="min-height:100px"></textarea>
+        <div id="wallFilePreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+          <label style="cursor:pointer;display:flex;align-items:center;gap:4px;padding:8px 16px;background:var(--bg,#f5f5f5);border-radius:20px;font-size:13px">
+            📷 <span>图片/视频</span>
+            <input type="file" id="wallFileInput" accept="image/*,video/*" multiple style="display:none" onchange="previewWallFiles(this)" />
+          </label>
+          <button onclick="submitWallPost()" class="submit-btn" style="flex:1">发布</button>
         </div>
-        <div class="modal-body">
-          <textarea id="wallPostContent" class="form-textarea" placeholder="分享你的校园生活..." style="min-height:100px"></textarea>
-          <div id="wallFilePreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
-          <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
-            <label style="cursor:pointer;display:flex;align-items:center;gap:4px;padding:8px 16px;background:var(--bg,#f5f5f5);border-radius:20px;font-size:13px">
-              📷 <span>图片/视频</span>
-              <input type="file" id="wallFileInput" accept="image/*,video/*" multiple style="display:none" onchange="previewWallFiles(this)" />
-            </label>
-            <button onclick="submitWallPost()" class="submit-btn" style="flex:1">发布</button>
+      </div>
+    </div>
+    </div>
+
+    <!-- 帖子详情子页面 -->
+    <div class="sub-page" id="wallDetailPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('wallDetailPage_sub')">←</button>
+        <span class="sub-page-title">帖子详情</span>
+      </div>
+      <div class="sub-page-body" id="wallDetailContent"></div>
+    </div>
+
+    <!-- 聊天列表子页面 -->
+    <div class="sub-page" id="chatListPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('chatListPage_sub')">←</button>
+        <span class="sub-page-title">💬 我的消息</span>
+      </div>
+      <div id="chatListBody" style="overflow-y:auto"></div>
+    </div>
+
+    <!-- 聊天对话子页面 -->
+    <div class="sub-page" id="chatConvPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('chatConvPage_sub')">←</button>
+        <span class="sub-page-title" id="chatConvTitle">对话</span>
+      </div>
+      <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px;min-height:calc(100vh - 180px)"></div>
+      <div style="display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--border);background:var(--card);align-items:center;position:relative">
+        <span style="font-size:22px;cursor:pointer" onclick="toggleEmojiPicker()">😊</span>
+        <input id="chatInput" placeholder="输入消息..." style="flex:1;padding:10px;border:1px solid var(--border);border-radius:20px;outline:none;background:var(--bg);color:var(--text)" onkeydown="if(event.key==='Enter')sendChatMsg()" />
+        <button onclick="sendChatMsg()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer">发送</button>
+        <div id="emojiPicker" style="display:none;position:absolute;bottom:60px;left:8px;right:8px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow-lg);z-index:9999;max-height:260px;overflow-y:auto">
+          <div style="display:flex;gap:8px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:8px">
+            <span id="tabEmoji" style="font-size:13px;font-weight:600;color:var(--primary);cursor:pointer;padding:4px 8px;border-radius:8px;background:var(--bg)">😊 表情</span>
+            <span id="tabGif" style="font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:8px" onclick="switchPickerTab('gif')">🖼️ GIF</span>
           </div>
-          
-        </div>
-      </div>
-    </div>
-
-    <!-- 帖子详情弹窗 -->
-    <div class="modal-overlay" id="wallDetailModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <span class="modal-title">帖子详情</span>
-          <button class="modal-close" onclick="closeModal('wallDetailModal')">✕</button>
-        </div>
-        <div class="modal-body" id="wallDetailContent"></div>
-      </div>
-    </div>
-
-    <!-- 聊天列表页 -->
-    <div class="modal-overlay" id="chatListModal">
-      <div class="modal-content" style="max-height:90vh">
-        <div class="modal-header">
-          <span class="modal-title">💬 我的消息</span>
-          <button class="modal-close" onclick="closeModal('chatListModal')">✕</button>
-        </div>
-        <div class="modal-body" id="chatListBody" style="padding:0;overflow-y:auto;max-height:calc(90vh - 56px)"></div>
-      </div>
-    </div>
-
-    <!-- 聊天对话页 -->
-    <div class="modal-overlay" id="chatConvModal">
-      <div class="modal-content" style="max-height:95vh;display:flex;flex-direction:column">
-        <div class="modal-header">
-          <span class="modal-title" id="chatConvTitle">对话</span>
-          <button class="modal-close" onclick="closeModal('chatConvModal')">✕</button>
-        </div>
-        <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px;min-height:300px"></div>
-        <div style="display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--border);background:var(--card);align-items:center;position:relative">
-          <span style="font-size:22px;cursor:pointer" onclick="toggleEmojiPicker()">😊</span>
-          <input id="chatInput" placeholder="输入消息..." style="flex:1;padding:10px;border:1px solid var(--border);border-radius:20px;outline:none;background:var(--bg);color:var(--text)" onkeydown="if(event.key==='Enter')sendChatMsg()" />
-          <button onclick="sendChatMsg()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer">发送</button>
-          <div id="emojiPicker" style="display:none;position:absolute;bottom:60px;left:8px;right:8px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow-lg);z-index:9999;max-height:260px;overflow-y:auto">
-            <div style="display:flex;gap:8px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:8px">
-              <span id="tabEmoji" style="font-size:13px;font-weight:600;color:var(--primary);cursor:pointer;padding:4px 8px;border-radius:8px;background:var(--bg)">😊 表情</span>
-              <span id="tabGif" style="font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:8px" onclick="switchPickerTab('gif')">🖼️ GIF</span>
+          <div id="emojiTabContent"><div style="display:flex;flex-wrap:wrap;gap:4px" id="emojiGrid"></div></div>
+          <div id="gifTabContent" style="display:none">
+            <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('hello')">👋 打招呼</span>
+              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('thanks')">🙏 感谢</span>
+              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('happy')">😊 开心</span>
+              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('funny')">😂 搞笑</span>
+              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('cool')">😎 酷</span>
+              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('love')">❤️ 爱</span>
+              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('sad')">😢 难过</span>
+              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('food')">🍔 美食</span>
             </div>
-            <div id="emojiTabContent"><div style="display:flex;flex-wrap:wrap;gap:4px" id="emojiGrid"></div></div>
+            <div id="gifResults" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
             <div id="gifTabContent" style="display:none">
               <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
                 <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('hello')">👋 打招呼</span>
@@ -1060,42 +803,41 @@
     <!-- ═══════════════════════════════════════════════════════
          ⭐ 评价弹窗
     ═══════════════════════════════════════════════════════ -->
-    <div class="modal-overlay" id="rateModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <span class="modal-title">评价订单</span>
-          <button class="modal-close" onclick="closeModal('rateModal')">&#10005;</button>
+    <!-- 评价子页面 -->
+    <div class="sub-page" id="ratePage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('ratePage_sub')">←</button>
+        <span class="sub-page-title">评价订单</span>
+      </div>
+      <div class="sub-page-body" style="text-align:center;padding:24px">
+        <div style="font-size:36px;margin-bottom:12px">⭐</div>
+        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px">
+          <span class="star" onclick="setStar(1)" style="font-size:28px;cursor:pointer">&#9733;</span>
+          <span class="star" onclick="setStar(2)" style="font-size:28px;cursor:pointer">&#9733;</span>
+          <span class="star" onclick="setStar(3)" style="font-size:28px;cursor:pointer">&#9733;</span>
+          <span class="star" onclick="setStar(4)" style="font-size:28px;cursor:pointer">&#9733;</span>
+          <span class="star" onclick="setStar(5)" style="font-size:28px;cursor:pointer">&#9733;</span>
         </div>
-        <div class="modal-body" style="text-align:center;padding:24px">
-          <div style="font-size:36px;margin-bottom:12px">⭐</div>
-          <div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px">
-            <span class="star" onclick="setStar(1)" style="font-size:28px;cursor:pointer">&#9733;</span>
-            <span class="star" onclick="setStar(2)" style="font-size:28px;cursor:pointer">&#9733;</span>
-            <span class="star" onclick="setStar(3)" style="font-size:28px;cursor:pointer">&#9733;</span>
-            <span class="star" onclick="setStar(4)" style="font-size:28px;cursor:pointer">&#9733;</span>
-            <span class="star" onclick="setStar(5)" style="font-size:28px;cursor:pointer">&#9733;</span>
-          </div>
-          <input type="hidden" id="starCount" value="5" />
-          <input type="hidden" id="rateOrderId" value="" />
-          <textarea id="rateComment" class="form-textarea" placeholder="写点评价吧..." style="width:100%;min-height:80px;margin-bottom:16px"></textarea>
-          <button onclick="submitRating()" class="submit-btn" style="width:100%">提交评价</button>
-        </div>
+        <input type="hidden" id="starCount" value="5" />
+        <input type="hidden" id="rateOrderId" value="" />
+        <textarea id="rateComment" class="form-textarea" placeholder="写点评价吧..." style="width:100%;min-height:80px;margin-bottom:16px"></textarea>
+        <button onclick="submitRating()" class="submit-btn" style="width:100%">提交评价</button>
       </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
          🔔 通知弹窗
     ═══════════════════════════════════════════════════════ -->
-    <div class="modal-overlay" id="notifModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <span class="modal-title">通知</span>
-          <button class="modal-close" onclick="closeModal('notifModal')">&#10005;</button>
-        </div>
-        <div class="modal-body" style="padding:0;max-height:60vh;overflow-y:auto">
-          <div id="notifList"></div>
-        </div>
+    <!-- 通知子页面 -->
+    <div class="sub-page" id="notifPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('notifPage_sub')">←</button>
+        <span class="sub-page-title">通知</span>
       </div>
+      <div class="sub-page-body" style="padding:0">
+        <div id="notifList"></div>
+      </div>
+    </div>
     </div>
 
 
@@ -1154,6 +896,29 @@
     let notifications = [];
     let addresses = [];
     let currentTip = 0;
+    
+    // ═══ 子页面栈管理 ═══
+    let _pageStack = [];
+    function openSubPage(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      _pageStack.push(id);
+      el.classList.add('active');
+      /* overflow managed by sub-page */
+    }
+    function closeSubPage(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('active');
+      _pageStack = _pageStack.filter(p => p !== id);
+      if (_pageStack.length === 0) document.body.style.overflow = '';
+    }
+    function goBack() {
+      if (_pageStack.length > 0) closeSubPage(_pageStack[_pageStack.length - 1]);
+    }
+    // 物理返回键支持
+    window.addEventListener('popstate', () => goBack());
+
     let currentService = 'delivery';
     let currentTab = 'all';
 
@@ -1448,8 +1213,8 @@
     function openWallPostModal() {
       if (!currentUser) return showLoginPage();
       document.getElementById('wallPostContent').value = ''; wallSelectedFiles = []; document.getElementById('wallFilePreview').innerHTML = ''; if(document.getElementById('wallFileInput'))document.getElementById('wallFileInput').value = '';
-      document.getElementById('wallPostModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
+      openSubPage('wallPostPage_sub');
+      /* overflow managed by sub-page */
     }
 
     async function submitWallPost() {
@@ -1457,7 +1222,7 @@
       if (!content) return showToast('请输入内容');
       const res = await API.wallPost({ phone: currentUser.phone, nickname: currentUser.name, content });
       if (res.error) return showToast(res.error);
-      closeModal('wallPostModal');
+      closeSubPage('wallPostPage_sub');
       showToast('发布成功！');
       loadWallFeed();
     }
@@ -1519,8 +1284,8 @@
           <button onclick="submitWallComment(${data.id})">发送</button>
         </div>
       `;
-      document.getElementById('wallDetailModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
+      openSubPage('wallDetailPage_sub');
+      /* overflow managed by sub-page */
     }
 
     async function submitWallComment(postId) {
@@ -1553,7 +1318,7 @@
         <div style="font-weight:700;margin-bottom:12px">📝 TA的帖子</div>
         ${posts.length ? posts.map(p => `
           <div class="wall-card" style="margin-bottom:12px">
-            <div class="wall-content" onclick="closeModal('wallDetailModal');showWallDetail(${p.id})">${escHtml(p.content)}</div>
+            <div class="wall-content" onclick="closeSubPage('wallDetailPage_sub');showWallDetail(${p.id})">${escHtml(p.content)}</div>
             ${p.images && p.images.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + (Array.isArray(p.images) ? p.images : []).map(img => {
               const url = typeof img === 'object' ? img.url : img;
               const isVid = typeof img === 'object' ? img.isVideo : false;
@@ -1563,8 +1328,8 @@
           </div>
         `).join('') : '<div style="text-align:center;color:var(--text-secondary,#888);padding:20px">暂无帖子</div>'}
       `;
-      document.getElementById('wallDetailModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
+      openSubPage('wallDetailPage_sub');
+      /* overflow managed by sub-page */
     }
 
     // 关注/取消关注（用户主页按钮）
@@ -1598,8 +1363,8 @@
 
     async function openChatList() {
       if (!currentUser) return showLoginPage();
-      document.getElementById('chatListModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
+      openSubPage('chatListPage_sub');
+      /* overflow managed by sub-page */
       await loadChatList();
     }
 
@@ -1631,9 +1396,9 @@
       currentConvId = convId;
       currentConvPhone = otherPhone;
       document.getElementById('chatConvTitle').textContent = otherName || otherPhone;
-      document.getElementById('chatListModal').classList.remove('active');
-      document.getElementById('chatConvModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
+      closeSubPage('chatListPage_sub');
+      openSubPage('chatConvPage_sub');
+      /* overflow managed by sub-page */
       await loadChatMessages();
       // 自动刷新
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
@@ -1743,8 +1508,8 @@
       document.getElementById('priceValue').textContent = '...' + s.price.toFixed(2);
       document.getElementById('tipSection').style.display = 'block';
       document.getElementById('orderForm').reset();
-      document.getElementById('orderModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
+      openSubPage('orderPage_sub');
+      /* overflow managed by sub-page */
     }
 
     function updatePrice() {
@@ -1775,7 +1540,7 @@
           tip: currentTip
         });
         if (res.error) throw new Error(res.error);
-        closeModal('orderModal');
+        closeSubPage('orderPage_sub');
         await refreshOrders();
         showToast('下单成功！');
       } catch(e) {
@@ -1842,8 +1607,8 @@
           ${canChat?'<button onclick="openChatFromOrder(\''+o.id+'\',\''+o.rider_phone+'\',\''+escHtml(o.rider_name||'')+'\')" style="width:100%;margin-top:12px;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius);font-size:14px;cursor:pointer">💬 联系骑手</button>':''}
         </div>
       `;
-      document.getElementById('detailModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
+      openSubPage('detailPage_sub');
+      /* overflow managed by sub-page */
     }
 
     async function cancelOrder(id) {
@@ -1851,7 +1616,7 @@
       try {
         await API.cancelOrder(id, '鐢ㄦ埛取消');
         const idx = orders.findIndex(o => (o.order_no||o.id) == id);
-        closeModal('detailModal');
+        closeSubPage('detailPage_sub');
         await refreshOrders();
         showToast('订单已取消');
       } catch(e) { showToast(e.message || '取消澶辫触'); }
@@ -1861,7 +1626,7 @@
       document.getElementById('rateOrderId').value = id;
       document.getElementById('rateComment').value = '';
       document.querySelectorAll('.star').forEach((s,i) => s.textContent = i < 5 ? '...' : '...');
-      document.getElementById('rateModal').classList.add('active');
+      openSubPage('ratePage_sub');
     }
 
     async function setStar(n) {
@@ -1877,8 +1642,8 @@
         await API.rateOrder(id, stars, comment, currentUser.phone);
         const idx = orders.findIndex(o => (o.order_no||o.id) == id);
         if (idx >= 0) { orders[idx].rating_stars = stars; orders[idx].rating_comment = comment; }
-        closeModal('rateModal');
-        closeModal('detailModal');
+        closeSubPage('ratePage_sub');
+        closeSubPage('detailPage_sub');
         renderOrders();
         showToast('...');
       } catch(e) { showToast(e.message || '...'); }
@@ -1940,37 +1705,40 @@
             <div style="font-size:12px;color:var(--text-light);margin-top:4px">${fmtTime(new Date(n.created_at).getTime())}</div>
           </div>
         </div>`).join('') : '';
-      document.getElementById('notifModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
+      openSubPage('notifPage_sub');
+      /* overflow managed by sub-page */
     }
 
     // ══════ 关闭寮圭獥 ══════
     function closeModal(id) {
-      document.getElementById(id)?.classList.remove('active');
-      document.body.style.overflow = '';
+      // 兼容映射：旧的modal id → 新的sub-page id
+      const map = {
+        'orderModal':'orderPage_sub','detailModal':'detailPage_sub',
+        'wallPostModal':'wallPostPage_sub','wallDetailModal':'wallDetailPage_sub',
+        'chatListModal':'chatListPage_sub','chatConvModal':'chatConvPage_sub',
+        'rateModal':'ratePage_sub','notifModal':'notifPage_sub',
+        'settingsModal':'settingsPage_sub','profileModal':'profilePage_sub',
+        'genericModal':'genericPage_sub'
+      };
+      const target = map[id] || id;
+      closeSubPage(target);
     }
     function openModal(title, bodyHtml) {
-      let m = document.getElementById('genericModal');
-      if (!m) {
-        m = document.createElement('div');
-        m.id = 'genericModal';
-        m.className = 'modal-overlay';
-        m.innerHTML = '<div class="modal-content" style="max-height:85vh"><div class="modal-header"><span class="modal-title" id="genericModalTitle"></span><button class="modal-close" onclick="closeModal(\'genericModal\')">\u2715</button></div><div id="genericModalBody" style="overflow-y:auto;max-height:calc(85vh - 56px)"></div></div>';
-        document.body.appendChild(m);
+      let el = document.getElementById('genericPage_sub');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'genericPage_sub';
+        el.className = 'sub-page';
+        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'genericPage_sub\')">←</button><span class="sub-page-title" id="genericPageTitle"></span></div><div class="sub-page-body" id="genericPageBody"></div>';
+        document.body.appendChild(el);
       }
-      document.getElementById('genericModalTitle').textContent = title;
-      document.getElementById('genericModalBody').innerHTML = bodyHtml;
-      m.classList.add('active');
-      document.body.style.overflow = 'hidden';
+      document.getElementById('genericPageTitle').textContent = title;
+      document.getElementById('genericPageBody').innerHTML = bodyHtml;
+      openSubPage('genericPage_sub');
     }
 
     // ══════ 关闭寮圭獥浜嬩欢 ══════
-    document.addEventListener('click', e => {
-      if (e.target.classList.contains('modal-overlay')) {
-        e.target.classList.remove('active');
-        document.body.style.overflow = '';
-      }
-    });
+    // 弹窗点击关闭已移除，改用子页面返回按钮
 
 
     // 小费选择
@@ -2097,10 +1865,15 @@
     function showSettings() {
       if (!currentUser) return showToast('请先登录');
       const isDark = document.body.classList.contains('dark');
-      const html = '<div class="modal-overlay active" id="settingsModal" onclick="if(event.target===this)closeModal(\'settingsModal\')">' +
-        '<div class="modal-content" style="max-height:80vh;overflow-y:auto">' +
-        '<div class="modal-header"><span class="modal-title">⚙️ 设置</span><button class="modal-close" onclick="closeModal(\'settingsModal\')">✕</button></div>' +
-        '<div class="modal-body">' +
+      let el = document.getElementById('settingsPage_sub');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'settingsPage_sub';
+        el.className = 'sub-page';
+        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'settingsPage_sub\')">←</button><span class="sub-page-title">⚙️ 设置</span></div><div class="sub-page-body"></div>';
+        document.body.appendChild(el);
+      }
+      el.querySelector('.sub-page-body').innerHTML =
         '<div style="padding:16px 0;border-bottom:1px solid var(--border)">' +
         '<div style="font-weight:600;margin-bottom:12px">外观</div>' +
         '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">' +
@@ -2110,22 +1883,19 @@
         '<div style="padding:16px 0;border-bottom:1px solid var(--border)">' +
         '<div style="font-weight:600;margin-bottom:12px">账户</div>' +
         '<div style="font-size:14px;color:var(--text-secondary);margin-bottom:8px">手机号: ' + escHtml(currentUser.phone) + '</div>' +
-        '<div style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">注册时间: ' + (currentUser.created_at || '未知') + '</div>' +
         '</div>' +
         '<div style="padding:16px 0">' +
         '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyUser\');location.reload()}" style="width:100%;padding:12px;border:none;border-radius:12px;background:var(--danger);color:#fff;font-size:15px;font-weight:600;cursor:pointer">退出登录</button>' +
         '</div>' +
-        '<div style="text-align:center;padding:16px 0;color:var(--text-light);font-size:12px">校园懒人效率站 v1.0</div>' +
-        '</div></div></div>';
-      document.body.insertAdjacentHTML('beforeend', html);
-      document.body.style.overflow = 'hidden';
+        '<div style="text-align:center;padding:16px 0;color:var(--text-light);font-size:12px">校园懒人效率站 v3.0</div>';
+      openSubPage('settingsPage_sub');
     }
     function toggleDark(on) {
       if (on) { document.body.classList.add('dark'); } else { document.body.classList.remove('dark'); }
       localStorage.setItem('lazyTheme', on ? 'dark' : 'light');
       const btn = document.getElementById('themeBtn');
       if (btn) btn.textContent = on ? '☀️' : '🌙';
-      closeModal('settingsModal');
+      closeSubPage('settingsPage_sub');
       setTimeout(() => showSettings(), 200);
     }
 
@@ -2137,10 +1907,15 @@
       const u = await API.getUser(currentUser.phone);
       if (!u) return showToast('加载失败');
       const avatars = ['🦥','🐱','🐶','🦊','🐼','🐨','🦄','🐸','🐧','🦋','🌸','⭐','🔥','💎','🎭'];
-      const html = '<div class="modal-overlay active" id="profileModal" onclick="if(event.target===this)closeModal(\'profileModal\')">' +
-        '<div class="modal-content" style="max-height:85vh;overflow-y:auto">' +
-        '<div class="modal-header"><span class="modal-title">👤 个人资料</span><button class="modal-close" onclick="closeModal(\'profileModal\')">✕</button></div>' +
-        '<div class="modal-body">' +
+      let el = document.getElementById('profilePage_sub');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'profilePage_sub';
+        el.className = 'sub-page';
+        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'profilePage_sub\')">←</button><span class="sub-page-title">👤 个人资料</span></div><div class="sub-page-body"></div>';
+        document.body.appendChild(el);
+      }
+      el.querySelector('.sub-page-body').innerHTML =
         '<div style="text-align:center;padding:16px 0;border-bottom:1px solid var(--border)">' +
         '<div style="font-size:64px" id="profileAvatarPreview">' + escHtml(u.avatar || '🦥') + '</div>' +
         '<div style="margin-top:8px">' +
@@ -2152,10 +1927,8 @@
         '<div class="form-group"><label class="form-label">宿舍楼</label><input type="text" class="form-input" id="profileDorm" value="' + escHtml(u.dormitory || '') + '" placeholder="例如：3号宿舍楼" /></div>' +
         '<div class="form-group"><label class="form-label">房间号</label><input type="text" class="form-input" id="profileRoom" value="' + escHtml(u.room || '') + '" placeholder="例如：301" /></div>' +
         '<input type="hidden" id="profileAvatar" value="' + escHtml(u.avatar || '') + '" />' +
-        '<button onclick="saveProfile()" style="width:100%;padding:14px;border:none;border-radius:12px;background:var(--primary);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px">保存修改</button>' +
-        '</div></div></div>';
-      document.body.insertAdjacentHTML('beforeend', html);
-      document.body.style.overflow = 'hidden';
+        '<button onclick="saveProfile()" style="width:100%;padding:14px;border:none;border-radius:12px;background:var(--primary);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px">保存修改</button>';
+      openSubPage('profilePage_sub');
     }
     async function saveProfile() {
       if (!currentUser) return;
@@ -2171,7 +1944,7 @@
         const res = await API.updateUser(currentUser.phone, data);
         if (res.error) return showToast(res.error);
         showToast('保存成功');
-        closeModal('profileModal');
+        closeSubPage('profilePage_sub');
         updateMePage();
       } catch(e) { showToast('保存失败'); }
     }
