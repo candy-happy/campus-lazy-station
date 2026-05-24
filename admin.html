@@ -17,6 +17,14 @@
  --shadow: 0 4px 24px rgba(26,26,46,0.08);
  --shadow-lg: 0 12px 48px rgba(26,26,46,0.14);
  }
+    body.dark {
+      --bg: #0D1117; --card-bg: #161B22; --text: #E6EDF3;
+      --text-muted: #8B949E; --border: #30363D;
+      --orange: #FF8C55; --orange-light: #FF9F70; --orange-pale: #2A1F14;
+      --dark: #0D1117; --dark-2: #161B22;
+      --shadow: 0 2px 12px rgba(0,0,0,0.4); --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+      --input-bg: #0D1117; --card-hover: #1C2333;
+    }
  * { box-sizing: border-box; margin: 0; padding: 0; }
  body {
  font-family: 'Noto Sans SC', sans-serif; background: var(--bg);
@@ -109,7 +117,24 @@
  .pending-badge { background: var(--red); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-left: 8px; }
  @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .charts-grid { grid-template-columns: 1fr; } }
  @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; padding: 16px; } .stats-grid { grid-template-columns: 1fr; } }
- </style>
+ 
+    /* === Dark Mode Detail Overrides === */
+    body.dark { background: var(--bg); color: var(--text); }
+    body.dark .header, body.dark .sidebar { background: var(--dark-2); border-color: var(--border); }
+    body.dark .card, body.dark .stat-card { background: var(--card-bg); border-color: var(--border); }
+    body.dark table { background: var(--card-bg); }
+    body.dark th { background: var(--dark-2); color: var(--text); border-color: var(--border); }
+    body.dark td { border-color: var(--border); color: var(--text); }
+    body.dark input, body.dark textarea, body.dark select {
+      background: var(--input-bg); color: var(--text); border-color: var(--border);
+    }
+    body.dark .btn-primary { background: var(--orange); }
+    body.dark .toast { background: var(--card-bg); color: var(--text); border-color: var(--border); }
+    body.dark .error-banner { background: #3D1F1F; color: #FF8E8E; border-color: #5C2E2E; }
+    body.dark tr:hover td { background: var(--card-hover); }
+    body.dark .status-badge { border-color: transparent; }
+    body.dark .modal-content { background: var(--card-bg); }
+</style>
 <script src="api.js"></script>
 </head>
 <body>
@@ -132,6 +157,14 @@
  <div class="sidebar-header">
  <div class="sidebar-logo"><div class="logo-icon">🦥</div>懒人效率站</div>
  <div class="sidebar-subtitle">管理后台</div>
+ <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.08);border-radius:8px">
+  <span style="font-size:12px;opacity:0.8">🌙 深色模式</span>
+  <label style="position:relative;width:42px;height:22px;display:inline-block;cursor:pointer">
+    <input type="checkbox" id="darkToggle" onchange="toggleDark(this.checked)" style="opacity:0;width:0;height:0;position:absolute">
+    <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.15);border-radius:22px;transition:.3s"></span>
+    <span style="position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s"></span>
+  </label>
+ </div>
  </div>
  <nav class="sidebar-nav">
  <div class="nav-section">
@@ -290,7 +323,9 @@
  currentAdmin = { username: saved.username, role: saved.role };
  await showDashboard();
  }
- });
+ 
+    const dt = document.getElementById('darkToggle');
+    if (dt) dt.checked = document.body.classList.contains('dark');});
 
  async function login(e) {
  e.preventDefault();
@@ -576,6 +611,16 @@
  window.showAdForm = showAdForm; window.editAd = editAd; window.saveAd = saveAd; window.deleteAd = deleteAd;
  // 初始加载广告
  loadAds();
- </script>
+ 
+    function toggleDark(isDark) {
+      document.body.classList.toggle('dark', isDark);
+      localStorage.setItem('lazyTheme', isDark ? 'dark' : 'light');
+    }
+    // Init dark mode from localStorage
+    (function() {
+      const saved = localStorage.getItem('lazyTheme');
+      if (saved === 'dark') document.body.classList.add('dark');
+    })();
+  </script>
 </body>
 </html>

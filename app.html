@@ -668,6 +668,31 @@
       color: white; font-size: 14px; font-weight: 600; cursor: pointer;
     }
   @keyframes animBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes animShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-10deg)}75%{transform:rotate(10deg)}}@keyframes animWave{0%,100%{transform:rotate(0)}25%{transform:rotate(20deg)}75%{transform:rotate(-15deg)}}@keyframes animHeartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}.anim-bounce{animation:animBounce 1s infinite}.anim-shake{animation:animShake 0.6s infinite}.anim-wave{animation:animWave 1s infinite}.anim-heartbeat{animation:animHeartbeat 1s infinite}
+
+    /* === Dark Mode Detail Overrides === */
+    body.dark .banner-btn { background: var(--card); color: var(--accent); border: 1px solid var(--border); }
+    body.dark .modal-content { background: var(--card); }
+    body.dark .tab-bar { background: var(--card); border-top: 1px solid var(--border); }
+    body.dark .service-card { background: var(--card); border-color: var(--border); }
+    body.dark .order-card { background: var(--card); border-color: var(--border); }
+    body.dark input, body.dark textarea, body.dark select {
+      background: var(--input-bg, var(--bg)); color: var(--text); border-color: var(--border);
+    }
+    body.dark .status-badge { border-color: transparent; }
+    body.dark .wall-post { background: var(--card); border-color: var(--border); }
+    body.dark .chat-bubble { background: var(--card); border-color: var(--border); }
+    body.dark .coupon-card { background: var(--card); border-color: var(--border); }
+    body.dark .point-item { background: var(--card); border-color: var(--border); }
+    body.dark .address-card { background: var(--card); border-color: var(--border); }
+    body.dark .notification-item { background: var(--card); border-color: var(--border); }
+    body.dark .fab { background: var(--primary); box-shadow: 0 4px 16px rgba(255,107,53,0.3); }
+    body.dark .header { background: var(--bg); }
+    body.dark .empty-state { color: var(--text-secondary); }
+    body.dark .profile-card { background: var(--card); border-color: var(--border); }
+    body.dark .settings-item { background: var(--card); border-color: var(--border); }
+    body.dark .emoji-picker { background: var(--card); border-color: var(--border); }
+    body.dark .toast { background: var(--card); color: var(--text); border-color: var(--border); }
+    body.dark .error-banner { background: #3D1F1F; color: #FF8E8E; border-color: #5C2E2E; }
 </style>
 <script src="api.js"></script>
 </head>
