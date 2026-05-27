@@ -53,20 +53,25 @@ router.get('/', requireAuth, (req, res) => JSON_RES(res, () => {
   }
   sql += ' ORDER BY created_at DESC';
 
-  return db.prepare(sql).all(...params).map(o => ({
-    ...o,
-    phone: o.phone,
-    phoneDisplay: fmtPhone(o.phone),
-    rider_phone: o.rider_phone,
-    rider_phoneDisplay: fmtPhone(o.rider_phone)
-  }));
+  return db.prepare(sql).all(...params).map(o => {
+    const user = db.prepare('SELECT name FROM users WHERE phone = ?').get(o.phone);
+    return {
+      ...o,
+      phone: o.phone,
+      phoneDisplay: fmtPhone(o.phone),
+      user_name: user ? user.name : '',
+      rider_phone: o.rider_phone,
+      rider_phoneDisplay: fmtPhone(o.rider_phone)
+    };
+  });
 }));
 
 // ─── 订单详情 ─────────────────────────────────────────────
 router.get('/:id', requireAuth, (req, res) => JSON_RES(res, () => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
   if (!order) return makeError('订单不存在', ErrorCode.ORDER_NOT_FOUND, 404);
-  return { ...order, phone: order.phone, phoneDisplay: fmtPhone(order.phone) };
+  const user = db.prepare('SELECT name FROM users WHERE phone = ?').get(order.phone);
+  return { ...order, phone: order.phone, phoneDisplay: fmtPhone(order.phone), user_name: user ? user.name : '' };
 }));
 
 // ─── 骑手接单 ─────────────────────────────────────────────

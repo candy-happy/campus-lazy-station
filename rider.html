@@ -563,7 +563,22 @@
  const o = arr.find(x => x.order_no === orderNo);
  if (!o) return;
  const content = $('detailContent');
- content.innerHTML = '<div style="margin-bottom:16px"><div style="font-size:24px;margin-bottom:4px">'+(typeEmoji[o.type]||'📦')+' '+(serviceNames[o.type]||'服务')+'</div><div class="order-info"><p>📍 取货：'+escHtml(o.pickup_location)+'</p><p>📍 送达：'+escHtml(o.delivery_location)+'</p><p>📝 备注：'+escHtml(o.details||'无')+'</p><p>💰 金额：¥'+((o.price||0).toFixed(2))+'</p></div><div style="font-size:12px;color:var(--text-muted)">订单号：'+o.order_no+' · '+fmtTime(o.created_at)+'</div></div>'+(mode==='accept'?'<button data-order="'+o.order_no+'" onclick="acceptOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#2ECC71;color:white;font-size:16px;font-weight:700;cursor:pointer">接单 🛵</button>':(o.status==='accepted'?'<button data-order="'+o.order_no+'" onclick="startDelivery(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#3498DB;color:white;font-size:16px;font-weight:700;cursor:pointer">开始配送 🚀</button>':(o.status==='running'?'<button data-order="'+o.order_no+'" onclick="completeOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#2ECC71;color:white;font-size:16px;font-weight:700;cursor:pointer">确认送达 ✅</button>':'<p style="text-align:center;color:var(--text-muted)">订单已结束</p>')));
+ // 用户信息栏（已接单/配送中时显示）
+   const userInfo = (mode !== 'accept' && o.phone) ? '<div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg);border-radius:12px;margin-bottom:12px"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">'+(o.user_name||o.phone||'?')[0]+'</div><div style="flex:1"><div style="font-size:14px;font-weight:600">'+escHtml(o.user_name||'用户')+'</div><div style="font-size:12px;color:var(--text-muted)">手机: '+fmtPhone(o.phone)+'</div></div></div>' : '';
+   // 操作按钮
+   let actionBtn = '';
+   if (mode === 'accept') {
+     actionBtn = '<button data-order="'+o.order_no+'" onclick="acceptOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#2ECC71;color:white;font-size:16px;font-weight:700;cursor:pointer">接单 🛵</button>';
+   } else if (o.status === 'accepted') {
+     actionBtn = '<button data-order="'+o.order_no+'" onclick="startDelivery(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#3498DB;color:white;font-size:16px;font-weight:700;cursor:pointer">开始配送 🚀</button>';
+   } else if (o.status === 'running') {
+     actionBtn = '<button data-order="'+o.order_no+'" onclick="completeOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#2ECC71;color:white;font-size:16px;font-weight:700;cursor:pointer">确认送达 ✅</button>';
+   } else {
+     actionBtn = '<p style="text-align:center;color:var(--text-muted)">订单已结束</p>';
+   }
+   // 联系用户按钮（已接单/配送中/已完成都可联系）
+   const chatBtn = (mode !== 'accept' && o.phone) ? '<button data-order="'+o.order_no+'" onclick="openChatFromOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:var(--green);color:white;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px">💬 联系用户</button>' : '';
+   content.innerHTML = '<div style="margin-bottom:16px"><div style="font-size:24px;margin-bottom:4px">'+(typeEmoji[o.type]||'📦')+' '+(serviceNames[o.type]||'服务')+'</div><div class="order-info"><p>📍 取货：'+escHtml(o.pickup_location)+'</p><p>📍 送达：'+escHtml(o.delivery_location)+'</p><p>📝 备注：'+escHtml(o.details||'无')+'</p><p>💰 金额：¥'+((o.price||0).toFixed(2))+'</p></div><div style="font-size:12px;color:var(--text-muted)">订单号：'+o.order_no+' · '+fmtTime(o.created_at)+'</div></div>'+userInfo+actionBtn+chatBtn;
  $('detailModal').classList.add('active');
  document.body.style.overflow = 'hidden';
  }
@@ -796,6 +811,28 @@
    await loadRiderChatMessages();
  }
 
+ // ═══════════════════════════════════════════════════════
+ // 💬 从订单详情页打开与用户的聊天
+ // ═══════════════════════════════════════════════════════
+ async function openChatFromOrder(orderNo) {
+   if (!currentRider) return showToast('请先登录');
+   const o = myOrders.find(x => x.order_no === orderNo) || newOrders.find(x => x.order_no === orderNo);
+   if (!o || !o.phone) return showToast('无法获取用户信息');
+   try {
+     const conv = await API.chatGetOrCreateConversation({
+       user_phone: o.phone,
+       rider_phone: currentRider.phone,
+       order_id: o.id || o.order_no,
+       order_title: (serviceNames[o.type]||'服务') + ' - ' + (o.pickup_location||'')
+     });
+     closeModal('detailModal');
+     await openRiderConv(conv.id, o.phone, o.user_name || '用户');
+   } catch(e) {
+     showToast('打开聊天失败');
+     console.error('openChatFromOrder error:', e);
+   }
+ }
+
  function escHtml(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
   // Sanitize order object for safe HTML rendering
   function safeOrder(o) {
@@ -981,6 +1018,7 @@
  window.openRiderChatList = openRiderChatList;
  window.openRiderConv = openRiderConv;
  window.sendChatMsg = sendChatMsg;
+ window.openChatFromOrder = openChatFromOrder;
  window.loadWalletInfo = loadWalletInfo;
  window.doWithdraw = doWithdraw;
  window.showEarningsDetail = showEarningsDetail;
