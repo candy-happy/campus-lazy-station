@@ -5,9 +5,16 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "db:init": "node db-init.js",
     "dev": "node server.js",
-    "db:reset": "node db-init.js"
+    "db:init": "node db-init.js",
+    "db:reset": "node db-init.js",
+    "pm2": "pm2",
+    "pm2:start": "pm2 start server.js --name campus-lazy",
+    "pm2:stop": "pm2 stop campus-lazy",
+    "pm2:restart": "pm2 restart campus-lazy",
+    "pm2:log": "pm2 log campus-lazy",
+    "pm2:status": "pm2 list",
+    "pm2:delete": "pm2 delete campus-lazy"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -16,7 +23,8 @@
     "dotenv": "^17.4.2",
     "express": "^4.21.0",
     "iconv-lite": "^0.7.2",
-    "multer": "^2.1.1"
+    "multer": "^2.1.1",
+    "pm2": "^7.0.1"
   },
   "devDependencies": {
     "acorn": "^8.16.0"
