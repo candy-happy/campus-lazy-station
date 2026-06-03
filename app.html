@@ -191,11 +191,35 @@
       height: 100%;
       object-fit: cover;
     }
+    .banner-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 4;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(4px);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      color: #333;
+      transition: all 0.2s;
+      opacity: 0;
+    }
+    .banner:hover .banner-arrow, .banner-arrow.show { opacity: 1; }
+    .banner-arrow:hover { background: rgba(255,255,255,0.95); transform: translateY(-50%) scale(1.1); }
+    .banner-arrow:active { transform: translateY(-50%) scale(0.9); }
+    .banner-arrow.left { left: 8px; }
+    .banner-arrow.right { right: 8px; }
     .banner-dots {
       display: flex;
       justify-content: center;
       gap: 6px;
-      margin-top: 12px;
+      margin-top: 8px;
     }
     .banner-dot {
       width: 6px;
@@ -203,6 +227,7 @@
       border-radius: 3px;
       background: var(--border);
       transition: all 0.3s;
+      cursor: pointer;
     }
     .banner-dot.active { width: 20px; background: var(--primary); }
 
@@ -1505,6 +1530,8 @@
         <!-- Banner -->
         <div class="banner-wrap">
           <div class="banner" id="banner1" onclick="clickAd(adsIdx)">
+            <button class="banner-arrow left" onclick="event.stopPropagation();switchAd(-1)" aria-label="上一个">‹</button>
+            <button class="banner-arrow right" onclick="event.stopPropagation();switchAd(1)" aria-label="下一个">›</button>
             <div class="banner-title" id="bannerTitle"></div>
             <div class="banner-illustration" id="bannerIcon"></div>
           </div>
@@ -2028,14 +2055,47 @@
     let adsList = [];
     let adsIdx = 0, adsTimer = null;
     let adsImpressionSent = new Set(); // 避免重复记录展示
+    // 触摸滑动状态
+    let bannerTouchX0 = 0, bannerTouchY0 = 0;
+
     function renderAds(ads) {
       adsList = ads;
       const dots = document.getElementById('bannerDots');
       if (!ads.length) { if (dots) dots.style.display = 'none'; return; }
-      if (dots) { dots.style.display = 'flex'; dots.innerHTML = ads.map((_,i)=>'<span class="banner-dot'+(i===0?' active':'')+'"></span>').join(''); }
+      if (dots) { dots.style.display = 'flex'; dots.innerHTML = ads.map((_,i)=>'<span class="banner-dot'+(i===0?' active':'')+'" onclick="event.stopPropagation();showAd('+i+');resetAdsTimer()"></span>').join(''); }
       showAd(0);
       if (ads.length > 1) { clearInterval(adsTimer); adsTimer = setInterval(()=>showAd((adsIdx+1)%adsList.length), 4000); }
     }
+    // 手动切换广告（direction: -1=上一个, 1=下一个）
+    function switchAd(dir) {
+      if (!adsList.length) return;
+      let next = (adsIdx + dir + adsList.length) % adsList.length;
+      showAd(next);
+      resetAdsTimer();
+    }
+    // 重置自动播放计时器
+    function resetAdsTimer() {
+      if (adsList.length <= 1) return;
+      clearInterval(adsTimer);
+      adsTimer = setInterval(()=>showAd((adsIdx+1)%adsList.length), 4000);
+    }
+    // 触摸滑动切换广告
+    document.addEventListener('DOMContentLoaded', () => {
+      const b = document.getElementById('banner1');
+      if (!b) return;
+      b.addEventListener('touchstart', e => {
+        bannerTouchX0 = e.touches[0].clientX;
+        bannerTouchY0 = e.touches[0].clientY;
+      }, { passive: true });
+      b.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - bannerTouchX0;
+        const dy = e.changedTouches[0].clientY - bannerTouchY0;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+          e.preventDefault();
+          switchAd(dx < 0 ? 1 : -1);
+        }
+      });
+    });
     function showAd(idx) {
       adsIdx = idx;
       const ad = adsList[idx]; if (!ad) return;
