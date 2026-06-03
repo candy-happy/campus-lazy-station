@@ -885,6 +885,289 @@
     body.dark .post-media-add { background: var(--card); border-color: var(--border); }
     body.dark .post-tool-btn { background: var(--card); border-color: var(--border); }
     body.dark .post-tips-card { background: rgba(255,107,53,0.12); color: var(--primary-light); }
+
+    /* ═══════════════════════════════════════════════════════
+       👤 我的页 + 个人资料页 美化
+    ═══════════════════════════════════════════════════════ */
+    /* 我的页 - 个人卡片 */
+    .me-profile-card {
+      position: relative;
+      background: var(--gradient);
+      border-radius: var(--radius);
+      padding: 28px 20px 20px;
+      color: #fff;
+      box-shadow: 0 6px 24px rgba(255,107,53,0.25);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .me-profile-card:active { transform: scale(0.98); }
+    .me-profile-card::before {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+    }
+    .me-profile-card::after {
+      content: '';
+      position: absolute;
+      bottom: -20px; left: 20px;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.07);
+    }
+    .me-profile-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+    .me-avatar-wrap {
+      width: 68px; height: 68px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+      flex-shrink: 0;
+      border: 3px solid rgba(255,255,255,0.35);
+    }
+    .me-profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .me-nickname {
+      font-size: 19px;
+      font-weight: 800;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .me-phone {
+      font-size: 13px;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+    .me-bio {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .me-edit-hint {
+      font-size: 11px;
+      opacity: 0.6;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* 我的页 - 统计栏 */
+    .me-stats-bar {
+      display: flex;
+      gap: 0;
+      margin-top: 16px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .me-stat-item {
+      flex: 1;
+      text-align: center;
+      padding: 18px 8px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .me-stat-item:active { background: var(--bg); }
+    .me-stat-item + .me-stat-item::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 25%; height: 50%;
+      width: 1px;
+      background: var(--border);
+    }
+    .me-stat-num {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+    .me-stat-num.primary { color: var(--primary); }
+    .me-stat-num.warning { color: var(--warning); }
+    .me-stat-num.secondary { color: var(--secondary); }
+    .me-stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* 我的页 - 菜单列表 */
+    .me-menu-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      margin-top: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .me-menu-item {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      border-bottom: 1px solid var(--border);
+    }
+    .me-menu-item:last-child { border-bottom: none; }
+    .me-menu-item:active { background: var(--bg); }
+    .me-menu-icon {
+      font-size: 20px;
+      margin-right: 14px;
+      flex-shrink: 0;
+    }
+    .me-menu-text {
+      flex: 1;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .me-menu-arrow {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+    .me-menu-badge {
+      background: var(--danger);
+      color: #fff;
+      font-size: 11px;
+      padding: 1px 7px;
+      border-radius: 10px;
+      margin-right: 8px;
+      font-weight: 600;
+    }
+
+    /* 个人资料编辑页 */
+    .profile-hero {
+      text-align: center;
+      padding: 20px 16px 16px;
+      background: var(--card);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    .profile-avatar-big {
+      font-size: 72px;
+      display: block;
+      margin-bottom: 12px;
+      transition: transform 0.3s;
+    }
+    .profile-avatar-big:active { transform: scale(1.1); }
+    .profile-avatar-label {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 16px;
+    }
+    .profile-avatar-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .profile-avatar-option {
+      font-size: 30px;
+      width: 46px; height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+      background: var(--bg);
+    }
+    .profile-avatar-option:hover { border-color: var(--primary-light); transform: scale(1.05); }
+    .profile-avatar-option:active { transform: scale(0.95); }
+    .profile-avatar-option.selected {
+      border-color: var(--primary);
+      background: var(--primary-pale, #FFF0EB);
+      box-shadow: 0 2px 8px rgba(255,107,53,0.2);
+    }
+
+    .profile-form-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 4px 0;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .profile-form-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .profile-form-item:last-child { border-bottom: none; }
+    .profile-form-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      width: 72px;
+      flex-shrink: 0;
+    }
+    .profile-form-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      text-align: right;
+      font-family: inherit;
+    }
+    .profile-form-input::placeholder { color: var(--text-light); }
+    .profile-form-item.with-icon {
+      padding-left: 16px;
+    }
+    .profile-form-icon {
+      font-size: 18px;
+      margin-right: 10px;
+    }
+
+    .profile-save-btn {
+      display: block;
+      width: calc(100% - 32px);
+      margin: 20px auto 0;
+      padding: 14px 0;
+      border: none;
+      border-radius: 24px;
+      background: var(--gradient);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(255,107,53,0.35);
+      transition: all 0.25s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .profile-save-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(255,107,53,0.2); }
+
+    /* 暗色模式 */
+    body.dark .me-profile-card { box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
+    body.dark .me-stats-bar { box-shadow: var(--shadow); }
+    body.dark .me-menu-card { box-shadow: var(--shadow); }
+    body.dark .profile-hero { box-shadow: var(--shadow); }
+    body.dark .profile-avatar-option { background: var(--bg); }
+    body.dark .profile-avatar-option.selected { background: rgba(255,107,53,0.15); }
+    body.dark .profile-form-card { box-shadow: var(--shadow); }
 </style>
 <script src="api.js"></script>
 </head>
@@ -1032,48 +1315,59 @@
         </div>
       </div>
       <div style="margin-top: -24px; padding: 0 16px;">
-        <div style="background: var(--card); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); text-align: center; cursor: pointer;" onclick="showUserProfile()">
-          <div style="font-size: 64px; margin-bottom: 12px;" id="meAvatar">🦥</div>
-          <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;" id="meName">校园懒人</div>
-          <div style="font-size: 13px; color: var(--text-secondary);" id="mePhone">UID: 10086</div>
-          <div style="font-size: 11px; color: var(--text-light); margin-top: 4px">点击编辑资料 ›</div>
+        <div class="me-profile-card" onclick="showUserProfile()">
+          <div class="me-profile-top">
+            <div class="me-avatar-wrap" id="meAvatar">🦥</div>
+            <div class="me-profile-info">
+              <div class="me-nickname" id="meName">校园懒人</div>
+              <div class="me-phone" id="mePhone">UID: 10086</div>
+              <div class="me-bio" id="meBio"></div>
+              <div class="me-edit-hint">✏️ 点击编辑资料 ›</div>
+            </div>
+          </div>
         </div>
         
-        <div style="display: flex; gap: 12px; margin-top: 16px;">
-          <div style="flex: 1; background: var(--card); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: var(--shadow);">
-            <div style="font-size: 28px; font-weight: 900; color: var(--primary);" id="totalOrders">0</div>
-            <div style="font-size: 12px; color: var(--text-secondary);">总订单</div>
+        <div class="me-stats-bar">
+          <div class="me-stat-item" onclick="switchPage('order')">
+            <div class="me-stat-num primary" id="totalOrders">0</div>
+            <div class="me-stat-label">总订单</div>
           </div>
-          <div style="flex: 1; background: var(--card); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: var(--shadow);">
-            <div style="font-size: 28px; font-weight: 900; color: var(--warning);" id="totalPoints">168</div>
-            <div style="font-size: 12px; color: var(--text-secondary);">积分</div>
+          <div class="me-stat-item" onclick="showPoints()">
+            <div class="me-stat-num warning" id="totalPoints">168</div>
+            <div class="me-stat-label">积分</div>
           </div>
-          <div style="flex: 1; background: var(--card); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: var(--shadow);">
-            <div style="font-size: 28px; font-weight: 900; color: var(--secondary);" id="totalCoupons">2</div>
-            <div style="font-size: 12px; color: var(--text-secondary);">优惠券</div>
+          <div class="me-stat-item" onclick="showCoupons()">
+            <div class="me-stat-num secondary" id="totalCoupons">2</div>
+            <div class="me-stat-label">优惠券</div>
           </div>
         </div>
 
-        <div style="background: var(--card); border-radius: var(--radius); margin-top: 16px; overflow: hidden; box-shadow: var(--shadow);">
-          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); cursor: pointer;" onclick="openChatList()">
-            <span>💬 我的消息</span>
-            <span style="color: var(--text-light);">›</span>
+        <div class="me-menu-card">
+          <div class="me-menu-item" onclick="openChatList()">
+            <span class="me-menu-icon">💬</span>
+            <span class="me-menu-text">我的消息</span>
+            <span class="me-menu-badge" id="meMsgBadge" style="display:none">0</span>
+            <span class="me-menu-arrow">›</span>
           </div>
-          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); cursor: pointer;" onclick="showAddresses()">
-            <span>📍 常用地址</span>
-            <span style="color: var(--text-light);">›</span>
+          <div class="me-menu-item" onclick="showAddresses()">
+            <span class="me-menu-icon">📍</span>
+            <span class="me-menu-text">常用地址</span>
+            <span class="me-menu-arrow">›</span>
           </div>
-          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); cursor: pointer;" onclick="showCoupons()">
-            <span>🎫 我的优惠券</span>
-            <span style="color: var(--text-light);">›</span>
+          <div class="me-menu-item" onclick="showCoupons()">
+            <span class="me-menu-icon">🎫</span>
+            <span class="me-menu-text">我的优惠券</span>
+            <span class="me-menu-arrow">›</span>
           </div>
-          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); cursor: pointer;" onclick="showPoints()">
-            <span>⭐ 积分明细</span>
-            <span style="color: var(--text-light);">›</span>
+          <div class="me-menu-item" onclick="showPoints()">
+            <span class="me-menu-icon">⭐</span>
+            <span class="me-menu-text">积分明细</span>
+            <span class="me-menu-arrow">›</span>
           </div>
-          <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="showSettings()">
-            <span>⚙️ 设置</span>
-            <span style="color: var(--text-light);">›</span>
+          <div class="me-menu-item" onclick="showSettings()">
+            <span class="me-menu-icon">⚙️</span>
+            <span class="me-menu-text">设置</span>
+            <span class="me-menu-arrow">›</span>
           </div>
         </div>
       </div>
@@ -2328,6 +2622,8 @@
         if (nameEl) nameEl.textContent = pdata?.nickname || pdata?.name || '校园懒人';
         if (phoneEl) phoneEl.textContent = fmtPhone(currentUser.phone);
         if (avatarEl) avatarEl.textContent = pdata?.avatar || avatars[parseInt(currentUser.phone.slice(-2)) % avatars.length];
+        const bioEl = document.getElementById('meBio');
+        if (bioEl) bioEl.textContent = pdata?.bio || '';
       } catch(e) {
         console.error('updateMePage error:', e);
       }
@@ -2562,6 +2858,7 @@
       const u = await API.getUser(currentUser.phone);
       if (!u) return showToast('加载失败');
       const avatars = ['🦥','🐱','🐶','🦊','🐼','🐨','🦄','🐸','🐧','🦋','🌸','⭐','🔥','💎','🎭'];
+      const curAvatar = u.avatar || '🦥';
       let el = document.getElementById('profilePage_sub');
       if (!el) {
         el = document.createElement('div');
@@ -2571,19 +2868,28 @@
         document.body.appendChild(el);
       }
       el.querySelector('.sub-page-body').innerHTML =
-        '<div style="text-align:center;padding:16px 0;border-bottom:1px solid var(--border)">' +
-        '<div style="font-size:64px" id="profileAvatarPreview">' + escHtml(u.avatar || '🦥') + '</div>' +
-        '<div style="margin-top:8px">' +
-        avatars.map(a => '<span style="font-size:28px;cursor:pointer;margin:2px;display:inline-block;padding:4px;border-radius:8px" onclick="document.getElementById(\'profileAvatar\').value=\'' + a + '\';document.getElementById(\'profileAvatarPreview\').textContent=\'' + a + '\'">' + a + '</span>').join('') +
+        '<div class="profile-hero">' +
+        '<div class="profile-avatar-big" id="profileAvatarPreview">' + escHtml(curAvatar) + '</div>' +
+        '<div class="profile-avatar-label">点击下方头像更换</div>' +
+        '<div class="profile-avatar-grid">' +
+        avatars.map(a => '<div class="profile-avatar-option' + (a === curAvatar ? ' selected' : '') + '" data-avatar="' + a + '" onclick="selectProfileAvatar(this,\'' + a + '\')">' + a + '</div>').join('') +
         '</div></div>' +
-        '<div class="form-group"><label class="form-label">昵称</label><input type="text" class="form-input" id="profileNickname" value="' + escHtml(u.nickname || '') + '" placeholder="给自己取个昵称" maxlength="20" /></div>' +
-        '<div class="form-group"><label class="form-label">真实姓名</label><input type="text" class="form-input" id="profileName" value="' + escHtml(u.name || '') + '" placeholder="选填" /></div>' +
-        '<div class="form-group"><label class="form-label">个性签名</label><input type="text" class="form-input" id="profileBio" value="' + escHtml(u.bio || '') + '" placeholder="一句话介绍自己" maxlength="50" /></div>' +
-        '<div class="form-group"><label class="form-label">宿舍楼</label><input type="text" class="form-input" id="profileDorm" value="' + escHtml(u.dormitory || '') + '" placeholder="例如：3号宿舍楼" /></div>' +
-        '<div class="form-group"><label class="form-label">房间号</label><input type="text" class="form-input" id="profileRoom" value="' + escHtml(u.room || '') + '" placeholder="例如：301" /></div>' +
-        '<input type="hidden" id="profileAvatar" value="' + escHtml(u.avatar || '') + '" />' +
-        '<button onclick="saveProfile()" style="width:100%;padding:14px;border:none;border-radius:12px;background:var(--primary);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px">保存修改</button>';
+        '<div class="profile-form-card">' +
+        '<div class="profile-form-item with-icon"><span class="profile-form-icon">✏️</span><span class="profile-form-label">昵称</span><input type="text" class="profile-form-input" id="profileNickname" value="' + escHtml(u.nickname || '') + '" placeholder="给自己取个昵称" maxlength="20" /></div>' +
+        '<div class="profile-form-item with-icon"><span class="profile-form-icon">👤</span><span class="profile-form-label">姓名</span><input type="text" class="profile-form-input" id="profileName" value="' + escHtml(u.name || '') + '" placeholder="选填" /></div>' +
+        '<div class="profile-form-item with-icon"><span class="profile-form-icon">💭</span><span class="profile-form-label">签名</span><input type="text" class="profile-form-input" id="profileBio" value="' + escHtml(u.bio || '') + '" placeholder="一句话介绍自己" maxlength="50" /></div>' +
+        '<div class="profile-form-item with-icon"><span class="profile-form-icon">🏠</span><span class="profile-form-label">宿舍楼</span><input type="text" class="profile-form-input" id="profileDorm" value="' + escHtml(u.dormitory || '') + '" placeholder="例如：3号宿舍楼" /></div>' +
+        '<div class="profile-form-item with-icon"><span class="profile-form-icon">🚪</span><span class="profile-form-label">房间号</span><input type="text" class="profile-form-input" id="profileRoom" value="' + escHtml(u.room || '') + '" placeholder="例如：301" /></div>' +
+        '</div>' +
+        '<input type="hidden" id="profileAvatar" value="' + escHtml(curAvatar) + '" />' +
+        '<button class="profile-save-btn" onclick="saveProfile()">💾 保存修改</button>';
       openSubPage('profilePage_sub');
+    }
+    function selectProfileAvatar(el, emoji) {
+      document.querySelectorAll('.profile-avatar-option').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('profileAvatar').value = emoji;
+      document.getElementById('profileAvatarPreview').textContent = emoji;
     }
     async function saveProfile() {
       if (!currentUser) return;
