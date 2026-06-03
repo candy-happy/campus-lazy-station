@@ -687,6 +687,21 @@
       <div class="sub-page-body" id="chatListBody" style="padding:8px 0"></div>
     </div>
 
+    <!-- 聊天对话页 -->
+    <div class="sub-page" id="chatConvPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('chatConvPage_sub')">←</button>
+        <span class="sub-page-title" id="chatConvTitle">对话</span>
+      </div>
+      <div class="sub-page-body" style="display:flex;flex-direction:column;height:calc(100% - 56px);padding:0">
+        <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px 16px;scrollbar-width:none"></div>
+        <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:8px;background:var(--bg)">
+          <input id="chatInput" type="text" placeholder="输入消息..." style="flex:1;padding:10px 14px;border-radius:20px;border:1px solid var(--border);background:var(--card-bg);color:var(--text);font-size:14px;outline:none" onkeypress="if(event.key==='Enter')sendChatMsg()">
+          <button onclick="sendChatMsg()" style="padding:10px 16px;border-radius:20px;background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;border:none;font-size:14px;cursor:pointer">发送</button>
+        </div>
+      </div>
+    </div>
+
  <script>
 
  // ====== 工具函数 ======
@@ -826,6 +841,7 @@
    // New orders (pending)
    try {
      const pending = await API.getOrders({ status: 'pending' });
+     newOrders = pending || [];
      if (pending && pending.length) {
        newEl.innerHTML = pending.map(o => '<div class="order-card new" onclick="showOrderDetail(\''+o.order_no+'\',\'accept\')">' +
          '<div class="order-top"><div class="order-type"><div class="order-type-icon">'+(typeEmoji[o.type]||'📦')+'</div>' +
@@ -1101,7 +1117,17 @@
  // ═══════════════════════════════════════════════════════
  async function openChatFromOrder(orderNo) {
    if (!currentRider) return showToast('请先登录');
-   const o = myOrders.find(x => x.order_no === orderNo) || newOrders.find(x => x.order_no === orderNo);
+   // 从多个来源查找订单
+   const allOrders = [...(myOrders||[]), ...(newOrders||[])];
+   let o = allOrders.find(x => x.order_no === orderNo);
+   // 如果内存中没找到，尝试从API获取
+   if (!o) {
+     try {
+       const res = await API.getOrders({ rider_phone: currentRider.phone, status: 'my' });
+       o = (res || []).find(x => x.order_no === orderNo);
+       if (o) myOrders = res || myOrders;
+     } catch(e2) { console.error('fetch order error:', e2); }
+   }
    if (!o || !o.phone) return showToast('无法获取用户信息');
    try {
      const conv = await API.chatGetOrCreateConversation({
@@ -1113,7 +1139,7 @@
      closeSubPage('detailPage_sub');
      await openRiderConv(conv.id, o.phone, o.user_name || '用户');
    } catch(e) {
-     showToast('打开聊天失败');
+     showToast('打开聊天失败: ' + (e.message||e));
      console.error('openChatFromOrder error:', e);
    }
  }
