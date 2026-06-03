@@ -317,6 +317,166 @@
     .sub-page-body { padding: 16px; }
     body.dark .sub-page-header { background: linear-gradient(135deg, #1a1a2e, #16213e); }
 
+ /* ═══════════════════════════════════════════════════════
+    🧩 子页面通用组件类
+ ═══════════════════════════════════════════════════════ */
+ .sp-card { background: var(--card-bg); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+ .sp-card-title { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .06em; }
+ .sp-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); }
+ .sp-row:last-child { border-bottom: none; padding-bottom: 0; }
+ .sp-row:first-child { padding-top: 0; }
+ .sp-row-label { font-size: 14px; color: var(--text-muted); }
+ .sp-row-value { font-size: 14px; font-weight: 600; color: var(--text); }
+ .sp-empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+ .sp-empty-icon { font-size: 48px; margin-bottom: 8px; opacity: .5; }
+ .sp-empty-text { font-size: 14px; }
+ .sp-btn { display: block; width: 100%; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; font-family: inherit; transition: all .2s; text-align: center; }
+ .sp-btn:active { transform: scale(.97); }
+ .sp-btn-green { background: linear-gradient(135deg, #2ECC71, #27AE60); color: #fff; box-shadow: 0 4px 16px rgba(46,204,113,.25); }
+ .sp-btn-red { background: linear-gradient(135deg, #E74C3C, #C0392B); color: #fff; box-shadow: 0 4px 16px rgba(231,76,60,.2); }
+ .sp-btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--border); box-shadow: none; }
+ .sp-select, .sp-input, .sp-textarea {
+   width: 100%; padding: 12px 14px; border-radius: 12px;
+   border: 1.5px solid var(--border); background: var(--bg);
+   font-size: 14px; font-family: inherit; color: var(--text);
+   transition: border-color .2s;
+ }
+ .sp-select:focus, .sp-input:focus, .sp-textarea:focus {
+   outline: none; border-color: var(--green);
+   box-shadow: 0 0 0 3px rgba(46,204,113,.12);
+ }
+ .sp-textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+ /* ═══ 设置页 ═══ */
+ .settings-avatar-row {
+   display: flex; align-items: center; gap: 16px;
+   padding: 20px; margin-bottom: 14px;
+   background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+   border-radius: var(--radius);
+   color: #fff; position: relative; overflow: hidden;
+ }
+ .settings-avatar-row::after {
+   content: ''; position: absolute; top: -40%; right: -20%; width: 120px; height: 120px;
+   background: rgba(255,255,255,.08); border-radius: 50%;
+ }
+ .settings-avatar-circle {
+   width: 56px; height: 56px; border-radius: 50%;
+   background: rgba(255,255,255,.2); display: flex;
+   align-items: center; justify-content: center; font-size: 28px;
+   border: 2px solid rgba(255,255,255,.4); flex-shrink: 0;
+ }
+ .settings-avatar-info { flex: 1; z-index: 1; }
+ .settings-avatar-name { font-size: 18px; font-weight: 800; }
+ .settings-avatar-sub { font-size: 12px; opacity: .8; margin-top: 2px; }
+ .settings-level-badge {
+   display: inline-flex; align-items: center; gap: 6px;
+   background: rgba(255,255,255,.2); border-radius: 20px;
+   padding: 3px 12px; font-size: 12px; font-weight: 700;
+ }
+
+ .settings-toggle-row {
+   display: flex; justify-content: space-between; align-items: center;
+   padding: 14px 0; border-bottom: 1px solid var(--border);
+ }
+ .settings-toggle-row:last-child { border-bottom: none; }
+ .settings-toggle-label { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
+ .settings-toggle-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+ .toggle-switch {
+   position: relative; width: 48px; height: 26px; display: inline-block;
+ }
+ .toggle-switch input { opacity: 0; width: 0; height: 0; }
+ .toggle-slider {
+   position: absolute; cursor: pointer; inset: 0;
+   background: #ccc; border-radius: 26px; transition: .3s;
+ }
+ .toggle-slider::before {
+   content: ''; position: absolute; height: 20px; width: 20px;
+   left: 3px; bottom: 3px; background: #fff; border-radius: 50%;
+   transition: .3s; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+ }
+ .toggle-switch input:checked + .toggle-slider { background: var(--green); }
+ .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+ .settings-info-row {
+   display: flex; justify-content: space-between; align-items: center;
+   padding: 12px 0; border-bottom: 1px solid var(--border);
+ }
+ .settings-info-row:last-child { border-bottom: none; }
+ .settings-info-label { font-size: 14px; color: var(--text-muted); }
+ .settings-info-value { font-size: 14px; font-weight: 600; color: var(--text); }
+ .settings-logout-btn {
+   display: flex; align-items: center; justify-content: center; gap: 8px;
+   width: 100%; padding: 14px; border-radius: 14px;
+   background: rgba(231,76,60,.08); color: var(--red);
+   font-size: 15px; font-weight: 700;
+   border: 1.5px solid rgba(231,76,60,.15); cursor: pointer;
+   transition: all .2s; font-family: inherit;
+ }
+ .settings-logout-btn:active { transform: scale(.97); background: rgba(231,76,60,.15); }
+ .settings-version {
+   text-align: center; padding: 20px 0 8px;
+   color: var(--text-muted); font-size: 12px; opacity: .5;
+ }
+
+ /* ═══ 反馈页 ═══ */
+ .fb-type-grid {
+   display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px;
+ }
+ .fb-type-item {
+   display: flex; align-items: center; gap: 8px;
+   padding: 12px 14px; border-radius: 12px;
+   border: 1.5px solid var(--border); cursor: pointer;
+   transition: all .2s; font-size: 14px; font-weight: 600;
+   background: var(--card-bg);
+ }
+ .fb-type-item.active {
+   border-color: var(--green); background: rgba(46,204,113,.06);
+   color: var(--green);
+ }
+ .fb-type-item:active { transform: scale(.97); }
+ .fb-type-emoji { font-size: 20px; }
+ .fb-textarea-wrap {
+   position: relative; margin-bottom: 16px;
+ }
+ .fb-textarea {
+   width: 100%; padding: 14px; border-radius: 14px;
+   border: 1.5px solid var(--border); background: var(--bg);
+   font-size: 14px; font-family: inherit; color: var(--text);
+   resize: vertical; min-height: 120px; line-height: 1.6;
+   transition: border-color .2s;
+ }
+ .fb-textarea:focus {
+   outline: none; border-color: var(--green);
+   box-shadow: 0 0 0 3px rgba(46,204,113,.12);
+ }
+ .fb-textarea::placeholder { color: var(--text-muted); }
+ .fb-char-count {
+   position: absolute; right: 12px; bottom: 10px;
+   font-size: 12px; color: var(--text-muted);
+ }
+ .fb-submit-btn {
+   display: flex; align-items: center; justify-content: center; gap: 8px;
+   width: 100%; padding: 14px; border-radius: 14px;
+   background: linear-gradient(135deg, #2ECC71, #27AE60);
+   color: #fff; font-size: 15px; font-weight: 700;
+   border: none; cursor: pointer; font-family: inherit;
+   box-shadow: 0 4px 16px rgba(46,204,113,.25);
+   transition: all .2s;
+ }
+ .fb-submit-btn:active { transform: scale(.97); }
+ .fb-success {
+   text-align: center; padding: 48px 20px;
+ }
+ .fb-success-icon { font-size: 64px; margin-bottom: 16px; }
+ .fb-success-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+ .fb-success-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
+
+ /* dark mode */
+ body.dark .sp-card { background: var(--card-bg); }
+ body.dark .fb-type-item { background: var(--card-bg); }
+ body.dark .fb-type-item.active { background: rgba(46,204,113,.1); }
+
 </style>
 <script src="api.js"></script>
 </head>
@@ -520,9 +680,60 @@
 
  <script>
 
- // ====== Missing core functions ======
+ // ====== 工具函数 ======
+ const $ = (id) => document.getElementById(id);
+
+ const fmtTime = (ts) => {
+   if (!ts) return '';
+   const d = new Date(ts);
+   if (isNaN(d.getTime())) return '';
+   const now = new Date();
+   const diff = now - d;
+   if (diff < 0) return '刚刚';
+   if (diff < 60000) return '刚刚';
+   if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+   if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+   if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+   const m = ('0' + (d.getMonth() + 1)).slice(-2);
+   const day = ('0' + d.getDate()).slice(-2);
+   const h = ('0' + d.getHours()).slice(-2);
+   const min = ('0' + d.getMinutes()).slice(-2);
+   return m + '-' + day + ' ' + h + ':' + min;
+ };
+
+ const showToast = (msg, duration = 2500) => {
+   const el = document.getElementById('toast');
+   if (!el) return;
+   el.textContent = msg;
+   el.classList.add('show');
+   setTimeout(() => el.classList.remove('show'), duration);
+ };
+
+ // ====== 子页面栈管理 ======
+ let _pageStack = [];
+ function openSubPage(id) {
+   const el = document.getElementById(id);
+   if (!el) return;
+   _pageStack.push(id);
+   el.classList.add('active');
+ }
+ function closeSubPage(id) {
+   const el = document.getElementById(id);
+   if (!el) return;
+   el.classList.remove('active');
+   _pageStack = _pageStack.filter(p => p !== id);
+   if (_pageStack.length === 0) document.body.style.overflow = '';
+ }
+ function goBack() {
+   if (_pageStack.length > 0) closeSubPage(_pageStack[_pageStack.length - 1]);
+ }
+ window.addEventListener('popstate', () => goBack());
+
+ // ====== 核心变量 ======
  let currentRider = null;
  let myOrders = [];
+ let newOrders = [];
+ let isOnline = true;
 
  const statusColor = { pending: '#F39C12', accepted: '#3498DB', running: '#E74C3C', completed: '#2ECC71', cancelled: '#95A5A6' };
  const statusIcon = { pending: '⏳', accepted: '🛵', running: '🚀', completed: '✅', cancelled: '❌' };
@@ -1001,30 +1212,72 @@
    el = document.createElement('div');
    el.id = id;
    el.className = 'sub-page';
-   el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'feedbackPage_sub\')">←</button><span class="sub-page-title">📝 意见反馈</span></div>' +
+   const types = [
+     { val: 'bug', emoji: '🐛', label: '问题反馈' },
+     { val: 'feature', emoji: '💡', label: '功能建议' },
+     { val: 'complaint', emoji: '😤', label: '投诉' },
+     { val: 'other', emoji: '📌', label: '其他' }
+   ];
+   el.innerHTML =
+     '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'feedbackPage_sub\')">←</button><span class="sub-page-title">📝 意见反馈</span></div>' +
      '<div class="sub-page-body">' +
-     '<div class="sp-card">' +
-     '<label style="font-weight:700;font-size:14px;display:block;margin-bottom:10px">反馈类型</label>' +
-     '<select id="fbType" class="sp-select">' +
-     '<option value="bug">🐛 问题反馈</option><option value="feature">💡 功能建议</option><option value="complaint">😤 投诉</option><option value="other">📌 其他</option></select></div>' +
-     '<div class="sp-card">' +
-     '<label style="font-weight:700;font-size:14px;display:block;margin-bottom:10px">详细描述</label>' +
-     '<textarea id="fbContent" rows="5" placeholder="请描述您的问题或建议..." class="sp-textarea"></textarea></div>' +
-     '<button onclick="submitFeedback()" class="sp-btn sp-btn-green">提交反馈</button>' +
+     // Type selector
+     '<div class="sp-card" style="padding-bottom:6px">' +
+       '<div class="sp-card-title">反馈类型</div>' +
+       '<div class="fb-type-grid">' +
+         types.map(t =>
+           '<div class="fb-type-item' + (t.val === 'bug' ? ' active' : '') + '" data-type="' + t.val + '" onclick="selectFbType(this,\'' + t.val + '\')">' +
+             '<span class="fb-type-emoji">' + t.emoji + '</span><span>' + t.label + '</span></div>'
+         ).join('') +
+       '</div>' +
+     '</div>' +
+     // Textarea
+     '<div class="sp-card" style="padding:14px">' +
+       '<div class="fb-textarea-wrap">' +
+         '<textarea id="fbContent" class="fb-textarea" placeholder="请描述您的问题或建议，我们会认真对待每一条反馈..." oninput="updateFbCount()"></textarea>' +
+         '<div class="fb-char-count" id="fbCharCount">0/500</div>' +
+       '</div>' +
+     '</div>' +
+     // Submit
+     '<button onclick="submitFeedback()" class="fb-submit-btn">📤 提交反馈</button>' +
+     // Success (hidden initially)
+     '<div class="fb-success" id="fbSuccess" style="display:none">' +
+       '<div class="fb-success-icon">✅</div>' +
+       '<div class="fb-success-title">感谢反馈！</div>' +
+       '<div class="fb-success-desc">我们会认真对待每一条反馈，<br>尽快为您处理。</div>' +
+       '<button onclick="closeSubPage(\'feedbackPage_sub\')" class="sp-btn sp-btn-outline">返回</button>' +
+     '</div>' +
      '</div>';
    document.body.appendChild(el);
    openSubPage(id);
  }
+ // Feedback type selection
+ let _fbType = 'bug';
+ function selectFbType(el, type) {
+   _fbType = type;
+   el.closest('.fb-type-grid').querySelectorAll('.fb-type-item').forEach(i => i.classList.remove('active'));
+   el.classList.add('active');
+ }
+ function updateFbCount() {
+   const ta = document.getElementById('fbContent');
+   const cnt = document.getElementById('fbCharCount');
+   if (!ta || !cnt) return;
+   const len = ta.value.length;
+   cnt.textContent = len + '/500';
+   cnt.style.color = len > 500 ? 'var(--red)' : 'var(--text-muted)';
+ }
  function submitFeedback() {
-   const type = document.getElementById('fbType').value;
    const content = document.getElementById('fbContent').value.trim();
    if (!content) return showToast('请输入反馈内容');
-   // 保存到 localStorage (无后端表)
+   if (content.length > 500) return showToast('反馈内容不能超过500字');
    const feedbacks = JSON.parse(localStorage.getItem('riderFeedbacks') || '[]');
-   feedbacks.push({ type, content, time: new Date().toISOString(), rider: currentRider ? currentRider.phone : 'anon' });
+   feedbacks.push({ type: _fbType, content, time: new Date().toISOString(), rider: currentRider ? currentRider.phone : 'anon' });
    localStorage.setItem('riderFeedbacks', JSON.stringify(feedbacks));
-   showToast('感谢反馈！我们会尽快处理');
-   closeSubPage('feedbackPage_sub');
+   // Show success, hide form
+   const form = document.querySelector('#feedbackPage_sub .sp-card, #feedbackPage_sub .fb-submit-btn');
+   if (form) { document.querySelectorAll('#feedbackPage_sub .sp-card, #feedbackPage_sub .fb-submit-btn').forEach(e => e.style.display = 'none'); }
+   const success = document.getElementById('fbSuccess');
+   if (success) success.style.display = 'block';
  }
  function showSettingsModal() {
    if (!currentRider) return showToast('请先登录');
@@ -1038,21 +1291,43 @@
    const levelIcons = { bronze:'🥉', silver:'🥈', gold:'🥇', diamond:'💎' };
    const levelNames = { bronze:'青铜骑手', silver:'白银骑手', gold:'黄金骑手', diamond:'钻石骑手' };
    const lvl = currentRider.level || 'bronze';
-   el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'settingsPage_sub\')">←</button><span class="sub-page-title">⚙️ 设置</span></div>' +
+   el.innerHTML =
+     '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'settingsPage_sub\')">←</button><span class="sub-page-title">⚙️ 设置</span></div>' +
      '<div class="sub-page-body">' +
+     // Avatar hero card
+     '<div class="settings-avatar-row">' +
+       '<div class="settings-avatar-circle">🛵</div>' +
+       '<div class="settings-avatar-info">' +
+         '<div class="settings-avatar-name">' + escHtml(currentRider.name || '骑手') + '</div>' +
+         '<div class="settings-avatar-sub">' + escHtml(currentRider.phone || '') + '</div>' +
+         '<div class="settings-level-badge"><span>' + (levelIcons[lvl]||'🥉') + '</span><span>' + (levelNames[lvl]||lvl) + '</span></div>' +
+       '</div>' +
+     '</div>' +
      // Appearance
-     '<div class="sp-card"><div class="sp-card-title">外观</div>' +
-     '<div class="sp-row"><span style="display:flex;align-items:center;gap:8px;font-size:15px">🌙 深色模式</span>' +
-     '<label style="position:relative;width:48px;height:26px;display:inline-block"><input type="checkbox" id="riderDarkToggle" ' + (isDark?'checked':'') + ' onchange="riderToggleDark(this.checked)" style="opacity:0;width:0;height:0"><span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:' + (isDark?'var(--green)':'#ccc') + ';border-radius:26px;transition:.3s"></span><span style="position:absolute;height:20px;width:20px;left:' + (isDark?'24px':'3px') + ';bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.2)"></span></label></div></div>' +
-     // Rider info
-     '<div class="sp-card"><div class="sp-card-title">骑手信息</div>' +
-     '<div class="sp-row"><span class="sp-row-label">姓名</span><span class="sp-row-value">' + escHtml(currentRider.name || '--') + '</span></div>' +
-     '<div class="sp-row"><span class="sp-row-label">UID</span><span class="sp-row-value" style="font-family:Space Mono,monospace">' + escHtml(currentRider.uid || '--') + '</span></div>' +
-     '<div class="sp-row"><span class="sp-row-label">手机</span><span class="sp-row-value">' + escHtml(currentRider.phone) + '</span></div>' +
-     '<div class="sp-row"><span class="sp-row-label">等级</span><span style="display:flex;align-items:center;gap:6px"><span style="font-size:18px">' + (levelIcons[lvl]||'🥉') + '</span><span class="sp-row-value">' + (levelNames[lvl]||lvl) + '</span></span></div></div>' +
+     '<div class="sp-card">' +
+       '<div class="sp-card-title">外观</div>' +
+       '<div class="settings-toggle-row">' +
+         '<div class="settings-toggle-label"><div class="settings-toggle-icon" style="background:#FFF3E0">🌙</div><span>深色模式</span></div>' +
+         '<label class="toggle-switch"><input type="checkbox" id="riderDarkToggle" ' + (isDark?'checked':'') + ' onchange="riderToggleDark(this.checked)"><span class="toggle-slider"></span></label>' +
+       '</div>' +
+     '</div>' +
+     // Account info
+     '<div class="sp-card">' +
+       '<div class="sp-card-title">账号信息</div>' +
+       '<div class="settings-info-row"><span class="settings-info-label">姓名</span><span class="settings-info-value">' + escHtml(currentRider.name || '--') + '</span></div>' +
+       '<div class="settings-info-row"><span class="settings-info-label">UID</span><span class="settings-info-value" style="font-family:Space Mono,monospace">' + escHtml(currentRider.uid || '--') + '</span></div>' +
+       '<div class="settings-info-row"><span class="settings-info-label">手机</span><span class="settings-info-value">' + escHtml(currentRider.phone) + '</span></div>' +
+       '<div class="settings-info-row"><span class="settings-info-label">等级</span><span class="settings-info-value" style="display:flex;align-items:center;gap:6px"><span style="font-size:18px">' + (levelIcons[lvl]||'🥉') + '</span>' + (levelNames[lvl]||lvl) + '</span></div>' +
+     '</div>' +
+     // About
+     '<div class="sp-card">' +
+       '<div class="sp-card-title">关于</div>' +
+       '<div class="settings-info-row"><span class="settings-info-label">版本</span><span class="settings-info-value">v3.0.0</span></div>' +
+       '<div class="settings-info-row"><span class="settings-info-label">平台</span><span class="settings-info-value">校园懒人效率站</span></div>' +
+     '</div>' +
      // Logout
-     '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyRider\');location.reload()}" class="sp-btn sp-btn-red" style="margin-top:4px">退出登录</button>' +
-     '<div style="text-align:center;padding:20px 0 8px;color:var(--text-muted);font-size:12px;opacity:.5">校园懒人效率站 v3.0 骑手端</div>' +
+     '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyRider\');location.reload()}" class="settings-logout-btn">🚪 退出登录</button>' +
+     '<div class="settings-version">校园懒人效率站 v3.0 骑手端</div>' +
      '</div>';
    document.body.appendChild(el);
    openSubPage(id);
@@ -1063,6 +1338,68 @@
    closeSubPage('settingsPage_sub');
  }
  function logout() { API.logout(); location.reload(); }
+
+ // ====== 登录 ======
+ async function login(e) {
+   e.preventDefault();
+   const uid = $('loginUid').value.trim();
+   const name = $('loginName').value.trim();
+   const studentId = $('loginStudentId').value.trim();
+   const phone = $('loginPhone').value.trim();
+   if (!/^1[3-9]\d{9}$/.test(phone)) {
+     $('loginPhoneError').style.display = 'block';
+     return;
+   }
+   $('loginPhoneError').style.display = 'none';
+   try {
+     const rider = await API.riderLogin(uid, name, studentId, phone);
+     currentRider = { ...rider, phone };
+     localStorage.setItem('lazyRider', JSON.stringify(currentRider));
+     closeSubPage('loginPage_sub');
+     showToast('登录成功！🛵');
+     refreshOrders();
+     updateProfile();
+   } catch (err) {
+     showToast(err.message || '登录失败');
+   }
+ }
+
+ // ====== 在线状态切换 ======
+ function toggleOnlineStatus() {
+   isOnline = !isOnline;
+   const sw = $('statusSwitch');
+   if (sw) {
+     sw.classList.toggle('online', isOnline);
+     sw.classList.toggle('offline', !isOnline);
+   }
+   showToast(isOnline ? '已上线，可接单' : '已下线，暂停接单');
+   if (currentRider) {
+     API.updateRiderStatus(currentRider.phone, isOnline ? 'online' : 'offline').catch(() => {});
+   }
+ }
+
+ // ====== 页面初始化 ======
+ (function initRider() {
+   API._init();
+   const saved = localStorage.getItem('lazyRider');
+   if (saved) {
+     try {
+       currentRider = JSON.parse(saved);
+       updateProfile();
+     } catch(e) { localStorage.removeItem('lazyRider'); }
+   }
+   if (!currentRider) {
+     openSubPage('loginPage_sub');
+   } else {
+     refreshOrders();
+   }
+   // 暗色模式
+   const theme = localStorage.getItem('lazyTheme');
+   if (theme === 'dark') document.body.classList.add('dark');
+   // 在线状态
+   const sw = $('statusSwitch');
+   if (sw) { sw.classList.add('online'); }
+ })();
 
  window.login = login;
  window.toggleOnlineStatus = toggleOnlineStatus;
@@ -1086,6 +1423,8 @@ window.goBack = goBack;
  window.showHelpModal = showHelpModal;
  window.showFeedbackModal = showFeedbackModal;
  window.showSettingsModal = showSettingsModal;
+ window.selectFbType = selectFbType;
+ window.updateFbCount = updateFbCount;
  window.openRiderChatList = openRiderChatList;
  window.openRiderConv = openRiderConv;
  window.sendChatMsg = sendChatMsg;
@@ -1095,16 +1434,8 @@ window.goBack = goBack;
  window.showEarningsDetail = showEarningsDetail;
  window.loadEarningsDetail = loadEarningsDetail;
  window.logout = logout;
- 
-    function toggleDark(isDark) {
-      document.body.classList.toggle('dark', isDark);
-      localStorage.setItem('lazyTheme', isDark ? 'dark' : 'light');
-    }
-    // Init dark mode from localStorage
-    (function() {
-      const saved = localStorage.getItem('lazyTheme');
-      if (saved === 'dark') document.body.classList.add('dark');
-    })();
+
   </script>
+  <div class="toast" id="toast"></div>
 </body>
 </html>
