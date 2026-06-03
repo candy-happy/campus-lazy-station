@@ -76,6 +76,11 @@
  .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
  .chart-title { font-size: 1rem; font-weight: 700; color: var(--dark); }
  .chart-container { height: 280px; position: relative; }
+ .ads-filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+ .ads-filter-btn { padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border); background: var(--white); color: var(--text-muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+ .ads-filter-btn:hover { border-color: var(--orange); color: var(--orange); }
+ .ads-filter-btn.active { background: var(--orange); color: white; border-color: var(--orange); }
+ .ads-filter-count { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
  .table-card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
  .table-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
  .table-title { font-size: 1rem; font-weight: 700; color: var(--dark); }
@@ -243,6 +248,13 @@
  </div>
  <div class="page-section" id="page-ads">
  <div class="page-header"><h1 class="page-title">广告管理</h1><div class="page-actions"><button class="btn btn-primary" onclick="showAdForm()">+ 新增广告</button></div></div>
+ <div class="ads-filter-bar" id="adsFilterBar">
+   <button class="ads-filter-btn active" data-filter="all" onclick="filterAds('all',this)">全部</button>
+   <button class="ads-filter-btn" data-filter="active" onclick="filterAds('active',this)">正在进行</button>
+   <button class="ads-filter-btn" data-filter="ended" onclick="filterAds('ended',this)">已结束</button>
+   <button class="ads-filter-btn" data-filter="inactive" onclick="filterAds('inactive',this)">已停用</button>
+   <span class="ads-filter-count" id="adsFilterCount"></span>
+ </div>
  <div class="table-card">
  <table class="data-table"><thead><tr><th>预览</th><th>标题</th><th>展示</th><th>点击</th><th>点击率</th><th>排序</th><th>状态</th><th>链接</th><th>有效期</th><th>操作</th></tr></thead><tbody id="adsTable"></tbody></table>
  </div>
@@ -554,13 +566,41 @@
 
  // ─── 广告管理 ───
  let adsList = [];
+ let adsFilter = 'all';
  async function loadAds() {
  adsList = await API.getAdminAds();
  renderAdsTable();
  }
+ function filterAds(filter, btn) {
+ adsFilter = filter;
+ document.querySelectorAll('.ads-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+ renderAdsTable();
+ }
  function renderAdsTable() {
  const tb = document.getElementById('adsTable'); if (!tb) return;
- const statusLabel = s => s === 'active' ? '<span style="color:#27AE60">启用</span>' : '<span style="color:#999">停用</span>';
+ const now = new Date();
+ // 过滤
+ const filtered = adsList.filter(a => {
+   if (adsFilter === 'all') return true;
+   if (adsFilter === 'active') {
+     if (a.status !== 'active') return false;
+     if (a.end_time && new Date(a.end_time) <= now) return false;
+     return true;
+   }
+   if (adsFilter === 'ended') {
+     if (a.end_time && new Date(a.end_time) <= now) return true;
+     if (a.status === 'inactive') return false;
+     return false;
+   }
+   if (adsFilter === 'inactive') return a.status === 'inactive';
+   return true;
+ });
+ const countEl = document.getElementById('adsFilterCount');
+ if (countEl) countEl.textContent = filtered.length + ' / ' + adsList.length + ' 条';
+ const statusLabel = (s, a) => {
+   if (a.end_time && new Date(a.end_time) <= new Date()) return '<span style="color:#E67E22">已结束</span>';
+   return s === 'active' ? '<span style="color:#27AE60">启用</span>' : '<span style="color:#999">停用</span>';
+ };
  const mediaPreview = (url, img) => {
   if (!url) return '<span style="font-size:20px">'+(img||'🎁')+'</span>';
   const isVid = url.match(/\.(mp4|webm|mov)$/i);
@@ -572,9 +612,9 @@
   const lt = { order:'下单', coupon:'优惠券', page:'页面', url:'外部链接', none:'-' };
   return lt[a.link_type] || '-';
  };
- tb.innerHTML = adsList.map(a => {
+ tb.innerHTML = filtered.map(a => {
   const ctr = a.view_count > 0 ? (a.click_count / a.view_count * 100).toFixed(1) + '%' : '-';
-  return `<tr><td>${mediaPreview(a.media_url, a.image)}</td><td>${escHtml(a.title)}</td><td style="text-align:center">${a.view_count||0}</td><td style="text-align:center">${a.click_count||0}</td><td style="text-align:center">${ctr}</td><td>${a.sort_order}</td><td>${statusLabel(a.status)}</td><td>${linkLabel(a)}</td><td>${a.end_time||'永久'}</td><td><button class="btn btn-sm" onclick="editAd(${a.id})">编辑</button> <button class="btn btn-sm btn-danger" onclick="deleteAd(${a.id})">删除</button></td></tr>`;
+  return `<tr><td>${mediaPreview(a.media_url, a.image)}</td><td>${escHtml(a.title)}</td><td style="text-align:center">${a.view_count||0}</td><td style="text-align:center">${a.click_count||0}</td><td style="text-align:center">${ctr}</td><td>${a.sort_order}</td><td>${statusLabel(a.status,a)}</td><td>${linkLabel(a)}</td><td>${a.end_time||'永久'}</td><td><button class="btn btn-sm" onclick="editAd(${a.id})">编辑</button> <button class="btn btn-sm btn-danger" onclick="deleteAd(${a.id})">删除</button></td></tr>`;
  }).join('');
  }
  function showAdForm(ad) {
