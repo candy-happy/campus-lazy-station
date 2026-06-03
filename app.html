@@ -371,7 +371,7 @@
     .item-seller-info { flex: 1; }
     .item-seller-name { font-size: 15px; font-weight: 600; }
     .item-seller-trust { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-    .item-action-bar { display: flex; gap: 10px; padding: 16px; position: sticky; bottom: 0; background: var(--card); border-top: 1px solid var(--border); }
+    .item-action-bar { display: flex; gap: 10px; padding: 16px; background: var(--card); border-top: 1px solid var(--border); }
     .item-action-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
     .item-action-btn:active { transform: scale(0.96); }
     .item-action-btn.chat { background: var(--card); border: 2px solid var(--primary); color: var(--primary); }
@@ -453,7 +453,7 @@
     .comment-replies { margin-top: 8px; padding-left: 42px; }
     .comment-reply { padding: 8px 0; border-top: 1px solid var(--border); }
     .comment-reply:first-child { border-top: none; }
-    .comment-input-wrap { display: flex; gap: 8px; padding: 12px; background: var(--card); border-top: 1px solid var(--border); position: sticky; bottom: 56px; z-index: 2; }
+    .comment-input-wrap { display: flex; gap: 8px; padding: 12px; background: var(--card); border-top: 1px solid var(--border); position: sticky; bottom: 0; z-index: 2; }
     .comment-input { flex: 1; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; background: var(--bg); color: var(--text); outline: none; }
     .comment-input:focus { border-color: var(--primary); }
     .comment-send-btn { padding: 8px 16px; border: none; border-radius: 20px; background: var(--gradient); color: white; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
@@ -2899,17 +2899,20 @@
           '<div class="item-comments-header"><span class="item-comments-title">💬 留言</span><span class="item-comments-count" id="commentCount">加载中...</span></div>' +
           '<div id="commentList"></div>' +
         '</div>' +
+        (isOwner ?
+          '<div class="item-action-bar">' +
+            '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 私聊买家</button>' +
+            '<button class="item-action-btn chat" style="background:#FFF0F0;color:var(--danger)" onclick="removeMyItem(' + item.id + ')">下架商品</button>' +
+          '</div>' :
+          '<div class="item-action-bar">' +
+            '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 私聊卖家</button>' +
+            '<button class="item-action-btn buy" onclick="buyItem(' + item.id + ')">🛒 购买</button>' +
+          '</div>') +
         '<div class="comment-input-wrap">' +
           '<div id="replyHint" class="comment-reply-hint" style="display:none;width:100%;margin-bottom:6px">回复 <span id="replyName"></span> <span class="cancel-reply" onclick="cancelReplyComment()">✕ 取消</span></div>' +
           '<input class="comment-input" id="commentInput" placeholder="说点什么..." maxlength="500" />' +
           '<button class="comment-send-btn" id="commentSendBtn" onclick="sendComment(' + item.id + ')">发送</button>' +
-        '</div>' +
-        (isOwner ?
-          '<div class="item-action-bar"><button class="item-action-btn chat" style="background:#FFF0F0;color:var(--danger)" onclick="removeMyItem(' + item.id + ')">下架商品</button></div>' :
-          '<div class="item-action-bar">' +
-            '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 私聊卖家</button>' +
-            '<button class="item-action-btn buy" onclick="buyItem(' + item.id + ')">🛒 购买</button>' +
-          '</div>');
+        '</div>';
 
       // 加载评论
       loadMarketComments(item.id);
