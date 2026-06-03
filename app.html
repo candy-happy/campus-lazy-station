@@ -680,6 +680,128 @@
     body.dark .sub-page-header { background: linear-gradient(135deg, #1a1a2e, #16213e); }
 
     /* ═══════════════════════════════════════════════════════
+       📋 订单详情美化
+    ═══════════════════════════════════════════════════════ */
+    .od-status-hero {
+      border-radius: var(--radius);
+      padding: 28px 20px 24px;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .od-status-icon { font-size: 40px; margin-bottom: 8px; }
+    .od-status-text { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .od-status-sub { font-size: 13px; opacity: 0.85; }
+    .od-fee-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    .od-fee-label { font-size: 14px; color: var(--text-secondary); }
+    .od-fee-amount { font-size: 22px; font-weight: 900; color: var(--primary); }
+    .od-addr-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 0;
+    }
+    .od-addr-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+    .od-addr-line {
+      width: 2px; height: 16px;
+      background: var(--border);
+      margin-left: 4px;
+    }
+    .od-addr-info {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+    .od-addr-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+      background: var(--primary);
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .od-note {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .od-rider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .od-rider-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--gradient);
+      color: #fff;
+      font-size: 18px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .od-rider-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .od-rider-status { font-size: 12px; margin-top: 2px; }
+    .od-timeline { display: flex; flex-direction: column; gap: 4px; }
+    .od-tl-item {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--text-secondary);
+    }
+    .od-tl-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border); flex-shrink: 0;
+    }
+    .od-tl-dot.active { background: var(--primary); }
+    .od-tl-time { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+    .od-rating-stars { font-size: 20px; color: #F39C12; margin-bottom: 4px; }
+    .od-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+      padding-bottom: 24px;
+    }
+    .od-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .od-btn:active { transform: scale(0.97); }
+    .od-btn-primary {
+      background: var(--gradient);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(255,107,53,0.3);
+    }
+    .od-btn-danger {
+      background: #fff;
+      color: #E74C3C;
+      border: 1px solid #E74C3C;
+    }
+    body.dark .od-fee-row { background: var(--card); }
+
+    /* ═══════════════════════════════════════════════════════
        ✏️ 发帖页面美化
     ═══════════════════════════════════════════════════════ */
     .post-page { display: flex; flex-direction: column; height: 100%; }
@@ -2907,27 +3029,89 @@
       if (!o) return;
       const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
       const statusColor = { pending:'#F39C12', accepted:'#3498DB', running:'#2ECC71', completed:'#95A5A6', cancelled:'#E74C3C' };
+      const statusIcon = { pending:'⏳', accepted:'👍', running:'🚴', completed:'✅', cancelled:'❌' };
       const typeLabel = { delivery:'代取外卖', express:'代取快递', purchase:'代买东西', laundry:'代取洗衣', errand:'跑腿办事', other:'其他服务' };
+      const typeIcon = { delivery:'🍱', express:'📦', purchase:'🛒', laundry:'👔', errand:'🏃', other:'📋' };
       const canChat = o.rider_phone && ['accepted','running'].includes(o.status);
+      const canCancel = o.status === 'pending';
+      const canRate = o.status === 'completed' && !o.rating_stars;
       const content = document.getElementById('detailContent');
       content.innerHTML = `
-        <div class="detail-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <b>${typeLabel[o.type]||o.type} #${o.order_no||o.id}</b>
-            <span style="padding:4px 10px;border-radius:8px;background:${statusColor[o.status]||'#ddd'};color:#fff;font-size:12px">${statusLabel[o.status]||o.status}</span>
+        <!-- 状态头部 -->
+        <div class="od-status-hero" style="background:${statusColor[o.status]||'#95A5A6'}">
+          <div class="od-status-icon">${statusIcon[o.status]||'📋'}</div>
+          <div class="od-status-text">${statusLabel[o.status]||o.status}</div>
+          <div class="od-status-sub">${typeIcon[o.type]||'📋'} ${typeLabel[o.type]||o.type} #${o.order_no||o.id}</div>
+        </div>
+        <!-- 费用 -->
+        <div class="od-fee-row">
+          <span class="od-fee-label">订单费用</span>
+          <span class="od-fee-amount">¥${(o.price||0).toFixed(2)}${o.tip?' <small style="color:var(--primary)">+小费¥'+o.tip+'</small>':''}</span>
+        </div>
+        <!-- 地址卡片 -->
+        <div class="sp-card">
+          <div class="sp-card-title">📍 配送信息</div>
+          <div class="sp-card-body">
+            <div class="od-addr-row">
+              <div class="od-addr-dot" style="background:#2ECC71"></div>
+              <div class="od-addr-info"><span class="od-addr-tag">取件</span>${escHtml(o.pickup_location||'未填写')}</div>
+            </div>
+            <div class="od-addr-line"></div>
+            <div class="od-addr-row">
+              <div class="od-addr-dot" style="background:var(--primary)"></div>
+              <div class="od-addr-info"><span class="od-addr-tag">送达</span>${escHtml(o.delivery_location||'未填写')}</div>
+            </div>
           </div>
-          <div style="font-size:13px;line-height:2">
-            <div>📍 取件: ${escHtml(o.pickup_location||'')}</div>
-            <div>📍 送达: ${escHtml(o.delivery_location||'')}</div>
-            <div>💰 费用: ¥${(o.price||0).toFixed(2)}${o.tip?' + 小费¥'+o.tip:''}</div>
-            <div>📝 备注: ${escHtml(o.note||'无')}</div>
-            ${o.rider_name?'<div>🚴 骑手: '+escHtml(o.rider_name)+'</div>':''}
+        </div>
+        <!-- 备注 -->
+        <div class="sp-card">
+          <div class="sp-card-title">📝 订单备注</div>
+          <div class="sp-card-body">
+            <div class="od-note">${escHtml(o.note||'无备注')}</div>
           </div>
-          ${canChat?'<button onclick="openChatFromOrder(\''+o.id+'\',\''+o.rider_phone+'\',\''+escHtml(o.rider_name||'')+'\')" style="width:100%;margin-top:12px;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius);font-size:14px;cursor:pointer">💬 联系骑手</button>':''}
+        </div>
+        <!-- 骑手信息 -->
+        ${o.rider_name ? `
+        <div class="sp-card">
+          <div class="sp-card-title">🚴 骑手信息</div>
+          <div class="sp-card-body">
+            <div class="od-rider-row">
+              <div class="od-rider-avatar">${o.rider_name.charAt(0)}</div>
+              <div class="od-rider-info">
+                <div class="od-rider-name">${escHtml(o.rider_name)}</div>
+                <div class="od-rider-status" style="color:${statusColor[o.status]||'#999'}">${statusLabel[o.status]||o.status}</div>
+              </div>
+            </div>
+          </div>
+        </div>` : ''}
+        <!-- 时间线 -->
+        <div class="sp-card">
+          <div class="sp-card-title">🕐 时间信息</div>
+          <div class="sp-card-body">
+            <div class="od-timeline">
+              <div class="od-tl-item"><span class="od-tl-dot active"></span><span>下单时间</span><span class="od-tl-time">${o.created_at||'--'}</span></div>
+              ${o.accepted_at ? '<div class="od-tl-item"><span class="od-tl-dot active"></span><span>接单时间</span><span class="od-tl-time">'+o.accepted_at+'</span></div>' : ''}
+              ${o.completed_at ? '<div class="od-tl-item"><span class="od-tl-dot active"></span><span>完成时间</span><span class="od-tl-time">'+o.completed_at+'</span></div>' : ''}
+            </div>
+          </div>
+        </div>
+        <!-- 评分 -->
+        ${o.rating_stars ? `
+        <div class="sp-card">
+          <div class="sp-card-title">⭐ 订单评价</div>
+          <div class="sp-card-body">
+            <div class="od-rating-stars">${'★'.repeat(o.rating_stars)+'☆'.repeat(5-o.rating_stars)}</div>
+            ${o.rating_comment ? '<div class="od-note">'+escHtml(o.rating_comment)+'</div>' : ''}
+          </div>
+        </div>` : ''}
+        <!-- 操作按钮 -->
+        <div class="od-actions">
+          ${canChat ? '<button class="od-btn od-btn-primary" onclick="openChatFromOrder(\''+o.id+'\',\''+o.rider_phone+'\',\''+escHtml(o.rider_name||'')+'\')">💬 联系骑手</button>' : ''}
+          ${canRate ? '<button class="od-btn od-btn-primary" onclick="openRateModal(\''+o.id+'\')">⭐ 评价订单</button>' : ''}
+          ${canCancel ? '<button class="od-btn od-btn-danger" onclick="cancelOrder(\''+o.id+'\')">取消订单</button>' : ''}
         </div>
       `;
       openSubPage('detailPage_sub');
-      /* overflow managed by sub-page */
     }
 
     async function cancelOrder(id) {
