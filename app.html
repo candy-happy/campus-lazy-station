@@ -673,6 +673,218 @@
       padding: 16px;
     }
     body.dark .sub-page-header { background: linear-gradient(135deg, #1a1a2e, #16213e); }
+
+    /* ═══════════════════════════════════════════════════════
+       ✏️ 发帖页面美化
+    ═══════════════════════════════════════════════════════ */
+    .post-page { display: flex; flex-direction: column; height: 100%; }
+    .post-editor {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 0 16px 16px;
+    }
+    .post-textarea-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 180px;
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 2px dashed var(--border);
+      padding: 16px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .post-textarea-wrap:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255,107,53,0.12);
+    }
+    .post-textarea-wrap textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 140px;
+      border: none;
+      background: transparent;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text);
+      resize: none;
+      outline: none;
+      font-family: inherit;
+    }
+    .post-textarea-wrap textarea::placeholder { color: var(--text-light); }
+    .post-char-count {
+      text-align: right;
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 6px;
+      transition: color 0.2s;
+    }
+    .post-char-count.warn { color: var(--warning); }
+    .post-char-count.danger { color: var(--danger); font-weight: 700; }
+
+    /* 话题标签选择 */
+    .post-topic-bar {
+      display: flex;
+      gap: 8px;
+      margin: 14px 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .post-topic-bar::-webkit-scrollbar { display: none; }
+    .post-topic-tag {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--text-secondary);
+      transition: all 0.25s;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .post-topic-tag:active { transform: scale(0.95); }
+    .post-topic-tag.selected {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+    }
+    .post-topic-tag .tag-emoji { margin-right: 4px; }
+
+    /* 图片预览区 */
+    .post-media-section {
+      margin-top: 8px;
+    }
+    .post-media-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .post-media-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .post-media-item img,
+    .post-media-item video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .post-media-item .media-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      border: none;
+      font-size: 14px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .post-media-item .media-remove:active { background: var(--danger); }
+    .post-media-add {
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      border: 2px dashed var(--border);
+      background: var(--card);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.25s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .post-media-add:active { transform: scale(0.96); border-color: var(--primary); }
+    .post-media-add .add-icon { font-size: 28px; color: var(--text-light); line-height: 1; }
+    .post-media-add .add-text { font-size: 11px; color: var(--text-light); }
+
+    /* 底部工具栏 */
+    .post-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .post-tool-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--text-secondary);
+      transition: all 0.25s;
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+    }
+    .post-tool-btn:active { transform: scale(0.95); }
+    .post-tool-btn:hover { border-color: var(--primary-light); color: var(--primary); }
+    .post-tool-btn .tool-icon { font-size: 16px; }
+
+    .post-submit-btn {
+      flex: 1;
+      padding: 12px 0;
+      border-radius: 24px;
+      background: var(--gradient);
+      color: #fff;
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: 0 4px 16px rgba(255,107,53,0.35);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .post-submit-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(255,107,53,0.2); }
+    .post-submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* 提示卡 */
+    .post-tips-card {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: var(--primary-pale, #FFF0EB);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--primary-dark);
+      line-height: 1.6;
+    }
+    .post-tips-card .tips-title { font-weight: 700; margin-bottom: 4px; }
+
+    /* 暗色模式 */
+    body.dark .post-textarea-wrap { border-color: var(--border); background: var(--card); }
+    body.dark .post-textarea-wrap:focus-within { border-color: var(--primary); }
+    body.dark .post-topic-tag { background: var(--card); border-color: var(--border); color: var(--text-secondary); }
+    body.dark .post-topic-tag.selected { background: var(--primary); border-color: var(--primary); color: #fff; }
+    body.dark .post-media-add { background: var(--card); border-color: var(--border); }
+    body.dark .post-tool-btn { background: var(--card); border-color: var(--border); }
+    body.dark .post-tips-card { background: rgba(255,107,53,0.12); color: var(--primary-light); }
 </style>
 <script src="api.js"></script>
 </head>
@@ -945,24 +1157,58 @@
       </div>
       <div id="wallFeed" class="content-area" style="padding:12px 16px 80px"></div>
       <!-- FAB发帖按钮 -->
-      <button id="wallFab" onclick="openWallPostModal()" style="position:fixed;bottom:80px;right:calc(50% - 210px);width:52px;height:52px;border-radius:50%;background:var(--gradient);color:white;font-size:24px;border:none;box-shadow:var(--shadow-lg);cursor:pointer;z-index:90">✏️</button>
+      <button id="wallFab" onclick="openWallPostModal()" style="position:fixed;bottom:80px;right:calc(50% - 210px);width:52px;height:52px;border-radius:50%;background:var(--gradient);color:white;font-size:24px;border:none;box-shadow:var(--shadow-lg);cursor:pointer;z-index:90;transition:transform 0.2s">✏️</button>
     </div>
 
     <!-- 校园墙发帖子页面 -->
     <div class="sub-page" id="wallPostPage_sub">
       <div class="sub-page-header">
         <button class="sub-page-back" onclick="closeSubPage('wallPostPage_sub')">←</button>
-        <span class="sub-page-title">发帖</span>
+        <span class="sub-page-title">✏️ 发布动态</span>
       </div>
-      <div class="sub-page-body">
-        <textarea id="wallPostContent" class="form-textarea" placeholder="分享你的校园生活..." style="min-height:100px"></textarea>
-        <div id="wallFilePreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
-        <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
-          <label style="cursor:pointer;display:flex;align-items:center;gap:4px;padding:8px 16px;background:var(--bg,#f5f5f5);border-radius:20px;font-size:13px">
-            📷 <span>图片/视频</span>
-            <input type="file" id="wallFileInput" accept="image/*,video/*" multiple style="display:none" onchange="previewWallFiles(this)" />
-          </label>
-          <button onclick="submitWallPost()" class="submit-btn" style="flex:1">发布</button>
+      <div class="sub-page-body post-page">
+        <div class="post-editor">
+          <!-- 话题标签 -->
+          <div class="post-topic-bar" id="postTopicBar">
+            <div class="post-topic-tag" data-topic="日常" onclick="toggleTopicTag(this)"><span class="tag-emoji">💬</span>日常</div>
+            <div class="post-topic-tag" data-topic="求助" onclick="toggleTopicTag(this)"><span class="tag-emoji">🙏</span>求助</div>
+            <div class="post-topic-tag" data-topic="吐槽" onclick="toggleTopicTag(this)"><span class="tag-emoji">😤</span>吐槽</div>
+            <div class="post-topic-tag" data-topic="美食" onclick="toggleTopicTag(this)"><span class="tag-emoji">🍜</span>美食</div>
+            <div class="post-topic-tag" data-topic="恋爱" onclick="toggleTopicTag(this)"><span class="tag-emoji">💕</span>恋爱</div>
+            <div class="post-topic-tag" data-topic="学习" onclick="toggleTopicTag(this)"><span class="tag-emoji">📚</span>学习</div>
+            <div class="post-topic-tag" data-topic="闲置" onclick="toggleTopicTag(this)"><span class="tag-emoji">🎁</span>闲置</div>
+            <div class="post-topic-tag" data-topic="活动" onclick="toggleTopicTag(this)"><span class="tag-emoji">🎉</span>活动</div>
+          </div>
+
+          <!-- 内容输入 -->
+          <div class="post-textarea-wrap">
+            <textarea id="wallPostContent" placeholder="分享你的校园生活，想说就说..." oninput="onPostContentInput(this)"></textarea>
+          </div>
+          <div class="post-char-count" id="postCharCount">0 / 500</div>
+
+          <!-- 媒体区 -->
+          <div class="post-media-section">
+            <div class="post-media-grid" id="wallFilePreview"></div>
+          </div>
+
+          <!-- 工具栏 -->
+          <div class="post-toolbar">
+            <label class="post-tool-btn">
+              <span class="tool-icon">📷</span>图片
+              <input type="file" id="wallFileInput" accept="image/*,video/*" multiple style="display:none" onchange="previewWallFiles(this)" />
+            </label>
+            <label class="post-tool-btn">
+              <span class="tool-icon">🎥</span>视频
+              <input type="file" accept="video/*" style="display:none" onchange="previewWallFiles(this)" />
+            </label>
+            <button class="post-submit-btn" id="postSubmitBtn" onclick="submitWallPost()">🚀 发布</button>
+          </div>
+
+          <!-- 提示卡 -->
+          <div class="post-tips-card">
+            <div class="tips-title">💡 发帖小贴士</div>
+            <div>选择话题标签让更多人看到你的动态 · 支持图片和视频 · 文明发言，共建和谐社区</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1468,20 +1714,102 @@
       `).join('');
     }
 
+    // ─── 发帖页面相关函数 ──────────────────────────────
+    let wallSelectedFiles = [];
+    let _selectedTopic = '';
+
+    function toggleTopicTag(el) {
+      const topic = el.dataset.topic;
+      const wasSelected = el.classList.contains('selected');
+      // 只允许单选话题
+      document.querySelectorAll('.post-topic-tag').forEach(t => t.classList.remove('selected'));
+      if (!wasSelected) {
+        el.classList.add('selected');
+        _selectedTopic = topic;
+      } else {
+        _selectedTopic = '';
+      }
+    }
+
+    function onPostContentInput(textarea) {
+      const len = textarea.value.length;
+      const counter = document.getElementById('postCharCount');
+      if (!counter) return;
+      counter.textContent = len + ' / 500';
+      counter.className = 'post-char-count';
+      if (len > 450) counter.classList.add('warn');
+      if (len > 500) counter.classList.add('danger');
+      // 截断超长内容
+      if (len > 500) textarea.value = textarea.value.slice(0, 500);
+    }
+
+    function previewWallFiles(input) {
+      const files = Array.from(input.files || []);
+      files.forEach(file => {
+        if (wallSelectedFiles.length >= 9) return showToast('最多上传9个文件');
+        wallSelectedFiles.push(file);
+      });
+      renderWallFilePreview();
+      input.value = '';
+    }
+
+    function renderWallFilePreview() {
+      const container = document.getElementById('wallFilePreview');
+      if (!container) return;
+      let html = '';
+      wallSelectedFiles.forEach((file, i) => {
+        const url = URL.createObjectURL(file);
+        const isVideo = file.type.startsWith('video');
+        html += '<div class="post-media-item">';
+        if (isVideo) {
+          html += '<video src="' + url + '" muted></video>';
+        } else {
+          html += '<img src="' + url + '" alt="预览" />';
+        }
+        html += '<button class="media-remove" onclick="removeWallFile(' + i + ')">×</button>';
+        html += '</div>';
+      });
+      // 添加按钮（不满9个时）
+      if (wallSelectedFiles.length < 9) {
+        html += '<div class="post-media-add" onclick="document.getElementById(\'wallFileInput\').click()">';
+        html += '<span class="add-icon">+</span>';
+        html += '<span class="add-text">添加</span>';
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function removeWallFile(index) {
+      wallSelectedFiles.splice(index, 1);
+      renderWallFilePreview();
+    }
+
     function openWallPostModal() {
       if (!currentUser) return showLoginPage();
-      document.getElementById('wallPostContent').value = ''; wallSelectedFiles = []; document.getElementById('wallFilePreview').innerHTML = ''; if(document.getElementById('wallFileInput'))document.getElementById('wallFileInput').value = '';
+      document.getElementById('wallPostContent').value = '';
+      wallSelectedFiles = [];
+      _selectedTopic = '';
+      document.getElementById('wallFilePreview').innerHTML = '';
+      if (document.getElementById('wallFileInput')) document.getElementById('wallFileInput').value = '';
+      // 清除话题选中状态
+      document.querySelectorAll('.post-topic-tag').forEach(t => t.classList.remove('selected'));
+      // 重置字数
+      const counter = document.getElementById('postCharCount');
+      if (counter) { counter.textContent = '0 / 500'; counter.className = 'post-char-count'; }
       openSubPage('wallPostPage_sub');
-      /* overflow managed by sub-page */
     }
 
     async function submitWallPost() {
       const content = document.getElementById('wallPostContent').value.trim();
       if (!content) return showToast('请输入内容');
-      const res = await API.wallPost({ phone: currentUser.phone, nickname: currentUser.name, content });
+      if (content.length > 500) return showToast('内容不能超过500字');
+      // 拼接话题标签到内容
+      let finalContent = content;
+      if (_selectedTopic) finalContent = '#' + _selectedTopic + '# ' + content;
+      const res = await API.wallPost({ phone: currentUser.phone, nickname: currentUser.name, content: finalContent });
       if (res.error) return showToast(res.error);
       closeSubPage('wallPostPage_sub');
-      showToast('发布成功！');
+      showToast('发布成功！🎉');
       loadWallFeed();
     }
 
