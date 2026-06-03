@@ -189,6 +189,103 @@
     body.dark .chat-bubble { background: var(--card-bg); border-color: var(--border); }
     body.dark .toast { background: var(--card-bg); color: var(--text); border-color: var(--border); }
     body.dark .error-banner { background: #3D1F1F; color: #FF8E8E; border-color: #5C2E2E; }
+
+    /* ═══════════════════════════════════════════════════════
+       📋 骑手订单详情美化
+    ═══════════════════════════════════════════════════════ */
+    .rd-status-hero {
+      border-radius: var(--radius);
+      padding: 24px 20px 20px;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .rd-status-icon { font-size: 36px; margin-bottom: 6px; }
+    .rd-status-text { font-size: 18px; font-weight: 800; margin-bottom: 2px; }
+    .rd-status-sub { font-size: 13px; opacity: 0.85; }
+    .rd-fee-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+    .rd-fee-label { font-size: 14px; color: var(--text-muted); }
+    .rd-fee-amount { font-size: 22px; font-weight: 900; color: var(--orange); }
+    .rd-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .rd-card-title {
+      font-size: 14px; font-weight: 700;
+      padding: 12px 16px 6px;
+      color: var(--text);
+    }
+    .rd-card-body {
+      padding: 0 16px 14px;
+    }
+    .rd-addr-row {
+      display: flex; align-items: flex-start; gap: 10px; padding: 6px 0;
+    }
+    .rd-addr-dot {
+      width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+    }
+    .rd-addr-line {
+      width: 2px; height: 14px; background: var(--border); margin-left: 4px;
+    }
+    .rd-addr-info {
+      font-size: 14px; line-height: 1.6; color: var(--text);
+    }
+    .rd-addr-tag {
+      display: inline-block; font-size: 11px; font-weight: 600;
+      color: #fff; background: var(--orange); border-radius: 4px;
+      padding: 1px 6px; margin-right: 6px; vertical-align: middle;
+    }
+    .rd-note { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+    .rd-user-row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--card-bg); border-radius: var(--radius);
+      padding: 14px 16px; margin-bottom: 14px; box-shadow: var(--shadow);
+    }
+    .rd-user-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff; font-size: 17px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .rd-user-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .rd-user-phone { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .rd-time { font-size: 13px; color: var(--text-muted); padding: 3px 0; }
+    .rd-actions {
+      display: flex; flex-direction: column; gap: 10px; margin-top: 16px;
+    }
+    .rd-btn {
+      width: 100%; padding: 14px; border: none; border-radius: var(--radius);
+      font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+    }
+    .rd-btn:active { transform: scale(0.97); }
+    .rd-btn-success {
+      background: linear-gradient(135deg, #2ECC71, #27AE60); color: #fff;
+      box-shadow: 0 4px 12px rgba(46,204,113,0.3);
+    }
+    .rd-btn-blue {
+      background: linear-gradient(135deg, #3498DB, #2980B9); color: #fff;
+      box-shadow: 0 4px 12px rgba(52,152,219,0.3);
+    }
+    .rd-btn-chat {
+      background: var(--card-bg); color: var(--orange);
+      border: 1.5px solid var(--orange);
+    }
+    .rd-status-end {
+      text-align: center; color: var(--text-muted); font-size: 14px; padding: 12px;
+    }
 </style>
 <script src="api.js"></script>
 </head>
@@ -563,22 +660,66 @@
  const o = arr.find(x => x.order_no === orderNo);
  if (!o) return;
  const content = $('detailContent');
- // 用户信息栏（已接单/配送中时显示）
-   const userInfo = (mode !== 'accept' && o.phone) ? '<div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg);border-radius:12px;margin-bottom:12px"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">'+(o.user_name||o.phone||'?')[0]+'</div><div style="flex:1"><div style="font-size:14px;font-weight:600">'+escHtml(o.user_name||'用户')+'</div><div style="font-size:12px;color:var(--text-muted)">手机: '+fmtPhone(o.phone)+'</div></div></div>' : '';
-   // 操作按钮
-   let actionBtn = '';
-   if (mode === 'accept') {
-     actionBtn = '<button data-order="'+o.order_no+'" onclick="acceptOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#2ECC71;color:white;font-size:16px;font-weight:700;cursor:pointer">接单 🛵</button>';
-   } else if (o.status === 'accepted') {
-     actionBtn = '<button data-order="'+o.order_no+'" onclick="startDelivery(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#3498DB;color:white;font-size:16px;font-weight:700;cursor:pointer">开始配送 🚀</button>';
-   } else if (o.status === 'running') {
-     actionBtn = '<button data-order="'+o.order_no+'" onclick="completeOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:#2ECC71;color:white;font-size:16px;font-weight:700;cursor:pointer">确认送达 ✅</button>';
-   } else {
-     actionBtn = '<p style="text-align:center;color:var(--text-muted)">订单已结束</p>';
-   }
-   // 联系用户按钮（已接单/配送中/已完成都可联系）
-   const chatBtn = (mode !== 'accept' && o.phone) ? '<button data-order="'+o.order_no+'" onclick="openChatFromOrder(this.dataset.order)" style="width:100%;padding:14px;border:none;border-radius:14px;background:var(--green);color:white;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px">💬 联系用户</button>' : '';
-   content.innerHTML = '<div style="margin-bottom:16px"><div style="font-size:24px;margin-bottom:4px">'+(typeEmoji[o.type]||'📦')+' '+(serviceNames[o.type]||'服务')+'</div><div class="order-info"><p>📍 取货：'+escHtml(o.pickup_location)+'</p><p>📍 送达：'+escHtml(o.delivery_location)+'</p><p>📝 备注：'+escHtml(o.details||'无')+'</p><p>💰 金额：¥'+((o.price||0).toFixed(2))+'</p></div><div style="font-size:12px;color:var(--text-muted)">订单号：'+o.order_no+' · '+fmtTime(o.created_at)+'</div></div>'+userInfo+actionBtn+chatBtn;
+ const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
+ const statusColor = { pending:'#F39C12', accepted:'#3498DB', running:'#2ECC71', completed:'#95A5A6', cancelled:'#E74C3C' };
+ const statusIcon = { pending:'⏳', accepted:'👍', running:'🚴', completed:'✅', cancelled:'❌' };
+ const userInfo = (mode !== 'accept' && o.phone) ? '<div class="rd-user-row"><div class="rd-user-avatar">'+(o.user_name||o.phone||'?')[0]+'</div><div class="rd-user-info"><div class="rd-user-name">'+escHtml(o.user_name||'用户')+'</div><div class="rd-user-phone">📱 '+fmtPhone(o.phone)+'</div></div></div>' : '';
+ let actionBtn = '';
+ if (mode === 'accept') {
+   actionBtn = '<button data-order="'+o.order_no+'" onclick="acceptOrder(this.dataset.order)" class="rd-btn rd-btn-success">接单 🛵</button>';
+ } else if (o.status === 'accepted') {
+   actionBtn = '<button data-order="'+o.order_no+'" onclick="startDelivery(this.dataset.order)" class="rd-btn rd-btn-blue">开始配送 🚀</button>';
+ } else if (o.status === 'running') {
+   actionBtn = '<button data-order="'+o.order_no+'" onclick="completeOrder(this.dataset.order)" class="rd-btn rd-btn-success">确认送达 ✅</button>';
+ } else {
+   actionBtn = '<div class="rd-status-end">订单已结束</div>';
+ }
+ const chatBtn = (mode !== 'accept' && o.phone) ? '<button data-order="'+o.order_no+'" onclick="openChatFromOrder(this.dataset.order)" class="rd-btn rd-btn-chat">💬 联系用户</button>' : '';
+ content.innerHTML = `
+   <div class="rd-status-hero" style="background:${statusColor[o.status]||'#95A5A6'}">
+     <div class="rd-status-icon">${statusIcon[o.status]||'📋'}</div>
+     <div class="rd-status-text">${statusLabel[o.status]||o.status}</div>
+     <div class="rd-status-sub">${typeEmoji[o.type]||'📦'} ${serviceNames[o.type]||'服务'}</div>
+   </div>
+   <div class="rd-fee-row">
+     <span class="rd-fee-label">订单金额</span>
+     <span class="rd-fee-amount">¥${(o.price||0).toFixed(2)}</span>
+   </div>
+   <div class="rd-card">
+     <div class="rd-card-title">📍 配送信息</div>
+     <div class="rd-card-body">
+       <div class="rd-addr-row">
+         <div class="rd-addr-dot" style="background:#2ECC71"></div>
+         <div class="rd-addr-info"><span class="rd-addr-tag">取货</span>${escHtml(o.pickup_location)}</div>
+       </div>
+       <div class="rd-addr-line"></div>
+       <div class="rd-addr-row">
+         <div class="rd-addr-dot" style="background:var(--orange)"></div>
+         <div class="rd-addr-info"><span class="rd-addr-tag">送达</span>${escHtml(o.delivery_location)}</div>
+       </div>
+     </div>
+   </div>
+   <div class="rd-card">
+     <div class="rd-card-title">📝 备注</div>
+     <div class="rd-card-body">
+       <div class="rd-note">${escHtml(o.details||'无备注')}</div>
+     </div>
+   </div>
+   ${userInfo}
+   <div class="rd-card">
+     <div class="rd-card-title">🕐 时间</div>
+     <div class="rd-card-body">
+       <div class="rd-time">订单号: ${o.order_no}</div>
+       <div class="rd-time">下单: ${fmtTime(o.created_at)}</div>
+       ${o.accepted_at ? '<div class="rd-time">接单: '+fmtTime(o.accepted_at)+'</div>' : ''}
+       ${o.completed_at ? '<div class="rd-time">完成: '+fmtTime(o.completed_at)+'</div>' : ''}
+     </div>
+   </div>
+   <div class="rd-actions">
+     ${actionBtn}
+     ${chatBtn}
+   </div>
+ `;
  $('detailModal').classList.add('active');
  document.body.style.overflow = 'hidden';
  }
