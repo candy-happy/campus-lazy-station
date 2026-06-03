@@ -464,9 +464,11 @@
       <div class="sub-page-header">
         <span class="sub-page-title">🛵 骑手登录</span>
       </div>
-      <div class="sub-page-body">
-        <div class="login-form">
-          <div class="login-logo">🛵</div><div class="login-title">骑手端</div><div class="login-subtitle">登录后即可接单配送</div>
+      <div class="sub-page-body" style="display:flex;flex-direction:column;min-height:calc(100vh - 52px)">
+        <div class="login-form" style="flex:1">
+          <div class="login-logo" style="font-size:4.5rem;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(46,204,113,0.3))">🛵</div>
+          <div class="login-title">骑手端</div>
+          <div class="login-subtitle">登录后即可接单配送</div>
           <form onsubmit="login(event)">
             <div class="form-group"><input type="text" class="form-input" id="loginUid" placeholder="请输入UID编号" required></div>
             <div class="form-group"><input type="text" class="form-input" id="loginName" placeholder="请输入姓名" required></div>
@@ -475,6 +477,7 @@
             <button type="submit" class="btn btn-success">立即登录</button>
           </form>
         </div>
+        <div style="text-align:center;padding:16px 0;color:var(--text-muted);font-size:12px;opacity:.6">校园懒人效率站 v3.0</div>
       </div>
     </div>
 
@@ -485,19 +488,18 @@
         <span class="sub-page-title">💸 申请提现</span>
       </div>
       <div class="sub-page-body">
-        <div style="text-align:center;padding:16px 0">
-          <div style="font-size:13px;color:var(--text-muted)">可提现余额</div>
-          <div style="font-size:32px;font-weight:900;color:var(--green)">¥<span id="walletAvail">0.00</span></div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">审核中: ¥<span id="walletPending">0.00</span></div>
+        <div class="sp-card" style="text-align:center;background:linear-gradient(135deg,#2C3E50,#1A252F);color:#fff">
+          <div style="font-size:12px;opacity:.7;margin-bottom:4px">可提现余额</div>
+          <div style="font-size:36px;font-weight:900;letter-spacing:-0.02em">¥<span id="walletAvail">0.00</span></div>
+          <div style="font-size:12px;opacity:.5;margin-top:6px">审核中: ¥<span id="walletPending">0.00</span></div>
         </div>
-        <div style="padding:0 16px">
-          <label style="font-size:13px;color:var(--text-muted)">提现金额（最低1元，最多¥<span id="withdrawMax">0.00</span>）</label>
-          <input type="number" id="withdrawInput" min="1" step="0.01" placeholder="输入提现金额" style="width:100%;padding:12px;margin-top:8px;border:1.5px solid var(--border);border-radius:12px;font-size:18px;outline:none;text-align:center;background:var(--bg);color:var(--text)" />
-          <button onclick="doWithdraw()" class="rd-btn rd-btn-success" style="margin-top:16px">确认提现</button>
+        <div class="sp-card">
+          <label style="font-size:13px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:8px">提现金额（最低1元，最多¥<span id="withdrawMax">0.00</span>）</label>
+          <input type="number" id="withdrawInput" min="1" step="0.01" placeholder="输入提现金额" class="sp-input" style="font-size:22px;text-align:center;font-weight:700;padding:16px" />
+          <button onclick="doWithdraw()" class="sp-btn sp-btn-green" style="margin-top:14px">确认提现</button>
         </div>
       </div>
     </div>
- </div>
  <!-- 骑手收入明细 -->
  <div class="sub-page" id="earningsPage_sub">
       <div class="sub-page-header">
@@ -513,212 +515,8 @@
         <button class="sub-page-back" onclick="closeSubPage('chatListPage_sub')">←</button>
         <span class="sub-page-title">💬 我的消息</span>
       </div>
-      <div class="sub-page-body" id="chatListBody" style="padding:0"></div>
-    </div>
- <!-- 骑手聊天对话 -->
- <div class="sub-page" id="chatConvPage_sub">
-      <div class="sub-page-header">
-        <button class="sub-page-back" onclick="closeSubPage('chatConvPage_sub')">←</button>
-        <span class="sub-page-title" id="chatConvTitle">对话</span>
-      </div>
-      <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px;min-height:300px"></div>
-      <div style="display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--border);background:var(--card-bg)">
-        <input id="chatInput" placeholder="输入消息..." style="flex:1;padding:10px;border:1px solid var(--border);border-radius:20px;outline:none;background:var(--bg);color:var(--text)" onkeydown="if(event.key==='Enter')sendChatMsg()" />
-        <button onclick="sendChatMsg()" style="padding:8px 16px;background:var(--green);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer">发送</button>
-      </div>
-    </div>
-
- <div class="toast" id="toast"></div>
-
- <script>
- const $ = (id) => document.getElementById(id);
- let _pageStack = [];
- function openSubPage(id) {
-   const el = document.getElementById(id);
-   if (!el) return;
-   _pageStack.push(id);
-   el.classList.add('active');
- }
- function closeSubPage(id) {
-   const el = document.getElementById(id);
-   if (!el) return;
-   el.classList.remove('active');
-   _pageStack = _pageStack.filter(p => p !== id);
-   if (_pageStack.length === 0) document.body.style.overflow = '';
- }
- function goBack() {
-   if (_pageStack.length > 0) closeSubPage(_pageStack[_pageStack.length - 1]);
- }
- window.addEventListener('popstate', () => goBack());
- const phoneRegex = /^1[3-9]\d{9}$/;
- const fmtPhone = (p) => p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : '';
- const fmtTime = (ts) => {
- const d = new Date(ts), diff = Date.now() - d;
- if (diff < 60000) return '刚刚';
- if (diff < 3600000) return Math.floor(diff/60000) + '分钟前';
- if (diff < 86400000) return Math.floor(diff/3600000) + '小时前';
- return d.toLocaleDateString('zh-CN');
- };
- const showToast = (msg, duration = 2500) => {
- const toast = $('toast'); toast.textContent = msg; toast.classList.add('show');
- setTimeout(() => toast.classList.remove('show'), duration);
- };
-
- let currentRider = null;
- let newOrders = [];
- let myOrders = [];
- const typeEmoji = { delivery:'🍱', express:'📦', print:'🖨️', purchase:'🛒', laundry:'👕', errand:'🏃', other:'💡' };
- const serviceNames = { delivery:'代取外卖', express:'代取快递', print:'打印复印', purchase:'代买东西', laundry:'代取洗衣', errand:'跑腿办事', other:'其他服务' };
- const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
-
- document.addEventListener('DOMContentLoaded', async () => {
-  // 全局401拦截：token过期自动跳转登录
-  const origFetch = window.fetch;
-  window.fetch = function(...args) {
-    return origFetch.apply(this, args).then(res => {
-      if (res.status === 401) {
-        const s = JSON.parse(localStorage.getItem('lazy_session') || '{}');
-        if (s.role) {
-          localStorage.removeItem('lazy_token');
-          localStorage.removeItem('lazy_session');
-          API._token = null;
-          if (typeof showToast === 'function') showToast('登录已过期，请重新登录');
-          setTimeout(() => location.reload(), 1000);
-        }
-      }
-      return res;
-    });
-  };
-
- // 暗色模式初始化
- if (localStorage.getItem('lazyTheme') === 'dark') document.body.classList.add('dark');
- const saved = API.restoreSession();
- if (saved && saved.role === 'rider' && saved.phone) {
- if (saved.phone.includes('*')) { API.logout(); openSubPage('loginPage_sub'); $('mainContent').style.display = 'none'; }
- else { await restoreRiderSession(saved.phone, saved.name); }
- } else {
- openSubPage('loginPage_sub');
- $('mainContent').style.display = 'none';
- $('profilePage').classList.remove('active');
- }
- 
-    // Init dark toggle state
-    const dt = document.getElementById('darkToggle');
-    if (dt) {
-      dt.checked = document.body.classList.contains('dark');
-      dt.addEventListener('change', function() { toggleDark(this.checked); });
-    }
-  });
-
- async function restoreRiderSession(phone, name) {
- try {
- const r = await API.getRider(phone);
- currentRider = { ...r, phone };
- $('userName').textContent = name || r.name;
- $('userNameLg').textContent = name || r.name;
- $('userPhoneDisplay').textContent = phone;
- $('userUidDisplay').textContent = r.uid || '--';
- $('mainContent').style.display = 'block';
- closeSubPage('loginPage_sub');
- updateStatusUI(currentRider.status);
- await Promise.all([refreshOrders(), updateProfile()]);
- setInterval(refreshOrders, 15000);
- } catch (e) { showToast('恢复登录失败，请重新登录'); openSubPage('loginPage_sub'); }
- }
-
- async function login(e) {
- e.preventDefault();
- const uid = $('loginUid').value.trim();
- const name = $('loginName').value.trim();
- const sid = $('loginStudentId').value.trim();
- const phone = $('loginPhone').value.trim();
- if (!uid) return showToast('请输入UID编号');
- if (!name) return showToast('请输入姓名');
- if (!phoneRegex.test(phone)) return showToast('请输入正确手机号码');
- try {
- const r = await API.riderLogin(uid, name, sid, phone);
- currentRider = { ...r, phone };
- $('userName').textContent = name;
- $('userNameLg').textContent = name;
- $('userPhoneDisplay').textContent = phone;
- $('userUidDisplay').textContent = r.uid || uid;
- $('mainContent').style.display = 'block';
- closeSubPage('loginPage_sub');
- updateStatusUI('online');
- await Promise.all([refreshOrders(), updateProfile()]);
- setInterval(refreshOrders, 15000);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden && currentRider) refreshOrders(); });
- showToast('登录成功！');
- } catch (e) { showToast(e.message || '登录失败'); }
- }
-
- function toggleOnlineStatus() {
- if (!currentRider) return;
- const newStatus = currentRider.status === 'online' ? 'offline' : 'online';
- API.updateRiderStatus(currentRider.phone, newStatus).then(() => {
- currentRider.status = newStatus;
- updateStatusUI(newStatus);
- showToast(newStatus === 'online' ? '已上线，可接收新订单' : '已离线');
- if (newStatus === 'online') refreshOrders();
- }).catch(e => showToast('状态切换失败'));
- }
-
- function updateStatusUI(status) {
- const dot = $('statusDot');
- const txt = $('statusText');
- const sw = $('statusSwitch');
- if (dot) dot.className = 'status-dot' + (status === 'online' ? '' : ' offline');
- if (txt) txt.textContent = status === 'online' ? '在线接单中' : '已离线';
- if (sw) sw.className = 'status-switch' + (status === 'online' ? '' : ' off');
- }
-
- async function refreshOrders() {
- if (!currentRider) return;
- try {
- const [pending, active] = await Promise.all([
- API.getOrders({ status: 'pending' }),
- API.getOrders({ rider_phone: currentRider.phone, status: 'my' })
- ]);
- newOrders = Array.isArray(pending) ? pending : [];
- myOrders = Array.isArray(active) ? active : [];
- renderNewOrders();
- renderMyOrders();
- const today = new Date().toDateString();
- const todayCount = myOrders.filter(o => new Date(o.accepted_at).toDateString() === today).length;
- $('statTodayOrders').textContent = todayCount;
- $('statTodayOrders2').textContent = todayCount;
- } catch (e) { console.error('刷新订单失败', e); }
- }
-
- function renderNewOrders() {
- const list = $('newOrdersList');
- if (!list) return;
- if (!newOrders.length) {
- list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>暂无新订单</p></div>';
- return;
- }
- list.innerHTML = newOrders.map(o => '<div style="background:var(--card-bg);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer" data-order="'+o.order_no+'" onclick="showOrderDetail(this.dataset.order,\'accept\')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:18px">'+(typeEmoji[o.type]||'📦')+'</span><span style="font-size:16px;font-weight:700;color:#FF6B35">¥'+((o.price||0).toFixed(2))+'</span></div><div style="font-size:14px;margin-bottom:6px">📍 '+escHtml(o.pickup_location)+' → 📍 '+escHtml(o.delivery_location)+'</div><div style="font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between"><span>'+fmtTime(o.created_at)+'</span><span style="color:#2ECC71;font-weight:600">点击接单 →</span></div></div>').join('');
- }
-
- function renderMyOrders() {
- const list = $('myOrdersList');
- if (!list) return;
- if (!myOrders.length) {
- list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>暂无进行中的订单</p></div>';
- return;
- }
- list.innerHTML = myOrders.map(o => '<div style="background:var(--card-bg);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer" data-order="'+o.order_no+'" onclick="showOrderDetail(this.dataset.order,\'manage\')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:18px">'+(typeEmoji[o.type]||'📦')+'</span><span style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;color:white;background:'+(o.status==='accepted'?'#3498DB':'#2ECC71')+'">'+(statusLabel[o.status]||o.status)+'</span></div><div style="font-size:14px;margin-bottom:4px">📍 '+escHtml(o.pickup_location)+' → 📍 '+escHtml(o.delivery_location)+'</div><div style="font-size:12px;color:var(--text-muted)">¥'+((o.price||0).toFixed(2))+' · '+fmtTime(o.created_at)+'</div></div>').join('');
- }
-
- function showOrderDetail(orderNo, mode) {
- const arr = mode === 'accept' ? newOrders : myOrders;
- const o = arr.find(x => x.order_no === orderNo);
- if (!o) return;
- const content = $('detailContent');
- const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
- const statusColor = { pending:'#F39C12', accepted:'#3498DB', running:'#2ECC71', completed:'#95A5A6', cancelled:'#E74C3C' };
- const statusIcon = { pending:'⏳', accepted:'👍', running:'🚴', completed:'✅', cancelled:'❌' };
- const userInfo = (mode !== 'accept' && o.phone) ? '<div class="rd-user-row"><div class="rd-user-avatar">'+(o.user_name||o.phone||'?')[0]+'</div><div class="rd-user-info"><div class="rd-user-name">'+escHtml(o.user_name||'用户')+'</div><div class="rd-user-phone">📱 '+fmtPhone(o.phone)+'</div></div></div>' : '';
+      <div class="sub-page-body" id="chatListBody" style="padding:8px 0"></div>
+    </div>' : '';
  let actionBtn = '';
  if (mode === 'accept') {
    actionBtn = '<button data-order="'+o.order_no+'" onclick="acceptOrder(this.dataset.order)" class="rd-btn rd-btn-success">接单 🛵</button>';
@@ -902,19 +700,27 @@
      API.riderEarnings(currentRider.phone),
      API.riderWithdrawLogs(currentRider.phone)
    ]);
-   let html = '<div style="padding:12px 16px">';
-   // 收入记录
-   html += '<div style="font-weight:700;font-size:16px;margin-bottom:12px">📦 配送收入</div>';
+   let html = '';
+   // Summary card
+   const totalEarn = (earnings||[]).reduce((s,e) => s + (e.amount||0), 0);
+   const totalWithdraw = (logs||[]).filter(l=>l.status==='approved').reduce((s,l) => s + (l.amount||0), 0);
+   html += '<div class="sp-card" style="display:flex;gap:16px;text-align:center">' +
+     '<div style="flex:1"><div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">配送收入</div><div style="font-size:20px;font-weight:900;color:var(--green)">+' + totalEarn.toFixed(2) + '</div></div>' +
+     '<div style="width:1px;background:var(--border)"></div>' +
+     '<div style="flex:1"><div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">已提现</div><div style="font-size:20px;font-weight:900;color:var(--text)">-' + totalWithdraw.toFixed(2) + '</div></div></div>';
+   // Earnings list
+   html += '<div class="sp-card"><div class="sp-card-title">📦 配送收入</div>';
    if (earnings && earnings.length) {
-     html += earnings.map(e => '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-secondary);font-size:13px">订单 ' + e.order_no + '<br>' + fmtTime(e.time) + '</span><span style="color:var(--green);font-weight:600">+' + (e.amount||0).toFixed(2) + '</span></div>').join('');
-   } else { html += '<div style="text-align:center;padding:20px;color:var(--text-secondary)">暂无收入</div>'; }
-   // 提现记录
-   html += '<div style="font-weight:700;font-size:16px;margin:16px 0 12px">💸 提现记录</div>';
+     html += earnings.map(e => '<div class="sp-row"><div><div style="font-size:13px;font-weight:600">订单 ' + escHtml(e.order_no) + '</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">' + fmtTime(e.time) + '</div></div><span style="color:var(--green);font-weight:800;font-size:15px">+' + (e.amount||0).toFixed(2) + '</span></div>').join('');
+   } else { html += '<div class="sp-empty" style="padding:20px"><div class="sp-empty-text">暂无收入</div></div>'; }
+   html += '</div>';
+   // Withdraw logs
+   html += '<div class="sp-card"><div class="sp-card-title">💸 提现记录</div>';
    if (logs && logs.length) {
      const statusMap = { pending:'审核中', approved:'已通过', rejected:'已驳回' };
-     const colorMap = { pending:'#F39C12', approved:'#2ECC71', rejected:'#E74C3C' };
-     html += logs.map(l => '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px"><span style="color:' + (colorMap[l.status]||'#999') + ';font-weight:600">' + (statusMap[l.status]||l.status) + '</span><br><span style="color:var(--text-secondary)">' + fmtTime(l.created_at) + '</span></span><span style="color:var(--text);font-weight:600">-' + (l.amount||0).toFixed(2) + '</span></div>').join('');
-   } else { html += '<div style="text-align:center;padding:20px;color:var(--text-secondary)">暂无提现记录</div>'; }
+     const badgeMap = { pending:'sp-badge-yellow', approved:'sp-badge-green', rejected:'sp-badge-red' };
+     html += logs.map(l => '<div class="sp-row"><div><div style="font-size:13px;font-weight:600">-' + (l.amount||0).toFixed(2) + ' 元</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">' + fmtTime(l.created_at) + '</div></div><span class="sp-badge ' + (badgeMap[l.status]||'') + '">' + (statusMap[l.status]||l.status) + '</span></div>').join('');
+   } else { html += '<div class="sp-empty" style="padding:20px"><div class="sp-empty-text">暂无提现记录</div></div>'; }
    html += '</div>';
    $('earningsBody').innerHTML = html;
  }
@@ -927,18 +733,18 @@
    el.className = 'sub-page';
    el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'activityPage_sub\')">←</button><span class="sub-page-title">🎁 活动中心</span></div>' +
      '<div class="sub-page-body">' +
-     '<div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px;padding:24px;color:#fff;margin-bottom:16px">' +
-     '<div style="font-size:18px;font-weight:700">🎉 新手任务奖励</div>' +
-     '<div style="font-size:14px;margin-top:8px;opacity:.9">完成首单即得5元红包，限时活动！</div>' +
-     '<div style="font-size:12px;margin-top:8px;opacity:.7">活动时间：即日起至2026年6月30日</div></div>' +
-     '<div style="background:linear-gradient(135deg,#f093fb,#f5576c);border-radius:16px;padding:24px;color:#fff;margin-bottom:16px">' +
-     '<div style="font-size:18px;font-weight:700">🏅 接单达人榜</div>' +
-     '<div style="font-size:14px;margin-top:8px;opacity:.9">本周接单满20单额外奖励10元</div>' +
-     '<div style="font-size:12px;margin-top:8px;opacity:.7">每周一重置计数</div></div>' +
-     '<div style="background:linear-gradient(135deg,#4facfe,#00f2fe);border-radius:16px;padding:24px;color:#fff">' +
-     '<div style="font-size:18px;font-weight:700">⭐ 好评达人奖</div>' +
-     '<div style="font-size:14px;margin-top:8px;opacity:.9">获得5星好评满10次奖励8元</div>' +
-     '<div style="font-size:12px;margin-top:8px;opacity:.7">持续累计，不设上限</div></div>' +
+     '<div class="sp-card" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none">' +
+     '<div style="font-size:20px;font-weight:800">🎉 新手任务奖励</div>' +
+     '<div style="font-size:14px;margin-top:8px;opacity:.9;line-height:1.6">完成首单即得5元红包，限时活动！</div>' +
+     '<div style="font-size:12px;margin-top:10px;opacity:.55;display:flex;align-items:center;gap:4px">⏰ 即日起至2026年6月30日</div></div>' +
+     '<div class="sp-card" style="background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;border:none">' +
+     '<div style="font-size:20px;font-weight:800">🏅 接单达人榜</div>' +
+     '<div style="font-size:14px;margin-top:8px;opacity:.9;line-height:1.6">本周接单满20单额外奖励10元</div>' +
+     '<div style="font-size:12px;margin-top:10px;opacity:.55;display:flex;align-items:center;gap:4px">🔄 每周一重置计数</div></div>' +
+     '<div class="sp-card" style="background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff;border:none">' +
+     '<div style="font-size:20px;font-weight:800">⭐ 好评达人奖</div>' +
+     '<div style="font-size:14px;margin-top:8px;opacity:.9;line-height:1.6">获得5星好评满10次奖励8元</div>' +
+     '<div style="font-size:12px;margin-top:10px;opacity:.55;display:flex;align-items:center;gap:4px">∞ 持续累计，不设上限</div></div>' +
      '</div>';
    document.body.appendChild(el);
    openSubPage(id);
@@ -987,8 +793,8 @@
    const el = document.getElementById('chatMessages');
    el.innerHTML = msgs.map(m => {
      const isMe = m.sender_phone === currentRider.phone;
-     return '<div style="display:flex;justify-content:'+(isMe?'flex-end':'flex-start')+';margin-bottom:10px">' +
-       '<div style="max-width:70%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;background:'+(isMe?'var(--green)':'var(--card-bg)')+';color:'+(isMe?'#fff':'var(--text)')+';border:1px solid '+(isMe?'transparent':'var(--border)')+'">'+escHtml(m.content)+'</div></div>';
+     return '<div style="display:flex;justify-content:'+(isMe?'flex-end':'flex-start')+';margin-bottom:12px">' +
+       '<div style="max-width:72%;padding:10px 14px;border-radius:' + (isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px') + ';font-size:14px;line-height:1.6;background:'+(isMe?'linear-gradient(135deg,#2ECC71,#27AE60)':'var(--card-bg)')+';color:'+(isMe?'#fff':'var(--text)')+';border:1px solid '+(isMe?'transparent':'var(--border)')+';box-shadow:0 1px 4px rgba(0,0,0,.06)">'+escHtml(m.content)+'</div></div>';
    }).join('');
    el.scrollTop = el.scrollHeight;
  }
@@ -1045,21 +851,22 @@
      const avgRating = completed.length ? (completed.reduce((s,o) => s + (o.rating || 5), 0) / completed.length).toFixed(1) : '--';
      let html = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'reviewsPage_sub\')">←</button><span class="sub-page-title">⭐ 评价管理</span></div>' +
        '<div class="sub-page-body">' +
-       '<div style="text-align:center;padding:16px">' +
-       '<div style="font-size:48px;font-weight:900">' + avgRating + '</div>' +
-       '<div style="color:var(--text-muted)">平均评分</div></div>';
+       '<div class="sp-card" style="text-align:center">' +
+       '<div style="font-size:48px;font-weight:900;color:var(--yellow)">' + avgRating + '</div>' +
+       '<div style="color:var(--text-muted);font-size:13px;margin-top:2px">平均评分</div>' +
+       '<div style="font-size:18px;color:#F39C12;margin-top:4px">' + '★'.repeat(Math.round(parseFloat(avgRating)||5)) + '</div></div>';
      if (completed.length) {
+       html += '<div class="sp-card"><div class="sp-card-title">最近评价</div>';
        html += completed.slice(-10).reverse().map(o =>
-         '<div style="border-bottom:1px solid var(--border);padding:12px 0">' +
-         '<div style="display:flex;justify-content:space-between;align-items:center">' +
-         '<span style="font-size:14px">' + escHtml(o.pickup_location) + ' → ' + escHtml(o.delivery_location) + '</span>' +
-         '<span style="color:#F39C12;font-weight:700">' + '★'.repeat(o.rating || 5) + '</span></div>' +
-         '<div style="font-size:12px;color:var(--text-muted);margin-top:4px">' + fmtTime(o.completed_at) + '</div></div>'
+         '<div class="sp-row"><div><div style="font-size:14px;font-weight:600">' + escHtml(o.pickup_location) + ' → ' + escHtml(o.delivery_location) + '</div>' +
+         '<div style="font-size:12px;color:var(--text-muted);margin-top:3px">' + fmtTime(o.completed_at) + '</div></div>' +
+         '<div style="color:#F39C12;font-weight:800;font-size:15px">' + '★'.repeat(o.rating || 5) + '</div></div>'
        ).join('');
-     } else { html += '<div style="text-align:center;padding:24px;color:var(--text-muted)">暂无评价</div>'; }
+       html += '</div>';
+     } else { html += '<div class="sp-empty"><div class="sp-empty-icon">📭</div><div class="sp-empty-text">暂无评价</div></div>'; }
      html += '</div>';
      el.innerHTML = html;
-   } catch(e) { el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'reviewsPage_sub\')">←</button><span class="sub-page-title">⭐ 评价管理</span></div><div class="sub-page-body"><div style="text-align:center;padding:24px;color:var(--text-muted)">加载失败</div></div>'; }
+   } catch(e) { el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'reviewsPage_sub\')">←</button><span class="sub-page-title">⭐ 评价管理</span></div><div class="sub-page-body"><div class="sp-empty"><div class="sp-empty-icon">⚠️</div><div class="sp-empty-text">加载失败</div></div></div>'; }
    document.body.appendChild(el);
    openSubPage(id);
  }
@@ -1077,30 +884,32 @@
      const myIdx = sorted.findIndex(r => r.phone === currentRider.phone);
      let html = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'rankPage_sub\')">←</button><span class="sub-page-title">🏆 骑手排行榜</span></div>' +
        '<div class="sub-page-body">' +
-       '<div style="text-align:center;padding:12px;background:linear-gradient(135deg,#f9d423,#ff4e50);border-radius:12px;color:#fff;margin-bottom:16px">' +
-       '<div style="font-size:14px;opacity:.9">我的排名</div>' +
-       '<div style="font-size:32px;font-weight:900">第 ' + (myIdx >= 0 ? myIdx + 1 : '--') + ' 名</div></div>';
+       '<div class="sp-card" style="text-align:center;background:linear-gradient(135deg,#f9d423,#ff4e50);color:#fff;border:none">' +
+       '<div style="font-size:13px;opacity:.8">我的排名</div>' +
+       '<div style="font-size:36px;font-weight:900">第 ' + (myIdx >= 0 ? myIdx + 1 : '--') + ' 名</div></div>';
      const medals = ['🥇','🥈','🥉'];
+     html += '<div class="sp-card"><div class="sp-card-title">收入排行 TOP 10</div>';
      sorted.slice(0, 10).forEach((r, i) => {
        const isMe = r.phone === currentRider.phone;
-       html += '<div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);' + (isMe ? 'background:rgba(46,204,113,.1);border-radius:8px;padding:10px 8px;margin:0 -8px' : '') + '">' +
-         '<span style="width:32px;text-align:center;font-weight:700">' + (i < 3 ? medals[i] : (i+1)) + '</span>' +
-         '<span style="flex:1;margin-left:8px">' + escHtml(r.name || r.phone) + '</span>' +
-         '<span style="font-weight:700;color:var(--green)">¥' + ((r.total_earnings||0).toFixed(2)) + '</span></div>';
+       html += '<div class="sp-row" style="' + (isMe ? 'background:rgba(46,204,113,.08);border-radius:10px;padding:11px 10px;margin:2px -10px' : '') + '">' +
+         '<div style="display:flex;align-items:center;gap:10px">' +
+         '<span style="width:28px;text-align:center;font-size:' + (i<3?'18px':'14px') + ';font-weight:800">' + (i < 3 ? medals[i] : (i+1)) + '</span>' +
+         '<span style="font-weight:600;font-size:14px">' + escHtml(r.name || r.phone) + (isMe?' (我)':'') + '</span></div>' +
+         '<span style="font-weight:800;color:var(--green);font-size:15px">¥' + ((r.total_earnings||0).toFixed(2)) + '</span></div>';
      });
-     html += '</div>';
+     html += '</div></div>';
      el.innerHTML = html;
-   } catch(e) { el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'rankPage_sub\')">←</button><span class="sub-page-title">🏆 骑手排行榜</span></div><div class="sub-page-body"><div style="text-align:center;padding:24px;color:var(--text-muted)">加载失败</div></div>'; }
+   } catch(e) { el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'rankPage_sub\')">←</button><span class="sub-page-title">🏆 骑手排行榜</span></div><div class="sub-page-body"><div class="sp-empty"><div class="sp-empty-icon">⚠️</div><div class="sp-empty-text">加载失败</div></div></div>'; }
    document.body.appendChild(el);
    openSubPage(id);
  }
  function showHelpModal() {
    const faqs = [
-     ['如何接单？', '登录后在首页点击「接单」即可，系统会根据您的等级推送附近订单。'],
-     ['如何提现？', '在钱包页面点击「立即提现」，输入金额提交申请，管理员审核后到账。'],
-     ['收入如何计算？', '骑手收入 = 订单价格 × 80%，平台收取20%服务费。'],
-     ['等级如何提升？', '完成更多订单可自动升级：bronze→silver→gold→diamond，等级越高接单优先级越高。'],
-     ['遇到问题怎么办？', '可以通过「意见反馈」联系我们，或直接拨打客服电话。']
+     ['🛵 如何接单？', '登录后在首页点击「接单」即可，系统会根据您的等级推送附近订单。'],
+     ['💸 如何提现？', '在钱包页面点击「立即提现」，输入金额提交申请，管理员审核后到账。'],
+     ['📊 收入如何计算？', '骑手收入 = 订单价格 × 80%，平台收取20%服务费。'],
+     ['⬆️ 等级如何提升？', '完成更多订单可自动升级：bronze→silver→gold→diamond，等级越高接单优先级越高。'],
+     ['🆘 遇到问题怎么办？', '可以通过「意见反馈」联系我们，或直接拨打客服电话。']
    ];
    const id = 'helpPage_sub';
    let el = document.getElementById(id);
@@ -1110,11 +919,18 @@
    el.className = 'sub-page';
    let html = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'helpPage_sub\')">←</button><span class="sub-page-title">❓ 帮助中心</span></div><div class="sub-page-body">';
    faqs.forEach(([q,a]) => {
-     html += '<details style="border-bottom:1px solid var(--border);padding:12px 0"><summary style="font-weight:600;cursor:pointer;font-size:15px">' + q + '</summary>' +
-       '<div style="padding:8px 0 0;color:var(--text-muted);font-size:14px;line-height:1.6">' + a + '</div></details>';
+     html += '<details class="sp-card" style="padding:0;cursor:pointer"><summary style="font-weight:700;font-size:15px;padding:16px 18px;list-style:none;display:flex;align-items:center;justify-content:space-between">' + q + '<span style="font-size:12px;color:var(--text-muted);transition:transform .2s" class="faq-arrow">▶</span></summary>' +
+       '<div style="padding:0 18px 16px;color:var(--text-muted);font-size:14px;line-height:1.7;border-top:1px solid var(--border);padding-top:12px">' + a + '</div></details>';
    });
-   html += '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;margin-top:12px">还没解决？试试「意见反馈」联系我们</div></div>';
+   html += '<div style="text-align:center;padding:24px 0;color:var(--text-muted);font-size:13px">还没解决？试试「意见反馈」联系我们 💬</div></div>';
    el.innerHTML = html;
+   // FAQ arrow rotation
+   el.querySelectorAll('details').forEach(d => {
+     d.addEventListener('toggle', () => {
+       const arrow = d.querySelector('.faq-arrow');
+       if (arrow) arrow.style.transform = d.open ? 'rotate(90deg)' : '';
+     });
+   });
    document.body.appendChild(el);
    openSubPage(id);
  }
@@ -1127,12 +943,14 @@
    el.className = 'sub-page';
    el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'feedbackPage_sub\')">←</button><span class="sub-page-title">📝 意见反馈</span></div>' +
      '<div class="sub-page-body">' +
-     '<div style="margin-bottom:16px"><label style="font-weight:600;font-size:14px;display:block;margin-bottom:8px">反馈类型</label>' +
-     '<select id="fbType" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;background:var(--card-bg);color:var(--text)">' +
+     '<div class="sp-card">' +
+     '<label style="font-weight:700;font-size:14px;display:block;margin-bottom:10px">反馈类型</label>' +
+     '<select id="fbType" class="sp-select">' +
      '<option value="bug">🐛 问题反馈</option><option value="feature">💡 功能建议</option><option value="complaint">😤 投诉</option><option value="other">📌 其他</option></select></div>' +
-     '<div style="margin-bottom:16px"><label style="font-weight:600;font-size:14px;display:block;margin-bottom:8px">详细描述</label>' +
-     '<textarea id="fbContent" rows="5" placeholder="请描述您的问题或建议..." style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;resize:vertical;background:var(--card-bg);color:var(--text)"></textarea></div>' +
-     '<button onclick="submitFeedback()" class="rd-btn rd-btn-success">提交反馈</button>' +
+     '<div class="sp-card">' +
+     '<label style="font-weight:700;font-size:14px;display:block;margin-bottom:10px">详细描述</label>' +
+     '<textarea id="fbContent" rows="5" placeholder="请描述您的问题或建议..." class="sp-textarea"></textarea></div>' +
+     '<button onclick="submitFeedback()" class="sp-btn sp-btn-green">提交反馈</button>' +
      '</div>';
    document.body.appendChild(el);
    openSubPage(id);
@@ -1157,25 +975,24 @@
    el = document.createElement('div');
    el.id = id;
    el.className = 'sub-page';
+   const levelIcons = { bronze:'🥉', silver:'🥈', gold:'🥇', diamond:'💎' };
+   const levelNames = { bronze:'青铜骑手', silver:'白银骑手', gold:'黄金骑手', diamond:'钻石骑手' };
+   const lvl = currentRider.level || 'bronze';
    el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'settingsPage_sub\')">←</button><span class="sub-page-title">⚙️ 设置</span></div>' +
      '<div class="sub-page-body">' +
-     '<div style="padding:12px 0;border-bottom:1px solid var(--border)">' +
-     '<div style="font-weight:600;margin-bottom:12px">外观</div>' +
-     '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">' +
-     '<span>🌙 深色模式</span>' +
-     '<label style="position:relative;width:48px;height:26px;display:inline-block"><input type="checkbox" id="riderDarkToggle" ' + (isDark?'checked':'') + ' onchange="riderToggleDark(this.checked)" style="opacity:0;width:0;height:0"><span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:' + (isDark?'var(--primary)':'#ccc') + ';border-radius:26px;transition:.3s"></span><span style="position:absolute;height:20px;width:20px;left:' + (isDark?'24px':'3px') + ';bottom:3px;background:#fff;border-radius:50%;transition:.3s"></span></label>' +
-     '</div></div>' +
-     '<div style="padding:12px 0;border-bottom:1px solid var(--border)">' +
-     '<div style="font-weight:600;margin-bottom:12px">骑手信息</div>' +
-     '<div style="font-size:14px;color:var(--text-muted);margin-bottom:4px">姓名: ' + escHtml(currentRider.name || '--') + '</div>' +
-     '<div style="font-size:14px;color:var(--text-muted);margin-bottom:4px">UID: ' + escHtml(currentRider.uid || '--') + '</div>' +
-     '<div style="font-size:14px;color:var(--text-muted);margin-bottom:4px">手机: ' + escHtml(currentRider.phone) + '</div>' +
-     '<div style="font-size:14px;color:var(--text-muted);margin-bottom:4px">等级: ' + escHtml(currentRider.level || 'bronze') + '</div>' +
-     '</div>' +
-     '<div style="padding:12px 0">' +
-     '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyRider\');location.reload()}" style="width:100%;padding:12px;border:none;border-radius:12px;background:var(--red);color:#fff;font-size:15px;font-weight:600;cursor:pointer">退出登录</button>' +
-     '</div>' +
-     '<div style="text-align:center;padding:16px 0;color:var(--text-muted);font-size:12px">校园懒人效率站 v3.0 骑手端</div>' +
+     // Appearance
+     '<div class="sp-card"><div class="sp-card-title">外观</div>' +
+     '<div class="sp-row"><span style="display:flex;align-items:center;gap:8px;font-size:15px">🌙 深色模式</span>' +
+     '<label style="position:relative;width:48px;height:26px;display:inline-block"><input type="checkbox" id="riderDarkToggle" ' + (isDark?'checked':'') + ' onchange="riderToggleDark(this.checked)" style="opacity:0;width:0;height:0"><span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:' + (isDark?'var(--green)':'#ccc') + ';border-radius:26px;transition:.3s"></span><span style="position:absolute;height:20px;width:20px;left:' + (isDark?'24px':'3px') + ';bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.2)"></span></label></div></div>' +
+     // Rider info
+     '<div class="sp-card"><div class="sp-card-title">骑手信息</div>' +
+     '<div class="sp-row"><span class="sp-row-label">姓名</span><span class="sp-row-value">' + escHtml(currentRider.name || '--') + '</span></div>' +
+     '<div class="sp-row"><span class="sp-row-label">UID</span><span class="sp-row-value" style="font-family:Space Mono,monospace">' + escHtml(currentRider.uid || '--') + '</span></div>' +
+     '<div class="sp-row"><span class="sp-row-label">手机</span><span class="sp-row-value">' + escHtml(currentRider.phone) + '</span></div>' +
+     '<div class="sp-row"><span class="sp-row-label">等级</span><span style="display:flex;align-items:center;gap:6px"><span style="font-size:18px">' + (levelIcons[lvl]||'🥉') + '</span><span class="sp-row-value">' + (levelNames[lvl]||lvl) + '</span></span></div></div>' +
+     // Logout
+     '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyRider\');location.reload()}" class="sp-btn sp-btn-red" style="margin-top:4px">退出登录</button>' +
+     '<div style="text-align:center;padding:20px 0 8px;color:var(--text-muted);font-size:12px;opacity:.5">校园懒人效率站 v3.0 骑手端</div>' +
      '</div>';
    document.body.appendChild(el);
    openSubPage(id);
