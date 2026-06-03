@@ -516,19 +516,41 @@
         <span class="sub-page-title">💬 我的消息</span>
       </div>
       <div class="sub-page-body" id="chatListBody" style="padding:8px 0"></div>
-    </div>' : '';
- let actionBtn = '';
- if (mode === 'accept') {
-   actionBtn = '<button data-order="'+o.order_no+'" onclick="acceptOrder(this.dataset.order)" class="rd-btn rd-btn-success">接单 🛵</button>';
- } else if (o.status === 'accepted') {
-   actionBtn = '<button data-order="'+o.order_no+'" onclick="startDelivery(this.dataset.order)" class="rd-btn rd-btn-blue">开始配送 🚀</button>';
- } else if (o.status === 'running') {
-   actionBtn = '<button data-order="'+o.order_no+'" onclick="completeOrder(this.dataset.order)" class="rd-btn rd-btn-success">确认送达 ✅</button>';
- } else {
-   actionBtn = '<div class="rd-status-end">订单已结束</div>';
- }
- const chatBtn = (mode !== 'accept' && o.phone) ? '<button data-order="'+o.order_no+'" onclick="openChatFromOrder(this.dataset.order)" class="rd-btn rd-btn-chat">💬 联系用户</button>' : '';
- content.innerHTML = `
+    </div>
+
+ <script>
+
+ // ====== Missing core functions ======
+ let currentRider = null;
+ let myOrders = [];
+
+ const statusColor = { pending: '#F39C12', accepted: '#3498DB', running: '#E74C3C', completed: '#2ECC71', cancelled: '#95A5A6' };
+ const statusIcon = { pending: '⏳', accepted: '🛵', running: '🚀', completed: '✅', cancelled: '❌' };
+ const statusLabel = { pending: '等待接单', accepted: '已接单', running: '配送中', completed: '已完成', cancelled: '已取消' };
+ const typeEmoji = { delivery: '📦', food: '🍜', errand: '🏃', other: '📋' };
+ const serviceNames = { delivery: '快递配送', food: '餐饮外卖', errand: '跑腿代办', other: '其他服务' };
+
+ function showOrderDetail(orderNo, mode) {
+   const o = (myOrders || []).find(x => x.order_no === orderNo);
+   if (!o) return showToast('订单不存在');
+   const content = $('detailContent');
+   if (!content) return;
+   let userInfo = '';
+   if (o.phone && o.user_name) {
+     userInfo = '<div class="rd-card"><div class="rd-card-title">👤 用户信息</div><div class="rd-card-body"><div style="font-size:14px;font-weight:600">'+escHtml(o.user_name)+'</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">'+escHtml(o.phone)+'</div></div></div>';
+   }
+   let actionBtn = '';
+   if (mode === 'accept') {
+     actionBtn = '<button data-order="'+o.order_no+'" onclick="acceptOrder(this.dataset.order)" class="rd-btn rd-btn-success">接单 🛵</button>';
+   } else if (o.status === 'accepted') {
+     actionBtn = '<button data-order="'+o.order_no+'" onclick="startDelivery(this.dataset.order)" class="rd-btn rd-btn-blue">开始配送 🚀</button>';
+   } else if (o.status === 'running') {
+     actionBtn = '<button data-order="'+o.order_no+'" onclick="completeOrder(this.dataset.order)" class="rd-btn rd-btn-success">确认送达 ✅</button>';
+   } else {
+     actionBtn = '<div class="rd-status-end">订单已结束</div>';
+   }
+   const chatBtn = (mode !== 'accept' && o.phone) ? '<button data-order="'+o.order_no+'" onclick="openChatFromOrder(this.dataset.order)" class="rd-btn rd-btn-chat">💬 联系用户</button>' : '';
+   content.innerHTML = `
    <div class="rd-status-hero" style="background:${statusColor[o.status]||'#95A5A6'}">
      <div class="rd-status-icon">${statusIcon[o.status]||'📋'}</div>
      <div class="rd-status-text">${statusLabel[o.status]||o.status}</div>
@@ -572,8 +594,46 @@
      ${actionBtn}
      ${chatBtn}
    </div>
- `;
- openSubPage('detailPage_sub');
+   `;
+   openSubPage('detailPage_sub');
+ }
+
+ async function refreshOrders() {
+   const newEl = $('newOrdersList');
+   const myEl = $('myOrdersList');
+   if (!newEl || !myEl) return;
+
+   // New orders (pending)
+   try {
+     const pending = await API.getOrders({ status: 'pending' });
+     if (pending && pending.length) {
+       newEl.innerHTML = pending.map(o => '<div class="order-card new" onclick="showOrderDetail(\''+o.order_no+'\',\'accept\')">' +
+         '<div class="order-top"><div class="order-type"><div class="order-type-icon">'+(typeEmoji[o.type]||'📦')+'</div>' +
+         '<span>'+(serviceNames[o.type]||'服务')+'</span></div>' +
+         '<span class="order-status status-pending">待接单</span></div>' +
+         '<div class="order-info">'+escHtml(o.pickup_location)+' → '+escHtml(o.delivery_location)+'</div>' +
+         '<div class="order-meta"><span>'+fmtTime(o.created_at)+'</span><span class="order-price">¥'+(o.price||0).toFixed(2)+'</span></div></div>').join('');
+     } else {
+       newEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>暂无待接订单</p></div>';
+     }
+   } catch(e) { console.error('load pending orders error:', e); }
+
+   // My orders
+   if (!currentRider) { myEl.innerHTML = ''; return; }
+   try {
+     const all = await API.getOrders({ rider_phone: currentRider.phone, status: 'my' });
+     myOrders = all || [];
+     const active = myOrders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
+     if (active.length) {
+       myEl.innerHTML = active.map(o => '<div class="order-card my-order" onclick="showOrderDetail(\''+o.order_no+'\',\'view\')">' +
+         '<div class="order-top"><div class="order-type"><div class="order-type-icon">'+(typeEmoji[o.type]||'📦')+'</div><span>'+(serviceNames[o.type]||'服务')+'</span></div>' +
+         '<span class="order-status status-'+(o.status==='running'?'running':(o.status==='accepted'?'accepted':'pending'))+'">'+(statusLabel[o.status]||o.status)+'</span></div>' +
+         '<div class="order-info">'+escHtml(o.pickup_location)+' → '+escHtml(o.delivery_location)+'</div>' +
+         '<div class="order-meta"><span>'+fmtTime(o.created_at)+'</span><span class="order-price">¥'+(o.price||0).toFixed(2)+'</span></div></div>').join('');
+     } else {
+       myEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>暂无进行中的订单</p></div>';
+     }
+   } catch(e) { console.error('load my orders error:', e); }
  }
 
  async function acceptOrder(orderNo) {
