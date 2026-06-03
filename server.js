@@ -90,6 +90,9 @@ app.use('/api/gif', require('./routes/gif'));
 // 二手交易市场
 app.use('/api/market', require('./routes/market'));
 
+// AI 内容审核
+app.use('/api/ai', require('./routes/ai'));
+
 // ─── 404 处理 ────────────────────────────────────────────
 app.use('/api', (req, res) => {
   res.status(404).json({ error: '接口不存在', code: 'SYS_004' });
