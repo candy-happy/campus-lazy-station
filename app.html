@@ -385,6 +385,35 @@
     }
     .order-card:last-child { margin-bottom: 0; }
     .order-card:active { background: var(--border); }
+    /* 时间筛选 chip */
+    .time-filter-chip {
+      padding: 5px 12px;
+      font-size: 12px;
+      border-radius: 16px;
+      background: var(--bg);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .time-filter-chip.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .time-filter-chip:active { transform: scale(0.95); }
+    /* 订单统计小卡片 */
+    .order-stat-pill {
+      flex: 1;
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      font-size: 12px;
+    }
+    .order-stat-pill .stat-num { font-size: 18px; font-weight: 700; }
+    .order-stat-pill .stat-label { color: var(--text-secondary); margin-top: 2px; }
     .order-header {
       display: flex;
       justify-content: space-between;
@@ -1799,10 +1828,10 @@
         <div class="section">
           <div class="order-section">
             <div class="order-tabs">
-              <div class="order-tab active" onclick="switchTab('all')">全部</div>
-              <div class="order-tab" onclick="switchTab('pending')">待接单</div>
-              <div class="order-tab" onclick="switchTab('running')">进行中</div>
-              <div class="order-tab" onclick="switchTab('completed')">已完成</div>
+              <div class="order-tab active" onclick="switchOrderFilter('all')">全部</div>
+              <div class="order-tab" onclick="switchOrderFilter('pending')">待接单</div>
+              <div class="order-tab" onclick="switchOrderFilter('running')">进行中</div>
+              <div class="order-tab" onclick="switchOrderFilter('completed')">已完成</div>
             </div>
             <div id="orderList">
               <!-- 动态渲染 -->
@@ -1818,10 +1847,40 @@
     <div class="page" id="orderPage">
       <div class="header">
         <div class="header-top">
-          <div class="logo"><span class="logo-text">全部订单</span></div>
+          <div class="logo"><span class="logo-text">我的订单</span></div>
         </div>
       </div>
-      <div class="content-area section">
+      <div class="content-area" style="padding:12px 16px">
+        <!-- 状态分类标签 -->
+        <div class="order-section" style="margin-bottom:12px">
+          <div class="order-tabs" style="margin:-16px -16px 0;padding:0 8px">
+            <div class="order-tab active" onclick="switchOrderFilter('all')">全部</div>
+            <div class="order-tab" onclick="switchOrderFilter('pending')">待接单</div>
+            <div class="order-tab" onclick="switchOrderFilter('running')">进行中</div>
+            <div class="order-tab" onclick="switchOrderFilter('completed')">已完成</div>
+            <div class="order-tab" onclick="switchOrderFilter('cancelled')">已取消</div>
+          </div>
+        </div>
+        <!-- 时间筛选 -->
+        <div class="order-section" style="margin-bottom:12px;padding:10px 12px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:13px;color:var(--text-secondary);margin-right:4px">🕐</span>
+            <div class="time-filter-chip active" onclick="switchTimeFilter('all')">全部时间</div>
+            <div class="time-filter-chip" onclick="switchTimeFilter('today')">今天</div>
+            <div class="time-filter-chip" onclick="switchTimeFilter('week')">近7天</div>
+            <div class="time-filter-chip" onclick="switchTimeFilter('month')">近30天</div>
+            <div class="time-filter-chip" onclick="switchTimeFilter('custom')" id="customTimeBtn">📅 自定义</div>
+          </div>
+          <div id="customTimeRange" style="display:none;margin-top:10px;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="orderDateFrom" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)" onchange="applyCustomTime()" />
+            <span style="color:var(--text-secondary)">至</span>
+            <input type="date" id="orderDateTo" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)" onchange="applyCustomTime()" />
+          </div>
+        </div>
+        <!-- 订单统计 -->
+        <div id="orderStats" style="display:flex;gap:8px;margin-bottom:12px">
+        </div>
+        <!-- 订单列表 -->
         <div class="order-section">
           <div id="allOrderList"></div>
         </div>
@@ -3055,19 +3114,76 @@
       }
     }
 
-    // ══════ Tab切换 ══════
-    function switchTab(tab) {
- currentTab = tab;
- if (currentUser) refreshOrders();
- document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
- // 根据当前tab文本匹配高亮
- const labelMap = { all: '全部', pending: '待接单', running: '进行中', completed: '已完成' };
- const targetText = labelMap[tab] || '';
- document.querySelectorAll('.order-tab').forEach(t => {
- if (t.textContent.includes(targetText)) t.classList.add('active');
- });
- renderOrders();
-}
+    // ══════ 订单筛选 - 状态 ══════
+    let orderStatusFilter = 'all';
+    let orderTimeFilter = 'all';
+    let orderDateFrom = null;
+    let orderDateTo = null;
+
+    function switchOrderFilter(status) {
+      orderStatusFilter = status;
+      // 高亮状态标签（首页 + 订单页）
+      document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
+      const labelMap = { all:'全部', pending:'待接单', running:'进行中', completed:'已完成', cancelled:'已取消' };
+      const targetText = labelMap[status] || '';
+      document.querySelectorAll('.order-tab').forEach(t => {
+        if (t.textContent.includes(targetText)) t.classList.add('active');
+      });
+      currentTab = status; // 兼容首页
+      renderOrders();
+    }
+
+    // ══════ 订单筛选 - 时间 ══════
+    function switchTimeFilter(period) {
+      orderTimeFilter = period;
+      document.querySelectorAll('.time-filter-chip').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      const rangeEl = document.getElementById('customTimeRange');
+      if (period === 'custom') {
+        rangeEl.style.display = 'flex';
+      } else {
+        rangeEl.style.display = 'none';
+        orderDateFrom = null;
+        orderDateTo = null;
+      }
+      renderOrders();
+    }
+
+    function applyCustomTime() {
+      const from = document.getElementById('orderDateFrom').value;
+      const to = document.getElementById('orderDateTo').value;
+      if (from) orderDateFrom = new Date(from);
+      else orderDateFrom = null;
+      if (to) orderDateTo = new Date(to + 'T23:59:59');
+      else orderDateTo = null;
+      renderOrders();
+    }
+
+    function filterByTime(orders) {
+      if (orderTimeFilter === 'all') return orders;
+      const now = new Date();
+      let start, end;
+      if (orderTimeFilter === 'today') {
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      } else if (orderTimeFilter === 'week') {
+        start = new Date(now.getTime() - 7 * 86400000);
+        end = now;
+      } else if (orderTimeFilter === 'month') {
+        start = new Date(now.getTime() - 30 * 86400000);
+        end = now;
+      } else if (orderTimeFilter === 'custom') {
+        start = orderDateFrom;
+        end = orderDateTo;
+      }
+      if (!start && !end) return orders;
+      return orders.filter(o => {
+        const d = new Date(o.created_at);
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+        return true;
+      });
+    }
 
     // ══════ 涓嬪崟寮圭獥 ══════
     function openOrderModal(type) {
@@ -3124,33 +3240,58 @@
     }
 
     function renderOrders() {
- const homeList = document.getElementById('orderList');
- const allList = document.getElementById('allOrderList');
- if (!currentUser) return;
- let filtered = orders;
- if (currentTab === 'pending') filtered = orders.filter(o => o.status === 'pending');
- else if (currentTab === 'active' || currentTab === 'running') filtered = orders.filter(o => o.status === 'accepted' || o.status === 'running');
- else if (currentTab === 'completed') filtered = orders.filter(o => o.status === 'completed');
+      const homeList = document.getElementById('orderList');
+      const allList = document.getElementById('allOrderList');
+      const statsEl = document.getElementById('orderStats');
+      if (!currentUser) return;
 
- const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
- const statusColor = { pending:'#F39C12', accepted:'#3498DB', running:'#2ECC71', completed:'#95A5A6', cancelled:'#E74C3C' };
- const typeIcon = { delivery:'🍱', express:'📦', purchase:'🛒', laundry:'👕', errand:'🏃', other:'💡' };
- const typeLabel = { delivery:'代取外卖', express:'代取快递', purchase:'代买东西', laundry:'代取洗衣', errand:'跑腿办事', other:'其他服务' };
+      const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
+      const statusColor = { pending:'#F39C12', accepted:'#3498DB', running:'#2ECC71', completed:'#95A5A6', cancelled:'#E74C3C' };
+      const typeIcon = { delivery:'🍱', express:'📦', purchase:'🛒', laundry:'👕', errand:'🏃', other:'💡' };
+      const typeLabel = { delivery:'代取外卖', express:'代取快递', purchase:'代买东西', laundry:'代取洗衣', errand:'跑腿办事', other:'其他服务' };
 
- const html = filtered.length ? filtered.map(o => `
- <div class="order-card" onclick="showOrderDetail('${o.order_no||o.id}')" style="padding:12px;border-bottom:1px solid var(--border);cursor:pointer">
- <div style="display:flex;justify-content:space-between;align-items:center">
- <b>${typeIcon[o.type]||'📦'} ${typeLabel[o.type]||o.type}</b>
- <span style="font-size:12px;padding:4px 8px;border-radius:8px;background:${statusColor[o.status]||'#ddd'};color:white">${statusLabel[o.status]||o.status}</span>
- </div>
- <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">📍 ${o.pickup_location} → 📍 ${o.delivery_location}</div>
- <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${fmtTime(o.created_at)} · ¥${(o.price||0).toFixed(2)}</div>
- </div>
- `).join('') : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">暂无订单</div></div>`;
+      // 1. 先按状态筛选
+      let filtered = orders;
+      const sf = orderStatusFilter || currentTab || 'all';
+      if (sf === 'pending') filtered = orders.filter(o => o.status === 'pending');
+      else if (sf === 'running') filtered = orders.filter(o => o.status === 'accepted' || o.status === 'running');
+      else if (sf === 'completed') filtered = orders.filter(o => o.status === 'completed');
+      else if (sf === 'cancelled') filtered = orders.filter(o => o.status === 'cancelled');
 
- if (homeList) homeList.innerHTML = html;
- if (allList) allList.innerHTML = html;
-}
+      // 2. 再按时间筛选
+      filtered = filterByTime(filtered);
+
+      // 3. 统计信息（仅订单页）
+      if (statsEl) {
+        const total = filtered.length;
+        const totalAmount = filtered.reduce((s, o) => s + (o.price || 0), 0);
+        const pending = filtered.filter(o => o.status === 'pending').length;
+        const running = filtered.filter(o => o.status === 'accepted' || o.status === 'running').length;
+        const done = filtered.filter(o => o.status === 'completed').length;
+        statsEl.innerHTML = `
+          <div class="order-stat-pill"><div class="stat-num" style="color:var(--primary)">${total}</div><div class="stat-label">总计</div></div>
+          <div class="order-stat-pill"><div class="stat-num" style="color:#F39C12">${pending}</div><div class="stat-label">待接单</div></div>
+          <div class="order-stat-pill"><div class="stat-num" style="color:#2ECC71">${running}</div><div class="stat-label">进行中</div></div>
+          <div class="order-stat-pill"><div class="stat-num" style="color:#95A5A6">${done}</div><div class="stat-label">已完成</div></div>
+          <div class="order-stat-pill"><div class="stat-num" style="color:var(--primary)">¥${totalAmount.toFixed(1)}</div><div class="stat-label">总金额</div></div>
+        `;
+      }
+
+      // 4. 渲染列表
+      const html = filtered.length ? filtered.map(o => `
+        <div class="order-card" onclick="showOrderDetail('${o.order_no||o.id}')" style="padding:12px;border-bottom:1px solid var(--border);cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <b>${typeIcon[o.type]||'📦'} ${typeLabel[o.type]||o.type}</b>
+            <span style="font-size:12px;padding:4px 8px;border-radius:8px;background:${statusColor[o.status]||'#ddd'};color:white">${statusLabel[o.status]||o.status}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">📍 ${escHtml(o.pickup_location||'')} → 📍 ${escHtml(o.delivery_location||'')}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${fmtTime(o.created_at)} · ¥${(o.price||0).toFixed(2)}</div>
+        </div>
+      `).join('') : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">暂无订单</div></div>`;
+
+      if (homeList) homeList.innerHTML = html;
+      if (allList) allList.innerHTML = html;
+    }
 
 
     // ══════ 订单详情 ══════
