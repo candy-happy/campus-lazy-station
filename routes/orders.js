@@ -48,7 +48,7 @@ router.get('/', requireAuth, (req, res) => JSON_RES(res, () => {
   if (rider_phone) { sql += ' AND rider_phone = ?'; params.push(rider_phone); }
   if (status) {
     if (status === 'active') { sql += " AND status IN ('accepted','running')"; }
-    else if (status === 'my') { sql += " AND status NOT IN ('pending','cancelled')"; }
+    else if (status === 'my') { sql += " AND rider_phone IS NOT NULL AND status NOT IN ('pending')"; }
     else { sql += ' AND status = ?'; params.push(status); }
   }
   sql += ' ORDER BY created_at DESC';

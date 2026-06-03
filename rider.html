@@ -505,10 +505,18 @@
  <div class="stat-item"><div class="stat-value" id="statMyOrders">0</div><div class="stat-label">进行中</div></div>
  </div>
  <main class="app-main" id="mainContent">
+ <!-- 首页 -->
+ <div id="homePageContent">
  <div class="section-title">🆕 待接订单</div>
  <div id="newOrdersList"></div>
  <div class="section-title" style="margin-top: 24px;">📦 我的订单</div>
  <div id="myOrdersList"></div>
+ </div>
+ <!-- 历史 -->
+ <div id="historyPageContent" style="display:none">
+ <div class="section-title">📜 历史订单</div>
+ <div id="historyOrdersList"></div>
+ </div>
  </main>
  <nav class="bottom-nav">
  <div class="nav-item active" onclick="switchTab('home', event)"><span class="nav-item-icon">🏠</span><span class="nav-item-label">首页</span></div>
@@ -905,9 +913,12 @@
  if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
  document.body.classList.remove('tab-home', 'tab-history', 'tab-profile');
  document.body.classList.add('tab-' + tab);
+ $('homePageContent').style.display = tab === 'home' ? '' : 'none';
+ $('historyPageContent').style.display = tab === 'history' ? '' : 'none';
  if (tab === 'home') {
  $('mainContent').style.display = 'block';
  $('profilePage').classList.remove('active');
+ $('myOrdersList').style.display = '';
  refreshOrders();
  } else if (tab === 'history') {
  $('mainContent').style.display = 'block';
@@ -924,11 +935,13 @@
  if (!currentRider) return;
  const all = await API.getOrders({ rider_phone: currentRider.phone, status: 'my' });
  const history = all.filter(o => o.status === 'completed' || o.status === 'cancelled');
- const list = $('newOrdersList');
- document.querySelector('.app-main .section-title:first-child').textContent = '📜 历史订单';
- $('myOrdersList').style.display = 'none';
- if (!history.length) { list.innerHTML = '<div class="empty-state"><p>暂无历史订单</p></div>'; return; }
- list.innerHTML = history.map(o => '<div style="background:var(--card-bg);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)"><div>'+(typeEmoji[o.type]||'📦')+' '+escHtml(o.pickup_location)+' → '+escHtml(o.delivery_location)+'</div><div style="font-size:12px;color:var(--text-muted)">¥'+((o.price||0).toFixed(2))+' · '+fmtTime(o.completed_at||o.cancelled_at)+'</div></div>').join('');
+ const list = $('historyOrdersList');
+ if (!history.length) { list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>暂无历史订单</p></div>'; return; }
+ list.innerHTML = history.map(o => '<div class="order-card" onclick="showOrderDetail(\''+o.order_no+'\',\'view\')" style="cursor:pointer">' +
+ '<div class="order-top"><div class="order-type"><div class="order-type-icon">'+(typeEmoji[o.type]||'📦')+'</div><span>'+(serviceNames[o.type]||'服务')+'</span></div>' +
+ '<span class="order-status status-'+o.status+'">'+(statusLabel[o.status]||o.status)+'</span></div>' +
+ '<div class="order-info">'+escHtml(o.pickup_location)+' → '+escHtml(o.delivery_location)+'</div>' +
+ '<div class="order-meta"><span>'+fmtTime(o.completed_at||o.cancelled_at||o.created_at)+'</span><span class="order-price">¥'+(o.price||0).toFixed(2)+'</span></div></div>').join('');
  }
 
  function closeModal(id) { $(id).classList.remove('active'); document.body.style.overflow = ''; }
