@@ -37,7 +37,8 @@
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     .page { display: none; padding-bottom: 70px; }
     .page.active { display: block; }
-    .sub-page { display: none; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; height: 100%; background: var(--bg); z-index: 1000; overflow-y: auto; }
+    .sub-page { display: none; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; height: 100%; background: var(--bg); z-index: 1000; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+    .sub-page::-webkit-scrollbar { display: none; }
     .sub-page.active { display: block; }
     html { scroll-behavior: smooth; }
     body {
