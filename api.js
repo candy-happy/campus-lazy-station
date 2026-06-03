@@ -90,6 +90,8 @@ const API = {
   async getRiders() { return fetch('/api/riders', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
   async getRider(phone) { return fetch('/api/riders/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async frozenCheck(phone) { return fetch('/api/riders/frozen-check/' + phone).then(r => r.json()); },
+  async riderRanking() { return fetch('/api/riders/stats/ranking', { headers: this._headers() }).then(r => r.json()); },
+  async riderReviews(phone) { return fetch('/api/riders/stats/reviews/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async updateRiderStatus(phone, status) { return fetch('/api/riders/' + phone, {
     method: 'PATCH', headers: this._headers(),
     body: JSON.stringify({ status })

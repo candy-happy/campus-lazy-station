@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requireAdmin, requireRider } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { fmtPhone } = require('../utils/helpers');
 const multer = require('multer');
@@ -115,6 +115,19 @@ router.put('/:id/unfreeze', requireAdmin, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 骑手详情 ─────────────────────────────────────────────
+// ─── 骑手排行榜（骑手端可用，requireRider） ────────────────
+router.get('/stats/ranking', requireRider, (req, res) => JSON_RES(res, () => {
+  const riders = db.prepare('SELECT uid, name, phone, total_earnings, total_orders, rating, level FROM riders ORDER BY total_earnings DESC').all();
+  return riders.map(r => ({ ...r, phoneDisplay: fmtPhone(r.phone) }));
+}));
+
+// ─── 骑手评价统计（骑手端可用，requireRider） ──────────────────
+router.get('/stats/reviews/:phone', requireRider, (req, res) => JSON_RES(res, () => {
+  const orders = db.prepare('SELECT rating_stars, rating_comment, completed_at, pickup_location, delivery_location FROM orders WHERE rider_phone = ? AND status = ? ORDER BY completed_at DESC').all(req.params.phone, 'completed');
+  const avgRating = orders.length ? (orders.reduce((s, o) => s + (o.rating_stars || 5), 0) / orders.length).toFixed(1) : null;
+  return { avgRating, totalReviews: orders.length, reviews: orders.slice(0, 20).map(o => ({ rating: o.rating_stars, review: o.rating_comment, completed_at: o.completed_at, pickup_location: o.pickup_location, delivery_location: o.delivery_location })) };
+}));
+
 router.get('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
   const rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(req.params.phone);
   if (!rider) return makeError('骑手不存在', ErrorCode.RIDER_NOT_FOUND);
