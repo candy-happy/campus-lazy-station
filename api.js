@@ -258,6 +258,42 @@ const API = {
   },
 
 
+  // ─── 二手交易市场 ───
+  async getMarketItems(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return fetch('/api/market/items' + (qs ? '?' + qs : ''), { headers: this._headers() }).then(r => r.json());
+  },
+  async getMarketItem(id) { return fetch('/api/market/items/' + id, { headers: this._headers() }).then(r => r.json()); },
+  async getMarketCategories() { return fetch('/api/market/categories', { headers: this._headers() }).then(r => r.json()); },
+  async createMarketItem(data, files) {
+    if (files && files.length) {
+      const fd = new FormData();
+      Object.entries(data).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v); });
+      files.forEach(f => fd.append('images', f));
+      const h = {}; if (this._token) h['Authorization'] = 'Bearer ' + this._token;
+      return fetch('/api/market/items', { method: 'POST', headers: h, body: fd }).then(r => r.json());
+    }
+    return fetch('/api/market/items', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
+  },
+  async updateMarketItem(id, data, files) {
+    if (files && files.length) {
+      const fd = new FormData();
+      Object.entries(data).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v); });
+      files.forEach(f => fd.append('images', f));
+      const h = {}; if (this._token) h['Authorization'] = 'Bearer ' + this._token;
+      return fetch('/api/market/items/' + id, { method: 'PUT', headers: h, body: fd }).then(r => r.json());
+    }
+    return fetch('/api/market/items/' + id, { method: 'PUT', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
+  },
+  async deleteMarketItem(id) { return fetch('/api/market/items/' + id, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
+  async marketItemChat(itemId) { return fetch('/api/market/items/' + itemId + '/chat', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
+  async createMarketOrder(itemId) { return fetch('/api/market/orders', { method: 'POST', headers: this._headers(), body: JSON.stringify({ item_id: itemId }) }).then(r => r.json()); },
+  async getMarketOrders(role) { return fetch('/api/market/orders' + (role ? '?role=' + role : ''), { headers: this._headers() }).then(r => r.json()); },
+  async updateMarketOrder(id, action) { return fetch('/api/market/orders/' + id, { method: 'PUT', headers: this._headers(), body: JSON.stringify({ action }) }).then(r => r.json()); },
+  async reviewMarketOrder(id, rating, review) { return fetch('/api/market/orders/' + id + '/review', { method: 'POST', headers: this._headers(), body: JSON.stringify({ rating, review }) }).then(r => r.json()); },
+  async getTrust(phone) { return fetch('/api/market/trust/' + phone, { headers: this._headers() }).then(r => r.json()); },
+  async getMyMarketItems() { return fetch('/api/market/my-items', { headers: this._headers() }).then(r => r.json()); },
+
   // ─── 会话恢复 ───
   restoreSession() {
     try {

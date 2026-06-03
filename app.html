@@ -334,6 +334,88 @@
     }
 
     /* ═══════════════════════════════════════════════════════
+       🛒 二手交易市场
+    ═══════════════════════════════════════════════════════ */
+    .market-section { background: transparent; }
+    .market-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0; -webkit-overflow-scrolling: touch; }
+    .market-tabs::-webkit-scrollbar { display: none; }
+    .market-tab { flex-shrink: 0; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; background: var(--card); color: var(--text-secondary); cursor: pointer; transition: all 0.2s; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .market-tab.active { background: var(--gradient); color: white; box-shadow: 0 2px 12px rgba(255,107,53,0.3); }
+    .market-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 8px; }
+    .market-card { background: var(--card); border-radius: var(--radius-sm); overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.2s; }
+    .market-card:active { transform: scale(0.97); }
+    .market-card-img { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--bg); }
+    .market-card-noimg { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ffe8dc, #fff0eb); font-size: 36px; }
+    .market-card-info { padding: 10px; }
+    .market-card-title { font-size: 14px; font-weight: 600; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+    .market-card-price { font-size: 18px; font-weight: 900; color: var(--danger); margin-top: 6px; }
+    .market-card-price small { font-size: 12px; font-weight: 400; color: var(--text-light); text-decoration: line-through; margin-left: 4px; }
+    .market-card-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+    .market-card-seller { font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+    .market-card-condition { font-size: 11px; color: var(--warning); background: #FFF8F0; padding: 2px 8px; border-radius: 10px; }
+    .trust-badge { font-size: 11px; }
+    /* 商品详情 */
+    .item-detail-imgs { width: 100%; aspect-ratio: 1; position: relative; overflow: hidden; background: var(--bg); }
+    .item-detail-imgs img { width: 100%; height: 100%; object-fit: cover; }
+    .item-detail-imgs .img-counter { position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; }
+    .item-detail-body { padding: 16px; }
+    .item-detail-price { font-size: 28px; font-weight: 900; color: var(--danger); }
+    .item-detail-price small { font-size: 14px; font-weight: 400; color: var(--text-light); text-decoration: line-through; margin-left: 8px; }
+    .item-detail-title { font-size: 18px; font-weight: 700; color: var(--text); margin-top: 8px; line-height: 1.5; }
+    .item-detail-tags { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .item-detail-tag { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: #FFF0EB; color: var(--primary); }
+    .item-detail-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.8; margin-top: 16px; white-space: pre-wrap; }
+    .item-seller-card { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--card); border-radius: var(--radius-sm); margin-top: 16px; box-shadow: var(--shadow); }
+    .item-seller-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .item-seller-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+    .item-seller-info { flex: 1; }
+    .item-seller-name { font-size: 15px; font-weight: 600; }
+    .item-seller-trust { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .item-action-bar { display: flex; gap: 10px; padding: 16px; position: sticky; bottom: 0; background: var(--card); border-top: 1px solid var(--border); }
+    .item-action-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .item-action-btn:active { transform: scale(0.96); }
+    .item-action-btn.chat { background: var(--card); border: 2px solid var(--primary); color: var(--primary); }
+    .item-action-btn.buy { background: var(--gradient); color: white; }
+    /* 发布商品表单 */
+    .publish-form { padding: 16px; }
+    .publish-form .form-group { margin-bottom: 16px; }
+    .publish-form .form-label { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; display: block; }
+    .publish-form .form-label span { color: var(--danger); }
+    .publish-form .form-input, .publish-form .form-textarea { width: 100%; padding: 12px 14px; border: 2px solid var(--border); border-radius: 12px; font-size: 14px; background: var(--bg); color: var(--text); outline: none; box-sizing: border-box; transition: border-color 0.2s; }
+    .publish-form .form-input:focus, .publish-form .form-textarea:focus { border-color: var(--primary); }
+    .publish-form .form-textarea { min-height: 80px; resize: vertical; }
+    .publish-img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .publish-img-item { aspect-ratio: 1; border-radius: 10px; border: 2px dashed var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: pointer; }
+    .publish-img-item img { width: 100%; height: 100%; object-fit: cover; }
+    .publish-img-item .add-icon { font-size: 28px; color: var(--text-light); }
+    .publish-img-item .del-btn { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: none; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .condition-selector { display: flex; flex-wrap: wrap; gap: 8px; }
+    .condition-chip { padding: 8px 14px; border-radius: 20px; font-size: 13px; background: var(--card); border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; }
+    .condition-chip.active { border-color: var(--primary); background: #FFF0EB; color: var(--primary); }
+    .category-selector { display: flex; flex-wrap: wrap; gap: 8px; }
+    .category-chip { padding: 8px 14px; border-radius: 20px; font-size: 13px; background: var(--card); border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; }
+    .category-chip.active { border-color: var(--primary); background: #FFF0EB; color: var(--primary); }
+    /* 交易订单卡片 */
+    .trade-card { background: var(--card); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow); }
+    .trade-card-top { display: flex; gap: 10px; }
+    .trade-card-img { width: 70px; height: 70px; border-radius: 8px; object-fit: cover; background: var(--bg); flex-shrink: 0; }
+    .trade-card-noimg { width: 70px; height: 70px; border-radius: 8px; background: #FFF0EB; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+    .trade-card-info { flex: 1; }
+    .trade-card-title { font-size: 14px; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .trade-card-price { font-size: 16px; font-weight: 900; color: var(--danger); margin-top: 4px; }
+    .trade-card-status { font-size: 12px; padding: 3px 8px; border-radius: 10px; display: inline-block; margin-top: 4px; }
+    .trade-card-status.pending { background: #FFF3E0; color: #E65100; }
+    .trade-card-status.confirmed { background: #E3F2FD; color: #1565C0; }
+    .trade-card-status.paid { background: #E8F5E9; color: #2E7D32; }
+    .trade-card-status.completed { background: #F3E5F5; color: #7B1FA2; }
+    .trade-card-status.cancelled { background: #F5F5F5; color: #9E9E9E; }
+    .trade-card-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .trade-btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .trade-btn-primary { background: var(--gradient); color: white; }
+    .trade-btn-outline { background: var(--card); border: 1px solid var(--border); color: var(--text); }
+    .trade-btn-danger { background: #FFF0F0; color: var(--danger); border: 1px solid #FFCCCC; }
+
+    /* ═══════════════════════════════════════════════════════
        📦 订单区块
     ═══════════════════════════════════════════════════════ */
     .order-section {
@@ -1834,21 +1916,45 @@
               </div>
               <div class="quick-value" id="pointsCount">168</div>
             </div>
+            <div class="quick-card" onclick="openPublishItem()" style="background:linear-gradient(135deg,#FFF0EB,#FFE4D6);cursor:pointer">
+              <div class="quick-icon">📸</div>
+              <div class="quick-info">
+                <div class="quick-title">发布商品</div>
+                <div class="quick-desc">闲置转卖赚零花</div>
+              </div>
+              <div class="quick-value" style="color:var(--primary)">+</div>
+            </div>
           </div>
         </div>
 
-        <!-- 我的订单 -->
-        <div class="section">
-          <div class="order-section">
-            <div class="order-tabs">
-              <div class="order-tab active" onclick="switchOrderFilter('all')">全部</div>
-              <div class="order-tab" onclick="switchOrderFilter('pending')">待接单</div>
-              <div class="order-tab" onclick="switchOrderFilter('running')">进行中</div>
-              <div class="order-tab" onclick="switchOrderFilter('completed')">已完成</div>
-            </div>
-            <div id="orderList">
-              <!-- 动态渲染 -->
-            </div>
+        <!-- 🛒 二手市场 -->
+        <div class="section market-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div style="font-size:16px;font-weight:700">🛒 二手市场</div>
+            <div style="font-size:13px;color:var(--primary);cursor:pointer;font-weight:600" onclick="loadMarketItems()">刷新</div>
+          </div>
+          <!-- 分类标签 -->
+          <div class="market-tabs" id="marketTabs">
+            <div class="market-tab active" onclick="switchMarketCategory('all')">全部</div>
+            <div class="market-tab" onclick="switchMarketCategory('textbook')">📚 教材</div>
+            <div class="market-tab" onclick="switchMarketCategory('digital')">💻 数码</div>
+            <div class="market-tab" onclick="switchMarketCategory('daily')">🏠 日用</div>
+            <div class="market-tab" onclick="switchMarketCategory('clothing')">👔 服饰</div>
+            <div class="market-tab" onclick="switchMarketCategory('beauty')">💄 美妆</div>
+            <div class="market-tab" onclick="switchMarketCategory('other')">📦 其他</div>
+          </div>
+          <!-- 商品网格 -->
+          <div class="market-grid" id="marketGrid">
+            <!-- 动态渲染 -->
+          </div>
+          <!-- 空状态 -->
+          <div id="marketEmpty" style="display:none;text-align:center;padding:40px 0">
+            <div style="font-size:48px;margin-bottom:12px">🛒</div>
+            <div style="color:var(--text-secondary);font-size:14px">暂无商品，快来发布吧~</div>
+          </div>
+          <!-- 加载更多 -->
+          <div id="marketMore" style="text-align:center;padding:12px;display:none">
+            <button onclick="loadMoreMarketItems()" style="padding:8px 24px;border:2px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer">加载更多</button>
           </div>
         </div>
       </div>
@@ -1938,6 +2044,16 @@
         </div>
 
         <div class="me-menu-card">
+          <div class="me-menu-item" onclick="openMyTrades()">
+            <span class="me-menu-icon">🛒</span>
+            <span class="me-menu-text">我的交易</span>
+            <span class="me-menu-arrow">›</span>
+          </div>
+          <div class="me-menu-item" onclick="openMyListings()">
+            <span class="me-menu-icon">📦</span>
+            <span class="me-menu-text">我的在售</span>
+            <span class="me-menu-arrow">›</span>
+          </div>
           <div class="me-menu-item" onclick="openChatList()">
             <span class="me-menu-icon">💬</span>
             <span class="me-menu-text">我的消息</span>
@@ -2213,6 +2329,114 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
+         🛒 商品详情子页面
+    ═══════════════════════════════════════════════════════ -->
+    <div class="sub-page" id="itemDetailPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('itemDetailPage_sub')">←</button>
+        <span class="sub-page-title">商品详情</span>
+      </div>
+      <div class="sub-page-body" id="itemDetailBody" style="padding:0"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         📸 发布商品子页面
+    ═══════════════════════════════════════════════════════ -->
+    <div class="sub-page" id="publishItemPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('publishItemPage_sub')">←</button>
+        <span class="sub-page-title">📸 发布商品</span>
+      </div>
+      <div class="sub-page-body">
+        <div class="publish-form">
+          <div class="form-group">
+            <label class="form-label">商品图片 <span>*</span></label>
+            <div class="publish-img-grid" id="publishImgGrid">
+              <div class="publish-img-item" onclick="document.getElementById('publishImgInput').click()">
+                <div class="add-icon">+</div>
+              </div>
+            </div>
+            <input type="file" id="publishImgInput" accept="image/*" multiple style="display:none" onchange="onPublishImages(this)" />
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:6px">最多9张，支持JPG/PNG</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">商品标题 <span>*</span></label>
+            <input type="text" class="form-input" id="publishTitle" placeholder="请输入商品标题" maxlength="40" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">商品描述</label>
+            <textarea class="form-textarea" id="publishDesc" placeholder="请描述商品详情、使用情况..." maxlength="500"></textarea>
+          </div>
+          <div style="display:flex;gap:12px">
+            <div class="form-group" style="flex:1">
+              <label class="form-label">售价 <span>*</span></label>
+              <input type="number" class="form-input" id="publishPrice" placeholder="0.00" min="0" step="0.01" />
+            </div>
+            <div class="form-group" style="flex:1">
+              <label class="form-label">原价</label>
+              <input type="number" class="form-input" id="publishOrigPrice" placeholder="0.00" min="0" step="0.01" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">商品分类</label>
+            <div class="category-selector" id="publishCategorySelector">
+              <div class="category-chip active" onclick="selectPublishCategory(this,'other')">📦 其他</div>
+              <div class="category-chip" onclick="selectPublishCategory(this,'textbook')">📚 教材</div>
+              <div class="category-chip" onclick="selectPublishCategory(this,'digital')">💻 数码</div>
+              <div class="category-chip" onclick="selectPublishCategory(this,'daily')">🏠 日用</div>
+              <div class="category-chip" onclick="selectPublishCategory(this,'clothing')">👔 服饰</div>
+              <div class="category-chip" onclick="selectPublishCategory(this,'beauty')">💄 美妆</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">成色</label>
+            <div class="condition-selector" id="publishConditionSelector">
+              <div class="condition-chip" onclick="selectPublishCondition(this,'全新')">全新</div>
+              <div class="condition-chip active" onclick="selectPublishCondition(this,'9成新')">9成新</div>
+              <div class="condition-chip" onclick="selectPublishCondition(this,'8成新')">8成新</div>
+              <div class="condition-chip" onclick="selectPublishCondition(this,'7成新')">7成新</div>
+              <div class="condition-chip" onclick="selectPublishCondition(this,'一般')">一般</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">联系方式</label>
+            <input type="text" class="form-input" id="publishContact" placeholder="微信号/QQ/手机号（选填）" />
+          </div>
+          <button onclick="submitPublishItem()" style="width:100%;padding:14px;border:none;border-radius:14px;background:var(--gradient);color:white;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px">发布商品</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         📊 我的交易子页面
+    ═══════════════════════════════════════════════════════ -->
+    <div class="sub-page" id="myTradesPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('myTradesPage_sub')">←</button>
+        <span class="sub-page-title">我的交易</span>
+      </div>
+      <div class="sub-page-body">
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <div class="market-tab active" id="tradeTabAll" onclick="switchTradeTab('all')">全部</div>
+          <div class="market-tab" id="tradeTabBuy" onclick="switchTradeTab('buyer')">我买到的</div>
+          <div class="market-tab" id="tradeTabSell" onclick="switchTradeTab('seller')">我卖出的</div>
+        </div>
+        <div id="tradeListContainer"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         📦 我的在售子页面
+    ═══════════════════════════════════════════════════════ -->
+    <div class="sub-page" id="myListingsPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('myListingsPage_sub')">←</button>
+        <span class="sub-page-title">我的在售</span>
+      </div>
+      <div class="sub-page-body" id="myListingsContainer"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
          🔔 通知弹窗
     ═══════════════════════════════════════════════════════ -->
     <!-- 通知子页面 -->
@@ -2283,7 +2507,18 @@
     let notifications = [];
     let addresses = [];
     let currentTip = 0;
-    
+
+    // ═══ 二手市场状态 ═══
+    let marketItems = [];
+    let marketCategory = 'all';
+    let marketPage = 1;
+    let marketHasMore = false;
+    let publishImages = []; // 已选图片File对象
+    let publishImgUrls = []; // 预览URL
+    let publishCategory = 'other';
+    let publishCondition = '9成新';
+    let tradeTab = 'all';
+
     // ═══ 子页面栈管理 ═══
     let _pageStack = [];
     function openSubPage(id) {
@@ -2440,6 +2675,7 @@
         renderOrders();
         updateMePage();
         updateNotifBadge();
+        loadMarketItems(true); // 加载二手市场
       } catch(e) {
         console.error('loadData error:', e);
         orders = [];
@@ -2474,6 +2710,440 @@
 
     function stopOrderPolling() {
       if (_orderPollTimer) { clearInterval(_orderPollTimer); _orderPollTimer = null; }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 🛒 二手交易市场函数
+    // ═══════════════════════════════════════════════════════
+    const CATEGORY_MAP = { textbook:'📚 教材', digital:'💻 数码', daily:'🏠 日用', clothing:'👔 服饰', beauty:'💄 美妆', other:'📦 其他' };
+    const STATUS_MAP = { pending:'待确认', confirmed:'已确认', paid:'已付款', completed:'已完成', cancelled:'已取消' };
+
+    async function loadMarketItems(reset) {
+      if (!currentUser) return;
+      if (reset) { marketPage = 1; marketItems = []; }
+      try {
+        const params = { page: marketPage, limit: 10 };
+        if (marketCategory !== 'all') params.category = marketCategory;
+        const res = await API.getMarketItems(params);
+        if (res.items) {
+          marketItems = reset ? res.items : marketItems.concat(res.items);
+          marketHasMore = marketItems.length < res.total;
+          renderMarketGrid();
+        }
+      } catch(e) { console.error('loadMarketItems error:', e); }
+    }
+
+    function loadMoreMarketItems() {
+      marketPage++;
+      loadMarketItems(false);
+    }
+
+    function switchMarketCategory(cat) {
+      marketCategory = cat;
+      document.querySelectorAll('#marketTabs .market-tab').forEach(t => t.classList.toggle('active', t.textContent.includes(CATEGORY_MAP[cat] || '全部')));
+      loadMarketItems(true);
+    }
+
+    function renderMarketGrid() {
+      const grid = document.getElementById('marketGrid');
+      const empty = document.getElementById('marketEmpty');
+      const more = document.getElementById('marketMore');
+      if (!grid) return;
+      if (!marketItems.length) {
+        grid.innerHTML = '';
+        if (empty) empty.style.display = 'block';
+        if (more) more.style.display = 'none';
+        return;
+      }
+      if (empty) empty.style.display = 'none';
+      if (more) more.style.display = marketHasMore ? 'block' : 'none';
+      grid.innerHTML = marketItems.map(item => {
+        const img = (item.images && item.images[0]) || '';
+        const trust = item.trust || {};
+        const avatarHtml = renderAvatarHtml(item.seller_avatar, item.seller_name);
+        return '<div class="market-card" onclick="openItemDetail(' + item.id + ')">' +
+          (img ? '<img class="market-card-img" src="' + img + '" onerror="this.outerHTML=\'<div class=\\'market-card-noimg\\'>🛒</div>\'" />' : '<div class="market-card-noimg">🛒</div>') +
+          '<div class="market-card-info">' +
+            '<div class="market-card-title">' + escHtml(item.title) + '</div>' +
+            '<div class="market-card-price">¥' + (item.price || 0).toFixed(2) + (item.original_price ? '<small>¥' + item.original_price.toFixed(2) + '</small>' : '') + '</div>' +
+            '<div class="market-card-meta">' +
+              '<div class="market-card-seller">' + avatarHtml + ' ' + escHtml(item.seller_name || '') + ' <span class="trust-badge">' + (trust.icon || '') + '</span></div>' +
+              (item.condition_level ? '<div class="market-card-condition">' + escHtml(item.condition_level) + '</div>' : '') +
+            '</div>' +
+          '</div></div>';
+      }).join('');
+    }
+
+    function renderAvatarHtml(avatar, name) {
+      if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
+        return '<img src="' + avatar + '" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle" />';
+      }
+      if (avatar && avatar.length <= 2) return '<span style="font-size:14px">' + avatar + '</span>';
+      return '<span style="font-size:12px;color:var(--text-light)">' + escHtml((name || '?')[0]) + '</span>';
+    }
+
+    async function openItemDetail(id) {
+      try {
+        const item = await API.getMarketItem(id);
+        if (item.error) { showToast(item.error); return; }
+        renderItemDetail(item);
+        openSubPage('itemDetailPage_sub');
+      } catch(e) { showToast('加载失败'); }
+    }
+
+    function renderItemDetail(item) {
+      const body = document.getElementById('itemDetailBody');
+      if (!body) return;
+      const trust = item.trust || {};
+      const imgs = item.images || [];
+      const isOwner = currentUser && item.seller_phone === currentUser.phone;
+      const sellerAvatar = renderAvatarHtml(item.seller_avatar, item.seller_name);
+      const relatedHtml = (item.relatedItems || []).map(r => {
+        const rImg = (r.images && r.images[0]) || '';
+        return '<div style="min-width:120px;background:var(--card);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);cursor:pointer" onclick="openItemDetail(' + r.id + ')">' +
+          (rImg ? '<img src="' + rImg + '" style="width:120px;height:90px;object-fit:cover" />' : '<div style="width:120px;height:90px;background:#FFF0EB;display:flex;align-items:center;justify-content:center;font-size:24px">🛒</div>') +
+          '<div style="padding:8px;font-size:12px;font-weight:600">' + escHtml(r.title) + '</div>' +
+          '<div style="padding:0 8px 8px;font-size:14px;font-weight:900;color:var(--danger)">¥' + (r.price || 0).toFixed(2) + '</div>' +
+          '</div>';
+      }).join('');
+
+      body.innerHTML =
+        (imgs.length ? '<div class="item-detail-imgs"><img src="' + imgs[0] + '" /><div class="img-counter">1/' + imgs.length + '</div></div>' : '<div class="item-detail-imgs" style="display:flex;align-items:center;justify-content:center;font-size:64px;background:#FFF0EB">🛒</div>') +
+        '<div class="item-detail-body">' +
+          '<div class="item-detail-price">¥' + (item.price || 0).toFixed(2) + (item.original_price ? '<small>¥' + item.original_price.toFixed(2) + '</small>' : '') + '</div>' +
+          '<div class="item-detail-title">' + escHtml(item.title) + '</div>' +
+          '<div class="item-detail-tags">' +
+            (item.condition_level ? '<div class="item-detail-tag">' + escHtml(item.condition_level) + '</div>' : '') +
+            (item.category ? '<div class="item-detail-tag">' + (CATEGORY_MAP[item.category] || item.category) + '</div>' : '') +
+            '<div class="item-detail-tag">👁 ' + (item.views || 0) + '</div>' +
+          '</div>' +
+          (item.description ? '<div class="item-detail-desc">' + escHtml(item.description) + '</div>' : '') +
+          (item.contact ? '<div style="margin-top:12px;font-size:13px;color:var(--primary)">📞 联系方式：' + escHtml(item.contact) + '</div>' : '') +
+          '<div class="item-seller-card" onclick="event.stopPropagation()">' +
+            '<div class="item-seller-avatar">' + sellerAvatar + '</div>' +
+            '<div class="item-seller-info">' +
+              '<div class="item-seller-name">' + escHtml(item.seller_name || '卖家') + '</div>' +
+              '<div class="item-seller-trust">' + trust.icon + ' ' + trust.label + ' · ' + (trust.totalDeals || 0) + '笔交易 · 好评' + (trust.goodRate || 100) + '%</div>' +
+            '</div>' +
+          '</div>' +
+          (relatedHtml ? '<div style="margin-top:20px"><div style="font-size:15px;font-weight:700;margin-bottom:10px">卖家其他商品</div><div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">' + relatedHtml + '</div></div>' : '') +
+        '</div>' +
+        (isOwner ?
+          '<div class="item-action-bar"><button class="item-action-btn chat" style="background:#FFF0F0;color:var(--danger)" onclick="removeMyItem(' + item.id + ')">下架商品</button></div>' :
+          '<div class="item-action-bar">' +
+            '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 交流</button>' +
+            '<button class="item-action-btn buy" onclick="buyItem(' + item.id + ')">🛒 购买</button>' +
+          '</div>');
+
+      // 图片滑动支持
+      if (imgs.length > 1) {
+        let imgIdx = 0;
+        const imgBox = body.querySelector('.item-detail-imgs');
+        if (imgBox) {
+          let sx = 0;
+          imgBox.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, {passive:true});
+          imgBox.addEventListener('touchend', e => {
+            const dx = e.changedTouches[0].clientX - sx;
+            if (Math.abs(dx) > 40) {
+              imgIdx = dx < 0 ? Math.min(imgIdx+1, imgs.length-1) : Math.max(imgIdx-1, 0);
+              imgBox.querySelector('img').src = imgs[imgIdx];
+              const counter = imgBox.querySelector('.img-counter');
+              if (counter) counter.textContent = (imgIdx+1) + '/' + imgs.length;
+            }
+          });
+        }
+      }
+    }
+
+    async function chatWithSeller(itemId) {
+      if (!currentUser) { showToast('请先登录'); return; }
+      try {
+        const res = await API.marketItemChat(itemId);
+        if (res.ok && res.conversation_id) {
+          closeSubPage('itemDetailPage_sub');
+          openChatWithId(res.conversation_id);
+        } else {
+          showToast(res.error || '创建会话失败');
+        }
+      } catch(e) { showToast('操作失败'); }
+    }
+
+    async function buyItem(itemId) {
+      if (!currentUser) { showToast('请先登录'); return; }
+      if (!confirm('确认购买此商品？')) return;
+      try {
+        const res = await API.createMarketOrder(itemId);
+        if (res.ok) {
+          showToast('购买请求已发送 ✅');
+          closeSubPage('itemDetailPage_sub');
+          loadMarketItems(true);
+        } else {
+          showToast(res.error || '购买失败');
+        }
+      } catch(e) { showToast('操作失败'); }
+    }
+
+    async function removeMyItem(itemId) {
+      if (!confirm('确认下架此商品？')) return;
+      try {
+        const res = await API.deleteMarketItem(itemId);
+        if (res.ok) {
+          showToast('已下架');
+          closeSubPage('itemDetailPage_sub');
+          loadMarketItems(true);
+        } else { showToast(res.error || '下架失败'); }
+      } catch(e) { showToast('操作失败'); }
+    }
+
+    // ─── 发布商品 ─────────────────────────────────────────
+    function openPublishItem() {
+      if (!currentUser) { showToast('请先登录'); return; }
+      publishImages = [];
+      publishImgUrls = [];
+      publishCategory = 'other';
+      publishCondition = '9成新';
+      document.getElementById('publishTitle').value = '';
+      document.getElementById('publishDesc').value = '';
+      document.getElementById('publishPrice').value = '';
+      document.getElementById('publishOrigPrice').value = '';
+      document.getElementById('publishContact').value = '';
+      renderPublishImgGrid();
+      resetPublishSelectors();
+      openSubPage('publishItemPage_sub');
+    }
+
+    function onPublishImages(input) {
+      if (!input.files) return;
+      for (let i = 0; i < input.files.length && publishImages.length < 9; i++) {
+        const f = input.files[i];
+        if (!f.type.startsWith('image/')) { showToast('仅支持图片'); continue; }
+        if (f.size > 5*1024*1024) { showToast(f.name + '超过5MB'); continue; }
+        publishImages.push(f);
+        publishImgUrls.push(URL.createObjectURL(f));
+      }
+      renderPublishImgGrid();
+      input.value = '';
+    }
+
+    function renderPublishImgGrid() {
+      const grid = document.getElementById('publishImgGrid');
+      if (!grid) return;
+      let html = publishImgUrls.map((url, i) =>
+        '<div class="publish-img-item"><img src="' + url + '" /><button class="del-btn" onclick="removePublishImg(' + i + ')">×</button></div>'
+      ).join('');
+      if (publishImages.length < 9) {
+        html += '<div class="publish-img-item" onclick="document.getElementById(\'publishImgInput\').click()"><div class="add-icon">+</div></div>';
+      }
+      grid.innerHTML = html;
+    }
+
+    function removePublishImg(idx) {
+      URL.revokeObjectURL(publishImgUrls[idx]);
+      publishImages.splice(idx, 1);
+      publishImgUrls.splice(idx, 1);
+      renderPublishImgGrid();
+    }
+
+    function selectPublishCategory(el, cat) {
+      publishCategory = cat;
+      document.querySelectorAll('#publishCategorySelector .category-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function selectPublishCondition(el, cond) {
+      publishCondition = cond;
+      document.querySelectorAll('#publishConditionSelector .condition-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function resetPublishSelectors() {
+      document.querySelectorAll('#publishCategorySelector .category-chip').forEach((c, i) => c.classList.toggle('active', i === 0));
+      document.querySelectorAll('#publishConditionSelector .condition-chip').forEach((c, i) => c.classList.toggle('active', i === 1));
+    }
+
+    async function submitPublishItem() {
+      const title = document.getElementById('publishTitle').value.trim();
+      const price = parseFloat(document.getElementById('publishPrice').value);
+      if (!title) { showToast('请输入标题'); return; }
+      if (!price || price <= 0) { showToast('请输入有效价格'); return; }
+      const data = {
+        title,
+        description: document.getElementById('publishDesc').value.trim(),
+        price,
+        original_price: parseFloat(document.getElementById('publishOrigPrice').value) || '',
+        category: publishCategory,
+        condition_level: publishCondition,
+        contact: document.getElementById('publishContact').value.trim()
+      };
+      try {
+        showToast('发布中...');
+        const res = await API.createMarketItem(data, publishImages);
+        if (res.ok) {
+          showToast('发布成功 ✅');
+          closeSubPage('publishItemPage_sub');
+          loadMarketItems(true);
+        } else {
+          showToast(res.error || '发布失败');
+        }
+      } catch(e) { showToast('发布失败: ' + e.message); }
+    }
+
+    // ─── 我的交易 ─────────────────────────────────────────
+    async function openMyTrades() {
+      if (!currentUser) { showToast('请先登录'); return; }
+      tradeTab = 'all';
+      document.getElementById('tradeTabAll').classList.add('active');
+      document.getElementById('tradeTabBuy').classList.remove('active');
+      document.getElementById('tradeTabSell').classList.remove('active');
+      openSubPage('myTradesPage_sub');
+      await loadTradeList();
+    }
+
+    function switchTradeTab(tab) {
+      tradeTab = tab;
+      ['tradeTabAll','tradeTabBuy','tradeTabSell'].forEach(id => document.getElementById(id).classList.remove('active'));
+      const map = { all:'tradeTabAll', buyer:'tradeTabBuy', seller:'tradeTabSell' };
+      document.getElementById(map[tab]).classList.add('active');
+      loadTradeList();
+    }
+
+    async function loadTradeList() {
+      const container = document.getElementById('tradeListContainer');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">加载中...</div>';
+      try {
+        const res = await API.getMarketOrders(tradeTab === 'all' ? '' : tradeTab);
+        const orders = res.orders || [];
+        if (!orders.length) {
+          container.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">📭</div><div style="color:var(--text-secondary)">暂无交易记录</div></div>';
+          return;
+        }
+        container.innerHTML = orders.map(o => {
+          const statusClass = o.status || 'pending';
+          const statusText = STATUS_MAP[statusClass] || statusClass;
+          const img = o.image || '';
+          const avatarHtml = renderAvatarHtml(o.is_buyer ? o.seller_avatar : o.buyer_avatar, o.is_buyer ? o.seller_name : o.buyer_name);
+          const otherName = o.is_buyer ? o.seller_name : o.buyer_name;
+          return '<div class="trade-card">' +
+            '<div class="trade-card-top">' +
+              (img ? '<img class="trade-card-img" src="' + img + '" />' : '<div class="trade-card-noimg">🛒</div>') +
+              '<div class="trade-card-info">' +
+                '<div class="trade-card-title">' + escHtml(o.title || '') + '</div>' +
+                '<div class="trade-card-price">¥' + (o.price || 0).toFixed(2) + '</div>' +
+                '<div>' +
+                  '<span class="trade-card-status ' + statusClass + '">' + statusText + '</span>' +
+                  ' <span style="font-size:11px;color:var(--text-secondary)">' + (o.is_buyer ? '买家' : '卖家') + ' · ' + escHtml(otherName || '') + '</span>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            renderTradeActions(o) +
+          '</div>';
+        }).join('');
+      } catch(e) {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger)">加载失败</div>';
+      }
+    }
+
+    function renderTradeActions(o) {
+      let html = '<div class="trade-card-actions">';
+      if (o.is_seller && o.status === 'pending') {
+        html += '<button class="trade-btn trade-btn-primary" onclick="confirmTrade(' + o.id + ')">确认订单</button>';
+        html += '<button class="trade-btn trade-btn-danger" onclick="cancelTrade(' + o.id + ')">取消</button>';
+      }
+      if (o.is_buyer && (o.status === 'confirmed' || o.status === 'paid')) {
+        html += '<button class="trade-btn trade-btn-primary" onclick="completeTrade(' + o.id + ')">确认完成</button>';
+        html += '<button class="trade-btn trade-btn-danger" onclick="cancelTrade(' + o.id + ')">取消</button>';
+      }
+      if (o.is_buyer && o.status === 'completed' && !o.rating) {
+        html += '<button class="trade-btn trade-btn-outline" onclick="rateTrade(' + o.id + ')">⭐ 评价</button>';
+      }
+      html += '<button class="trade-btn trade-btn-outline" onclick="chatWithTrader(' + (o.is_buyer ? o.seller_phone : o.buyer_phone) + ')">💬 聊天</button>';
+      html += '</div>';
+      return html;
+    }
+
+    async function confirmTrade(orderId) {
+      try {
+        const res = await API.updateMarketOrder(orderId, 'confirm');
+        if (res.ok) { showToast('已确认'); loadTradeList(); }
+        else showToast(res.error || '操作失败');
+      } catch(e) { showToast('操作失败'); }
+    }
+
+    async function completeTrade(orderId) {
+      if (!confirm('确认完成交易？')) return;
+      try {
+        const res = await API.updateMarketOrder(orderId, 'complete');
+        if (res.ok) { showToast('交易完成 ✅'); loadTradeList(); }
+        else showToast(res.error || '操作失败');
+      } catch(e) { showToast('操作失败'); }
+    }
+
+    async function cancelTrade(orderId) {
+      if (!confirm('确认取消交易？')) return;
+      try {
+        const res = await API.updateMarketOrder(orderId, 'cancel');
+        if (res.ok) { showToast('已取消'); loadTradeList(); }
+        else showToast(res.error || '操作失败');
+      } catch(e) { showToast('操作失败'); }
+    }
+
+    async function rateTrade(orderId) {
+      const rating = prompt('请给1-5星评分：');
+      if (!rating || rating < 1 || rating > 5) { showToast('请输入1-5'); return; }
+      const review = prompt('评价内容（选填）：') || '';
+      try {
+        const res = await API.reviewMarketOrder(orderId, parseInt(rating), review);
+        if (res.ok) { showToast('评价成功 ⭐'); loadTradeList(); }
+        else showToast(res.error || '评价失败');
+      } catch(e) { showToast('操作失败'); }
+    }
+
+    async function chatWithTrader(phone) {
+      if (!currentUser) return;
+      try {
+        const res = await API.chatGetOrCreateConversation({ user_phone: currentUser.phone, rider_phone: phone });
+        if (res.id) openChatWithId(res.id);
+        else showToast(res.error || '打开聊天失败');
+      } catch(e) { showToast('操作失败'); }
+    }
+
+    // ─── 我的在售 ─────────────────────────────────────────
+    async function openMyListings() {
+      if (!currentUser) { showToast('请先登录'); return; }
+      openSubPage('myListingsPage_sub');
+      await loadMyListings();
+    }
+
+    async function loadMyListings() {
+      const container = document.getElementById('myListingsContainer');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">加载中...</div>';
+      try {
+        const res = await API.getMyMarketItems();
+        const items = res.items || [];
+        if (!items.length) {
+          container.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">📦</div><div style="color:var(--text-secondary)">暂无在售商品</div><button onclick="closeSubPage(\'myListingsPage_sub\');openPublishItem()" style="margin-top:16px;padding:10px 24px;border:2px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-weight:600;cursor:pointer">发布商品</button></div>';
+          return;
+        }
+        const statusLabel = { active:'在售', trading:'交易中', sold:'已售', removed:'已下架' };
+        container.innerHTML = items.map(item => {
+          const img = (item.images && item.images[0]) || '';
+          return '<div class="trade-card">' +
+            '<div class="trade-card-top">' +
+              (img ? '<img class="trade-card-img" src="' + img + '" />' : '<div class="trade-card-noimg">🛒</div>') +
+              '<div class="trade-card-info">' +
+                '<div class="trade-card-title">' + escHtml(item.title) + '</div>' +
+                '<div class="trade-card-price">¥' + (item.price || 0).toFixed(2) + '</div>' +
+                '<span class="trade-card-status ' + (item.status === 'active' ? 'completed' : item.status === 'trading' ? 'confirmed' : 'cancelled') + '">' + (statusLabel[item.status] || item.status) + '</span>' +
+              '</div>' +
+            '</div>' +
+            (item.status === 'active' ? '<div class="trade-card-actions"><button class="trade-btn trade-btn-danger" onclick="removeMyItem(' + item.id + ');loadMyListings()">下架</button></div>' : '') +
+          '</div>';
+        }).join('');
+      } catch(e) {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger)">加载失败</div>';
+      }
     }
 
     document.addEventListener("visibilitychange", () => {

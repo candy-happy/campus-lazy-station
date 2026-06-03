@@ -87,6 +87,9 @@ app.use('/api', require('./routes/wallet'));
 // GIF
 app.use('/api/gif', require('./routes/gif'));
 
+// 二手交易市场
+app.use('/api/market', require('./routes/market'));
+
 // ─── 404 处理 ────────────────────────────────────────────
 app.use('/api', (req, res) => {
   res.status(404).json({ error: '接口不存在', code: 'SYS_004' });
