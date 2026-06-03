@@ -30,10 +30,10 @@ const API = {
   },
 
   // ─── 骑手 ───
-  async riderLogin(uid, phone) {
+  async riderLogin(uid, student_id, phone) {
     const res = await fetch('/api/rider/login', {
       method: 'POST', headers: this._headers(),
-      body: JSON.stringify({ uid, phone })
+      body: JSON.stringify({ uid, student_id, phone })
     }).then(r => r.json());
     if (res.error) throw new Error(res.error);
     if (res.code === 'RIDER_FROZEN') throw { message: res.error, code: 'RIDER_FROZEN' };

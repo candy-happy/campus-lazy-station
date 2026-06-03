@@ -31,8 +31,9 @@ router.post('/user/login', (req, res) => JSON_RES(res, () => {
 
 // ─── 骑手登录 ─────────────────────────────────────────────
 router.post('/rider/login', (req, res) => JSON_RES(res, () => {
-  const { uid, phone } = req.body;
+  const { uid, student_id, phone } = req.body;
   if (!uid) return makeError('请输入UID编号', ErrorCode.PARAM_MISSING);
+  if (!student_id) return makeError('请输入学号', ErrorCode.PARAM_MISSING);
   if (!phone || phone.length !== 11) return makeError('请输入正确手机号', ErrorCode.USER_PHONE_INVALID);
 
   // 骑手必须由管理端创建，不再自动注册
@@ -41,6 +42,9 @@ router.post('/rider/login', (req, res) => JSON_RES(res, () => {
 
   // 验证UID匹配
   if (rider.uid !== uid) return makeError('UID编号不匹配，请联系管理员', ErrorCode.RIDER_UID_MISMATCH);
+
+  // 验证学号匹配
+  if (rider.student_id !== student_id) return makeError('学号不匹配，请联系管理员', ErrorCode.RIDER_STUDENT_MISMATCH);
 
   // 检查冻结状态
   if (rider.frozen) return makeError('你的账号已被冻结，原因: ' + (rider.frozen_reason || '管理员冻结'), 'RIDER_FROZEN');
