@@ -304,29 +304,29 @@
       flex: 1;
       background: var(--card);
       border-radius: var(--radius);
-      padding: 16px;
+      padding: 10px 12px;
       box-shadow: var(--shadow);
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       cursor: pointer;
       transition: all 0.2s;
     }
     .quick-card:active { transform: scale(0.98); }
     .quick-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
+      font-size: 18px;
     }
     .quick-card.discount .quick-icon { background: linear-gradient(135deg, #FF6B6B, #FF8E8E); }
     .quick-card.points .quick-icon { background: linear-gradient(135deg, #F7DC6F, #F9E79F); }
-    .quick-info { flex: 1; }
-    .quick-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
-    .quick-desc { font-size: 11px; color: var(--text-secondary); }
+    .quick-info { flex: 1; min-width: 0; }
+    .quick-title { font-size: 13px; font-weight: 700; line-height: 1.3; }
+    .quick-desc { font-size: 10px; color: var(--text-secondary); line-height: 1.2; margin-top: 1px; }
     .quick-value {
       font-size: 18px;
       font-weight: 900;
@@ -378,23 +378,38 @@
     .item-action-btn.buy { background: var(--gradient); color: white; }
     /* 发布商品表单 */
     .publish-form { padding: 16px; }
-    .publish-form .form-group { margin-bottom: 16px; }
-    .publish-form .form-label { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; display: block; }
+    .publish-form .form-group { margin-bottom: 18px; }
+    .publish-form .form-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
     .publish-form .form-label span { color: var(--danger); }
-    .publish-form .form-input, .publish-form .form-textarea { width: 100%; padding: 12px 14px; border: 2px solid var(--border); border-radius: 12px; font-size: 14px; background: var(--bg); color: var(--text); outline: none; box-sizing: border-box; transition: border-color 0.2s; }
-    .publish-form .form-input:focus, .publish-form .form-textarea:focus { border-color: var(--primary); }
-    .publish-form .form-textarea { min-height: 80px; resize: vertical; }
-    .publish-img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .publish-img-item { aspect-ratio: 1; border-radius: 10px; border: 2px dashed var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: pointer; }
-    .publish-img-item img { width: 100%; height: 100%; object-fit: cover; }
-    .publish-img-item .add-icon { font-size: 28px; color: var(--text-light); }
-    .publish-img-item .del-btn { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: none; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .condition-selector { display: flex; flex-wrap: wrap; gap: 8px; }
-    .condition-chip { padding: 8px 14px; border-radius: 20px; font-size: 13px; background: var(--card); border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; }
-    .condition-chip.active { border-color: var(--primary); background: #FFF0EB; color: var(--primary); }
-    .category-selector { display: flex; flex-wrap: wrap; gap: 8px; }
-    .category-chip { padding: 8px 14px; border-radius: 20px; font-size: 13px; background: var(--card); border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; }
-    .category-chip.active { border-color: var(--primary); background: #FFF0EB; color: var(--primary); }
+    .publish-form .form-input, .publish-form .form-textarea { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; background: var(--card); color: var(--text); outline: none; box-sizing: border-box; transition: all 0.2s; }
+    .publish-form .form-input:focus, .publish-form .form-textarea:focus { border-color: var(--primary); background: var(--bg); box-shadow: 0 0 0 3px rgba(255,107,53,0.1); }
+    .publish-form .form-textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
+    .publish-form .form-input::placeholder, .publish-form .form-textarea::placeholder { color: var(--text-light); }
+    /* 图片上传区域 */
+    .publish-img-section { background: var(--card); border-radius: 12px; padding: 16px; border: 1.5px dashed var(--border); }
+    .publish-img-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .publish-img-item { aspect-ratio: 1; border-radius: 10px; background: var(--bg); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: pointer; transition: all 0.2s; }
+    .publish-img-item:hover { background: var(--border); }
+    .publish-img-item.add-btn { border: 2px dashed var(--border); }
+    .publish-img-item.add-btn:hover { border-color: var(--primary); background: #FFF0EB; }
+    .publish-img-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+    .publish-img-item .add-icon { font-size: 24px; color: var(--text-light); }
+    .publish-img-item .del-btn { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.7); color: white; border: none; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
+    .publish-img-item:hover .del-btn { opacity: 1; }
+    /* 价格输入 */
+    .price-input-wrap { position: relative; }
+    .price-input-wrap .currency { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-secondary); font-weight: 600; }
+    .price-input-wrap .form-input { padding-left: 28px; }
+    .price-hint { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+    /* 选择器 */
+    .condition-selector, .category-selector { display: flex; flex-wrap: wrap; gap: 8px; }
+    .condition-chip, .category-chip { padding: 6px 12px; border-radius: 16px; font-size: 12px; background: var(--bg); border: 1.5px solid var(--border); cursor: pointer; transition: all 0.2s; color: var(--text-secondary); }
+    .condition-chip:hover, .category-chip:hover { border-color: var(--primary); color: var(--primary); }
+    .condition-chip.active, .category-chip.active { border-color: var(--primary); background: var(--primary); color: white; font-weight: 600; }
+    /* 发布按钮 */
+    .publish-submit-btn { width: 100%; padding: 16px; border: none; border-radius: 12px; background: var(--gradient); color: white; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(255,107,53,0.3); transition: all 0.2s; }
+    .publish-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255,107,53,0.4); }
+    .publish-submit-btn:active { transform: translateY(0); }
     /* 交易订单卡片 */
     .trade-card { background: var(--card); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow); }
     .trade-card-top { display: flex; gap: 10px; }
@@ -414,6 +429,37 @@
     .trade-btn-primary { background: var(--gradient); color: white; }
     .trade-btn-outline { background: var(--card); border: 1px solid var(--border); color: var(--text); }
     .trade-btn-danger { background: #FFF0F0; color: var(--danger); border: 1px solid #FFCCCC; }
+
+    /* ═══════════════════════════════════════════════════════
+       💬 商品留言区
+    ═══════════════════════════════════════════════════════ */
+    .item-comments-section { margin-top: 20px; padding: 0 16px 16px; }
+    .item-comments-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .item-comments-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .item-comments-count { font-size: 12px; color: var(--text-secondary); }
+    .comment-card { background: var(--card); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+    .comment-top { display: flex; align-items: flex-start; gap: 10px; }
+    .comment-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .comment-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+    .comment-body { flex: 1; }
+    .comment-name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .comment-text { font-size: 14px; color: var(--text); line-height: 1.6; margin-top: 4px; word-break: break-word; }
+    .comment-time { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+    .comment-actions { display: flex; gap: 16px; margin-top: 6px; }
+    .comment-action-btn { font-size: 12px; color: var(--text-secondary); cursor: pointer; background: none; border: none; padding: 0; }
+    .comment-action-btn:hover { color: var(--primary); }
+    .comment-del-btn { font-size: 12px; color: var(--text-light); cursor: pointer; background: none; border: none; padding: 0; }
+    .comment-del-btn:hover { color: var(--danger); }
+    .comment-replies { margin-top: 8px; padding-left: 42px; }
+    .comment-reply { padding: 8px 0; border-top: 1px solid var(--border); }
+    .comment-reply:first-child { border-top: none; }
+    .comment-input-wrap { display: flex; gap: 8px; padding: 12px; background: var(--card); border-top: 1px solid var(--border); position: sticky; bottom: 56px; z-index: 2; }
+    .comment-input { flex: 1; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; background: var(--bg); color: var(--text); outline: none; }
+    .comment-input:focus { border-color: var(--primary); }
+    .comment-send-btn { padding: 8px 16px; border: none; border-radius: 20px; background: var(--gradient); color: white; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .comment-send-btn:disabled { opacity: 0.5; cursor: default; }
+    .comment-reply-hint { display: flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 12px; color: var(--primary); background: #FFF0EB; }
+    .comment-reply-hint .cancel-reply { cursor: pointer; color: var(--text-secondary); font-size: 13px; }
 
     /* ═══════════════════════════════════════════════════════
        📦 订单区块
@@ -2349,36 +2395,52 @@
       </div>
       <div class="sub-page-body">
         <div class="publish-form">
+          <!-- 图片上传 -->
           <div class="form-group">
-            <label class="form-label">商品图片 <span>*</span></label>
-            <div class="publish-img-grid" id="publishImgGrid">
-              <div class="publish-img-item" onclick="document.getElementById('publishImgInput').click()">
-                <div class="add-icon">+</div>
+            <label class="form-label">📷 商品图片 <span>*</span> <small style="font-weight:400;color:var(--text-light)">（最多9张）</small></label>
+            <div class="publish-img-section">
+              <div class="publish-img-grid" id="publishImgGrid">
+                <div class="publish-img-item add-btn" onclick="document.getElementById('publishImgInput').click()">
+                  <div class="add-icon">+</div>
+                </div>
               </div>
+              <input type="file" id="publishImgInput" accept="image/*" multiple style="display:none" onchange="onPublishImages(this)" />
             </div>
-            <input type="file" id="publishImgInput" accept="image/*" multiple style="display:none" onchange="onPublishImages(this)" />
-            <div style="font-size:12px;color:var(--text-secondary);margin-top:6px">最多9张，支持JPG/PNG</div>
           </div>
+
+          <!-- 商品标题 -->
           <div class="form-group">
-            <label class="form-label">商品标题 <span>*</span></label>
-            <input type="text" class="form-input" id="publishTitle" placeholder="请输入商品标题" maxlength="40" />
+            <label class="form-label">🏷️ 商品标题 <span>*</span></label>
+            <input type="text" class="form-input" id="publishTitle" placeholder="给商品起个吸引人的标题" maxlength="40" />
           </div>
+
+          <!-- 商品描述 -->
           <div class="form-group">
-            <label class="form-label">商品描述</label>
-            <textarea class="form-textarea" id="publishDesc" placeholder="请描述商品详情、使用情况..." maxlength="500"></textarea>
+            <label class="form-label">📝 商品描述</label>
+            <textarea class="form-textarea" id="publishDesc" placeholder="描述商品的品牌、规格、使用情况、转手原因等，让买家更了解..." maxlength="500"></textarea>
           </div>
+
+          <!-- 价格 -->
           <div style="display:flex;gap:12px">
             <div class="form-group" style="flex:1">
-              <label class="form-label">售价 <span>*</span></label>
-              <input type="number" class="form-input" id="publishPrice" placeholder="0.00" min="0" step="0.01" />
+              <label class="form-label">💰 售价 <span>*</span></label>
+              <div class="price-input-wrap">
+                <span class="currency">¥</span>
+                <input type="number" class="form-input" id="publishPrice" placeholder="0.00" min="0" step="0.01" />
+              </div>
             </div>
             <div class="form-group" style="flex:1">
-              <label class="form-label">原价</label>
-              <input type="number" class="form-input" id="publishOrigPrice" placeholder="0.00" min="0" step="0.01" />
+              <label class="form-label">🏷️ 原价 <small style="font-weight:400;color:var(--text-light)">（选填）</small></label>
+              <div class="price-input-wrap">
+                <span class="currency">¥</span>
+                <input type="number" class="form-input" id="publishOrigPrice" placeholder="0.00" min="0" step="0.01" />
+              </div>
             </div>
           </div>
+
+          <!-- 分类 -->
           <div class="form-group">
-            <label class="form-label">商品分类</label>
+            <label class="form-label">📂 商品分类</label>
             <div class="category-selector" id="publishCategorySelector">
               <div class="category-chip active" onclick="selectPublishCategory(this,'other')">📦 其他</div>
               <div class="category-chip" onclick="selectPublishCategory(this,'textbook')">📚 教材</div>
@@ -2388,8 +2450,10 @@
               <div class="category-chip" onclick="selectPublishCategory(this,'beauty')">💄 美妆</div>
             </div>
           </div>
+
+          <!-- 成色 -->
           <div class="form-group">
-            <label class="form-label">成色</label>
+            <label class="form-label">✨ 商品成色</label>
             <div class="condition-selector" id="publishConditionSelector">
               <div class="condition-chip" onclick="selectPublishCondition(this,'全新')">全新</div>
               <div class="condition-chip active" onclick="selectPublishCondition(this,'9成新')">9成新</div>
@@ -2398,11 +2462,14 @@
               <div class="condition-chip" onclick="selectPublishCondition(this,'一般')">一般</div>
             </div>
           </div>
+
+          <!-- 联系方式 -->
           <div class="form-group">
-            <label class="form-label">联系方式</label>
-            <input type="text" class="form-input" id="publishContact" placeholder="微信号/QQ/手机号（选填）" />
+            <label class="form-label">📱 联系方式 <small style="font-weight:400;color:var(--text-light)">（选填）</small></label>
+            <input type="text" class="form-input" id="publishContact" placeholder="微信号 / QQ / 手机号，方便买家联系你" />
           </div>
-          <button onclick="submitPublishItem()" style="width:100%;padding:14px;border:none;border-radius:14px;background:var(--gradient);color:white;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px">发布商品</button>
+
+          <button class="publish-submit-btn" onclick="submitPublishItem()">🚀 发布商品</button>
         </div>
       </div>
     </div>
@@ -2828,12 +2895,24 @@
           '</div>' +
           (relatedHtml ? '<div style="margin-top:20px"><div style="font-size:15px;font-weight:700;margin-bottom:10px">卖家其他商品</div><div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">' + relatedHtml + '</div></div>' : '') +
         '</div>' +
+        '<div class="item-comments-section">' +
+          '<div class="item-comments-header"><span class="item-comments-title">💬 留言</span><span class="item-comments-count" id="commentCount">加载中...</span></div>' +
+          '<div id="commentList"></div>' +
+        '</div>' +
+        '<div class="comment-input-wrap">' +
+          '<div id="replyHint" class="comment-reply-hint" style="display:none;width:100%;margin-bottom:6px">回复 <span id="replyName"></span> <span class="cancel-reply" onclick="cancelReplyComment()">✕ 取消</span></div>' +
+          '<input class="comment-input" id="commentInput" placeholder="说点什么..." maxlength="500" />' +
+          '<button class="comment-send-btn" id="commentSendBtn" onclick="sendComment(' + item.id + ')">发送</button>' +
+        '</div>' +
         (isOwner ?
           '<div class="item-action-bar"><button class="item-action-btn chat" style="background:#FFF0F0;color:var(--danger)" onclick="removeMyItem(' + item.id + ')">下架商品</button></div>' :
           '<div class="item-action-bar">' +
-            '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 交流</button>' +
+            '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 私聊卖家</button>' +
             '<button class="item-action-btn buy" onclick="buyItem(' + item.id + ')">🛒 购买</button>' +
           '</div>');
+
+      // 加载评论
+      loadMarketComments(item.id);
 
       // 图片滑动支持
       if (imgs.length > 1) {
@@ -2853,6 +2932,125 @@
           });
         }
       }
+    }
+
+    // ─── 商品留言评论 ───────────────────────────────────
+    let _replyToCommentId = null;
+    let _replyToCommentName = '';
+
+    async function loadMarketComments(itemId) {
+      try {
+        const data = await API.getMarketComments(itemId);
+        const listEl = document.getElementById('commentList');
+        const countEl = document.getElementById('commentCount');
+        if (!listEl) return;
+        if (data.error) { listEl.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px">加载失败</div>'; return; }
+        const comments = data.comments || [];
+        if (countEl) countEl.textContent = (data.total || 0) + '条';
+        if (!comments.length) {
+          listEl.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;font-size:13px">暂无留言，来说点什么吧 👋</div>';
+          return;
+        }
+        listEl.innerHTML = comments.map(c => renderCommentCard(c, itemId)).join('');
+      } catch(e) {
+        const listEl = document.getElementById('commentList');
+        if (listEl) listEl.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px">加载失败</div>';
+      }
+    }
+
+    function renderCommentCard(c, itemId) {
+      const avatarHtml = c.user_avatar && c.user_avatar.startsWith('http') ?
+        '<img src="' + c.user_avatar + '" />' :
+        '<span>' + escHtml((c.user_name || 'U').charAt(0)) + '</span>';
+      const isMine = currentUser && c.user_phone === currentUser.phone;
+      let repliesHtml = '';
+      if (c.replies && c.replies.length) {
+        repliesHtml = '<div class="comment-replies">' + c.replies.map(r => {
+          const rAvatar = r.user_avatar && r.user_avatar.startsWith('http') ?
+            '<img src="' + r.user_avatar + '" />' : '<span>' + escHtml((r.user_name || 'U').charAt(0)) + '</span>';
+          const rMine = currentUser && r.user_phone === currentUser.phone;
+          return '<div class="comment-reply">' +
+            '<div class="comment-top">' +
+              '<div class="comment-avatar">' + rAvatar + '</div>' +
+              '<div class="comment-body">' +
+                '<div class="comment-name">' + escHtml(r.user_name || '用户') + '</div>' +
+                '<div class="comment-text">' + escHtml(r.content) + '</div>' +
+                '<div class="comment-time">' + timeAgo(r.created_at) + (rMine ? ' · <button class="comment-del-btn" onclick="deleteComment(' + r.id + ',' + itemId + ')">删除</button>' : '') + '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('') + '</div>';
+      }
+      return '<div class="comment-card">' +
+        '<div class="comment-top">' +
+          '<div class="comment-avatar">' + avatarHtml + '</div>' +
+          '<div class="comment-body">' +
+            '<div class="comment-name">' + escHtml(c.user_name || '用户') + '</div>' +
+            '<div class="comment-text">' + escHtml(c.content) + '</div>' +
+            '<div class="comment-time">' + timeAgo(c.created_at) + '</div>' +
+            '<div class="comment-actions">' +
+              '<button class="comment-action-btn" onclick="replyToComment(' + c.id + ',\'' + escHtml(c.user_name || '用户').replace(/'/g, "\\'") + '\')">💬 回复</button>' +
+              (isMine ? '<button class="comment-del-btn" onclick="deleteComment(' + c.id + ',' + itemId + ')">🗑 删除</button>' : '') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        repliesHtml +
+      '</div>';
+    }
+
+    function replyToComment(commentId, name) {
+      _replyToCommentId = commentId;
+      _replyToCommentName = name;
+      const hintEl = document.getElementById('replyHint');
+      const nameEl = document.getElementById('replyName');
+      const inputEl = document.getElementById('commentInput');
+      if (hintEl) hintEl.style.display = 'flex';
+      if (nameEl) nameEl.textContent = name;
+      if (inputEl) { inputEl.placeholder = '回复 ' + name + '...'; inputEl.focus(); }
+    }
+
+    function cancelReplyComment() {
+      _replyToCommentId = null;
+      _replyToCommentName = '';
+      const hintEl = document.getElementById('replyHint');
+      const inputEl = document.getElementById('commentInput');
+      if (hintEl) hintEl.style.display = 'none';
+      if (inputEl) inputEl.placeholder = '说点什么...';
+    }
+
+    async function sendComment(itemId) {
+      if (!currentUser) { showToast('请先登录'); return; }
+      const inputEl = document.getElementById('commentInput');
+      const sendBtn = document.getElementById('commentSendBtn');
+      if (!inputEl) return;
+      const content = inputEl.value.trim();
+      if (!content) { showToast('请输入留言内容'); return; }
+      if (sendBtn) sendBtn.disabled = true;
+      try {
+        const res = await API.postMarketComment(itemId, content, _replyToCommentId);
+        if (res.ok) {
+          inputEl.value = '';
+          cancelReplyComment();
+          loadMarketComments(itemId);
+          showToast('留言成功 ✅');
+        } else {
+          showToast(res.error || '留言失败');
+        }
+      } catch(e) { showToast('留言失败'); }
+      if (sendBtn) sendBtn.disabled = false;
+    }
+
+    async function deleteComment(commentId, itemId) {
+      if (!confirm('确认删除这条留言？')) return;
+      try {
+        const res = await API.deleteMarketComment(commentId);
+        if (res.ok) {
+          loadMarketComments(itemId);
+          showToast('已删除');
+        } else {
+          showToast(res.error || '删除失败');
+        }
+      } catch(e) { showToast('删除失败'); }
     }
 
     async function chatWithSeller(itemId) {
@@ -2932,7 +3130,7 @@
         '<div class="publish-img-item"><img src="' + url + '" /><button class="del-btn" onclick="removePublishImg(' + i + ')">×</button></div>'
       ).join('');
       if (publishImages.length < 9) {
-        html += '<div class="publish-img-item" onclick="document.getElementById(\'publishImgInput\').click()"><div class="add-icon">+</div></div>';
+        html += '<div class="publish-img-item add-btn" onclick="document.getElementById(\'publishImgInput\').click()"><div class="add-icon">+</div></div>';
       }
       grid.innerHTML = html;
     }

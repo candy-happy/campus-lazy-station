@@ -344,6 +344,86 @@ router.post('/orders/:id/review', requireAuth, (req, res) => JSON_RES(res, () =>
   return { ok: true };
 }));
 
+// ─── 商品留言评论 ─────────────────────────────────────────
+// 获取评论列表
+router.get('/items/:id/comments', (req, res) => JSON_RES(res, () => {
+  const itemId = req.params.id;
+  const item = db.prepare('SELECT id FROM market_items WHERE id = ?').get(itemId);
+  if (!item) return notFound('商品不存在');
+
+  // 获取顶层评论
+  const comments = db.prepare(
+    'SELECT mc.*, u.name as user_name, u.avatar as user_avatar ' +
+    'FROM market_comments mc LEFT JOIN users u ON mc.user_phone = u.phone ' +
+    'WHERE mc.item_id = ? AND mc.parent_id IS NULL ORDER BY mc.created_at DESC'
+  ).all(itemId);
+
+  // 获取每条评论的回复
+  comments.forEach(c => {
+    const replies = db.prepare(
+      'SELECT mc.*, u.name as user_name, u.avatar as user_avatar ' +
+      'FROM market_comments mc LEFT JOIN users u ON mc.user_phone = u.phone ' +
+      'WHERE mc.parent_id = ? ORDER BY mc.created_at ASC'
+    ).all(c.id);
+    c.replies = replies;
+    c.reply_count = replies.length;
+  });
+
+  const total = db.prepare('SELECT COUNT(*) as cnt FROM market_comments WHERE item_id = ?').get(itemId).cnt;
+  return { comments, total };
+}));
+
+// 发表评论
+router.post('/items/:id/comments', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  if (!phone) return makeError('请先登录', 'AUTH_001');
+  const { content, parent_id } = req.body;
+  if (!content || !content.trim()) return makeError('评论内容不能为空', ErrorCode.PARAM_MISSING);
+  if (content.trim().length > 500) return makeError('评论最多500字', ErrorCode.PARAM_INVALID);
+
+  const itemId = req.params.id;
+  const item = db.prepare('SELECT id, seller_phone FROM market_items WHERE id = ?').get(itemId);
+  if (!item) return notFound('商品不存在');
+
+  // 如果是回复，检查父评论
+  if (parent_id) {
+    const parent = db.prepare('SELECT id, item_id FROM market_comments WHERE id = ?').get(parent_id);
+    if (!parent) return notFound('原评论不存在');
+    if (parent.item_id !== parseInt(itemId)) return makeError('回复的评论不属于该商品', 'MKT_010');
+  }
+
+  const result = db.prepare(
+    'INSERT INTO market_comments (item_id, user_phone, content, parent_id, created_at) VALUES (?,?,?,?,datetime(\'now\',\'localtime\'))'
+  ).run(itemId, phone, content.trim(), parent_id || null);
+
+  // 给卖家发通知（非自己评论自己商品时）
+  if (item.seller_phone !== phone && !parent_id) {
+    try {
+      const user = db.prepare('SELECT name FROM users WHERE phone = ?').get(phone);
+      db.prepare(
+        'INSERT INTO notifications (user_phone, type, title, content, created_at) VALUES (?,?,?,?,datetime(\'now\',\'localtime\'))'
+      ).run(item.seller_phone, 'market_comment', '商品新留言',
+        (user?.name || '有人') + '对你的商品留言了：' + content.trim().substring(0, 50));
+    } catch(e) { /* 通知失败不影响评论 */ }
+  }
+
+  return { ok: true, comment_id: result.lastInsertRowid };
+}));
+
+// 删除评论
+router.delete('/comments/:commentId', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const comment = db.prepare('SELECT * FROM market_comments WHERE id = ?').get(req.params.commentId);
+  if (!comment) return notFound('评论不存在');
+  if (comment.user_phone !== phone) return makeError('只能删除自己的评论', ErrorCode.FORBIDDEN);
+
+  // 删除子回复
+  db.prepare('DELETE FROM market_comments WHERE parent_id = ?').run(comment.id);
+  // 删除评论
+  db.prepare('DELETE FROM market_comments WHERE id = ?').run(comment.id);
+  return { ok: true };
+}));
+
 // ─── 获取用户诚信度 ───────────────────────────────────────
 router.get('/trust/:phone', (req, res) => JSON_RES(res, () => {
   const trust = getTrustLevel(req.params.phone);
