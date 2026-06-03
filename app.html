@@ -2078,6 +2078,7 @@
     // ══════ 加载数据 ══════
     let adsList = [];
     let adsIdx = 0, adsTimer = null;
+    let adsImpressionSent = new Set(); // 避免重复记录展示
     function renderAds(ads) {
       adsList = ads;
       const dots = document.getElementById('bannerDots');
@@ -2089,6 +2090,11 @@
     function showAd(idx) {
       adsIdx = idx;
       const ad = adsList[idx]; if (!ad) return;
+      // 记录展示（每个广告每个会话只记一次）
+      if (!adsImpressionSent.has(ad.id)) {
+        adsImpressionSent.add(ad.id);
+        API.adView(ad.id, 'impression').catch(()=>{});
+      }
       const banner = document.getElementById('banner1');
       const content = document.getElementById('bannerContent');
       const icon = document.getElementById('bannerIcon');
@@ -2112,6 +2118,8 @@
     }
     function clickAd(idx) {
       const ad = adsList[idx]; if (!ad) return;
+      // 记录点击
+      API.adView(ad.id, 'click').catch(()=>{});
       // 1. 直接外部链接
       if (ad.link_url && ad.link_url.trim()) { window.open(ad.link_url, '_blank'); return; }
       // 2. 内部链接类型

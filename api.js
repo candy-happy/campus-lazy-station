@@ -146,6 +146,15 @@ const API = {
     if (res.error) throw new Error(res.error);
     return res;
   },
+  // 记录广告浏览（展示/点击）
+  async adView(adId, eventType) {
+    return fetch('/api/ads/' + adId + '/view', { method: 'POST', headers: this._headers(), body: JSON.stringify({ event_type: eventType }) }).then(r => r.json());
+  },
+  // 管理员：广告统计
+  async adStats(startDate) {
+    const qs = startDate ? '?start_date=' + startDate : '';
+    return fetch('/api/ads/admin/stats' + qs, { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json());
+  },
 
   // ─── 通知 ───
   async getNotifications(phone) { return fetch('/api/notifications/' + phone, { headers: this._headers() }).then(r => r.json()); },

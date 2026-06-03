@@ -244,7 +244,7 @@
  <div class="page-section" id="page-ads">
  <div class="page-header"><h1 class="page-title">广告管理</h1><div class="page-actions"><button class="btn btn-primary" onclick="showAdForm()">+ 新增广告</button></div></div>
  <div class="table-card">
- <table class="data-table"><thead><tr><th>预览</th><th>标题</th><th>排序</th><th>状态</th><th>链接</th><th>有效期</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="adsTable"></tbody></table>
+ <table class="data-table"><thead><tr><th>预览</th><th>标题</th><th>展示</th><th>点击</th><th>点击率</th><th>排序</th><th>状态</th><th>链接</th><th>有效期</th><th>操作</th></tr></thead><tbody id="adsTable"></tbody></table>
  </div>
  </div>
  <div class="page-section" id="page-withdraw">
@@ -575,7 +575,10 @@
   const lt = { order:'下单', coupon:'优惠券', page:'页面', url:'外部链接', none:'-' };
   return lt[a.link_type] || '-';
  };
- tb.innerHTML = adsList.map(a => `<tr><td>${mediaPreview(a.media_url, a.image)}</td><td>${escHtml(a.title)}</td><td>${a.sort_order}</td><td>${statusLabel(a.status)}</td><td>${linkLabel(a)}</td><td>${a.end_time||'永久'}</td><td>${a.created_at||''}</td><td><button class="btn btn-sm" onclick="editAd(${a.id})">编辑</button> <button class="btn btn-sm btn-danger" onclick="deleteAd(${a.id})">删除</button></td></tr>`).join('');
+ tb.innerHTML = adsList.map(a => {
+  const ctr = a.view_count > 0 ? (a.click_count / a.view_count * 100).toFixed(1) + '%' : '-';
+  return `<tr><td>${mediaPreview(a.media_url, a.image)}</td><td>${escHtml(a.title)}</td><td style="text-align:center">${a.view_count||0}</td><td style="text-align:center">${a.click_count||0}</td><td style="text-align:center">${ctr}</td><td>${a.sort_order}</td><td>${statusLabel(a.status)}</td><td>${linkLabel(a)}</td><td>${a.end_time||'永久'}</td><td><button class="btn btn-sm" onclick="editAd(${a.id})">编辑</button> <button class="btn btn-sm btn-danger" onclick="deleteAd(${a.id})">删除</button></td></tr>`;
+ }).join('');
  }
  function showAdForm(ad) {
  document.getElementById('adEditId').value = ad ? ad.id : '';
