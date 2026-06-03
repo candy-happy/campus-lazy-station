@@ -155,87 +155,41 @@
       margin-top: -8px;
     }
     .banner {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-radius: var(--radius-lg);
       height: 140px;
       position: relative;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      padding: 20px 24px;
-    }
-    .banner-content { color: white; z-index: 1; flex: 1; }
-    .banner-tag {
-      display: inline-block;
-      background: rgba(255,255,255,0.2);
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 11px;
-      font-weight: 500;
-      margin-bottom: 8px;
+      cursor: pointer;
     }
     .banner-title {
-      font-size: 22px;
-      font-weight: 900;
-      margin-bottom: 4px;
-    }
-    .banner-desc { font-size: 13px; opacity: 0.9; margin-bottom: 12px; }
-    .banner-btn {
-      background: white;
-      color: #667eea;
-      border: none;
-      border-radius: 20px;
-      padding: 8px 20px;
+      position: absolute;
+      left: 14px;
+      bottom: 12px;
       font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
+      font-weight: 600;
+      color: white;
+      z-index: 3;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      max-width: 60%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .banner-illustration {
       position: absolute;
-      right: 12px;
-      top: 12px;
-      bottom: 12px;
-      width: 130px;
-      font-size: 100px;
-      opacity: 0.3;
-      transform: rotate(-10deg);
+      left: 0; top: 0; right: 0; bottom: 0;
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
       pointer-events: none;
+      font-size: 80px;
+      background: var(--bg);
     }
     .banner-illustration img, .banner-illustration video {
-      opacity: 1;
       width: 100%;
       height: 100%;
       object-fit: cover;
-      border-radius: 12px;
-    }
-    /* 有媒体图时覆盖整个 banner */
-    .banner.has-media {
-      position: relative;
-    }
-    .banner.has-media .banner-illustration {
-      position: absolute;
-      left: 0; top: 0; right: 0; bottom: 0;
-      width: auto; height: auto;
-      opacity: 1;
-      transform: none;
-      border-radius: var(--radius-lg);
-      pointer-events: none;
-    }
-    .banner.has-media .banner-illustration img,
-    .banner.has-media .banner-illustration video {
-      border-radius: var(--radius-lg);
-    }
-    .banner.has-media .banner-content {
-      position: relative;
-      z-index: 2;
-      background: linear-gradient(90deg, rgba(102,126,234,0.92) 0%, rgba(102,126,234,0.7) 60%, transparent 100%);
-      margin: -20px -24px;
-      padding: 20px 24px;
-      border-radius: var(--radius-lg);
     }
     .banner-dots {
       display: flex;
@@ -1515,7 +1469,7 @@
     body.dark .coupon-item { border-color: var(--border); }
     body.dark .addr-item { border-color: var(--border); }
     body.dark .addr-form-input { background: var(--bg); border-color: var(--border); }
-    body.dark .banner.has-media .banner-content { background: linear-gradient(90deg, rgba(26,26,46,0.92) 0%, rgba(22,33,62,0.7) 60%, transparent 100%); }
+    body.dark .banner-illustration { background: var(--bg); }
 </style>
 <script src="api.js"></script>
 </head>
@@ -1550,14 +1504,9 @@
       <div class="content-area">
         <!-- Banner -->
         <div class="banner-wrap">
-          <div class="banner" id="banner1">
-            <div class="banner-content" id="bannerContent">
-              <span class="banner-tag">限时活动</span>
-              <div class="banner-title">新人专享福利</div>
-              <div class="banner-desc">首单立减5元，配送费全免</div>
-              <button class="banner-btn" onclick="openOrderModal('delivery')">立即体验</button>
-            </div>
-            <div class="banner-illustration" id="bannerIcon">🎁</div>
+          <div class="banner" id="banner1" onclick="clickAd(adsIdx)">
+            <div class="banner-title" id="bannerTitle"></div>
+            <div class="banner-illustration" id="bannerIcon"></div>
           </div>
           <div class="banner-dots" id="bannerDots" style="display:none"></div>
         </div>
@@ -2096,20 +2045,17 @@
         API.adView(ad.id, 'impression').catch(()=>{});
       }
       const banner = document.getElementById('banner1');
-      const content = document.getElementById('bannerContent');
+      const title = document.getElementById('bannerTitle');
       const icon = document.getElementById('bannerIcon');
       const dots = document.getElementById('bannerDots');
-      const tagLabel = ad.link_url ? '链接' : ad.link_type==='order' ? '下单立减' : ad.link_type==='page' ? '活动' : ad.link_type==='coupon' ? '优惠' : ad.link_type==='url' ? '链接' : '广告';
+      if (title) title.textContent = ad.title || '';
       const hasMedia = ad.media_url && ad.media_url.trim();
-      // 有媒体图时给 banner 加 has-media 类
-      if (banner) banner.classList.toggle('has-media', !!hasMedia);
-      if (content) content.innerHTML = '<span class="banner-tag">'+escHtml(tagLabel)+'</span><div class="banner-title">'+escHtml(ad.title)+'</div><div class="banner-desc">'+escHtml(ad.description)+'</div><button class="banner-btn" onclick="clickAd('+idx+')">立即查看</button>';
       if (hasMedia) {
         const isVid = ad.media_url.match(/\.(mp4|webm|mov)$/i);
         if (isVid) {
-          if (icon) icon.innerHTML = '<video src="'+ad.media_url+'" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:12px"></video>';
+          if (icon) icon.innerHTML = '<video src="'+ad.media_url+'" autoplay loop muted playsinline></video>';
         } else {
-          if (icon) icon.innerHTML = '<img src="'+ad.media_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:12px" onerror="this.parentElement.textContent=\x27🎁\x27">';
+          if (icon) icon.innerHTML = '<img src="'+ad.media_url+'" onerror="this.parentElement.textContent=\x27🎁\x27">';
         }
       } else {
         if (icon) icon.textContent = ad.image || '🎁';
