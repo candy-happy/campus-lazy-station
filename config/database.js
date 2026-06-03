@@ -226,6 +226,9 @@ db.exec(`
   );
 `);
 
+// ─── 数据库迁移 ─────────────────────────────────────────
+try { db.exec('ALTER TABLE riders ADD COLUMN avatar TEXT'); } catch(e) { /* 列已存在则忽略 */ }
+
 // ─── 基础数据初始化 ─────────────────────────────────────
 const initData = db.transaction(() => {
   // 服务（仅在表为空时插入，避免旧表无UNIQUE约束导致重复）

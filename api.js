@@ -92,6 +92,16 @@ const API = {
     method: 'PATCH', headers: this._headers(),
     body: JSON.stringify({ status })
   }).then(r => r.json()); },
+  async updateRiderProfile(phone, data) { return fetch('/api/riders/' + phone, {
+    method: 'PUT', headers: this._headers(),
+    body: JSON.stringify(data)
+  }).then(r => r.json()); },
+  async uploadRiderAvatar(phone, file) {
+    const fd = new FormData(); fd.append('avatar', file);
+    return fetch('/api/riders/' + phone + '/avatar', {
+      method: 'POST', body: fd
+    }).then(r => r.json());
+  },
 
   // ─── 用户数据 ───
   async getUsers() { return fetch('/api/users', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },

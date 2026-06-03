@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
  <meta charset="UTF-8" />
@@ -25,63 +25,24 @@
   --input-bg: #0D1117; --card-hover: #1C2333;
  }
  * { box-sizing: border-box; margin: 0; padding: 0; }
- html { scroll-behavior: smooth; overflow-y: scroll; }
+ html { scroll-behavior: smooth; }
  body {
  font-family: 'Noto Sans SC', sans-serif; background: var(--bg);
  color: var(--text); line-height: 1.6; min-height: 100vh;
  }
- /* 隐藏默认滚动条，保留滚动功能 */
- body::-webkit-scrollbar { display: none; }
- body { -ms-overflow-style: none; scrollbar-width: none; }
  .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg); position: relative; }
  .app-header { background: var(--green); padding: 16px 20px; color: white; position: sticky; top: 0; z-index: 100; }
  .app-header-top { display: flex; justify-content: space-between; align-items: center; }
  .app-title { font-size: 1.1rem; font-weight: 900; display: flex; align-items: center; gap: 8px; }
  .app-badge { background: rgba(255,255,255,0.25); border-radius: 12px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; }
  .app-user { display: flex; align-items: center; gap: 8px; cursor: pointer; }
- .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden; }
- .user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+ .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 1rem; }
  .stats-bar { background: var(--card-bg); padding: 16px; display: flex; justify-content: space-around; border-bottom: 1px solid var(--border); }
- .stats-bar { display: none; }
- body.tab-home .stats-bar { display: flex; }
  .stat-item { text-align: center; }
  .stat-value { font-size: 1.5rem; font-weight: 900; color: var(--dark); }
  .stat-label { font-size: 0.75rem; color: var(--text-muted); }
- .app-main { padding: 16px; padding-bottom: 72px; }
- /* 消息页样式 */
- .msg-header { margin: -16px -16px 0; padding: 16px; background: linear-gradient(135deg, var(--green), #2d9a5e); color: #fff; }
- .msg-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
- .msg-header p { margin: 4px 0 0; font-size: 13px; opacity: 0.85; }
- .chat-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; background: var(--card); }
- .chat-item:active { background: var(--bg); }
- .chat-item-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--green), #2d9a5e); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; font-weight: 700; }
- .chat-item-info { flex: 1; min-width: 0; }
- .chat-item-top { display: flex; justify-content: space-between; align-items: center; }
- .chat-item-name { font-weight: 600; font-size: 15px; color: var(--text); }
- .chat-item-time { font-size: 11px; color: var(--text-secondary); flex-shrink: 0; }
- .chat-item-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
- .chat-item-msg { font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
- .chat-item-badge { background: #ff4757; color: #fff; border-radius: 50%; min-width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; margin-left: 8px; padding: 0 4px; font-weight: 600; }
- .msg-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; }
- .msg-empty-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.6; }
- .msg-empty-text { font-size: 15px; color: var(--text-secondary); }
- .msg-empty-sub { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+ .app-main { padding: 16px; padding-bottom: 100px; }
  .section-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
- /* 订单筛选标签 */
- .order-tabs { display: flex; border-bottom: 1px solid var(--border); margin: 0 -16px 16px; padding: 0 8px; }
- .order-tab { flex: 1; text-align: center; padding: 12px 0; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; position: relative; transition: all 0.2s; }
- .order-tab.active { color: var(--orange); font-weight: 700; }
- .order-tab.active::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 24px; height: 3px; background: var(--orange); border-radius: 2px; }
- /* 时间筛选 chip */
- .time-filter-chip { padding: 5px 12px; font-size: 12px; border-radius: 16px; background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
- .time-filter-chip.active { background: var(--orange); color: #fff; border-color: var(--orange); }
- .time-filter-chip:active { transform: scale(0.95); }
- /* 订单统计小卡片 */
- .order-stat-pill { flex: 1; text-align: center; padding: 8px 4px; border-radius: var(--radius-sm); background: var(--card-bg); font-size: 12px; box-shadow: var(--shadow); }
- .order-stat-pill .stat-num { font-size: 18px; font-weight: 700; }
- .order-stat-pill .stat-label { color: var(--text-muted); margin-top: 2px; }
- /* 筛选区域容器 */
- .filter-section { background: var(--card-bg); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px; box-shadow: var(--shadow); }
  .order-card { background: var(--card-bg); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); transition: all 0.2s; }
  .order-card:hover { box-shadow: var(--shadow-lg); }
  .order-card.new { border-left: 4px solid var(--orange); }
@@ -151,14 +112,12 @@
  .entry-links { display: flex; justify-content: center; gap: 16px; padding: 16px; background: var(--bg); border-top: 1px solid var(--border); }
  .entry-link { font-size: 0.8rem; color: var(--text-muted); text-decoration: none; padding: 6px 12px; border-radius: 16px; transition: all 0.2s; }
  .entry-link:hover { background: var(--card-bg); color: var(--green); }
- .entry-links { display: none; }
- body.tab-home .entry-links { display: flex; }
  .detail-section { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
  .detail-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
  .detail-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
  .detail-value { font-size: 1rem; font-weight: 600; color: var(--dark); }
- .profile-section { display: none; min-height: 60vh; background: var(--bg); }
- .profile-section.active { display: block; }
+ .profile-page { display: none; min-height: 100vh; background: var(--bg); padding-bottom: 100px; }
+ .profile-page.active { display: block; }
  .profile-header { background: linear-gradient(135deg, #2ECC71 0%, #27AE60 50%, #1E8449 100%); padding: 20px 16px 70px; position: relative; overflow: hidden; }
  .profile-header::before { content: ''; position: absolute; top: -50%; right: -30%; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; }
  .profile-header::after { content: ''; position: absolute; bottom: -30%; left: -20%; width: 150px; height: 150px; background: rgba(255,255,255,0.08); border-radius: 50%; }
@@ -168,8 +127,7 @@
  .profile-settings:active { transform: scale(0.95); }
  .user-card { background: var(--card-bg); margin: -50px 16px 16px; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-lg); position: relative; z-index: 10; }
  .user-info { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
- .user-avatar-lg { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #D5F5E3, #ABEBC6); display: flex; align-items: center; justify-content: center; font-size: 2rem; border: 3px solid white; box-shadow: 0 4px 12px rgba(46,204,113,0.3); overflow: hidden; }
- .user-avatar-lg img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+ .user-avatar-lg { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #D5F5E3, #ABEBC6); display: flex; align-items: center; justify-content: center; font-size: 2rem; border: 3px solid white; box-shadow: 0 4px 12px rgba(46,204,113,0.3); }
  .user-details { flex: 1; }
  .user-name-lg { font-size: 1.3rem; font-weight: 900; color: var(--text); margin-bottom: 4px; }
  .user-id-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--bg); border-radius: 8px; padding: 2px 8px; font-size: 0.75rem; color: var(--text-muted); }
@@ -349,8 +307,7 @@
     /* ═══════════════════════════════════════════════════════
        📄 子页面系统
     ═══════════════════════════════════════════════════════ */
-    .sub-page { display: none; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; height: 100%; background: var(--bg); z-index: 1000; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
- .sub-page::-webkit-scrollbar { display: none; }
+    .sub-page { display: none; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; height: 100%; background: var(--bg); z-index: 1000; overflow-y: auto; }
     .sub-page.active { display: block; }
     .sub-page-header { background: linear-gradient(135deg, #2ECC71, #27AE60); padding: 16px 20px; color: white; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; }
     .sub-page-back { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
@@ -359,175 +316,6 @@
     .sub-page-title { font-size: 16px; font-weight: 800; }
     .sub-page-body { padding: 16px; }
     body.dark .sub-page-header { background: linear-gradient(135deg, #1a1a2e, #16213e); }
-
- /* ═══════════════════════════════════════════════════════
-    🧩 子页面通用组件类
- ═══════════════════════════════════════════════════════ */
- .sp-card { background: var(--card-bg); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
- .sp-card-title { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .06em; }
- .sp-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); }
- .sp-row:last-child { border-bottom: none; padding-bottom: 0; }
- .sp-row:first-child { padding-top: 0; }
- .sp-row-label { font-size: 14px; color: var(--text-muted); }
- .sp-row-value { font-size: 14px; font-weight: 600; color: var(--text); }
- .sp-empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
- .sp-empty-icon { font-size: 48px; margin-bottom: 8px; opacity: .5; }
- .sp-empty-text { font-size: 14px; }
- .sp-btn { display: block; width: 100%; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; font-family: inherit; transition: all .2s; text-align: center; }
- .sp-btn:active { transform: scale(.97); }
- .sp-btn-green { background: linear-gradient(135deg, #2ECC71, #27AE60); color: #fff; box-shadow: 0 4px 16px rgba(46,204,113,.25); }
- .sp-btn-red { background: linear-gradient(135deg, #E74C3C, #C0392B); color: #fff; box-shadow: 0 4px 16px rgba(231,76,60,.2); }
- .sp-btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--border); box-shadow: none; }
- .sp-select, .sp-input, .sp-textarea {
-   width: 100%; padding: 12px 14px; border-radius: 12px;
-   border: 1.5px solid var(--border); background: var(--bg);
-   font-size: 14px; font-family: inherit; color: var(--text);
-   transition: border-color .2s;
- }
- .sp-select:focus, .sp-input:focus, .sp-textarea:focus {
-   outline: none; border-color: var(--green);
-   box-shadow: 0 0 0 3px rgba(46,204,113,.12);
- }
- .sp-textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
-
- /* ═══ 设置页 ═══ */
- .settings-avatar-row {
-   display: flex; align-items: center; gap: 16px;
-   padding: 20px; margin-bottom: 14px;
-   background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
-   border-radius: var(--radius);
-   color: #fff; position: relative; overflow: hidden;
- }
- .settings-avatar-row::after {
-   content: ''; position: absolute; top: -40%; right: -20%; width: 120px; height: 120px;
-   background: rgba(255,255,255,.08); border-radius: 50%;
- }
- .settings-avatar-circle {
-   width: 56px; height: 56px; border-radius: 50%;
-   background: rgba(255,255,255,.2); display: flex;
-   align-items: center; justify-content: center; font-size: 28px;
-   border: 2px solid rgba(255,255,255,.4); flex-shrink: 0;
-   overflow: hidden; cursor: pointer; position: relative;
- }
- .settings-avatar-circle img {
-   width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
- }
- .settings-avatar-circle:hover::after {
-   content: '📷'; position: absolute; inset: 0;
-   background: rgba(0,0,0,.4); display: flex;
-   align-items: center; justify-content: center; font-size: 20px;
- }
- .settings-avatar-info { flex: 1; z-index: 1; }
- .settings-avatar-name { font-size: 18px; font-weight: 800; }
- .settings-avatar-sub { font-size: 12px; opacity: .8; margin-top: 2px; }
- .settings-level-badge {
-   display: inline-flex; align-items: center; gap: 6px;
-   background: rgba(255,255,255,.2); border-radius: 20px;
-   padding: 3px 12px; font-size: 12px; font-weight: 700;
- }
-
- .settings-toggle-row {
-   display: flex; justify-content: space-between; align-items: center;
-   padding: 14px 0; border-bottom: 1px solid var(--border);
- }
- .settings-toggle-row:last-child { border-bottom: none; }
- .settings-toggle-label { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
- .settings-toggle-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-
- .toggle-switch {
-   position: relative; width: 48px; height: 26px; display: inline-block;
- }
- .toggle-switch input { opacity: 0; width: 0; height: 0; }
- .toggle-slider {
-   position: absolute; cursor: pointer; inset: 0;
-   background: #ccc; border-radius: 26px; transition: .3s;
- }
- .toggle-slider::before {
-   content: ''; position: absolute; height: 20px; width: 20px;
-   left: 3px; bottom: 3px; background: #fff; border-radius: 50%;
-   transition: .3s; box-shadow: 0 1px 4px rgba(0,0,0,.2);
- }
- .toggle-switch input:checked + .toggle-slider { background: var(--green); }
- .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
-
- .settings-info-row {
-   display: flex; justify-content: space-between; align-items: center;
-   padding: 12px 0; border-bottom: 1px solid var(--border);
- }
- .settings-info-row:last-child { border-bottom: none; }
- .settings-info-label { font-size: 14px; color: var(--text-muted); }
- .settings-info-value { font-size: 14px; font-weight: 600; color: var(--text); }
- .settings-logout-btn {
-   display: flex; align-items: center; justify-content: center; gap: 8px;
-   width: 100%; padding: 14px; border-radius: 14px;
-   background: rgba(231,76,60,.08); color: var(--red);
-   font-size: 15px; font-weight: 700;
-   border: 1.5px solid rgba(231,76,60,.15); cursor: pointer;
-   transition: all .2s; font-family: inherit;
- }
- .settings-logout-btn:active { transform: scale(.97); background: rgba(231,76,60,.15); }
- .settings-version {
-   text-align: center; padding: 20px 0 8px;
-   color: var(--text-muted); font-size: 12px; opacity: .5;
- }
-
- /* ═══ 反馈页 ═══ */
- .fb-type-grid {
-   display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px;
- }
- .fb-type-item {
-   display: flex; align-items: center; gap: 8px;
-   padding: 12px 14px; border-radius: 12px;
-   border: 1.5px solid var(--border); cursor: pointer;
-   transition: all .2s; font-size: 14px; font-weight: 600;
-   background: var(--card-bg);
- }
- .fb-type-item.active {
-   border-color: var(--green); background: rgba(46,204,113,.06);
-   color: var(--green);
- }
- .fb-type-item:active { transform: scale(.97); }
- .fb-type-emoji { font-size: 20px; }
- .fb-textarea-wrap {
-   position: relative; margin-bottom: 16px;
- }
- .fb-textarea {
-   width: 100%; padding: 14px; border-radius: 14px;
-   border: 1.5px solid var(--border); background: var(--bg);
-   font-size: 14px; font-family: inherit; color: var(--text);
-   resize: vertical; min-height: 120px; line-height: 1.6;
-   transition: border-color .2s;
- }
- .fb-textarea:focus {
-   outline: none; border-color: var(--green);
-   box-shadow: 0 0 0 3px rgba(46,204,113,.12);
- }
- .fb-textarea::placeholder { color: var(--text-muted); }
- .fb-char-count {
-   position: absolute; right: 12px; bottom: 10px;
-   font-size: 12px; color: var(--text-muted);
- }
- .fb-submit-btn {
-   display: flex; align-items: center; justify-content: center; gap: 8px;
-   width: 100%; padding: 14px; border-radius: 14px;
-   background: linear-gradient(135deg, #2ECC71, #27AE60);
-   color: #fff; font-size: 15px; font-weight: 700;
-   border: none; cursor: pointer; font-family: inherit;
-   box-shadow: 0 4px 16px rgba(46,204,113,.25);
-   transition: all .2s;
- }
- .fb-submit-btn:active { transform: scale(.97); }
- .fb-success {
-   text-align: center; padding: 48px 20px;
- }
- .fb-success-icon { font-size: 64px; margin-bottom: 16px; }
- .fb-success-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
- .fb-success-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
-
- /* dark mode */
- body.dark .sp-card { background: var(--card-bg); }
- body.dark .fb-type-item { background: var(--card-bg); }
- body.dark .fb-type-item.active { background: rgba(46,204,113,.1); }
 
 </style>
 <script src="api.js"></script>
@@ -549,41 +337,21 @@
  <div class="stat-item"><div class="stat-value" id="statMyOrders">0</div><div class="stat-label">进行中</div></div>
  </div>
  <main class="app-main" id="mainContent">
- <!-- 首页（统一订单列表+筛选） -->
- <div id="orderSection" style="display:block">
-   <!-- 状态分类标签 -->
-   <div class="filter-section">
-     <div class="order-tabs" style="margin:-12px -12px 0;padding:0 8px">
-       <div class="order-tab active" onclick="riderSwitchFilter('all')">全部</div>
-       <div class="order-tab" onclick="riderSwitchFilter('pending')">待接单</div>
-       <div class="order-tab" onclick="riderSwitchFilter('running')">进行中</div>
-       <div class="order-tab" onclick="riderSwitchFilter('completed')">已完成</div>
-       <div class="order-tab" onclick="riderSwitchFilter('cancelled')">已取消</div>
-     </div>
-   </div>
-   <!-- 时间筛选 -->
-   <div class="filter-section" style="padding:10px 12px">
-     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-       <span style="font-size:13px;color:var(--text-muted);margin-right:4px">🕐</span>
-       <div class="time-filter-chip active" onclick="riderSwitchTime('all')">全部时间</div>
-       <div class="time-filter-chip" onclick="riderSwitchTime('today')">今天</div>
-       <div class="time-filter-chip" onclick="riderSwitchTime('week')">近7天</div>
-       <div class="time-filter-chip" onclick="riderSwitchTime('month')">近30天</div>
-       <div class="time-filter-chip" onclick="riderSwitchTime('custom')" id="riderCustomTimeBtn">📅 自定义</div>
-     </div>
-     <div id="riderCustomTimeRange" style="display:none;margin-top:10px;gap:8px;align-items:center;flex-wrap:wrap">
-       <input type="date" id="riderDateFrom" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)" onchange="riderApplyCustomTime()" />
-       <span style="color:var(--text-muted)">至</span>
-       <input type="date" id="riderDateTo" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)" onchange="riderApplyCustomTime()" />
-     </div>
-   </div>
-   <!-- 订单统计 -->
-   <div id="riderOrderStats" style="display:flex;gap:8px;margin-bottom:12px"></div>
-   <!-- 统一订单列表 -->
-   <div id="allRiderOrders"></div>
+ <div class="section-title">🆕 待接订单</div>
+ <div id="newOrdersList"></div>
+ <div class="section-title" style="margin-top: 24px;">📦 我的订单</div>
+ <div id="myOrdersList"></div>
+ </main>
+ <nav class="bottom-nav">
+ <div class="nav-item active" onclick="switchTab('home', event)"><span class="nav-item-icon">🏠</span><span class="nav-item-label">首页</span></div>
+ <div class="nav-item" onclick="switchTab('history', event)"><span class="nav-item-icon">📋</span><span class="nav-item-label">历史</span></div>
+ <div class="nav-item" onclick="switchTab('profile', event)"><span class="nav-item-icon">👤</span><span class="nav-item-label">我的</span></div>
+ </nav>
+ <div class="entry-links">
+ <a href="index.html" class="entry-link">🏠 首页</a>
+ <a href="app.html" class="entry-link">📱 用户端</a>
  </div>
- <!-- 我的 信息区 -->
- <div class="profile-section" id="profileSection">
+ <div class="profile-page" id="profilePage">
  <div class="profile-header">
  <div class="profile-top">
  <div class="profile-title">我的</div>
@@ -592,7 +360,7 @@
  </div>
  <div class="user-card">
  <div class="user-info">
- <div class="user-avatar-lg" id="userAvatarLg" style="cursor:pointer" onclick="showSettings()">🛵</div>
+ <div class="user-avatar-lg" id="userAvatarLg">🛵</div>
  <div class="user-details">
  <div class="user-name-lg" id="userNameLg">未登录</div>
  <div class="user-id-badge"><span>🔑</span><span id="userUidDisplay">--</span> &nbsp; <span>📱</span><span id="userPhoneDisplay">--</span></div>
@@ -653,7 +421,11 @@
  </div>
  </div>
  <div class="menu-section">
-
+ <div class="menu-item" onclick="openRiderChatList()">
+ <div class="menu-icon menu-icon-purple">💬</div>
+ <div class="menu-text"><div class="menu-title">我的消息</div><div class="menu-desc" id="riderUnreadHint">暂无新消息</div></div>
+ <span class="menu-arrow">›</span>
+ </div>
  <div class="menu-item" onclick="showHelpModal()">
  <div class="menu-icon menu-icon-blue">❓</div>
  <div class="menu-text"><div class="menu-title">帮助中心</div><div class="menu-desc">常见问题解答</div></div>
@@ -670,17 +442,17 @@
  <span class="menu-arrow">›</span>
  </div>
  </div>
-
+ <div style="padding:0 16px 8px;display:flex;align-items:center;justify-content:space-between">
+  <span style="font-size:14px;font-weight:600">🌙 深色模式</span>
+  <label style="position:relative;width:48px;height:26px;display:inline-block">
+    <input type="checkbox" id="darkToggle" onchange="toggleDark(this.checked)" style="opacity:0;width:0;height:0">
+    <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:26px;transition:.3s"></span>
+    <span style="position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s"></span>
+  </label>
+</div>
  <div style="padding: 16px;"><button class="btn btn-secondary" style="width: 100%;" onclick="logout()">退出登录</button></div>
  </div>
- <!-- 底部导航 -->
- <nav class="bottom-nav" id="bottomNav">
- <div class="nav-item active" onclick="riderSwitchTab('home', event)"><span class="nav-item-icon">🏠</span><span class="nav-item-label">订单</span></div>
- <div class="nav-item" onclick="riderSwitchTab('msg', event)"><span class="nav-item-icon">💬</span><span class="nav-item-label">消息</span></div>
- <div class="nav-item" onclick="riderSwitchTab('profile', event)"><span class="nav-item-icon">👤</span><span class="nav-item-label">我的</span></div>
- </nav>
- </main>
- <!-- 我的 信息区（在底部导航下面） -->
+ </div>
  <div class="sub-page" id="detailPage_sub">
       <div class="sub-page-header">
         <button class="sub-page-back" onclick="closeSubPage('detailPage_sub')">←</button>
@@ -737,95 +509,20 @@
       <div class="sub-page-body" id="earningsBody"></div>
     </div>
 
- <!-- 骑手消息主页 -->
- <div id="msgSection" style="display:none">
-      <div class="msg-header">
-        <h2>💬 我的消息</h2>
-        <p id="msgCount">暂无会话</p>
-      </div>
-      <div id="chatListBody" style="padding:0;margin:0"></div>
-    </div>
-
-    <!-- 聊天对话页 -->
-    <div class="sub-page" id="chatConvPage_sub">
+ <!-- 骑手聊天列表 -->
+ <div class="sub-page" id="chatListPage_sub">
       <div class="sub-page-header">
-        <button class="sub-page-back" onclick="closeSubPage('chatConvPage_sub')">←</button>
-        <span class="sub-page-title" id="chatConvTitle">对话</span>
+        <button class="sub-page-back" onclick="closeSubPage('chatListPage_sub')">←</button>
+        <span class="sub-page-title">💬 我的消息</span>
       </div>
-      <div class="sub-page-body" style="display:flex;flex-direction:column;height:calc(100% - 56px);padding:0;position:relative">
-        <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px 16px;scrollbar-width:none"></div>
-        <!-- 表情选择器 -->
-        <div id="riderEmojiPicker" style="display:none;padding:8px 12px;border-top:1px solid var(--border);background:var(--bg);max-height:220px;overflow-y:auto">
-          <div style="display:flex;flex-wrap:wrap;gap:2px" id="riderEmojiGrid"></div>
-        </div>
-        <!-- 输入区 -->
-        <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:6px;background:var(--bg);align-items:center">
-          <span style="font-size:22px;cursor:pointer" onclick="toggleRiderEmojiPicker()">😊</span>
-          <label style="font-size:20px;cursor:pointer;display:flex;align-items:center" title="发送图片/视频">
-            📎<input type="file" accept="image/*,video/*" style="display:none" onchange="riderChatUpload(this)">
-          </label>
-          <input id="chatInput" type="text" placeholder="输入消息..." style="flex:1;padding:10px 14px;border-radius:20px;border:1px solid var(--border);background:var(--card-bg);color:var(--text);font-size:14px;outline:none" onkeypress="if(event.key==='Enter')sendChatMsg()">
-          <button onclick="sendChatMsg()" style="padding:10px 16px;border-radius:20px;background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;border:none;font-size:14px;cursor:pointer">发送</button>
-        </div>
-      </div>
+      <div class="sub-page-body" id="chatListBody" style="padding:8px 0"></div>
     </div>
 
  <script>
 
- // ====== 工具函数 ======
- const $ = (id) => document.getElementById(id);
-
- const fmtTime = (ts) => {
-   if (!ts) return '';
-   const d = new Date(ts);
-   if (isNaN(d.getTime())) return '';
-   const now = new Date();
-   const diff = now - d;
-   if (diff < 0) return '刚刚';
-   if (diff < 60000) return '刚刚';
-   if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
-   if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
-   if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
-   const m = ('0' + (d.getMonth() + 1)).slice(-2);
-   const day = ('0' + d.getDate()).slice(-2);
-   const h = ('0' + d.getHours()).slice(-2);
-   const min = ('0' + d.getMinutes()).slice(-2);
-   return m + '-' + day + ' ' + h + ':' + min;
- };
-
- const showToast = (msg, duration = 2500) => {
-   const el = document.getElementById('toast');
-   if (!el) return;
-   el.textContent = msg;
-   el.classList.add('show');
-   setTimeout(() => el.classList.remove('show'), duration);
- };
-
- // ====== 子页面栈管理 ======
- let _pageStack = [];
- function openSubPage(id) {
-   const el = document.getElementById(id);
-   if (!el) return;
-   _pageStack.push(id);
-   el.classList.add('active');
- }
- function closeSubPage(id) {
-   const el = document.getElementById(id);
-   if (!el) return;
-   el.classList.remove('active');
-   _pageStack = _pageStack.filter(p => p !== id);
-   if (_pageStack.length === 0) document.body.style.overflow = '';
- }
- function goBack() {
-   if (_pageStack.length > 0) closeSubPage(_pageStack[_pageStack.length - 1]);
- }
- window.addEventListener('popstate', () => goBack());
-
- // ====== 核心变量 ======
+ // ====== Missing core functions ======
  let currentRider = null;
  let myOrders = [];
- let newOrders = [];
- let isOnline = true;
 
  const statusColor = { pending: '#F39C12', accepted: '#3498DB', running: '#E74C3C', completed: '#2ECC71', cancelled: '#95A5A6' };
  const statusIcon = { pending: '⏳', accepted: '🛵', running: '🚀', completed: '✅', cancelled: '❌' };
@@ -901,122 +598,43 @@
    openSubPage('detailPage_sub');
  }
 
- // ══════ 骑手端筛选变量 ══════
- let riderStatusFilter = 'all';
- let riderTimeFilter = 'all';
- let riderDateFrom = null;
- let riderDateTo = null;
- let riderAllOrders = []; // 所有订单缓存
+ async function refreshOrders() {
+   const newEl = $('newOrdersList');
+   const myEl = $('myOrdersList');
+   if (!newEl || !myEl) return;
 
- // ══════ 骑手端状态筛选 ══════
- function riderSwitchFilter(status) {
-   riderStatusFilter = status;
-   document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
-   const labelMap = { all:'全部', pending:'待接单', running:'进行中', completed:'已完成', cancelled:'已取消' };
-   const targetText = labelMap[status] || '';
-   document.querySelectorAll('.order-tab').forEach(t => {
-     if (t.textContent.includes(targetText)) t.classList.add('active');
-   });
-   renderRiderOrders();
+   // New orders (pending)
+   try {
+     const pending = await API.getOrders({ status: 'pending' });
+     if (pending && pending.length) {
+       newEl.innerHTML = pending.map(o => '<div class="order-card new" onclick="showOrderDetail(\''+o.order_no+'\',\'accept\')">' +
+         '<div class="order-top"><div class="order-type"><div class="order-type-icon">'+(typeEmoji[o.type]||'📦')+'</div>' +
+         '<span>'+(serviceNames[o.type]||'服务')+'</span></div>' +
+         '<span class="order-status status-pending">待接单</span></div>' +
+         '<div class="order-info">'+escHtml(o.pickup_location)+' → '+escHtml(o.delivery_location)+'</div>' +
+         '<div class="order-meta"><span>'+fmtTime(o.created_at)+'</span><span class="order-price">¥'+(o.price||0).toFixed(2)+'</span></div></div>').join('');
+     } else {
+       newEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>暂无待接订单</p></div>';
+     }
+   } catch(e) { console.error('load pending orders error:', e); }
+
+   // My orders
+   if (!currentRider) { myEl.innerHTML = ''; return; }
+   try {
+     const all = await API.getOrders({ rider_phone: currentRider.phone, status: 'my' });
+     myOrders = all || [];
+     const active = myOrders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
+     if (active.length) {
+       myEl.innerHTML = active.map(o => '<div class="order-card my-order" onclick="showOrderDetail(\''+o.order_no+'\',\'view\')">' +
+         '<div class="order-top"><div class="order-type"><div class="order-type-icon">'+(typeEmoji[o.type]||'📦')+'</div><span>'+(serviceNames[o.type]||'服务')+'</span></div>' +
+         '<span class="order-status status-'+(o.status==='running'?'running':(o.status==='accepted'?'accepted':'pending'))+'">'+(statusLabel[o.status]||o.status)+'</span></div>' +
+         '<div class="order-info">'+escHtml(o.pickup_location)+' → '+escHtml(o.delivery_location)+'</div>' +
+         '<div class="order-meta"><span>'+fmtTime(o.created_at)+'</span><span class="order-price">¥'+(o.price||0).toFixed(2)+'</span></div></div>').join('');
+     } else {
+       myEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>暂无进行中的订单</p></div>';
+     }
+   } catch(e) { console.error('load my orders error:', e); }
  }
-
- // ══════ 骑手端时间筛选 ══════
- function riderSwitchTime(period) {
-   riderTimeFilter = period;
-   document.querySelectorAll('.time-filter-chip').forEach(c => c.classList.remove('active'));
-   if (event && event.target) event.target.classList.add('active');
-   const rangeEl = document.getElementById('riderCustomTimeRange');
-   if (period === 'custom') {
-     rangeEl.style.display = 'flex';
-   } else {
-     rangeEl.style.display = 'none';
-     riderDateFrom = null;
-     riderDateTo = null;
-   }
-   renderRiderOrders();
- }
-
- function riderApplyCustomTime() {
-   const from = document.getElementById('riderDateFrom').value;
-   const to = document.getElementById('riderDateTo').value;
-   riderDateFrom = from ? new Date(from) : null;
-   riderDateTo = to ? new Date(to + 'T23:59:59') : null;
-   renderRiderOrders();
- }
-
- function riderFilterByTime(orders) {
-   if (riderTimeFilter === 'all') return orders;
-   const now = new Date();
-   let start = null, end = null;
-   if (riderTimeFilter === 'today') {
-     start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-     end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-   } else if (riderTimeFilter === 'week') {
-     start = new Date(now.getTime() - 7 * 86400000); end = now;
-   } else if (riderTimeFilter === 'month') {
-     start = new Date(now.getTime() - 30 * 86400000); end = now;
-   } else if (riderTimeFilter === 'custom') {
-     start = riderDateFrom; end = riderDateTo;
-   }
-   if (!start && !end) return orders;
-   return orders.filter(o => {
-     const d = new Date(o.created_at);
-     if (start && d < start) return false;
-     if (end && d > end) return false;
-     return true;
-   });
- }
-
- // ══════ 渲染骑手订单列表 ══════
- function renderRiderOrders() {
-   const container = document.getElementById('allRiderOrders');
-   const statsEl = document.getElementById('riderOrderStats');
-   if (!container) return;
-
-   // 1. 按状态筛选
-   let filtered = riderAllOrders;
-   if (riderStatusFilter === 'pending') filtered = filtered.filter(o => o.status === 'pending');
-   else if (riderStatusFilter === 'running') filtered = filtered.filter(o => o.status === 'accepted' || o.status === 'running');
-   else if (riderStatusFilter === 'completed') filtered = filtered.filter(o => o.status === 'completed');
-   else if (riderStatusFilter === 'cancelled') filtered = filtered.filter(o => o.status === 'cancelled');
-
-   // 2. 按时间筛选
-   filtered = riderFilterByTime(filtered);
-
-   // 3. 统计
-   if (statsEl) {
-     const total = filtered.length;
-     const totalAmount = filtered.reduce((s, o) => s + (o.price || 0), 0);
-     const myEarnings = filtered.filter(o => o.status === 'completed').reduce((s, o) => s + (o.price || 0) * 0.8, 0);
-     const pending = filtered.filter(o => o.status === 'pending').length;
-     const running = filtered.filter(o => o.status === 'accepted' || o.status === 'running').length;
-     const done = filtered.filter(o => o.status === 'completed').length;
-     statsEl.innerHTML =
-       '<div class="order-stat-pill"><div class="stat-num" style="color:var(--orange)">' + total + '</div><div class="stat-label">总计</div></div>' +
-       '<div class="order-stat-pill"><div class="stat-num" style="color:#F39C12">' + pending + '</div><div class="stat-label">待接</div></div>' +
-       '<div class="order-stat-pill"><div class="stat-num" style="color:#2ECC71">' + running + '</div><div class="stat-label">进行中</div></div>' +
-       '<div class="order-stat-pill"><div class="stat-num" style="color:#95A5A6">' + done + '</div><div class="stat-label">已完成</div></div>' +
-       '<div class="order-stat-pill"><div class="stat-num" style="color:var(--orange)">¥' + myEarnings.toFixed(1) + '</div><div class="stat-label">我的收入</div></div>';
-   }
-
-   // 4. 渲染列表
-   if (!filtered.length) {
-     container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>暂无订单</p></div>';
-     return;
-   }
-   container.innerHTML = filtered.map(o => {
-     const isNew = o.status === 'pending';
-     const isMy = o.status === 'accepted' || o.status === 'running';
-     const cardClass = isNew ? 'new' : (isMy ? 'my-order' : '');
-     const action = isNew ? 'accept' : 'view';
-     return '<div class="order-card ' + cardClass + '" onclick="showOrderDetail(\''+o.order_no+'\',\''+action+'\')">' +
-       '<div class="order-top"><div class="order-type"><div class="order-type-icon">'+(typeEmoji[o.type]||'📦')+'</div><span>'+(serviceNames[o.type]||'服务')+'</span></div>' +
-       '<span class="order-status status-'+o.status+'">'+(statusLabel[o.status]||o.status)+'</span></div>' +
-       '<div class="order-info">'+escHtml(o.pickup_location)+' → '+escHtml(o.delivery_location)+'</div>' +
-       '<div class="order-meta"><span>'+fmtTime(o.created_at)+'</span><span class="order-price">¥'+(o.price||0).toFixed(2)+'</span></div></div>';
-   }).join('');
- }
-
 
  async function acceptOrder(orderNo) {
  try {
@@ -1052,26 +670,6 @@
  try {
  const r = await API.getRider(currentRider.phone);
  currentRider = { ...r, phone: currentRider.phone };
- if (r.avatar) currentRider.avatar = r.avatar;
- localStorage.setItem('lazyRider', JSON.stringify(currentRider));
- // 更新头像显示
- const avatarLg = $('userAvatarLg');
- if (avatarLg) {
-   if (currentRider.avatar) {
-     avatarLg.innerHTML = '<img src="' + currentRider.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />';
-   } else {
-     avatarLg.textContent = '\u{1F6F5}';
-   }
- }
- // 更新侧边栏小头像
- const sidebarAvatar = document.querySelector('.app-user .user-avatar');
- if (sidebarAvatar) {
-   if (currentRider.avatar) {
-     sidebarAvatar.innerHTML = '<img src="' + currentRider.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />';
-   } else {
-     sidebarAvatar.textContent = '\u{1F6F5}';
-   }
- }
  $('walletBalance').textContent = (r.total_earnings||0).toFixed(2);
  $('statTotalEarnings').textContent = '¥' + (r.total_earnings||0).toFixed(2);
  $('statTotalEarnings2').textContent = $('statTotalEarnings').textContent;
@@ -1090,55 +688,39 @@
  } catch(e){ console.error(e); }
  }
 
- // ══════ Tab切换（简化版） ══════
- function riderSwitchTab(tab, evt) {
-   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-   if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
-   // 隐藏所有主区域
-   $('orderSection').style.display = 'none';
-   $('profileSection').classList.remove('active');
-   $('msgSection').style.display = 'none';
-   const chatSub = document.getElementById('chatConvPage_sub');
-   if (chatSub) chatSub.classList.remove('active');
-
-   if (tab === 'home') {
-     $('orderSection').style.display = 'block';
-     refreshOrders();
-   } else if (tab === 'msg') {
-     $('msgSection').style.display = 'block';
-     loadChatList();
-   } else if (tab === 'profile') {
-     $('profileSection').classList.add('active');
-     updateProfile();
-     window.scrollTo({ top: 0, behavior: 'smooth' });
-   }
+ function switchTab(tab, evt) {
+ document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+ if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+ if (tab === 'home') {
+ $('mainContent').style.display = 'block';
+ $('profilePage').classList.remove('active');
+ refreshOrders();
+ } else if (tab === 'history') {
+ $('mainContent').style.display = 'block';
+ $('profilePage').classList.remove('active');
+ renderHistoryOrders();
+ } else if (tab === 'profile') {
+ $('mainContent').style.display = 'none';
+ $('profilePage').classList.add('active');
+ updateProfile();
+ }
  }
 
- // ══════ 加载所有订单 ══════
- async function refreshOrders() {
-   if (!currentRider) return;
-   try {
-     // 获取待接单 + 我的订单
-     const [pending, mine] = await Promise.all([
-       API.getOrders({ status: 'pending' }),
-       API.getOrders({ rider_phone: currentRider.phone, status: 'my' })
-     ]);
-     // 合并去重
-     const map = new Map();
-     [...(pending||[]), ...(mine||[])].forEach(o => map.set(o.order_no || o.id, o));
-     riderAllOrders = Array.from(map.values());
-     newOrders = pending || [];
-     myOrders = mine || [];
-     renderRiderOrders();
-   } catch(e) {
-     console.error('refreshOrders error:', e);
-   }
+ async function renderHistoryOrders() {
+ if (!currentRider) return;
+ const all = await API.getOrders({ rider_phone: currentRider.phone, status: 'my' });
+ const history = all.filter(o => o.status === 'completed' || o.status === 'cancelled');
+ const list = $('newOrdersList');
+ document.querySelector('.app-main .section-title:first-child').textContent = '📜 历史订单';
+ $('myOrdersList').style.display = 'none';
+ if (!history.length) { list.innerHTML = '<div class="empty-state"><p>暂无历史订单</p></div>'; return; }
+ list.innerHTML = history.map(o => '<div style="background:var(--card-bg);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)"><div>'+(typeEmoji[o.type]||'📦')+' '+escHtml(o.pickup_location)+' → '+escHtml(o.delivery_location)+'</div><div style="font-size:12px;color:var(--text-muted)">¥'+((o.price||0).toFixed(2))+' · '+fmtTime(o.completed_at||o.cancelled_at)+'</div></div>').join('');
  }
 
  function closeModal(id) { $(id).classList.remove('active'); document.body.style.overflow = ''; }
  document.addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) { e.target.classList.remove('active'); document.body.style.overflow = ''; } });
 
- function showProfile() { riderSwitchTab('profile'); }
+ function showProfile() { switchTab('profile'); }
  function showSettings() { showSettingsModal(); }
  function showWithdrawModal() {
    if (!currentRider) return;
@@ -1235,35 +817,30 @@
  let riderConvPhone = null;
  let riderChatTimer = null;
 
- async function loadChatList() {
+ async function openRiderChatList() {
    if (!currentRider) return;
+   openSubPage('chatListPage_sub');
    const list = await API.chatConversations(currentRider.phone);
    const el = document.getElementById('chatListBody');
-   const countEl = document.getElementById('msgCount');
-   if (!list || !list.length) {
-     el.innerHTML = '<div class="msg-empty"><div class="msg-empty-icon">📭</div><div class="msg-empty-text">暂无消息</div><div class="msg-empty-sub">有新消息时会在这里显示</div></div>';
-     if (countEl) countEl.textContent = '暂无会话';
-     return;
-   }
-   if (countEl) countEl.textContent = list.length + ' 个会话';
+   if (!list || !list.length) { el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary)">暂无消息</div>'; return; }
    el.innerHTML = list.map(c => {
      const isMe = c.last_sender === currentRider.phone;
-     const t = c.last_message_at ? timeAgo(c.last_message_at) : '';
-     return '<div class="chat-item" onclick="openRiderConv('+c.id+',\''+c.other_phone+'\',\''+escHtml(c.other_name||'')+'\')">' +
-       '<div class="chat-item-avatar">'+(c.other_name||'?')[0]+'</div>' +
-       '<div class="chat-item-info">' +
-       '<div class="chat-item-top"><span class="chat-item-name">'+escHtml(c.other_name||c.other_phone)+'</span><span class="chat-item-time">'+t+'</span></div>' +
-       '<div class="chat-item-bottom"><span class="chat-item-msg">'+escHtml((isMe?'我: ':'')+(c.last_message||''))+'</span>' +
-       (c.unread?'<span class="chat-item-badge">'+c.unread+'</span>':'') +
-       '</div></div></div>';
+     return '<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer" onclick="openRiderConv('+c.id+',\''+c.other_phone+'\',\''+escHtml(c.other_name||'')+'\')">' +
+       '<div style="width:44px;height:44px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+(c.other_name||'?')[0]+'</div>' +
+       '<div style="flex:1;min-width:0">' +
+       '<div style="font-weight:600;font-size:14px">'+escHtml(c.other_name||c.other_phone)+'</div>' +
+       '<div style="font-size:13px;color:var(--text-secondary);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml((isMe?'我: ':'')+(c.last_message||''))+'</div>' +
+       '</div>' +
+       (c.unread?'<span style="background:var(--green);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">'+c.unread+'</span>':'') +
+       '</div>';
    }).join('');
  }
- async function openRiderChatList() { riderSwitchTab('msg'); }
 
  async function openRiderConv(convId, otherPhone, otherName) {
    riderConvId = convId;
    riderConvPhone = otherPhone;
    document.getElementById('chatConvTitle').textContent = otherName || otherPhone;
+   closeSubPage('chatListPage_sub');
    openSubPage('chatConvPage_sub');
    await loadRiderChatMessages();
    if (riderChatTimer) clearInterval(riderChatTimer);
@@ -1273,21 +850,11 @@
  async function loadRiderChatMessages() {
    if (!riderConvId) return;
    const msgs = await API.chatMessages(riderConvId, currentRider.phone);
-   if (!Array.isArray(msgs)) return;
    const el = document.getElementById('chatMessages');
    el.innerHTML = msgs.map(m => {
      const isMe = m.sender_phone === currentRider.phone;
-     const bubbleStyle = 'max-width:72%;padding:10px 14px;border-radius:' + (isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px') + ';font-size:14px;line-height:1.6;background:'+(isMe?'linear-gradient(135deg,#2ECC71,#27AE60)':'var(--card-bg)')+';color:'+(isMe?'#fff':'var(--text)')+';border:1px solid '+(isMe?'transparent':'var(--border)')+';box-shadow:0 1px 4px rgba(0,0,0,.06)';
-     let content;
-     if (m.type === 'image') {
-       content = '<img src="'+escHtml(m.content)+'" style="max-width:100%;border-radius:8px;display:block" onclick="window.open(this.src)" />';
-     } else if (m.type === 'video') {
-       content = '<video src="'+escHtml(m.content)+'" style="max-width:100%;border-radius:8px;display:block" controls preload="metadata"></video>';
-     } else {
-       content = escHtml(m.content);
-     }
      return '<div style="display:flex;justify-content:'+(isMe?'flex-end':'flex-start')+';margin-bottom:12px">' +
-       '<div style="'+bubbleStyle+'">'+content+'</div></div>';
+       '<div style="max-width:72%;padding:10px 14px;border-radius:' + (isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px') + ';font-size:14px;line-height:1.6;background:'+(isMe?'linear-gradient(135deg,#2ECC71,#27AE60)':'var(--card-bg)')+';color:'+(isMe?'#fff':'var(--text)')+';border:1px solid '+(isMe?'transparent':'var(--border)')+';box-shadow:0 1px 4px rgba(0,0,0,.06)">'+escHtml(m.content)+'</div></div>';
    }).join('');
    el.scrollTop = el.scrollHeight;
  }
@@ -1303,70 +870,11 @@
  }
 
  // ═══════════════════════════════════════════════════════
- // 😊 骑手端表情选择器
- // ═══════════════════════════════════════════════════════
- const riderEmojiList = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','🥰','😘','😗','😙','😚','🙂','🤗','🤩','🤔','🤨','😐','😑','😶','🙄','😏','😣','😥','😮','🤐','😯','😪','😫','😴','😌','😛','😜','😝','🤤','😒','😓','😔','😕','🙃','🤑','😲','🙁','😖','😞','😟','😤','😢','😭','😦','😧','😨','😩','🤯','😬','😰','😱','🥵','🥶','😳','🤪','😵','😡','😠','🤬','😷','🤒','🤕','🤢','🤮','🥴','😇','🥳','🥺','🤠','🤡','🤥','🤫','🤭','🧐','🤓','💪','👍','👎','👏','🙏','🤝','❤️','💔','🔥','💯','✨','🎉','🎊','⭐','🌟','💬','💭','🤷','🤦','👋','✌️','🤞','🤟','🤘','👌','🤙','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','🤌','🫶','🫡','🫣','🫠'];
- let riderEmojiInited = false;
- function toggleRiderEmojiPicker() {
-   const picker = document.getElementById('riderEmojiPicker');
-   if (!picker) return;
-   if (!riderEmojiInited) {
-     const grid = document.getElementById('riderEmojiGrid');
-     if (grid) grid.innerHTML = riderEmojiList.map(e => '<span style="font-size:24px;cursor:pointer;padding:4px;border-radius:6px;display:inline-block;transition:background .15s" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'" onclick="insertRiderEmoji(\''+e+'\')">' + e + '</span>').join('');
-     riderEmojiInited = true;
-   }
-   picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
- }
- function insertRiderEmoji(emoji) {
-   const input = document.getElementById('chatInput');
-   if (input) { input.value += emoji; input.focus(); }
-   const picker = document.getElementById('riderEmojiPicker');
-   if (picker) picker.style.display = 'none';
- }
-
- // ═══════════════════════════════════════════════════════
- // 📎 骑手端图片/视频上传
- // ═══════════════════════════════════════════════════════
- async function riderChatUpload(input) {
-   const file = input.files && input.files[0];
-   if (!file || !riderConvId) return;
-   // 文件大小检查
-   if (file.size > 20 * 1024 * 1024) return showToast('文件不能超过20MB');
-   showToast('上传中...');
-   try {
-     const res = await API.chatUpload(file);
-     if (res.error) return showToast(res.error);
-     // 发送媒体消息
-     const sendRes = await API.chatSend({
-       conversation_id: riderConvId,
-       sender_phone: currentRider.phone,
-       content: res.url,
-       type: res.type
-     });
-     if (sendRes.error) return showToast(sendRes.error);
-     await loadRiderChatMessages();
-   } catch(e) {
-     showToast('上传失败: ' + (e.message||e));
-   }
-   input.value = '';
- }
-
- // ═══════════════════════════════════════════════════════
  // 💬 从订单详情页打开与用户的聊天
  // ═══════════════════════════════════════════════════════
  async function openChatFromOrder(orderNo) {
    if (!currentRider) return showToast('请先登录');
-   // 从多个来源查找订单
-   const allOrders = [...(myOrders||[]), ...(newOrders||[])];
-   let o = allOrders.find(x => x.order_no === orderNo);
-   // 如果内存中没找到，尝试从API获取
-   if (!o) {
-     try {
-       const res = await API.getOrders({ rider_phone: currentRider.phone, status: 'my' });
-       o = (res || []).find(x => x.order_no === orderNo);
-       if (o) myOrders = res || myOrders;
-     } catch(e2) { console.error('fetch order error:', e2); }
-   }
+   const o = myOrders.find(x => x.order_no === orderNo) || newOrders.find(x => x.order_no === orderNo);
    if (!o || !o.phone) return showToast('无法获取用户信息');
    try {
      const conv = await API.chatGetOrCreateConversation({
@@ -1378,18 +886,17 @@
      closeSubPage('detailPage_sub');
      await openRiderConv(conv.id, o.phone, o.user_name || '用户');
    } catch(e) {
-     showToast('打开聊天失败: ' + (e.message||e));
+     showToast('打开聊天失败');
      console.error('openChatFromOrder error:', e);
    }
  }
 
-function timeAgo(ts) { if (!ts) return ''; const diff=Date.now()-new Date(ts).getTime(); if(diff<60000) return '刚刚'; if(diff<3600000) return Math.floor(diff/60000)+'分钟前'; if(diff<86400000) return Math.floor(diff/3600000)+'小时前'; if(diff<604800000) return Math.floor(diff/86400000)+'天前'; return ts.slice(0,10); }
  function escHtml(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
   // Sanitize order object for safe HTML rendering
   function safeOrder(o) {
     return Object.fromEntries(Object.entries(o).map(([k,v]) => [k, typeof v === 'string' ? escHtml(v) : v]));
   }
- function showOrderHistory() { riderSwitchTab('home'); riderSwitchFilter('completed'); }
+ function showOrderHistory() { switchTab('history'); }
  async function showReviewsModal() {
    if (!currentRider) return showToast('请先登录');
    const id = 'reviewsPage_sub';
@@ -1494,72 +1001,30 @@ function timeAgo(ts) { if (!ts) return ''; const diff=Date.now()-new Date(ts).ge
    el = document.createElement('div');
    el.id = id;
    el.className = 'sub-page';
-   const types = [
-     { val: 'bug', emoji: '🐛', label: '问题反馈' },
-     { val: 'feature', emoji: '💡', label: '功能建议' },
-     { val: 'complaint', emoji: '😤', label: '投诉' },
-     { val: 'other', emoji: '📌', label: '其他' }
-   ];
-   el.innerHTML =
-     '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'feedbackPage_sub\')">←</button><span class="sub-page-title">📝 意见反馈</span></div>' +
+   el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'feedbackPage_sub\')">←</button><span class="sub-page-title">📝 意见反馈</span></div>' +
      '<div class="sub-page-body">' +
-     // Type selector
-     '<div class="sp-card" style="padding-bottom:6px">' +
-       '<div class="sp-card-title">反馈类型</div>' +
-       '<div class="fb-type-grid">' +
-         types.map(t =>
-           '<div class="fb-type-item' + (t.val === 'bug' ? ' active' : '') + '" data-type="' + t.val + '" onclick="selectFbType(this,\'' + t.val + '\')">' +
-             '<span class="fb-type-emoji">' + t.emoji + '</span><span>' + t.label + '</span></div>'
-         ).join('') +
-       '</div>' +
-     '</div>' +
-     // Textarea
-     '<div class="sp-card" style="padding:14px">' +
-       '<div class="fb-textarea-wrap">' +
-         '<textarea id="fbContent" class="fb-textarea" placeholder="请描述您的问题或建议，我们会认真对待每一条反馈..." oninput="updateFbCount()"></textarea>' +
-         '<div class="fb-char-count" id="fbCharCount">0/500</div>' +
-       '</div>' +
-     '</div>' +
-     // Submit
-     '<button onclick="submitFeedback()" class="fb-submit-btn">📤 提交反馈</button>' +
-     // Success (hidden initially)
-     '<div class="fb-success" id="fbSuccess" style="display:none">' +
-       '<div class="fb-success-icon">✅</div>' +
-       '<div class="fb-success-title">感谢反馈！</div>' +
-       '<div class="fb-success-desc">我们会认真对待每一条反馈，<br>尽快为您处理。</div>' +
-       '<button onclick="closeSubPage(\'feedbackPage_sub\')" class="sp-btn sp-btn-outline">返回</button>' +
-     '</div>' +
+     '<div class="sp-card">' +
+     '<label style="font-weight:700;font-size:14px;display:block;margin-bottom:10px">反馈类型</label>' +
+     '<select id="fbType" class="sp-select">' +
+     '<option value="bug">🐛 问题反馈</option><option value="feature">💡 功能建议</option><option value="complaint">😤 投诉</option><option value="other">📌 其他</option></select></div>' +
+     '<div class="sp-card">' +
+     '<label style="font-weight:700;font-size:14px;display:block;margin-bottom:10px">详细描述</label>' +
+     '<textarea id="fbContent" rows="5" placeholder="请描述您的问题或建议..." class="sp-textarea"></textarea></div>' +
+     '<button onclick="submitFeedback()" class="sp-btn sp-btn-green">提交反馈</button>' +
      '</div>';
    document.body.appendChild(el);
    openSubPage(id);
  }
- // Feedback type selection
- let _fbType = 'bug';
- function selectFbType(el, type) {
-   _fbType = type;
-   el.closest('.fb-type-grid').querySelectorAll('.fb-type-item').forEach(i => i.classList.remove('active'));
-   el.classList.add('active');
- }
- function updateFbCount() {
-   const ta = document.getElementById('fbContent');
-   const cnt = document.getElementById('fbCharCount');
-   if (!ta || !cnt) return;
-   const len = ta.value.length;
-   cnt.textContent = len + '/500';
-   cnt.style.color = len > 500 ? 'var(--red)' : 'var(--text-muted)';
- }
  function submitFeedback() {
+   const type = document.getElementById('fbType').value;
    const content = document.getElementById('fbContent').value.trim();
    if (!content) return showToast('请输入反馈内容');
-   if (content.length > 500) return showToast('反馈内容不能超过500字');
+   // 保存到 localStorage (无后端表)
    const feedbacks = JSON.parse(localStorage.getItem('riderFeedbacks') || '[]');
-   feedbacks.push({ type: _fbType, content, time: new Date().toISOString(), rider: currentRider ? currentRider.phone : 'anon' });
+   feedbacks.push({ type, content, time: new Date().toISOString(), rider: currentRider ? currentRider.phone : 'anon' });
    localStorage.setItem('riderFeedbacks', JSON.stringify(feedbacks));
-   // Show success, hide form
-   const form = document.querySelector('#feedbackPage_sub .sp-card, #feedbackPage_sub .fb-submit-btn');
-   if (form) { document.querySelectorAll('#feedbackPage_sub .sp-card, #feedbackPage_sub .fb-submit-btn').forEach(e => e.style.display = 'none'); }
-   const success = document.getElementById('fbSuccess');
-   if (success) success.style.display = 'block';
+   showToast('感谢反馈！我们会尽快处理');
+   closeSubPage('feedbackPage_sub');
  }
  function showSettingsModal() {
    if (!currentRider) return showToast('请先登录');
@@ -1573,44 +1038,21 @@ function timeAgo(ts) { if (!ts) return ''; const diff=Date.now()-new Date(ts).ge
    const levelIcons = { bronze:'🥉', silver:'🥈', gold:'🥇', diamond:'💎' };
    const levelNames = { bronze:'青铜骑手', silver:'白银骑手', gold:'黄金骑手', diamond:'钻石骑手' };
    const lvl = currentRider.level || 'bronze';
-   el.innerHTML =
-     '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'settingsPage_sub\')">←</button><span class="sub-page-title">⚙️ 设置</span></div>' +
+   el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'settingsPage_sub\')">←</button><span class="sub-page-title">⚙️ 设置</span></div>' +
      '<div class="sub-page-body">' +
-     // Avatar hero card
-     '<div class="settings-avatar-row">' +
-       '<div class="settings-avatar-circle" onclick="document.getElementById(\'riderAvatarInput\').click()">' + (currentRider.avatar ? '<img src="' + escHtml(currentRider.avatar) + '" />' : '\u{1F6F5}') + '</div>' +
-       '<div class="settings-avatar-info">' +
-         '<div class="settings-avatar-name">' + escHtml(currentRider.name || '骑手') + '</div>' +
-         '<div class="settings-avatar-sub">点击头像更换照片</div>' +
-         '<div class="settings-level-badge"><span>' + (levelIcons[lvl]||'\u{1F949}') + '</span><span>' + (levelNames[lvl]||lvl) + '</span></div>' +
-       '</div>' +
-     '</div>' +
-     '<input type="file" id="riderAvatarInput" accept="image/*" style="display:none" onchange="uploadRiderAvatar(this)" />' +
      // Appearance
-     '<div class="sp-card">' +
-       '<div class="sp-card-title">外观</div>' +
-       '<div class="settings-toggle-row">' +
-         '<div class="settings-toggle-label"><div class="settings-toggle-icon" style="background:#FFF3E0">🌙</div><span>深色模式</span></div>' +
-         '<label class="toggle-switch"><input type="checkbox" id="riderDarkToggle" ' + (isDark?'checked':'') + ' onchange="riderToggleDark(this.checked)"><span class="toggle-slider"></span></label>' +
-       '</div>' +
-     '</div>' +
-     // Account info
-     '<div class="sp-card">' +
-       '<div class="sp-card-title">账号信息</div>' +
-       '<div class="settings-info-row"><span class="settings-info-label">姓名</span><span class="settings-info-value">' + escHtml(currentRider.name || '--') + '</span></div>' +
-       '<div class="settings-info-row"><span class="settings-info-label">UID</span><span class="settings-info-value" style="font-family:Space Mono,monospace">' + escHtml(currentRider.uid || '--') + '</span></div>' +
-       '<div class="settings-info-row"><span class="settings-info-label">手机</span><span class="settings-info-value">' + escHtml(currentRider.phone) + '</span></div>' +
-       '<div class="settings-info-row"><span class="settings-info-label">等级</span><span class="settings-info-value" style="display:flex;align-items:center;gap:6px"><span style="font-size:18px">' + (levelIcons[lvl]||'🥉') + '</span>' + (levelNames[lvl]||lvl) + '</span></div>' +
-     '</div>' +
-     // About
-     '<div class="sp-card">' +
-       '<div class="sp-card-title">关于</div>' +
-       '<div class="settings-info-row"><span class="settings-info-label">版本</span><span class="settings-info-value">v3.0.0</span></div>' +
-       '<div class="settings-info-row"><span class="settings-info-label">平台</span><span class="settings-info-value">校园懒人效率站</span></div>' +
-     '</div>' +
+     '<div class="sp-card"><div class="sp-card-title">外观</div>' +
+     '<div class="sp-row"><span style="display:flex;align-items:center;gap:8px;font-size:15px">🌙 深色模式</span>' +
+     '<label style="position:relative;width:48px;height:26px;display:inline-block"><input type="checkbox" id="riderDarkToggle" ' + (isDark?'checked':'') + ' onchange="riderToggleDark(this.checked)" style="opacity:0;width:0;height:0"><span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:' + (isDark?'var(--green)':'#ccc') + ';border-radius:26px;transition:.3s"></span><span style="position:absolute;height:20px;width:20px;left:' + (isDark?'24px':'3px') + ';bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.2)"></span></label></div></div>' +
+     // Rider info
+     '<div class="sp-card"><div class="sp-card-title">骑手信息</div>' +
+     '<div class="sp-row"><span class="sp-row-label">姓名</span><span class="sp-row-value">' + escHtml(currentRider.name || '--') + '</span></div>' +
+     '<div class="sp-row"><span class="sp-row-label">UID</span><span class="sp-row-value" style="font-family:Space Mono,monospace">' + escHtml(currentRider.uid || '--') + '</span></div>' +
+     '<div class="sp-row"><span class="sp-row-label">手机</span><span class="sp-row-value">' + escHtml(currentRider.phone) + '</span></div>' +
+     '<div class="sp-row"><span class="sp-row-label">等级</span><span style="display:flex;align-items:center;gap:6px"><span style="font-size:18px">' + (levelIcons[lvl]||'🥉') + '</span><span class="sp-row-value">' + (levelNames[lvl]||lvl) + '</span></span></div></div>' +
      // Logout
-     '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyRider\');location.reload()}" class="settings-logout-btn">🚪 退出登录</button>' +
-     '<div class="settings-version">校园懒人效率站 v3.0 骑手端</div>' +
+     '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyRider\');location.reload()}" class="sp-btn sp-btn-red" style="margin-top:4px">退出登录</button>' +
+     '<div style="text-align:center;padding:20px 0 8px;color:var(--text-muted);font-size:12px;opacity:.5">校园懒人效率站 v3.0 骑手端</div>' +
      '</div>';
    document.body.appendChild(el);
    openSubPage(id);
@@ -1621,100 +1063,6 @@ function timeAgo(ts) { if (!ts) return ''; const diff=Date.now()-new Date(ts).ge
    closeSubPage('settingsPage_sub');
  }
  function logout() { API.logout(); location.reload(); }
-
- // ====== 登录 ======
- async function login(e) {
-   e.preventDefault();
-   const uid = $('loginUid').value.trim();
-   const name = $('loginName').value.trim();
-   const studentId = $('loginStudentId').value.trim();
-   const phone = $('loginPhone').value.trim();
-   if (!/^1[3-9]\d{9}$/.test(phone)) {
-     $('loginPhoneError').style.display = 'block';
-     return;
-   }
-   $('loginPhoneError').style.display = 'none';
-   try {
-     const rider = await API.riderLogin(uid, name, studentId, phone);
-     currentRider = { ...rider, phone };
-     localStorage.setItem('lazyRider', JSON.stringify(currentRider));
-     closeSubPage('loginPage_sub');
-     showToast('登录成功！🛵');
-     refreshOrders();
-     updateProfile();
-   } catch (err) {
-     showToast(err.message || '登录失败');
-   }
- }
-
- // ====== 在线状态切换 ======
- function toggleOnlineStatus() {
-   isOnline = !isOnline;
-   const sw = $('statusSwitch');
-   if (sw) {
-     sw.classList.toggle('online', isOnline);
-     sw.classList.toggle('offline', !isOnline);
-   }
-   showToast(isOnline ? '已上线，可接单' : '已下线，暂停接单');
-   if (currentRider) {
-     API.updateRiderStatus(currentRider.phone, isOnline ? 'online' : 'offline').catch(() => {});
-   }
- }
-
- // ====== 页面初始化 ======
- (function initRider() {
-   API._init();
-   const saved = localStorage.getItem('lazyRider');
-   if (saved) {
-     try {
-       currentRider = JSON.parse(saved);
-       updateProfile();
-     } catch(e) { localStorage.removeItem('lazyRider'); }
-   }
-   if (!currentRider) {
-     openSubPage('loginPage_sub');
-   } else {
-     refreshOrders();
-   }
-   // 暗色模式
-   const theme = localStorage.getItem('lazyTheme');
-   if (theme === 'dark') document.body.classList.add('dark');
-   // 在线状态
-   const sw = $('statusSwitch');
-   if (sw) { sw.classList.add('online'); }
- })();
-
- // ====== 头像上传 ======
- async function uploadRiderAvatar(input) {
-   if (!input.files || !input.files[0]) return;
-   const file = input.files[0];
-   if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
-   if (file.size > 5 * 1024 * 1024) { showToast('图片不能超过5MB'); return; }
-   try {
-     showToast('上传中...');
-     const res = await API.uploadRiderAvatar(currentRider.phone, file);
-     if (res.code === 0 || res.avatarUrl) {
-       currentRider.avatar = res.avatarUrl || res.data?.avatarUrl;
-       localStorage.setItem('lazyRider', JSON.stringify(currentRider));
-       showToast('头像更新成功 ✅');
-       updateProfile();
-       // 刷新设置页头像
-       const circle = document.querySelector('.settings-avatar-circle');
-       if (circle) {
-         if (currentRider.avatar) {
-           circle.innerHTML = '<img src="' + currentRider.avatar + '" />';
-         } else {
-           circle.innerHTML = '\u{1F6F5}';
-         }
-       }
-     } else {
-       showToast(res.message || '上传失败');
-     }
-   } catch(e) {
-     showToast('上传失败: ' + (e.message||''));
-   }
-   input.value = '';
- }
 
  window.login = login;
  window.toggleOnlineStatus = toggleOnlineStatus;
@@ -1738,9 +1086,6 @@ window.goBack = goBack;
  window.showHelpModal = showHelpModal;
  window.showFeedbackModal = showFeedbackModal;
  window.showSettingsModal = showSettingsModal;
- window.uploadRiderAvatar = uploadRiderAvatar;
- window.selectFbType = selectFbType;
- window.updateFbCount = updateFbCount;
  window.openRiderChatList = openRiderChatList;
  window.openRiderConv = openRiderConv;
  window.sendChatMsg = sendChatMsg;
@@ -1750,8 +1095,16 @@ window.goBack = goBack;
  window.showEarningsDetail = showEarningsDetail;
  window.loadEarningsDetail = loadEarningsDetail;
  window.logout = logout;
-
+ 
+    function toggleDark(isDark) {
+      document.body.classList.toggle('dark', isDark);
+      localStorage.setItem('lazyTheme', isDark ? 'dark' : 'light');
+    }
+    // Init dark mode from localStorage
+    (function() {
+      const saved = localStorage.getItem('lazyTheme');
+      if (saved === 'dark') document.body.classList.add('dark');
+    })();
   </script>
-  <div class="toast" id="toast"></div>
 </body>
 </html>
