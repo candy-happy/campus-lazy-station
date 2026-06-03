@@ -2893,11 +2893,11 @@
               '<div class="item-seller-trust">' + trust.icon + ' ' + trust.label + ' · ' + (trust.totalDeals || 0) + '笔交易 · 好评' + (trust.goodRate || 100) + '%</div>' +
             '</div>' +
           '</div>' +
+          '<div class="item-comments-section">' +
+            '<div class="item-comments-header"><span class="item-comments-title">💬 留言</span><span class="item-comments-count" id="commentCount">加载中...</span></div>' +
+            '<div id="commentList"></div>' +
+          '</div>' +
           (relatedHtml ? '<div style="margin-top:20px"><div style="font-size:15px;font-weight:700;margin-bottom:10px">卖家其他商品</div><div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">' + relatedHtml + '</div></div>' : '') +
-        '</div>' +
-        '<div class="item-comments-section">' +
-          '<div class="item-comments-header"><span class="item-comments-title">💬 留言</span><span class="item-comments-count" id="commentCount">加载中...</span></div>' +
-          '<div id="commentList"></div>' +
         '</div>' +
         (isOwner ?
           '<div class="item-action-bar">' +
