@@ -73,24 +73,52 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
   if (phone) {
     db.prepare('SELECT following_phone FROM wall_follows WHERE follower_phone = ?').all(phone).forEach(f => followSet.add(f.following_phone));
   }
-  return posts.map(p => ({
-    ...p,
-    images: parseImageUrls(p.images),
-    gif_urls: safeJSON(p.gif_urls),
-    isFollowing: followSet.has(p.phone)
-  }));
+  return posts.map(p => {
+    // 如果帖子头像是旧emoji/空，尝试从用户表同步最新头像
+    let avatar = p.avatar;
+    if (!avatar || (!avatar.startsWith('/') && !avatar.startsWith('http'))) {
+      const user = db.prepare('SELECT avatar FROM users WHERE phone = ?').get(p.phone)
+        || db.prepare('SELECT avatar FROM riders WHERE phone = ?').get(p.phone);
+      if (user && user.avatar && (user.avatar.startsWith('/') || user.avatar.startsWith('http'))) avatar = user.avatar;
+    }
+    return {
+      ...p,
+      avatar,
+      images: parseImageUrls(p.images),
+      gif_urls: safeJSON(p.gif_urls),
+      isFollowing: followSet.has(p.phone)
+    };
+  });
 }));
 
 // ─── 帖子详情 ────────────────────────────────────────────
 router.get('/posts/:id', (req, res) => JSON_RES(res, () => {
   const post = db.prepare('SELECT * FROM wall_posts WHERE id = ?').get(req.params.id);
   if (!post) return makeError('帖子不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
+  // 同步最新头像
+  let postAvatar = post.avatar;
+  if (!postAvatar || (!postAvatar.startsWith('/') && !postAvatar.startsWith('http'))) {
+    const user = db.prepare('SELECT avatar FROM users WHERE phone = ?').get(post.phone)
+      || db.prepare('SELECT avatar FROM riders WHERE phone = ?').get(post.phone);
+    if (user && user.avatar && (user.avatar.startsWith('/') || user.avatar.startsWith('http'))) postAvatar = user.avatar;
+  }
   const comments = db.prepare('SELECT * FROM wall_comments WHERE post_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id);
+  // 评论头像同步
+  const enrichedComments = comments.map(c => {
+    let cAvatar = c.avatar;
+    if (!cAvatar || (!cAvatar.startsWith('/') && !cAvatar.startsWith('http'))) {
+      const cu = db.prepare('SELECT avatar FROM users WHERE phone = ?').get(c.phone)
+        || db.prepare('SELECT avatar FROM riders WHERE phone = ?').get(c.phone);
+      if (cu && cu.avatar && (cu.avatar.startsWith('/') || cu.avatar.startsWith('http'))) cAvatar = cu.avatar;
+    }
+    return { ...c, avatar: cAvatar };
+  });
   return {
     ...post,
+    avatar: postAvatar,
     images: parseImageUrls(post.images),
     gif_urls: safeJSON(post.gif_urls),
-    comments
+    comments: enrichedComments
   };
 }));
 
@@ -191,11 +219,12 @@ router.get('/user/:phone', (req, res) => JSON_RES(res, () => {
   const posts = db.prepare('SELECT * FROM wall_posts WHERE phone = ? ORDER BY created_at DESC LIMIT 20').all(phone);
   const followers = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE following_phone = ?').get(phone).n;
   const following = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE follower_phone = ?').get(phone).n;
-  const user = db.prepare('SELECT name,phone FROM users WHERE phone = ?').get(phone)
-    || db.prepare('SELECT name,phone FROM riders WHERE phone = ?').get(phone)
-    || { name: '匿名', phone };
+  const user = db.prepare('SELECT name,phone,avatar FROM users WHERE phone = ?').get(phone)
+    || db.prepare('SELECT name,phone,avatar FROM riders WHERE phone = ?').get(phone)
+    || { name: '匿名', phone, avatar: '' };
   return {
     nickname: user.name,
+    avatar: user.avatar || '',
     phone,
     followers,
     following,
