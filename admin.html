@@ -142,16 +142,16 @@
     /* 二手市场管理 */
     .market-admin-tabs { display:flex;gap:8px;margin-bottom:20px;border-bottom:2px solid var(--border);padding-bottom:12px }
     .market-tab { padding:8px 18px;border:none;background:transparent;font-size:0.9rem;cursor:pointer;border-radius:var(--radius-sm) var(--radius-sm) 0 0;transition:all 0.2s;color:var(--text-secondary);font-weight:500 }
-    .market-tab:hover { background:rgba(255,107,43,0.1);color:var(--primary) }
-    .market-tab.active { background:var(--primary);color:#fff;font-weight:700 }
+    .market-tab:hover { background:rgba(255,107,43,0.1);color:var(--orange) }
+    .market-tab.active { background:var(--orange);color:#fff;font-weight:700 }
     .market-admin-panel { display:none }
     .market-admin-panel.active { display:block }
     .market-admin-toolbar { display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap }
     .market-admin-filters { display:flex;gap:6px }
     .market-admin-search { display:flex;gap:8px;align-items:center }
     .market-admin-batch { margin-top:12px;padding:10px 16px;background:var(--bg);border-radius:var(--radius);display:flex;align-items:center;gap:12px }
-    body.dark .market-tab.active { background:var(--primary) }
-    .ai-spinner { width:24px;height:24px;border:3px solid var(--border);border-top:3px solid var(--primary);border-radius:50%;animation:ai-spin 0.8s linear infinite }
+    body.dark .market-tab.active { background:var(--orange) }
+    .ai-spinner { width:24px;height:24px;border:3px solid var(--border);border-top:3px solid var(--orange);border-radius:50%;animation:ai-spin 0.8s linear infinite }
     @keyframes ai-spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
     .ai-violation-high { color:#E74C3C;font-weight:700 }
     .ai-violation-medium { color:#F39C12;font-weight:600 }
@@ -379,6 +379,7 @@
       <tbody id="marketTrustTable"></tbody></table>
     </div>
   </div>
+  </div><!-- end page-market -->
 
   <!-- AI 审核页面 -->
   <div class="page-section" id="page-ai">
@@ -414,7 +415,7 @@
           <span id="aiMarketProgressText" style="font-size:14px">正在检测...</span>
         </div>
         <div style="background:var(--border);height:4px;border-radius:2px;margin-top:10px;overflow:hidden">
-          <div id="aiMarketProgressBar" style="background:var(--primary);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div>
+          <div id="aiMarketProgressBar" style="background:var(--orange);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div>
         </div>
       </div>
       <div id="aiMarketResult" style="display:none">
@@ -450,7 +451,7 @@
           <span id="aiWallProgressText" style="font-size:14px">正在检测...</span>
         </div>
         <div style="background:var(--border);height:4px;border-radius:2px;margin-top:10px;overflow:hidden">
-          <div id="aiWallProgressBar" style="background:var(--primary);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div>
+          <div id="aiWallProgressBar" style="background:var(--orange);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div>
         </div>
       </div>
       <div id="aiWallResult" style="display:none">
@@ -486,7 +487,7 @@
           <span id="aiWallCommentProgressText" style="font-size:14px">正在检测...</span>
         </div>
         <div style="background:var(--border);height:4px;border-radius:2px;margin-top:10px;overflow:hidden">
-          <div id="aiWallCommentProgressBar" style="background:var(--primary);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div>
+          <div id="aiWallCommentProgressBar" style="background:var(--orange);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div>
         </div>
       </div>
       <div id="aiWallCommentResult" style="display:none">
@@ -848,7 +849,7 @@
   return '<img src="'+url+'" style="width:60px;height:36px;object-fit:cover;border-radius:6px" onerror="this.style.display=none">';
  };
  const linkLabel = a => {
-  if (a.link_url) return '<a href="'+escHtml(a.link_url)+'" target="blank" style="color:var(--primary);font-size:12px">🔗外部链接</a>';
+  if (a.link_url) return '<a href="'+escHtml(a.link_url)+'" target="blank" style="color:var(--orange);font-size:12px">🔗外部链接</a>';
   const lt = { order:'下单', coupon:'优惠券', page:'页面', url:'外部链接', none:'-' };
   return lt[a.link_type] || '-';
  };
@@ -984,12 +985,14 @@
 
  async function fetchMarketAPI(path) {
    const res = await fetch('/api/market/admin/' + path, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') } });
-   return res.json();
+   const data = await res.json();
+   if (!res.ok) { showToast(data.error || '请求失败(' + res.status + ')'); return {}; }
+   return data;
  }
 
  function switchMarketTab(tab, btn) {
-   document.querySelectorAll('.market-tab').forEach(t => t.classList.remove('active'));
-   document.querySelectorAll('.market-admin-panel').forEach(p => p.classList.remove('active'));
+   document.querySelectorAll('#page-market .market-tab').forEach(t => t.classList.remove('active'));
+   document.querySelectorAll('#page-market .market-admin-panel').forEach(p => p.classList.remove('active'));
    if (btn) btn.classList.add('active');
    const panel = document.getElementById('marketPanel-' + tab);
    if (panel) panel.classList.add('active');
@@ -1222,7 +1225,7 @@
       try {
         const resp = await fetch('/api/ai/market/batch', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') },
           body: JSON.stringify({ status, limit })
         });
         const data = await resp.json();
@@ -1264,7 +1267,7 @@
       try {
         const resp = await fetch('/api/ai/wall/batch', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') },
           body: JSON.stringify({ limit })
         });
         const data = await resp.json();
@@ -1306,7 +1309,7 @@
       try {
         const resp = await fetch('/api/ai/wall/comments/batch', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') },
           body: JSON.stringify({ limit })
         });
         const data = await resp.json();
