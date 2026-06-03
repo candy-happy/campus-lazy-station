@@ -591,7 +591,28 @@
       align-items: center;
       gap: 4px;
     }
-    .wall-action:hover, .wall-action.liked { color: #E74C3C; }
+    .wall-action:hover, .wall-action.liked { color: #E74C3C; background: rgba(231,76,60,0.08); }
+    .wall-action:active { transform: scale(0.92); }
+    .comment-item { padding: 10px 0; border-bottom: 1px solid var(--border,#f0f0f0); }
+    .comment-nickname { font-weight: 700; font-size: 13px; color: var(--primary); }
+    .comment-text { font-size: 14px; color: var(--text); margin: 4px 0; line-height: 1.5; }
+    .comment-time { font-size: 11px; color: var(--text-secondary,#999); }
+    .comment-actions { display: flex; gap: 14px; margin-top: 4px; align-items: center; }
+    .comment-action-btn { background: none; border: none; font-size: 12px; color: var(--text-secondary,#999); cursor: pointer; padding: 2px 0; display: flex; align-items: center; gap: 3px; transition: color 0.2s; }
+    .comment-action-btn:hover { color: var(--primary); }
+    .comment-action-btn.liked { color: #E74C3C; }
+    .comment-reply-item { margin-left: 20px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+    .reply-tag { font-size: 11px; color: var(--primary); background: rgba(0,0,0,0.04); padding: 1px 6px; border-radius: 10px; margin-right: 4px; }
+    .comment-input-bar { display: flex; gap: 8px; padding: 12px 0 0; border-top: 1px solid var(--border,#eee); margin-top: 12px; }
+    .comment-input-bar input { flex: 1; border: 1px solid var(--border,#ddd); border-radius: 20px; padding: 8px 14px; font-size: 14px; outline: none; background: var(--bg); color: var(--text); }
+    .comment-input-bar input:focus { border-color: var(--primary); }
+    .comment-input-bar button { background: var(--primary); color: #fff; border: none; border-radius: 20px; padding: 8px 18px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    .comment-input-bar button:active { opacity: 0.85; }
+    body.dark .comment-item { border-bottom-color: rgba(255,255,255,0.06); }
+    body.dark .comment-reply-item { border-bottom-color: rgba(255,255,255,0.04); }
+    body.dark .reply-tag { background: rgba(255,255,255,0.08); }
+    body.dark .comment-input-bar { border-top-color: rgba(255,255,255,0.08); }
+    body.dark .comment-input-bar input { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: var(--text); }
     .wall-follow-btn {
       padding: 4px 12px;
       border: 1px solid var(--primary);
@@ -1440,7 +1461,7 @@
             return isVid ? '<video src="' + url + '" style="width:100px;height:100px;object-fit:cover;border-radius:8px" muted></video>' : '<img src="' + url + '" style="width:100px;height:100px;object-fit:cover;border-radius:8px" loading="lazy" />';
           }).join('') + '</div>' : ''}
           <div class="wall-actions">
-            <button class="wall-action" onclick="doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button>
+            <button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button>
             <button class="wall-action" onclick="showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button>
           </div>
         </div>
@@ -1478,7 +1499,13 @@
     async function showWallDetail(postId) {
       const data = await API.wallPostDetail(postId);
       if (data.error) return showToast(data.error);
+      _currentWallPostId = postId;
       const comments = data.comments || [];
+      // 构建评论树：顶级评论 + 回复
+      const topLevel = comments.filter(c => !c.parent_id);
+      const replies = comments.filter(c => c.parent_id);
+      const replyMap = {};
+      replies.forEach(r => { if (!replyMap[r.parent_id]) replyMap[r.parent_id] = []; replyMap[r.parent_id].push(r); });
       const el = document.getElementById('wallDetailContent');
       el.innerHTML = `
         <div class="wall-card" style="box-shadow:none;padding:0">
@@ -1492,48 +1519,111 @@
           const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
           return isVid ? '<video src="' + url + '" controls style="width:100%;max-width:320px;border-radius:12px"></video>' : '<img src="' + url + '" style="width:100%;max-width:320px;border-radius:12px" loading="lazy" onclick="window.open(this.src)" />';
         }).join('') + '</div>' : ''}
-          <div class="wall-actions"><button class="wall-action" onclick="doWallLike(${data.id},this)">❤️ <span>${data.like_count||0}</span></button></div>
+          <div class="wall-actions"><button class="wall-action" onclick="event.stopPropagation();doWallLike(${data.id},this)">❤️ <span>${data.like_count||0}</span></button></div>
         </div>
         <div style="margin-top:16px">
           <div style="font-weight:700;margin-bottom:8px">评论 (${comments.length})</div>
-          ${comments.length ? (() => {
-            const show = comments.slice(0, 3);
-            const rest = comments.slice(3);
-            let h = show.map(c => `
-              <div class="comment-item">
-                <span class="comment-nickname">${escHtml(c.nickname||'匿名')}</span>
-                <div class="comment-text">${escHtml(c.content)}</div>
-                <div class="comment-time">${timeAgo(c.created_at)}</div>
+          ${topLevel.length ? topLevel.map(c => `
+            <div class="comment-item">
+              <span class="comment-nickname">${escHtml(c.nickname||'匿名')}</span>
+              <div class="comment-text">${escHtml(c.content)}</div>
+              <div class="comment-actions">
+                <span class="comment-time">${timeAgo(c.created_at)}</span>
+                <button class="comment-action-btn" onclick="doCommentLike(${c.id},this)">❤️ <span>${c.like_count||0}</span></button>
+                <button class="comment-action-btn" onclick="replyToComment(${c.id},'${escHtml(c.nickname||'匿名')}','${c.phone}')" style="color:var(--text-secondary,#999)">💬 回复</button>
               </div>
-            `).join('');
-            if (rest.length) h += `<div id="moreComments" style="display:none">${rest.map(c => `
-              <div class="comment-item">
-                <span class="comment-nickname">${escHtml(c.nickname||'匿名')}</span>
-                <div class="comment-text">${escHtml(c.content)}</div>
-                <div class="comment-time">${timeAgo(c.created_at)}</div>
-              </div>
-            `).join('')}</div><div onclick="document.getElementById('moreComments').style.display='block';this.style.display='none'" style="color:var(--primary);font-size:13px;cursor:pointer;padding:8px 0">展开更多 ${rest.length} 条评论</div>`;
-            return h;
-          })() : '<div style="color:var(--text-secondary);font-size:13px;padding:8px 0">暂无评论</div>'}
+              ${(replyMap[c.id]||[]).map(r => `
+                <div class="comment-reply-item">
+                  <span class="reply-tag">回复</span>
+                  <span class="comment-nickname">${escHtml(r.nickname||'匿名')}</span>
+                  ${r.reply_to_nickname ? '<span style="font-size:12px;color:var(--text-secondary)"> 回复 </span><span class="comment-nickname">' + escHtml(r.reply_to_nickname) + '</span>' : ''}
+                  <div class="comment-text">${escHtml(r.content)}</div>
+                  <div class="comment-actions">
+                    <span class="comment-time">${timeAgo(r.created_at)}</span>
+                    <button class="comment-action-btn" onclick="doCommentLike(${r.id},this)">❤️ <span>${r.like_count||0}</span></button>
+                    <button class="comment-action-btn" onclick="replyToComment(${c.id},'${escHtml(r.nickname||'匿名')}','${r.phone}')" style="color:var(--text-secondary,#999)">💬 回复</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `).join('') : '<div style="color:var(--text-secondary);font-size:13px;padding:8px 0">暂无评论</div>'}
         </div>
         <div class="comment-input-bar">
           <input id="wallCommentInput" placeholder="写评论..." />
-          <button onclick="submitWallComment(${data.id})">发送</button>
+          <button id="wallCommentSendBtn" onclick="submitWallComment(${data.id})">发送</button>
         </div>
       `;
       openSubPage('wallDetailPage_sub');
       /* overflow managed by sub-page */
     }
 
+    let _replyContext = null; // { parentId, replyToNickname, replyToPhone }
+    let _currentWallPostId = null;
+
     async function submitWallComment(postId) {
       const input = document.getElementById('wallCommentInput');
       const content = input.value.trim();
       if (!content) return;
-      const res = await API.wallComment(postId, { phone: currentUser.phone, nickname: currentUser.name, content });
+      const data = { phone: currentUser.phone, nickname: currentUser.name, content };
+      if (_replyContext) {
+        data.parent_id = _replyContext.parentId;
+        data.reply_to_nickname = _replyContext.replyToNickname;
+        data.reply_to_phone = _replyContext.replyToPhone;
+      }
+      const res = await API.wallComment(postId, data);
       if (res.error) return showToast(res.error);
+      _replyContext = null;
+      const sendBtn = document.getElementById('wallCommentSendBtn');
+      if (sendBtn) sendBtn.textContent = '发送';
+      const cancelHint = document.getElementById('cancelReplyHint');
+      if (cancelHint) cancelHint.style.display = 'none';
+      const input2 = document.getElementById('wallCommentInput');
+      if (input2) input2.placeholder = '写评论...';
       showToast('评论成功');
       showWallDetail(postId);
       loadWallFeed();
+    }
+
+    function replyToComment(parentId, nickname, phone) {
+      if (!currentUser) return showLoginPage();
+      _replyContext = { parentId, replyToNickname: nickname, replyToPhone: phone };
+      const input = document.getElementById('wallCommentInput');
+      if (input) { input.placeholder = `回复 ${nickname}...`; input.focus(); }
+      const sendBtn = document.getElementById('wallCommentSendBtn');
+      if (sendBtn) sendBtn.textContent = '回复';
+      // 显示取消回复提示
+      let cancelHint = document.getElementById('cancelReplyHint');
+      if (!cancelHint) {
+        cancelHint = document.createElement('div');
+        cancelHint.id = 'cancelReplyHint';
+        cancelHint.style.cssText = 'font-size:12px;color:var(--primary);cursor:pointer;padding:4px 0;margin-bottom:4px';
+        cancelHint.textContent = '✕ 取消回复';
+        cancelHint.onclick = cancelReply;
+        const bar = document.querySelector('.comment-input-bar');
+        if (bar) bar.parentNode.insertBefore(cancelHint, bar);
+      }
+      cancelHint.style.display = 'block';
+    }
+
+    function cancelReply() {
+      _replyContext = null;
+      const input = document.getElementById('wallCommentInput');
+      if (input) input.placeholder = '写评论...';
+      const sendBtn = document.getElementById('wallCommentSendBtn');
+      if (sendBtn) sendBtn.textContent = '发送';
+      const cancelHint = document.getElementById('cancelReplyHint');
+      if (cancelHint) cancelHint.style.display = 'none';
+    }
+
+    async function doCommentLike(commentId, btn) {
+      if (!currentUser) return showLoginPage();
+      const res = await API.wallCommentLike(commentId, currentUser.phone);
+      if (res.ok) {
+        const span = btn.querySelector('span');
+        const count = parseInt(span.textContent) + (res.liked ? 1 : -1);
+        span.textContent = count;
+        btn.classList.toggle('liked', res.liked);
+      }
     }
 
     async function showWallUser(phone) {
@@ -1561,7 +1651,7 @@
               const isVid = typeof img === 'object' ? img.isVideo : false;
               return isVid ? '<video src="' + url + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px" muted></video>' : '<img src="' + url + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px" loading="lazy" />';
             }).join('') + '</div>' : ''}
-            <div class="wall-actions"><span style="font-size:12px;color:var(--text-secondary,#888)">❤️ ${p.like_count||0} · 💬 ${p.comment_count||0} · ${timeAgo(p.created_at)}</span></div>
+            <div class="wall-actions"><button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button><button class="wall-action" onclick="closeSubPage('wallDetailPage_sub');showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button></div>
           </div>
         `).join('') : '<div style="text-align:center;color:var(--text-secondary,#888);padding:20px">暂无帖子</div>'}
       `;
@@ -1935,7 +2025,7 @@
       updateNotifBadge();
       list.innerHTML = notifications.length ? notifications.map(n => `
         <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start">
-          <span style="font-size:20px">${n.type==='order'?'...':'...'}</span>
+          <span style="font-size:20px">${n.type==='order'?'📦':n.type==='wall_like'?'❤️':n.type==='wall_comment'?'💬':n.type==='rating'?'⭐':n.type==='promo'?'🎉':'🔔'}</span>
           <div style="flex:1">
             <div style="font-weight:600;font-size:14px">${escHtml(n.title)}</div>
             <div style="font-size:13px;color:var(--text-secondary);margin-top:2px">${escHtml(n.content)}</div>

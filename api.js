@@ -200,6 +200,9 @@ const API = {
     method: 'POST', headers: this._headers(), body: JSON.stringify({ follower_phone, following_phone })
   }).then(r => r.json()); },
   async wallUserProfile(phone) { return fetch('/api/wall/user/' + phone, { headers: this._headers() }).then(r => r.json()); },
+  async wallCommentLike(commentId, phone) { return fetch('/api/wall/comments/' + commentId + '/like', {
+    method: 'POST', headers: this._headers(), body: JSON.stringify({ phone })
+  }).then(r => r.json()); },
   async wallDeletePost(id) { return fetch('/api/wall/posts/' + id, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
 
   // ─── 聊天 ───

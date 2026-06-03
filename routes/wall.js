@@ -98,6 +98,7 @@ router.get('/posts/:id', (req, res) => JSON_RES(res, () => {
 router.post('/posts/:id/like', requireAuth, (req, res) => JSON_RES(res, () => {
   const { phone } = req.body;
   if (!phone) return makeError('缺少手机号', ErrorCode.PARAM_MISSING);
+  const post = db.prepare('SELECT phone, nickname FROM wall_posts WHERE id = ?').get(req.params.id);
   const existing = db.prepare('SELECT id FROM wall_likes WHERE post_id = ? AND phone = ?').get(req.params.id, phone);
   if (existing) {
     db.prepare('DELETE FROM wall_likes WHERE id = ?').run(existing.id);
@@ -106,6 +107,12 @@ router.post('/posts/:id/like', requireAuth, (req, res) => JSON_RES(res, () => {
   } else {
     db.prepare("INSERT INTO wall_likes (post_id, phone, created_at) VALUES (?, ?, datetime('now','localtime'))").run(req.params.id, phone);
     db.prepare('UPDATE wall_posts SET like_count = like_count + 1 WHERE id = ?').run(req.params.id);
+    // 通知帖子作者
+    if (post && post.phone !== phone) {
+      const liker = db.prepare('SELECT name FROM users WHERE phone = ?').get(phone) || db.prepare('SELECT name FROM riders WHERE phone = ?').get(phone);
+      db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'wall_like', ?, ?, 0, datetime('now','localtime'))")
+        .run(post.phone, '收到点赞', `${liker?.name || '有人'} 赞了你的帖子`);
+    }
     return { ok: true, liked: true };
   }
 }));
@@ -114,11 +121,53 @@ router.post('/posts/:id/like', requireAuth, (req, res) => JSON_RES(res, () => {
 router.post('/posts/:id/comments', requireAuth, (req, res) => JSON_RES(res, () => {
   const { phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname } = req.body;
   if (!phone || !content) return makeError('缺少手机号或内容', ErrorCode.PARAM_MISSING);
-  db.prepare(`INSERT INTO wall_comments (post_id, phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname, like_count, created_at)
+  const result = db.prepare(`INSERT INTO wall_comments (post_id, phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname, like_count, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now','localtime'))`)
     .run(req.params.id, phone, nickname || '匿名', avatar || '', content, parent_id || null, reply_to_phone || '', reply_to_nickname || '');
   db.prepare('UPDATE wall_posts SET comment_count = comment_count + 1 WHERE id = ?').run(req.params.id);
-  return { ok: true };
+  // 通知
+  const post = db.prepare('SELECT phone, nickname FROM wall_posts WHERE id = ?').get(req.params.id);
+  const commenter = nickname || '有人';
+  if (parent_id && reply_to_phone) {
+    // 回复评论 → 通知被回复者
+    if (reply_to_phone !== phone) {
+      db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'wall_comment', ?, ?, 0, datetime('now','localtime'))")
+        .run(reply_to_phone, '收到回复', `${commenter} 回复了你的评论: ${content.length > 30 ? content.slice(0,30) + '...' : content}`);
+    }
+    // 同时通知帖子作者（如果不是自己评论自己的帖子且不是回复帖子作者）
+    if (post && post.phone !== phone && post.phone !== reply_to_phone) {
+      db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'wall_comment', ?, ?, 0, datetime('now','localtime'))")
+        .run(post.phone, '帖子新评论', `${commenter} 评论了你的帖子`);
+    }
+  } else if (post && post.phone !== phone) {
+    // 普通评论 → 通知帖子作者
+    db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'wall_comment', ?, ?, 0, datetime('now','localtime'))")
+      .run(post.phone, '帖子新评论', `${commenter} 评论了你的帖子: ${content.length > 30 ? content.slice(0,30) + '...' : content}`);
+  }
+  return { ok: true, id: result.lastInsertRowid };
+}));
+
+// ─── 评论点赞 ──────────────────────────────────────────
+router.post('/comments/:commentId/like', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { phone } = req.body;
+  if (!phone) return makeError('缺少手机号', ErrorCode.PARAM_MISSING);
+  const existing = db.prepare('SELECT id FROM wall_comment_likes WHERE comment_id = ? AND phone = ?').get(req.params.commentId, phone);
+  if (existing) {
+    db.prepare('DELETE FROM wall_comment_likes WHERE id = ?').run(existing.id);
+    db.prepare('UPDATE wall_comments SET like_count = MAX(0, like_count - 1) WHERE id = ?').run(req.params.commentId);
+    return { ok: true, liked: false };
+  } else {
+    db.prepare("INSERT INTO wall_comment_likes (comment_id, phone, created_at) VALUES (?, ?, datetime('now','localtime'))").run(req.params.commentId, phone);
+    db.prepare('UPDATE wall_comments SET like_count = like_count + 1 WHERE id = ?').run(req.params.commentId);
+    // 通知评论作者
+    const comment = db.prepare('SELECT phone, nickname FROM wall_comments WHERE id = ?').get(req.params.commentId);
+    if (comment && comment.phone !== phone) {
+      const liker = db.prepare('SELECT name FROM users WHERE phone = ?').get(phone) || db.prepare('SELECT name FROM riders WHERE phone = ?').get(phone);
+      db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'wall_like', ?, ?, 0, datetime('now','localtime'))")
+        .run(comment.phone, '评论获赞', `${liker?.name || '有人'} 赞了你的评论`);
+    }
+    return { ok: true, liked: true };
+  }
 }));
 
 // ─── 关注 ──────────────────────────────────────────────

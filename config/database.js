@@ -108,7 +108,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS notifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT NOT NULL,
-    type TEXT CHECK(type IN ('order','promo','system','rating')),
+    type TEXT CHECK(type IN ('order','promo','system','rating','wall_like','wall_comment')),
     title TEXT NOT NULL,
     content TEXT,
     read INTEGER DEFAULT 0,
@@ -176,6 +176,14 @@ db.exec(`
     following_phone TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now','localtime')),
     UNIQUE(follower_phone, following_phone)
+  );
+
+  CREATE TABLE IF NOT EXISTS wall_comment_likes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    comment_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(comment_id, phone)
   );
 
   CREATE TABLE IF NOT EXISTS wall_exposures (
