@@ -107,6 +107,12 @@ const API = {
   async getUsers() { return fetch('/api/users', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
   async getUser(phone) { return fetch('/api/users/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async updateUser(phone, data) { return fetch('/api/users/' + phone, { method: 'PUT', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },
+  async uploadUserAvatar(phone, file) {
+    const fd = new FormData(); fd.append('avatar', file);
+    return fetch('/api/users/' + phone + '/avatar', {
+      method: 'POST', body: fd
+    }).then(r => r.json());
+  },
 
   // ─── 优惠券 ───
   async getCoupons() { return fetch('/api/coupons', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },

@@ -1168,6 +1168,10 @@
       font-size: 38px;
       flex-shrink: 0;
       border: 3px solid rgba(255,255,255,0.35);
+      overflow: hidden;
+    }
+    .me-avatar-wrap img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
     }
     .me-profile-info {
       flex: 1;
@@ -1296,10 +1300,19 @@
       box-shadow: var(--shadow);
     }
     .profile-avatar-big {
-      font-size: 72px;
-      display: block;
-      margin-bottom: 12px;
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: rgba(255,107,53,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 52px;
+      margin: 0 auto 12px;
       transition: transform 0.3s;
+      overflow: hidden;
+    }
+    .profile-avatar-big img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
     }
     .profile-avatar-big:active { transform: scale(1.1); }
     .profile-avatar-label {
@@ -3473,7 +3486,15 @@
         const avatarEl = document.getElementById('meAvatar');
         if (nameEl) nameEl.textContent = pdata?.nickname || pdata?.name || '校园懒人';
         if (phoneEl) phoneEl.textContent = fmtPhone(currentUser.phone);
-        if (avatarEl) avatarEl.textContent = pdata?.avatar || avatars[parseInt(currentUser.phone.slice(-2)) % avatars.length];
+        if (avatarEl) {
+          const av = pdata?.avatar || avatars[parseInt(currentUser.phone.slice(-2)) % avatars.length];
+          const isUrl = av && (av.startsWith('/') || av.startsWith('http'));
+          if (isUrl) {
+            avatarEl.innerHTML = '<img src="' + av + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />';
+          } else {
+            avatarEl.textContent = av;
+          }
+        }
         const bioEl = document.getElementById('meBio');
         if (bioEl) bioEl.textContent = pdata?.bio || '';
       } catch(e) {
@@ -3745,32 +3766,37 @@
       if (!currentUser) return showToast('请先登录');
       const u = await API.getUser(currentUser.phone);
       if (!u) return showToast('加载失败');
-      const avatars = ['🦥','🐱','🐶','🦊','🐼','🐨','🦄','🐸','🐧','🦋','🌸','⭐','🔥','💎','🎭'];
-      const curAvatar = u.avatar || '🦥';
+      const avatars = ['\u{1F9A5}','\u{1F431}','\u{1F436}','\u{1F98A}','\u{1F43C}','\u{1F428}','\u{1F984}','\u{1F438}','\u{1F427}','\u{1F98B}','\u{1F338}','\u2B50','\u{1F525}','\u{1F48E}','\u{1F3AD}'];
+      const curAvatar = u.avatar || '\u{1F9A5}';
+      const isUrl = curAvatar.startsWith('/') || curAvatar.startsWith('http');
+      const avatarPreviewHtml = isUrl
+        ? '<img src="' + curAvatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />'
+        : curAvatar;
       let el = document.getElementById('profilePage_sub');
       if (!el) {
         el = document.createElement('div');
         el.id = 'profilePage_sub';
         el.className = 'sub-page';
-        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'profilePage_sub\')">←</button><span class="sub-page-title">👤 个人资料</span></div><div class="sub-page-body"></div>';
+        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'profilePage_sub\')">\u2190</button><span class="sub-page-title">\u{1F464} 个人资料</span></div><div class="sub-page-body"></div>';
         document.body.appendChild(el);
       }
       el.querySelector('.sub-page-body').innerHTML =
         '<div class="profile-hero">' +
-        '<div class="profile-avatar-big" id="profileAvatarPreview">' + escHtml(curAvatar) + '</div>' +
-        '<div class="profile-avatar-label">点击下方头像更换</div>' +
+        '<div class="profile-avatar-big" id="profileAvatarPreview" style="cursor:pointer;position:relative;overflow:hidden" onclick="document.getElementById(\'userAvatarInput\').click()">' + avatarPreviewHtml + '</div>' +
+        '<div class="profile-avatar-label">点击头像上传照片，或在下方选择emoji</div>' +
         '<div class="profile-avatar-grid">' +
         avatars.map(a => '<div class="profile-avatar-option' + (a === curAvatar ? ' selected' : '') + '" data-avatar="' + a + '" onclick="selectProfileAvatar(this,\'' + a + '\')">' + a + '</div>').join('') +
         '</div></div>' +
+        '<input type="file" id="userAvatarInput" accept="image/*" style="display:none" onchange="uploadUserAvatar(this)" />' +
         '<div class="profile-form-card">' +
-        '<div class="profile-form-item with-icon"><span class="profile-form-icon">✏️</span><span class="profile-form-label">昵称</span><input type="text" class="profile-form-input" id="profileNickname" value="' + escHtml(u.nickname || '') + '" placeholder="给自己取个昵称" maxlength="20" /></div>' +
-        '<div class="profile-form-item with-icon"><span class="profile-form-icon">👤</span><span class="profile-form-label">姓名</span><input type="text" class="profile-form-input" id="profileName" value="' + escHtml(u.name || '') + '" placeholder="选填" /></div>' +
-        '<div class="profile-form-item with-icon"><span class="profile-form-icon">💭</span><span class="profile-form-label">签名</span><input type="text" class="profile-form-input" id="profileBio" value="' + escHtml(u.bio || '') + '" placeholder="一句话介绍自己" maxlength="50" /></div>' +
-        '<div class="profile-form-item with-icon"><span class="profile-form-icon">🏠</span><span class="profile-form-label">宿舍楼</span><input type="text" class="profile-form-input" id="profileDorm" value="' + escHtml(u.dormitory || '') + '" placeholder="例如：3号宿舍楼" /></div>' +
-        '<div class="profile-form-item with-icon"><span class="profile-form-icon">🚪</span><span class="profile-form-label">房间号</span><input type="text" class="profile-form-input" id="profileRoom" value="' + escHtml(u.room || '') + '" placeholder="例如：301" /></div>' +
+        '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u270F\uFE0F</span><span class="profile-form-label">昵称</span><input type="text" class="profile-form-input" id="profileNickname" value="' + escHtml(u.nickname || '') + '" placeholder="给自己取个昵称" maxlength="20" /></div>' +
+        '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F464}</span><span class="profile-form-label">姓名</span><input type="text" class="profile-form-input" id="profileName" value="' + escHtml(u.name || '') + '" placeholder="选填" /></div>' +
+        '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F4AD}</span><span class="profile-form-label">签名</span><input type="text" class="profile-form-input" id="profileBio" value="' + escHtml(u.bio || '') + '" placeholder="一句话介绍自己" maxlength="50" /></div>' +
+        '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F3E0}</span><span class="profile-form-label">宿舍楼</span><input type="text" class="profile-form-input" id="profileDorm" value="' + escHtml(u.dormitory || '') + '" placeholder="例如：3号宿舍楼" /></div>' +
+        '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F6AA}</span><span class="profile-form-label">房间号</span><input type="text" class="profile-form-input" id="profileRoom" value="' + escHtml(u.room || '') + '" placeholder="例如：301" /></div>' +
         '</div>' +
         '<input type="hidden" id="profileAvatar" value="' + escHtml(curAvatar) + '" />' +
-        '<button class="profile-save-btn" onclick="saveProfile()">💾 保存修改</button>';
+        '<button class="profile-save-btn" onclick="saveProfile()">\u{1F4BE} 保存修改</button>';
       openSubPage('profilePage_sub');
     }
     function selectProfileAvatar(el, emoji) {
@@ -3796,6 +3822,39 @@
         closeSubPage('profilePage_sub');
         updateMePage();
       } catch(e) { showToast('保存失败'); }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // \u{1F4F7} 用户头像上传
+    // ═══════════════════════════════════════════════════════
+    async function uploadUserAvatar(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
+      if (file.size > 5 * 1024 * 1024) { showToast('图片不能超过5MB'); return; }
+      try {
+        showToast('上传中...');
+        const res = await API.uploadUserAvatar(currentUser.phone, file);
+        if (res.code === 0 || res.avatarUrl) {
+          currentUser.avatar = res.avatarUrl || res.data?.avatarUrl;
+          localStorage.setItem('lazyUser', JSON.stringify(currentUser));
+          showToast('头像更新成功 \u2705');
+          // 更新预览
+          const preview = document.getElementById('profileAvatarPreview');
+          if (preview) {
+            preview.innerHTML = '<img src="' + currentUser.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />';
+          }
+          document.getElementById('profileAvatar').value = currentUser.avatar;
+          // 取消 emoji 选中
+          document.querySelectorAll('.profile-avatar-option').forEach(e => e.classList.remove('selected'));
+          updateMePage();
+        } else {
+          showToast(res.message || '上传失败');
+        }
+      } catch(e) {
+        showToast('上传失败: ' + (e.message||''));
+      }
+      input.value = '';
     }
 
     // ═══════════════════════════════════════════════════════
