@@ -112,6 +112,8 @@
  .entry-links { display: flex; justify-content: center; gap: 16px; padding: 16px; background: var(--bg); border-top: 1px solid var(--border); }
  .entry-link { font-size: 0.8rem; color: var(--text-muted); text-decoration: none; padding: 6px 12px; border-radius: 16px; transition: all 0.2s; }
  .entry-link:hover { background: var(--card-bg); color: var(--green); }
+ .entry-links { display: none; }
+ body.tab-home .entry-links { display: flex; }
  .detail-section { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
  .detail-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
  .detail-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
@@ -895,6 +897,8 @@
  function switchTab(tab, evt) {
  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
  if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+ document.body.classList.remove('tab-home', 'tab-history', 'tab-profile');
+ document.body.classList.add('tab-' + tab);
  if (tab === 'home') {
  $('mainContent').style.display = 'block';
  $('profilePage').classList.remove('active');
