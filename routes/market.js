@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError, notFound } = require('../utils/response');
 const path = require('path');
 const fs = require('fs');
@@ -458,6 +458,151 @@ router.get('/my-items', requireAuth, (req, res) => JSON_RES(res, () => {
     try { item.images = JSON.parse(item.images || '[]'); } catch(e) { item.images = []; }
   });
   return { items };
+}));
+
+// ─── 管理端 API ──────────────────────────────────────────────
+
+// 管理员获取所有商品
+router.get('/admin/items', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { status, search, page = 1, limit = 20 } = req.query;
+  const offset = (page - 1) * limit;
+  let where = "status != 'removed'";
+  const params = [];
+  if (status && status !== 'all') { where += ' AND status = ?'; params.push(status); }
+  if (search) { where += ' AND (title LIKE ? OR seller_phone LIKE ?)'; params.push('%' + search + '%', '%' + search + '%'); }
+  const total = db.prepare('SELECT COUNT(*) as cnt FROM market_items WHERE ' + where).get(...params).cnt;
+  const items = db.prepare('SELECT m.*, u.name as seller_name, u.avatar as seller_avatar FROM market_items m LEFT JOIN users u ON m.seller_phone = u.phone WHERE m.' + where.replace(/\?/g, () => '?') + ' ORDER BY m.created_at DESC LIMIT ? OFFSET ?').all(...params, +limit, +offset);
+  items.forEach(item => {
+    try { item.images = JSON.parse(item.images || '[]'); } catch(e) { item.images = []; }
+  });
+  return { items, total, page: +page, limit: +limit };
+}));
+
+// 管理员强制下架商品
+router.put('/admin/items/:id/offline', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { reason } = req.body;
+  const item = db.prepare('SELECT * FROM market_items WHERE id = ?').get(req.params.id);
+  if (!item) return notFound('商品');
+  db.prepare("UPDATE market_items SET status = 'offline', updated_at = datetime('now','localtime') WHERE id = ?").run(req.params.id);
+  // 通知卖家
+  if (item.seller_phone) {
+    db.prepare('INSERT INTO notifications (phone, type, title, content) VALUES (?, ?, ?, ?)').run(
+      item.seller_phone, 'system', '商品被下架', '您的商品「' + item.title + '」已被管理员下架' + (reason ? '，原因：' + reason : ''));
+  }
+  return { ok: true };
+}));
+
+// 管理员删除商品
+router.delete('/admin/items/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const item = db.prepare('SELECT * FROM market_items WHERE id = ?').get(req.params.id);
+  if (!item) return notFound('商品');
+  db.prepare("UPDATE market_items SET status = 'removed', updated_at = datetime('now','localtime') WHERE id = ?").run(req.params.id);
+  if (item.seller_phone) {
+    db.prepare('INSERT INTO notifications (phone, type, title, content) VALUES (?, ?, ?, ?)').run(
+      item.seller_phone, 'system', '商品被删除', '您的商品「' + item.title + '」已被管理员删除');
+  }
+  return { ok: true };
+}));
+
+// 管理员获取所有交易订单
+router.get('/admin/orders', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { status, search, page = 1, limit = 20 } = req.query;
+  const offset = (page - 1) * limit;
+  let where = '1=1';
+  const params = [];
+  if (status && status !== 'all') { where += ' AND status = ?'; params.push(status); }
+  if (search) { where += ' AND (title LIKE ? OR buyer_phone LIKE ? OR seller_phone LIKE ?)'; params.push('%' + search + '%', '%' + search + '%', '%' + search + '%'); }
+  const total = db.prepare('SELECT COUNT(*) as cnt FROM market_orders WHERE ' + where).get(...params).cnt;
+  const orders = db.prepare(
+    'SELECT o.*, b.name as buyer_name, s.name as seller_name FROM market_orders o ' +
+    'LEFT JOIN users b ON o.buyer_phone = b.phone LEFT JOIN users s ON o.seller_phone = s.phone ' +
+    'WHERE ' + where + ' ORDER BY o.created_at DESC LIMIT ? OFFSET ?'
+  ).all(...params, +limit, +offset);
+  return { orders, total, page: +page, limit: +limit };
+}));
+
+// 管理员仲裁处理订单
+router.put('/admin/orders/:id/resolve', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { action, reason } = req.body; // action: 'complete' | 'cancel'
+  const order = db.prepare('SELECT * FROM market_orders WHERE id = ?').get(req.params.id);
+  if (!order) return notFound('订单');
+  if (action === 'complete') {
+    db.prepare("UPDATE market_orders SET status = 'completed', updated_at = datetime('now','localtime') WHERE id = ?").run(req.params.id);
+    db.prepare("UPDATE market_items SET status = 'sold', updated_at = datetime('now','localtime') WHERE id = ?").run(order.item_id);
+  } else if (action === 'cancel') {
+    db.prepare("UPDATE market_orders SET status = 'cancelled', updated_at = datetime('now','localtime') WHERE id = ?").run(req.params.id);
+    db.prepare("UPDATE market_items SET status = 'active', updated_at = datetime('now','localtime') WHERE id = ?").run(order.item_id);
+  } else {
+    return makeError('无效操作', 'PARAM_001');
+  }
+  // 通知双方
+  const msg = action === 'complete' ? '订单已由管理员确认完成' : '订单已由管理员取消';
+  [order.buyer_phone, order.seller_phone].forEach(phone => {
+    if (phone) db.prepare('INSERT INTO notifications (phone, type, title, content) VALUES (?, ?, ?, ?)').run(phone, 'system', '订单状态变更', msg + (reason ? '，原因：' + reason : '') + '，商品：' + order.title);
+  });
+  return { ok: true };
+}));
+
+// 管理员获取所有留言
+router.get('/admin/comments', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { search, page = 1, limit = 20 } = req.query;
+  const offset = (page - 1) * limit;
+  let where = '1=1';
+  const params = [];
+  if (search) { where += ' AND (c.content LIKE ? OR c.user_phone LIKE ? OR m.title LIKE ?)'; params.push('%' + search + '%', '%' + search + '%', '%' + search + '%'); }
+  const total = db.prepare('SELECT COUNT(*) as cnt FROM market_comments c LEFT JOIN market_items m ON c.item_id = m.id WHERE ' + where).get(...params).cnt;
+  const comments = db.prepare(
+    'SELECT c.*, u.name as user_name, u.avatar as user_avatar, m.title as item_title ' +
+    'FROM market_comments c ' +
+    'LEFT JOIN users u ON c.user_phone = u.phone ' +
+    'LEFT JOIN market_items m ON c.item_id = m.id ' +
+    'WHERE ' + where + ' ORDER BY c.created_at DESC LIMIT ? OFFSET ?'
+  ).all(...params, +limit, +offset);
+  return { comments, total, page: +page, limit: +limit };
+}));
+
+// 管理员删除留言
+router.delete('/admin/comments/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const comment = db.prepare('SELECT * FROM market_comments WHERE id = ?').get(req.params.id);
+  if (!comment) return notFound('留言');
+  db.prepare('DELETE FROM market_comments WHERE id = ?').run(req.params.id);
+  // 同时删除该评论的所有回复
+  db.prepare('DELETE FROM market_comments WHERE parent_id = ?').run(req.params.id);
+  return { ok: true };
+}));
+
+// 管理员统计数据
+router.get('/admin/stats', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const totalItems = db.prepare("SELECT COUNT(*) as cnt FROM market_items WHERE status != 'removed'").get().cnt;
+  const activeItems = db.prepare("SELECT COUNT(*) as cnt FROM market_items WHERE status = 'active'").get().cnt;
+  const todayItems = db.prepare("SELECT COUNT(*) as cnt FROM market_items WHERE date(created_at) = date('now','localtime')").get().cnt;
+  const totalOrders = db.prepare('SELECT COUNT(*) as cnt FROM market_orders').get().cnt;
+  const completedOrders = db.prepare("SELECT COUNT(*) as cnt FROM market_orders WHERE status = 'completed'").get().cnt;
+  const totalRevenue = db.prepare("SELECT COALESCE(SUM(price), 0) as total FROM market_orders WHERE status = 'completed'").get().total;
+  const totalComments = db.prepare('SELECT COUNT(*) as cnt FROM market_comments').get().cnt;
+  const todayComments = db.prepare("SELECT COUNT(*) as cnt FROM market_comments WHERE date(created_at) = date('now','localtime')").get().cnt;
+  // 近7天趋势
+  const trend = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().slice(0, 10);
+    const items = db.prepare("SELECT COUNT(*) as cnt FROM market_items WHERE date(created_at) = ?").get(ds).cnt;
+    const orders = db.prepare("SELECT COUNT(*) as cnt FROM market_orders WHERE date(created_at) = ?").get(ds).cnt;
+    trend.push({ date: ds.slice(5), items, orders });
+  }
+  // 分类分布
+  const categories = db.prepare("SELECT category, COUNT(*) as cnt FROM market_items WHERE status != 'removed' GROUP BY category ORDER BY cnt DESC").all();
+  // 诚信度分布
+  const trustDist = { newcomer: 0, bronze: 0, silver: 0, gold: 0 };
+  const sellers = db.prepare("SELECT DISTINCT seller_phone FROM market_items WHERE status != 'removed'").all();
+  sellers.forEach(s => {
+    const t = getTrustLevel(s.seller_phone);
+    if (t.level === 'gold') trustDist.gold++;
+    else if (t.level === 'silver') trustDist.silver++;
+    else if (t.level === 'bronze') trustDist.bronze++;
+    else trustDist.newcomer++;
+  });
+  return { totalItems, activeItems, todayItems, totalOrders, completedOrders, totalRevenue, totalComments, todayComments, trend, categories, trustDist };
 }));
 
 module.exports = router;
