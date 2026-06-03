@@ -46,7 +46,7 @@
  .stat-item { text-align: center; }
  .stat-value { font-size: 1.5rem; font-weight: 900; color: var(--dark); }
  .stat-label { font-size: 0.75rem; color: var(--text-muted); }
- .app-main { padding: 16px; padding-bottom: 40px; }
+ .app-main { padding: 16px; padding-bottom: 72px; }
  .section-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
  /* 订单筛选标签 */
  .order-tabs { display: flex; border-bottom: 1px solid var(--border); margin: 0 -16px 16px; padding: 0 8px; }
@@ -623,11 +623,7 @@
  </div>
  </div>
  <div class="menu-section">
- <div class="menu-item" onclick="openRiderChatList()">
- <div class="menu-icon menu-icon-purple">💬</div>
- <div class="menu-text"><div class="menu-title">我的消息</div><div class="menu-desc" id="riderUnreadHint">暂无新消息</div></div>
- <span class="menu-arrow">›</span>
- </div>
+
  <div class="menu-item" onclick="showHelpModal()">
  <div class="menu-icon menu-icon-blue">❓</div>
  <div class="menu-text"><div class="menu-title">帮助中心</div><div class="menu-desc">常见问题解答</div></div>
@@ -647,6 +643,11 @@
 
  <div style="padding: 16px;"><button class="btn btn-secondary" style="width: 100%;" onclick="logout()">退出登录</button></div>
  </div>
+ <!-- 底部导航 -->
+ <nav class="bottom-nav" id="bottomNav">
+ <div class="nav-item active" onclick="riderSwitchTab('home', event)"><span class="nav-item-icon">🏠</span><span class="nav-item-label">订单</span></div>
+ <div class="nav-item" onclick="riderSwitchTab('msg', event)"><span class="nav-item-icon">💬</span><span class="nav-item-label">消息</span></div>
+ </nav>
  </main>
  <!-- 我的 信息区（在底部导航下面） -->
  <div class="sub-page" id="detailPage_sub">
@@ -1040,11 +1041,21 @@
 
  // ══════ Tab切换（简化版） ══════
  function riderSwitchTab(tab, evt) {
+   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+   if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
    if (tab === 'home') {
+     // 显示订单区，隐藏消息子页面
+     $('mainContent').style.display = 'block';
+     $('profileSection').style.display = 'block';
+     const chatSub = document.getElementById('chatListPage_sub');
+     if (chatSub) chatSub.classList.remove('active');
+     window.scrollTo({ top: 0, behavior: 'smooth' });
      refreshOrders();
+   } else if (tab === 'msg') {
+     // 打开消息子页面
+     openRiderChatList();
    } else if (tab === 'profile') {
      updateProfile();
-     // 滚动到我的信息区
      const el = document.getElementById('profileSection');
      if (el) el.scrollIntoView({ behavior: 'smooth' });
    }
