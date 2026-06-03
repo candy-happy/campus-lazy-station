@@ -1,6 +1,7 @@
 // middleware/auth.js - 认证中间件
 const { verifyToken } = require('../utils/jwt');
 const { ErrorCode } = require('../utils/response');
+const db = require('../config/database');
 
 // ─── 通用错误码映射 ──────────────────────────────────────
 const AUTH_ERRORS = {
@@ -29,9 +30,21 @@ function optionalAuth(req, res, next) {
 
 // ─── 强制认证 ─────────────────────────────────────────────
 // 必须登录，否则 401
+// 同时检查骑手冻结状态（冻结骑手的token会被拉黑）
 function requireAuth(req, res, next) {
   if (!req.user) {
     return makeError(res, 401, AUTH_ERRORS.NO_TOKEN);
+  }
+  // 检查骑手是否被冻结：通过 token_blacklist 中的 phone 标记
+  if (req.user.type === 'rider' && req.user.phone) {
+    const blocked = db.prepare('SELECT 1 FROM token_blacklist WHERE rider_phone = ? LIMIT 1').get(req.user.phone);
+    if (blocked) {
+      return res.status(403).json({
+        error: '你的账号已被冻结，即将退出',
+        code: 'RIDER_FROZEN',
+        frozen: true
+      });
+    }
   }
   next();
 }

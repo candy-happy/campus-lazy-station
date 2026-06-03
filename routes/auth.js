@@ -31,23 +31,22 @@ router.post('/user/login', (req, res) => JSON_RES(res, () => {
 
 // ─── 骑手登录 ─────────────────────────────────────────────
 router.post('/rider/login', (req, res) => JSON_RES(res, () => {
-  const { uid, name, student_id, phone } = req.body;
+  const { uid, phone } = req.body;
   if (!uid) return makeError('请输入UID编号', ErrorCode.PARAM_MISSING);
   if (!phone || phone.length !== 11) return makeError('请输入正确手机号', ErrorCode.USER_PHONE_INVALID);
 
-  let rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(phone);
-  if (!rider) {
-    db.prepare('INSERT INTO riders (uid, name, student_id, phone, status) VALUES (?, ?, ?, ?, ?)')
-      .run(uid, name || '', student_id || '', phone, 'online');
-    rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(phone);
-  } else {
-    if (!rider.uid && uid) {
-      db.prepare('UPDATE riders SET uid = ? WHERE phone = ?').run(uid, phone);
-      rider.uid = uid;
-    }
-  }
+  // 骑手必须由管理端创建，不再自动注册
+  const rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(phone);
+  if (!rider) return makeError('该手机号未注册为骑手，请联系管理员', ErrorCode.RIDER_NOT_FOUND);
 
-  if (rider.uid && rider.uid !== uid) return makeError('UID编号不匹配，请联系管理员', ErrorCode.RIDER_UID_MISMATCH);
+  // 验证UID匹配
+  if (rider.uid !== uid) return makeError('UID编号不匹配，请联系管理员', ErrorCode.RIDER_UID_MISMATCH);
+
+  // 检查冻结状态
+  if (rider.frozen) return makeError('你的账号已被冻结，原因: ' + (rider.frozen_reason || '管理员冻结'), 'RIDER_FROZEN');
+
+  // 登录成功，清除该骑手的token黑名单（允许重新登录）
+  db.prepare('DELETE FROM token_blacklist WHERE rider_phone = ?').run(rider.phone);
 
   return {
     ok: true,

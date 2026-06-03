@@ -30,16 +30,17 @@ const API = {
   },
 
   // ─── 骑手 ───
-  async riderLogin(uid, name, student_id, phone) {
+  async riderLogin(uid, phone) {
     const res = await fetch('/api/rider/login', {
       method: 'POST', headers: this._headers(),
-      body: JSON.stringify({ uid, name, student_id, phone })
+      body: JSON.stringify({ uid, phone })
     }).then(r => r.json());
     if (res.error) throw new Error(res.error);
+    if (res.code === 'RIDER_FROZEN') throw { message: res.error, code: 'RIDER_FROZEN' };
     this._rider = { ...res.rider, phone_original: phone };
     this._role = 'rider';
     if (res.token) { this._token = res.token; localStorage.setItem('lazy_token', res.token); }
-    localStorage.setItem('lazy_session', JSON.stringify({ role: 'rider', phone, name, uid, avatar: res.rider?.avatar || '' }));
+    localStorage.setItem('lazy_session', JSON.stringify({ role: 'rider', phone, uid, avatar: res.rider?.avatar || '', name: res.rider?.name || '' }));
     return this._rider;
   },
 
@@ -88,6 +89,7 @@ const API = {
   // ─── 骑手数据 ───
   async getRiders() { return fetch('/api/riders', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
   async getRider(phone) { return fetch('/api/riders/' + phone, { headers: this._headers() }).then(r => r.json()); },
+  async frozenCheck(phone) { return fetch('/api/riders/frozen-check/' + phone).then(r => r.json()); },
   async updateRiderStatus(phone, status) { return fetch('/api/riders/' + phone, {
     method: 'PATCH', headers: this._headers(),
     body: JSON.stringify({ status })

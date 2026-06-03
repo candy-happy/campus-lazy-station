@@ -101,6 +101,8 @@
  .page-section.active { display: block; }
  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center; }
  .modal-overlay.active { display: flex; }
+.sp-input { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; outline: none; transition: border 0.2s; }
+.sp-input:focus { border-color: var(--orange); }
  .modal-content { background: var(--card-bg); border-radius: var(--radius); width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
  .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
  .modal-title { font-size: 1.1rem; font-weight: 700; }
@@ -259,9 +261,40 @@
  </div>
  </div>
  <div class="page-section" id="page-riders">
- <div class="page-header"><h1 class="page-title">骑手管理</h1></div>
+ <div class="page-header"><h1 class="page-title">骑手管理</h1><div class="page-actions"><button class="btn btn-primary" onclick="showAddRiderModal()">+ 添加骑手</button></div></div>
  <div class="table-card">
  <table class="data-table"><thead><tr><th>UID</th><th>姓名</th><th>学号</th><th>联系电话</th><th>总接单</th><th>总收入</th><th>评分</th><th>状态</th><th>操作</th></tr></thead><tbody id="ridersTable"></tbody></table>
+ </div>
+ <!-- 添加骑手弹窗 -->
+ <div id="addRiderModal" class="modal-overlay">
+   <div class="modal-content" style="max-width:420px">
+     <div class="modal-header"><h3>添加骑手</h3><button class="modal-close" onclick="closeAddRiderModal()">&times;</button></div>
+     <div class="modal-body">
+       <div style="margin-bottom:12px"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">姓名 *</label><input type="text" id="newRiderName" class="sp-input" placeholder="请输入骑手姓名" style="width:100%"></div>
+       <div style="margin-bottom:12px"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">学号</label><input type="text" id="newRiderStudentId" class="sp-input" placeholder="请输入学号" style="width:100%"></div>
+       <div style="margin-bottom:12px"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">手机号 *</label><input type="tel" id="newRiderPhone" class="sp-input" placeholder="请输入11位手机号" maxlength="11" style="width:100%"></div>
+       <div style="margin-bottom:12px"><label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">宿舍</label><input type="text" id="newRiderDormitory" class="sp-input" placeholder="请输入宿舍楼" style="width:100%"></div>
+     </div>
+     <div class="modal-footer" style="padding:12px 20px;display:flex;justify-content:flex-end;gap:8px">
+       <button class="btn" onclick="closeAddRiderModal()">取消</button>
+       <button class="btn btn-primary" onclick="addRider()">确认添加</button>
+     </div>
+   </div>
+ </div>
+ <!-- 冻结原因弹窗 -->
+ <div id="freezeReasonModal" class="modal-overlay">
+   <div class="modal-content" style="max-width:380px">
+     <div class="modal-header"><h3>冻结骑手</h3><button class="modal-close" onclick="closeFreezeModal()">&times;</button></div>
+     <div class="modal-body">
+       <p id="freezeRiderInfo" style="margin-bottom:8px;font-weight:600"></p>
+       <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">冻结原因</label>
+       <textarea id="freezeReason" class="sp-input" rows="3" placeholder="请输入冻结原因" style="width:100%;resize:vertical"></textarea>
+     </div>
+     <div class="modal-footer" style="padding:12px 20px;display:flex;justify-content:flex-end;gap:8px">
+       <button class="btn" onclick="closeFreezeModal()">取消</button>
+       <button class="btn btn-danger" onclick="confirmFreezeRider()">确认冻结</button>
+     </div>
+   </div>
  </div>
  </div>
  <div class="page-section" id="page-admins">
@@ -713,8 +746,94 @@
  }
 
  function renderRidersTable() {
- document.getElementById('ridersTable').innerHTML = riders.map(r => `
- <tr><td>${r.uid||'-'}</td><td>${escHtml(r.name)}</td><td>${escHtml(r.student_id||'-')}</td><td>${escHtml(r.phone)}</td><td>${r.total_orders||0}</td><td>¥${(r.total_earnings||0).toFixed(2)}</td><td>${r.rating||5.0}</td><td><span class="status-badge status-completed">${r.status||'active'}</span></td><td><button class="btn btn-danger btn-sm" onclick="removeRider(${r.id})">移除</button></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center">暂无骑手</td></tr>';
+ const token = localStorage.getItem('lazy_token') || '';
+ document.getElementById('ridersTable').innerHTML = riders.map(r => {
+   const isFrozen = r.frozen === 1;
+   const statusBadge = isFrozen
+     ? '<span class="status-badge" style="background:#FEE;color:#C00">已冻结</span>'
+     : r.status === 'online'
+       ? '<span class="status-badge status-running">在线</span>'
+       : '<span class="status-badge status-completed">离线</span>';
+   const actions = isFrozen
+     ? `<button class="btn btn-success btn-sm" onclick="unfreezeRider(${r.id})" style="background:var(--green);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer">解冻</button>`
+     : `<button class="btn btn-danger btn-sm" onclick="showFreezeModal(${r.id},'${escHtml(r.name)}','${escHtml(r.uid||'')}')" style="background:var(--red);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer">冻结</button>`;
+   return `<tr><td>${r.uid||'-'}</td><td>${escHtml(r.name)}</td><td>${escHtml(r.student_id||'-')}</td><td>${escHtml(r.phone)}</td><td>${r.total_orders||0}</td><td>¥${(r.total_earnings||0).toFixed(2)}</td><td>${r.rating||5.0}</td><td>${statusBadge}</td><td>${actions} <button class="btn btn-danger btn-sm" onclick="removeRider(${r.id})" style="margin-left:4px;padding:4px 8px;border-radius:6px;cursor:pointer">移除</button></td></tr>`;
+ }).join('') || '<tr><td colspan="9" style="text-align:center">暂无骑手</td></tr>';
+ }
+
+ let freezeTargetId = null;
+ function showFreezeModal(id, name, uid) {
+   freezeTargetId = id;
+   document.getElementById('freezeRiderInfo').textContent = name + ' (' + uid + ')';
+   document.getElementById('freezeReason').value = '';
+   document.getElementById('freezeReasonModal').classList.add('active');
+ }
+ function closeFreezeModal() {
+   document.getElementById('freezeReasonModal').classList.remove('active');
+   freezeTargetId = null;
+ }
+ async function confirmFreezeRider() {
+   if (!freezeTargetId) return;
+   const reason = document.getElementById('freezeReason').value.trim() || '管理员冻结';
+   try {
+     const res = await fetch('/api/riders/' + freezeTargetId + '/freeze', {
+       method: 'PUT',
+       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') },
+       body: JSON.stringify({ reason })
+     }).then(r => r.json());
+     if (res.ok) {
+       riders = riders.map(r => r.id === freezeTargetId ? { ...r, frozen: 1, frozen_reason: reason, status: 'frozen' } : r);
+       renderRidersTable();
+       showToast('骑手已冻结');
+     } else { showToast(res.error || '冻结失败'); }
+   } catch(e) { showToast('冻结失败'); }
+   closeFreezeModal();
+ }
+ async function unfreezeRider(id) {
+   try {
+     const res = await fetch('/api/riders/' + id + '/unfreeze', {
+       method: 'PUT',
+       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') }
+     }).then(r => r.json());
+     if (res.ok) {
+       riders = riders.map(r => r.id === id ? { ...r, frozen: 0, frozen_reason: null, status: 'offline' } : r);
+       renderRidersTable();
+       showToast('骑手已解冻');
+     } else { showToast(res.error || '解冻失败'); }
+   } catch(e) { showToast('解冻失败'); }
+ }
+
+ function showAddRiderModal() {
+   document.getElementById('newRiderName').value = '';
+   document.getElementById('newRiderStudentId').value = '';
+   document.getElementById('newRiderPhone').value = '';
+   document.getElementById('newRiderDormitory').value = '';
+   document.getElementById('addRiderModal').classList.add('active');
+ }
+ function closeAddRiderModal() {
+   document.getElementById('addRiderModal').classList.remove('active');
+ }
+ async function addRider() {
+   const name = document.getElementById('newRiderName').value.trim();
+   const student_id = document.getElementById('newRiderStudentId').value.trim();
+   const phone = document.getElementById('newRiderPhone').value.trim();
+   const dormitory = document.getElementById('newRiderDormitory').value.trim();
+   if (!name) return showToast('请输入姓名');
+   if (!phone || phone.length !== 11) return showToast('请输入正确的11位手机号');
+   try {
+     const res = await fetch('/api/riders', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') },
+       body: JSON.stringify({ name, student_id, phone, dormitory })
+     }).then(r => r.json());
+     if (res.ok) {
+       riders.unshift({ ...res.rider, createdAt: res.rider.created_at });
+       renderRidersTable();
+       updateStats();
+       closeAddRiderModal();
+       showToast('骑手添加成功！UID: ' + res.rider.uid);
+     } else { showToast(res.error || '添加失败'); }
+   } catch(e) { showToast('添加失败'); }
  }
 
  function renderAdminsTable() {
