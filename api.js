@@ -98,8 +98,10 @@ const API = {
   }).then(r => r.json()); },
   async uploadRiderAvatar(phone, file) {
     const fd = new FormData(); fd.append('avatar', file);
+    const headers = {};
+    if (this._token) headers['Authorization'] = 'Bearer ' + this._token;
     return fetch('/api/riders/' + phone + '/avatar', {
-      method: 'POST', body: fd
+      method: 'POST', headers, body: fd
     }).then(r => r.json());
   },
 
@@ -109,8 +111,10 @@ const API = {
   async updateUser(phone, data) { return fetch('/api/users/' + phone, { method: 'PUT', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },
   async uploadUserAvatar(phone, file) {
     const fd = new FormData(); fd.append('avatar', file);
+    const headers = {};
+    if (this._token) headers['Authorization'] = 'Bearer ' + this._token;
     return fetch('/api/users/' + phone + '/avatar', {
-      method: 'POST', body: fd
+      method: 'POST', headers, body: fd
     }).then(r => r.json());
   },
 

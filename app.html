@@ -2507,7 +2507,7 @@
           API.logout();
           showLoginPage();
         } else {
-          currentUser = { phone: saved.phone, name: saved.name };
+          currentUser = { phone: saved.phone, name: saved.name, avatar: saved.avatar || '' };
           var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + (saved.name || '...');
           showMainApp();
           await loadData();
