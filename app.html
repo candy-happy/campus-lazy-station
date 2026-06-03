@@ -2058,6 +2058,9 @@
       <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px;min-height:calc(100vh - 180px)"></div>
       <div style="display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--border);background:var(--card);align-items:center;position:relative">
         <span style="font-size:22px;cursor:pointer" onclick="toggleEmojiPicker()">😊</span>
+        <label style="font-size:20px;cursor:pointer;display:flex;align-items:center" title="发送图片/视频">
+          📎<input type="file" accept="image/*,video/*" style="display:none" onchange="userChatUpload(this)">
+        </label>
         <input id="chatInput" placeholder="输入消息..." style="flex:1;padding:10px;border:1px solid var(--border);border-radius:20px;outline:none;background:var(--bg);color:var(--text)" onkeydown="if(event.key==='Enter')sendChatMsg()" />
         <button onclick="sendChatMsg()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer">发送</button>
         <div id="emojiPicker" style="display:none;position:absolute;bottom:60px;left:8px;right:8px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow-lg);z-index:9999;max-height:260px;overflow-y:auto">
@@ -2941,11 +2944,25 @@
       const el = document.getElementById('chatMessages');
       el.innerHTML = msgs.map(m => {
         const isMe = m.sender_phone === currentUser.phone;
+        let content;
+        const c = m.content;
+        if (m.type === 'image') {
+          content = '<img src="'+escHtml(c)+'" style="max-width:100%;border-radius:8px;display:block;cursor:pointer" onclick="window.open(this.src)" />';
+        } else if (m.type === 'video') {
+          content = '<video src="'+escHtml(c)+'" style="max-width:100%;border-radius:8px;display:block" controls preload="metadata"></video>';
+        } else if (c.startsWith('[ANIM:')) {
+          const p=c.slice(6,c.length-1).split(':');
+          content = '<span class="anim-'+p[1]+'" style="font-size:36px;display:inline-block">'+p[0]+'</span>';
+        } else if (c.startsWith('[GIF]')) {
+          content = '<img src="'+escHtml(c.slice(5))+'" style="max-width:160px;border-radius:12px;display:block" />';
+        } else {
+          content = escHtml(c);
+        }
         return `
           <div style="display:flex;justify-content:${isMe?'flex-end':'flex-start'};margin-bottom:10px">
             <div style="max-width:70%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;
               background:${isMe?'var(--primary)':'var(--card)'};color:${isMe?'#fff':'var(--text)'};border:1px solid ${isMe?'transparent':'var(--border)'}">
-              ${(() => { const c=m.content; if(c.startsWith('[ANIM:')){const p=c.slice(6,c.length-1).split(':');return '<span class="anim-'+p[1]+'" style="font-size:36px;display:inline-block">'+p[0]+'</span>'} if(c.startsWith('[GIF]'))return '<img src="'+escHtml(c.slice(5))+'" style="max-width:160px;border-radius:12px;display:block" />'; return escHtml(c) })()}
+              ${content}
             </div>
           </div>
         `;
@@ -2961,6 +2978,31 @@
       if (res.error) return showToast(res.error);
       input.value = '';
       await loadChatMessages();
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 📎 用户端图片/视频上传
+    // ═══════════════════════════════════════════════════════
+    async function userChatUpload(input) {
+      const file = input.files && input.files[0];
+      if (!file || !currentConvId) return;
+      if (file.size > 20 * 1024 * 1024) return showToast('文件不能超过20MB');
+      showToast('上传中...');
+      try {
+        const res = await API.chatUpload(file);
+        if (res.error) return showToast(res.error);
+        const sendRes = await API.chatSend({
+          conversation_id: currentConvId,
+          sender_phone: currentUser.phone,
+          content: res.url,
+          type: res.type
+        });
+        if (sendRes.error) return showToast(sendRes.error);
+        await loadChatMessages();
+      } catch(e) {
+        showToast('上传失败: ' + (e.message||e));
+      }
+      input.value = '';
     }
 
     // 从订单卡片打开聊天（供订单列表调用）
