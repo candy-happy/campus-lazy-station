@@ -609,14 +609,21 @@
  async function saveAd(e) {
  e.preventDefault();
  const id = document.getElementById('adEditId').value;
+ const rawLinkType = document.getElementById('adLinkType').value;
+ const rawLinkValue = document.getElementById('adLinkValue').value.trim();
+ // 自动修复：link_value 是 URL 但 link_type 不是 url
+ let linkType = rawLinkType;
+ if (rawLinkValue && /^https?:\/\//i.test(rawLinkValue) && rawLinkType === 'none') {
+  linkType = 'url';
+ }
  const data = {
  title: document.getElementById('adTitle').value,
  description: document.getElementById('adDesc').value,
  image: document.getElementById('adImage').value,
  media_url: document.getElementById('adMediaUrl').value,
  link_url: document.getElementById('adLinkUrl').value,
- link_type: document.getElementById('adLinkType').value,
- link_value: document.getElementById('adLinkValue').value,
+ link_type: linkType,
+ link_value: rawLinkValue,
  sort_order: parseInt(document.getElementById('adSort').value) || 0,
  status: document.getElementById('adStatus').value,
  start_time: document.getElementById('adStartTime').value ? document.getElementById('adStartTime').value.replace('T',' ') : null,

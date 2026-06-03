@@ -192,10 +192,10 @@
     }
     .banner-illustration {
       position: absolute;
-      right: 20px;
-      bottom: 0;
-      width: 120px;
-      height: 120px;
+      right: 12px;
+      top: 12px;
+      bottom: 12px;
+      width: 130px;
       font-size: 100px;
       opacity: 0.3;
       transform: rotate(-10deg);
@@ -203,6 +203,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      pointer-events: none;
     }
     .banner-illustration img, .banner-illustration video {
       opacity: 1;
@@ -210,6 +211,31 @@
       height: 100%;
       object-fit: cover;
       border-radius: 12px;
+    }
+    /* 有媒体图时覆盖整个 banner */
+    .banner.has-media {
+      position: relative;
+    }
+    .banner.has-media .banner-illustration {
+      position: absolute;
+      left: 0; top: 0; right: 0; bottom: 0;
+      width: auto; height: auto;
+      opacity: 1;
+      transform: none;
+      border-radius: var(--radius-lg);
+      pointer-events: none;
+    }
+    .banner.has-media .banner-illustration img,
+    .banner.has-media .banner-illustration video {
+      border-radius: var(--radius-lg);
+    }
+    .banner.has-media .banner-content {
+      position: relative;
+      z-index: 2;
+      background: linear-gradient(90deg, rgba(102,126,234,0.92) 0%, rgba(102,126,234,0.7) 60%, transparent 100%);
+      margin: -20px -24px;
+      padding: 20px 24px;
+      border-radius: var(--radius-lg);
     }
     .banner-dots {
       display: flex;
@@ -1489,6 +1515,7 @@
     body.dark .coupon-item { border-color: var(--border); }
     body.dark .addr-item { border-color: var(--border); }
     body.dark .addr-form-input { background: var(--bg); border-color: var(--border); }
+    body.dark .banner.has-media .banner-content { background: linear-gradient(90deg, rgba(26,26,46,0.92) 0%, rgba(22,33,62,0.7) 60%, transparent 100%); }
 </style>
 <script src="api.js"></script>
 </head>
@@ -2062,12 +2089,16 @@
     function showAd(idx) {
       adsIdx = idx;
       const ad = adsList[idx]; if (!ad) return;
+      const banner = document.getElementById('banner1');
       const content = document.getElementById('bannerContent');
       const icon = document.getElementById('bannerIcon');
       const dots = document.getElementById('bannerDots');
-      const tagLabel = ad.link_url ? '链接' : ad.link_type==='order' ? '下单立减' : ad.link_type==='page' ? '活动' : '广告';
+      const tagLabel = ad.link_url ? '链接' : ad.link_type==='order' ? '下单立减' : ad.link_type==='page' ? '活动' : ad.link_type==='coupon' ? '优惠' : ad.link_type==='url' ? '链接' : '广告';
+      const hasMedia = ad.media_url && ad.media_url.trim();
+      // 有媒体图时给 banner 加 has-media 类
+      if (banner) banner.classList.toggle('has-media', !!hasMedia);
       if (content) content.innerHTML = '<span class="banner-tag">'+escHtml(tagLabel)+'</span><div class="banner-title">'+escHtml(ad.title)+'</div><div class="banner-desc">'+escHtml(ad.description)+'</div><button class="banner-btn" onclick="clickAd('+idx+')">立即查看</button>';
-      if (ad.media_url) {
+      if (hasMedia) {
         const isVid = ad.media_url.match(/\.(mp4|webm|mov)$/i);
         if (isVid) {
           if (icon) icon.innerHTML = '<video src="'+ad.media_url+'" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:12px"></video>';
@@ -2081,10 +2112,14 @@
     }
     function clickAd(idx) {
       const ad = adsList[idx]; if (!ad) return;
-      if (ad.link_url) { window.open(ad.link_url, '_blank'); return; }
+      // 1. 直接外部链接
+      if (ad.link_url && ad.link_url.trim()) { window.open(ad.link_url, '_blank'); return; }
+      // 2. 内部链接类型
       if (ad.link_type==='order' && ad.link_value) openOrderModal(ad.link_value);
       else if (ad.link_type==='coupon') showCoupons();
       else if (ad.link_type==='url' && ad.link_value) { window.open(ad.link_value, '_blank'); }
+      // 3. link_type 为 none 但 link_value 是 URL
+      else if (ad.link_value && ad.link_value.trim() && /^https?:\/\//i.test(ad.link_value.trim())) { window.open(ad.link_value.trim(), '_blank'); }
       else showToast(ad.description || ad.title);
     }
 
