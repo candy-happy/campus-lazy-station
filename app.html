@@ -2762,7 +2762,7 @@
         const trust = item.trust || {};
         const avatarHtml = renderAvatarHtml(item.seller_avatar, item.seller_name);
         return '<div class="market-card" onclick="openItemDetail(' + item.id + ')">' +
-          (img ? '<img class="market-card-img" src="' + img + '" onerror="this.outerHTML=\'<div class=\\'market-card-noimg\\'>🛒</div>\'" />' : '<div class="market-card-noimg">🛒</div>') +
+          (img ? '<img class="market-card-img" src="' + img + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" /><div class="market-card-noimg" style="display:none">🛒</div>' : '<div class="market-card-noimg">🛒</div>') +
           '<div class="market-card-info">' +
             '<div class="market-card-title">' + escHtml(item.title) + '</div>' +
             '<div class="market-card-price">¥' + (item.price || 0).toFixed(2) + (item.original_price ? '<small>¥' + item.original_price.toFixed(2) + '</small>' : '') + '</div>' +
