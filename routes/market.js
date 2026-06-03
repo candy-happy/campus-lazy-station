@@ -466,12 +466,13 @@ router.get('/my-items', requireAuth, (req, res) => JSON_RES(res, () => {
 router.get('/admin/items', requireAdmin, (req, res) => JSON_RES(res, () => {
   const { status, search, page = 1, limit = 20 } = req.query;
   const offset = (page - 1) * limit;
-  let where = "status != 'removed'";
+  let where = "m.status != 'removed'";
   const params = [];
-  if (status && status !== 'all') { where += ' AND status = ?'; params.push(status); }
-  if (search) { where += ' AND (title LIKE ? OR seller_phone LIKE ?)'; params.push('%' + search + '%', '%' + search + '%'); }
-  const total = db.prepare('SELECT COUNT(*) as cnt FROM market_items WHERE ' + where).get(...params).cnt;
-  const items = db.prepare('SELECT m.*, u.name as seller_name, u.avatar as seller_avatar FROM market_items m LEFT JOIN users u ON m.seller_phone = u.phone WHERE m.' + where.replace(/\?/g, () => '?') + ' ORDER BY m.created_at DESC LIMIT ? OFFSET ?').all(...params, +limit, +offset);
+  if (status && status !== 'all') { where += ' AND m.status = ?'; params.push(status); }
+  if (search) { where += ' AND (m.title LIKE ? OR m.seller_phone LIKE ?)'; params.push('%' + search + '%', '%' + search + '%'); }
+  const totalWhere = where.replace(/m\./g, '');
+  const total = db.prepare('SELECT COUNT(*) as cnt FROM market_items WHERE ' + totalWhere).get(...params).cnt;
+  const items = db.prepare('SELECT m.*, u.name as seller_name, u.avatar as seller_avatar FROM market_items m LEFT JOIN users u ON m.seller_phone = u.phone WHERE ' + where + ' ORDER BY m.created_at DESC LIMIT ? OFFSET ?').all(...params, +limit, +offset);
   items.forEach(item => {
     try { item.images = JSON.parse(item.images || '[]'); } catch(e) { item.images = []; }
   });
@@ -510,9 +511,10 @@ router.get('/admin/orders', requireAdmin, (req, res) => JSON_RES(res, () => {
   const offset = (page - 1) * limit;
   let where = '1=1';
   const params = [];
-  if (status && status !== 'all') { where += ' AND status = ?'; params.push(status); }
-  if (search) { where += ' AND (title LIKE ? OR buyer_phone LIKE ? OR seller_phone LIKE ?)'; params.push('%' + search + '%', '%' + search + '%', '%' + search + '%'); }
-  const total = db.prepare('SELECT COUNT(*) as cnt FROM market_orders WHERE ' + where).get(...params).cnt;
+  if (status && status !== 'all') { where += ' AND o.status = ?'; params.push(status); }
+  if (search) { where += ' AND (o.title LIKE ? OR o.buyer_phone LIKE ? OR o.seller_phone LIKE ?)'; params.push('%' + search + '%', '%' + search + '%', '%' + search + '%'); }
+  const totalWhere = where.replace(/o\./g, '');
+  const total = db.prepare('SELECT COUNT(*) as cnt FROM market_orders WHERE ' + totalWhere).get(...params).cnt;
   const orders = db.prepare(
     'SELECT o.*, b.name as buyer_name, s.name as seller_name FROM market_orders o ' +
     'LEFT JOIN users b ON o.buyer_phone = b.phone LEFT JOIN users s ON o.seller_phone = s.phone ' +

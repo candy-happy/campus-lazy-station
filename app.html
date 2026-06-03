@@ -353,6 +353,11 @@
     .market-card-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
     .market-card-seller { font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
     .market-card-condition { font-size: 11px; color: var(--warning); background: #FFF8F0; padding: 2px 8px; border-radius: 10px; }
+    .market-card-status { position: absolute; top: 8px; left: 8px; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; z-index: 2; }
+    .market-card-status.active { background: rgba(46,204,113,0.9); color: #fff; }
+    .market-card-status.sold { background: rgba(52,152,219,0.9); color: #fff; }
+    .market-card-status.offline { background: rgba(149,165,166,0.9); color: #fff; }
+    .market-card { position: relative; }
     .trust-badge { font-size: 11px; }
     /* 商品详情 */
     .item-detail-imgs { width: 100%; aspect-ratio: 1; position: relative; overflow: hidden; background: var(--bg); }
@@ -2826,18 +2831,22 @@
       }
       if (empty) empty.style.display = 'none';
       if (more) more.style.display = marketHasMore ? 'block' : 'none';
+      const condLabel = { new:'全新', like_new:'几乎全新', good:'良好', fair:'一般' };
+      const statusLabel = { active:'在售', trading:'交易中', sold:'已售', offline:'已下架' };
       grid.innerHTML = marketItems.map(item => {
         const img = (item.images && item.images[0]) || '';
         const trust = item.trust || {};
         const avatarHtml = renderAvatarHtml(item.seller_avatar, item.seller_name);
+        const statusCls = item.status === 'active' ? 'active' : item.status === 'sold' ? 'sold' : 'offline';
         return '<div class="market-card" onclick="openItemDetail(' + item.id + ')">' +
           (img ? '<img class="market-card-img" src="' + img + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" /><div class="market-card-noimg" style="display:none">🛒</div>' : '<div class="market-card-noimg">🛒</div>') +
+          (statusLabel[item.status] ? '<span class="market-card-status ' + statusCls + '">' + statusLabel[item.status] + '</span>' : '') +
           '<div class="market-card-info">' +
             '<div class="market-card-title">' + escHtml(item.title) + '</div>' +
             '<div class="market-card-price">¥' + (item.price || 0).toFixed(2) + (item.original_price ? '<small>¥' + item.original_price.toFixed(2) + '</small>' : '') + '</div>' +
             '<div class="market-card-meta">' +
               '<div class="market-card-seller">' + avatarHtml + ' ' + escHtml(item.seller_name || '') + ' <span class="trust-badge">' + (trust.icon || '') + '</span></div>' +
-              (item.condition_level ? '<div class="market-card-condition">' + escHtml(item.condition_level) + '</div>' : '') +
+              (item.condition_level ? '<div class="market-card-condition">' + escHtml(condLabel[item.condition_level] || item.condition_level) + '</div>' : '') +
             '</div>' +
           '</div></div>';
       }).join('');
@@ -2882,7 +2891,8 @@
           '<div class="item-detail-price">¥' + (item.price || 0).toFixed(2) + (item.original_price ? '<small>¥' + item.original_price.toFixed(2) + '</small>' : '') + '</div>' +
           '<div class="item-detail-title">' + escHtml(item.title) + '</div>' +
           '<div class="item-detail-tags">' +
-            (item.condition_level ? '<div class="item-detail-tag">' + escHtml(item.condition_level) + '</div>' : '') +
+            (item.status ? '<div class="item-detail-tag" style="background:' + (item.status==='active'?'#E8F5E9;color:#2ECC71':item.status==='sold'?'#E3F2FD;color:#3498DB':'#F5F5F5;color:#999') + '">' + ({active:'在售',sold:'已售',offline:'已下架',trading:'交易中'}[item.status]||item.status) + '</div>' : '') +
+            (item.condition_level ? '<div class="item-detail-tag">' + escHtml({new:'全新',like_new:'几乎全新',good:'良好',fair:'一般'}[item.condition_level]||item.condition_level) + '</div>' : '') +
             (item.category ? '<div class="item-detail-tag">' + (CATEGORY_MAP[item.category] || item.category) + '</div>' : '') +
             '<div class="item-detail-tag">👁 ' + (item.views || 0) + '</div>' +
           '</div>' +
@@ -2915,11 +2925,16 @@
         (isOwner ?
           '<div class="item-action-bar">' +
             '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 私聊买家</button>' +
-            '<button class="item-action-btn chat" style="background:#FFF0F0;color:var(--danger)" onclick="removeMyItem(' + item.id + ')">下架商品</button>' +
+            (item.status === 'active' ? '<button class="item-action-btn chat" style="background:#FFF0F0;color:var(--danger)" onclick="removeMyItem(' + item.id + ')">下架商品</button>' : '') +
           '</div>' :
+          item.status === 'active' ?
           '<div class="item-action-bar">' +
             '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 私聊卖家</button>' +
             '<button class="item-action-btn buy" onclick="buyItem(' + item.id + ')">🛒 购买</button>' +
+          '</div>' :
+          '<div class="item-action-bar">' +
+            '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 私聊卖家</button>' +
+            '<button class="item-action-btn buy" style="background:#ccc;cursor:not-allowed" disabled>' + ({sold:'已售出',offline:'已下架',trading:'交易中'}[item.status]||'不可购买') + '</button>' +
           '</div>');
 
       // 加载评论
