@@ -708,13 +708,10 @@
       <div class="sub-page-body" id="earningsBody"></div>
     </div>
 
- <!-- 骑手聊天列表 -->
- <div class="sub-page" id="chatListPage_sub">
-      <div class="sub-page-header">
-        <button class="sub-page-back" onclick="closeSubPage('chatListPage_sub')">←</button>
-        <span class="sub-page-title">💬 我的消息</span>
-      </div>
-      <div class="sub-page-body" id="chatListBody" style="padding:8px 0"></div>
+ <!-- 骑手消息主页 -->
+ <div id="msgSection" style="display:none">
+      <div style="padding:12px 16px;font-size:18px;font-weight:700;color:var(--text)">💬 我的消息</div>
+      <div id="chatListBody" style="padding:8px 0"></div>
     </div>
 
     <!-- 聊天对话页 -->
@@ -1045,18 +1042,19 @@
  function riderSwitchTab(tab, evt) {
    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
    if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
-   // 隐藏所有区域
+   // 隐藏所有主区域
    $('orderSection').style.display = 'none';
    $('profileSection').classList.remove('active');
-   const chatSub = document.getElementById('chatListPage_sub');
+   $('msgSection').style.display = 'none';
+   const chatSub = document.getElementById('chatConvPage_sub');
    if (chatSub) chatSub.classList.remove('active');
 
    if (tab === 'home') {
      $('orderSection').style.display = 'block';
      refreshOrders();
    } else if (tab === 'msg') {
-     $('orderSection').style.display = 'block'; // 保持订单区占位
-     openRiderChatList();
+     $('msgSection').style.display = 'block';
+     loadChatList();
    } else if (tab === 'profile') {
      $('profileSection').classList.add('active');
      updateProfile();
@@ -1185,9 +1183,8 @@
  let riderConvPhone = null;
  let riderChatTimer = null;
 
- async function openRiderChatList() {
+ async function loadChatList() {
    if (!currentRider) return;
-   openSubPage('chatListPage_sub');
    const list = await API.chatConversations(currentRider.phone);
    const el = document.getElementById('chatListBody');
    if (!list || !list.length) { el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary)">暂无消息</div>'; return; }
@@ -1203,12 +1200,12 @@
        '</div>';
    }).join('');
  }
+ async function openRiderChatList() { riderSwitchTab('msg'); }
 
  async function openRiderConv(convId, otherPhone, otherName) {
    riderConvId = convId;
    riderConvPhone = otherPhone;
    document.getElementById('chatConvTitle').textContent = otherName || otherPhone;
-   closeSubPage('chatListPage_sub');
    openSubPage('chatConvPage_sub');
    await loadRiderChatMessages();
    if (riderChatTimer) clearInterval(riderChatTimer);
