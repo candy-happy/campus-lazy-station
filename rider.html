@@ -1071,6 +1071,12 @@
      sidebarAvatar.textContent = '\u{1F6F5}';
    }
  }
+ // 更新顶部header名称
+ const headerName = $('userName');
+ if (headerName) headerName.textContent = currentRider.name || '骑手';
+ $('userNameLg').textContent = currentRider.name || '骑手';
+ $('userUidDisplay').textContent = currentRider.uid || '--';
+ $('userPhoneDisplay').textContent = currentRider.phone ? currentRider.phone.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : '--';
  $('walletBalance').textContent = (r.total_earnings||0).toFixed(2);
  $('statTotalEarnings').textContent = '¥' + (r.total_earnings||0).toFixed(2);
  $('statTotalEarnings2').textContent = $('statTotalEarnings').textContent;
