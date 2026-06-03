@@ -1696,6 +1696,12 @@ function timeAgo(ts) { if (!ts) return ''; const diff=Date.now()-new Date(ts).ge
      if (res.code === 0 || res.avatarUrl) {
        currentRider.avatar = res.avatarUrl || res.data?.avatarUrl;
        localStorage.setItem('lazyRider', JSON.stringify(currentRider));
+       // 同步更新 lazy_session 中的 avatar
+       try {
+         const s = JSON.parse(localStorage.getItem('lazy_session') || '{}');
+         s.avatar = currentRider.avatar;
+         localStorage.setItem('lazy_session', JSON.stringify(s));
+       } catch(e) {}
        showToast('头像更新成功 ✅');
        updateProfile();
        // 刷新设置页头像

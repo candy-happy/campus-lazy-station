@@ -25,7 +25,7 @@ const API = {
     this._user = { ...res.user, phone_original: phone };
     this._role = 'user';
     if (res.token) { this._token = res.token; localStorage.setItem('lazy_token', res.token); }
-    localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', phone, name }));
+    localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', phone, name, avatar: res.user?.avatar || '' }));
     return this._user;
   },
 
@@ -39,7 +39,7 @@ const API = {
     this._rider = { ...res.rider, phone_original: phone };
     this._role = 'rider';
     if (res.token) { this._token = res.token; localStorage.setItem('lazy_token', res.token); }
-    localStorage.setItem('lazy_session', JSON.stringify({ role: 'rider', phone, name, uid }));
+    localStorage.setItem('lazy_session', JSON.stringify({ role: 'rider', phone, name, uid, avatar: res.rider?.avatar || '' }));
     return this._rider;
   },
 
@@ -266,8 +266,8 @@ const API = {
         this._role = s.role;
         const t = localStorage.getItem('lazy_token');
         if (t) this._token = t;
-        if (s.role === 'user') return { phone: s.phone, name: s.name };
-        if (s.role === 'rider') return { phone: s.phone, name: s.name };
+        if (s.role === 'user') return { phone: s.phone, name: s.name, avatar: s.avatar || '' };
+        if (s.role === 'rider') return { phone: s.phone, name: s.name, avatar: s.avatar || '' };
         if (s.role === 'admin') return { username: s.username };
       }
     } catch (e) {}

@@ -3849,6 +3849,12 @@
         if (res.code === 0 || res.avatarUrl) {
           currentUser.avatar = res.avatarUrl || res.data?.avatarUrl;
           localStorage.setItem('lazyUser', JSON.stringify(currentUser));
+          // 同步更新 lazy_session 中的 avatar
+          try {
+            const s = JSON.parse(localStorage.getItem('lazy_session') || '{}');
+            s.avatar = currentUser.avatar;
+            localStorage.setItem('lazy_session', JSON.stringify(s));
+          } catch(e) {}
           showToast('头像更新成功 \u2705');
           // 更新预览
           const preview = document.getElementById('profileAvatarPreview');
