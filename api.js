@@ -294,7 +294,16 @@ const API = {
   async getTrust(phone) { return fetch('/api/market/trust/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async getMyMarketItems() { return fetch('/api/market/my-items', { headers: this._headers() }).then(r => r.json()); },
   async getMarketComments(itemId) { return fetch('/api/market/items/' + itemId + '/comments', { headers: this._headers() }).then(r => r.json()); },
-  async postMarketComment(itemId, content, parentId) { return fetch('/api/market/items/' + itemId + '/comments', { method: 'POST', headers: this._headers(), body: JSON.stringify({ content, parent_id: parentId || null }) }).then(r => r.json()); },
+  async postMarketComment(itemId, content, parentId, mediaFile) {
+    if (mediaFile) {
+      const fd = new FormData();
+      if (content) fd.append('content', content);
+      if (parentId) fd.append('parent_id', parentId);
+      fd.append('media', mediaFile);
+      return fetch('/api/market/items/' + itemId + '/comments', { method: 'POST', headers: { 'Authorization': 'Bearer ' + (JSON.parse(localStorage.getItem('lazy_session'))?.token || '') }, body: fd }).then(r => r.json());
+    }
+    return fetch('/api/market/items/' + itemId + '/comments', { method: 'POST', headers: this._headers(), body: JSON.stringify({ content, parent_id: parentId || null }) }).then(r => r.json());
+  },
   async deleteMarketComment(commentId) { return fetch('/api/market/comments/' + commentId, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
 
   // ─── 会话恢复 ───

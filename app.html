@@ -453,7 +453,9 @@
     .comment-replies { margin-top: 8px; padding-left: 42px; }
     .comment-reply { padding: 8px 0; border-top: 1px solid var(--border); }
     .comment-reply:first-child { border-top: none; }
-    .comment-input-wrap { display: flex; gap: 8px; padding: 12px; background: var(--card); border-top: 1px solid var(--border); position: sticky; bottom: 0; z-index: 2; }
+    .comment-input-wrap { display: flex; flex-direction: column; gap: 4px; padding: 12px; background: var(--card); border-top: 1px solid var(--border); border-radius: 0 0 12px 12px; }
+    .comment-emoji-btn { font-size: 22px; cursor: pointer; flex-shrink: 0; user-select: none; }
+    .comment-media-btn { font-size: 20px; cursor: pointer; flex-shrink: 0; user-select: none; display: flex; align-items: center; }
     .comment-input { flex: 1; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; background: var(--bg); color: var(--text); outline: none; }
     .comment-input:focus { border-color: var(--primary); }
     .comment-send-btn { padding: 8px 16px; border: none; border-radius: 20px; background: var(--gradient); color: white; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
@@ -2896,6 +2898,17 @@
           '<div class="item-comments-section">' +
             '<div class="item-comments-header"><span class="item-comments-title">💬 留言</span><span class="item-comments-count" id="commentCount">加载中...</span></div>' +
             '<div id="commentList"></div>' +
+            '<div class="comment-input-wrap" id="commentInputWrap">' +
+              '<div id="replyHint" class="comment-reply-hint" style="display:none;width:100%;margin-bottom:6px">回复 <span id="replyName"></span> <span class="cancel-reply" onclick="cancelReplyComment()">✕ 取消</span></div>' +
+              '<div style="display:flex;gap:6px;align-items:center;width:100%">' +
+                '<span class="comment-emoji-btn" onclick="toggleCommentEmoji()">😊</span>' +
+                '<label class="comment-media-btn" title="上传图片/视频">📎<input type="file" accept="image/*,video/*" style="display:none" onchange="commentUploadMedia(this)" /></label>' +
+                '<input class="comment-input" id="commentInput" placeholder="说点什么..." maxlength="500" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendComment(' + item.id + ')}" />' +
+                '<button class="comment-send-btn" id="commentSendBtn" onclick="sendComment(' + item.id + ')">发送</button>' +
+              '</div>' +
+              '<div id="commentMediaPreview" style="display:none;margin-top:8px;position:relative"></div>' +
+              '<div id="commentEmojiPanel" style="display:none;margin-top:8px"></div>' +
+            '</div>' +
           '</div>' +
           (relatedHtml ? '<div style="margin-top:20px"><div style="font-size:15px;font-weight:700;margin-bottom:10px">卖家其他商品</div><div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">' + relatedHtml + '</div></div>' : '') +
         '</div>' +
@@ -2907,12 +2920,7 @@
           '<div class="item-action-bar">' +
             '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 私聊卖家</button>' +
             '<button class="item-action-btn buy" onclick="buyItem(' + item.id + ')">🛒 购买</button>' +
-          '</div>') +
-        '<div class="comment-input-wrap">' +
-          '<div id="replyHint" class="comment-reply-hint" style="display:none;width:100%;margin-bottom:6px">回复 <span id="replyName"></span> <span class="cancel-reply" onclick="cancelReplyComment()">✕ 取消</span></div>' +
-          '<input class="comment-input" id="commentInput" placeholder="说点什么..." maxlength="500" />' +
-          '<button class="comment-send-btn" id="commentSendBtn" onclick="sendComment(' + item.id + ')">发送</button>' +
-        '</div>';
+          '</div>');
 
       // 加载评论
       loadMarketComments(item.id);
@@ -2961,6 +2969,12 @@
       }
     }
 
+    function renderCommentMedia(c) {
+      if (!c.media_url) return '';
+      if (c.media_type === 'video') return '<video src="' + c.media_url + '" controls playsinline style="max-width:100%;max-height:200px;border-radius:8px;margin-top:6px"></video>';
+      return '<img src="' + c.media_url + '" onclick="previewImage(this.src)" style="max-width:100%;max-height:200px;border-radius:8px;margin-top:6px;cursor:pointer" />';
+    }
+
     function renderCommentCard(c, itemId) {
       const avatarHtml = c.user_avatar && c.user_avatar.startsWith('http') ?
         '<img src="' + c.user_avatar + '" />' :
@@ -2977,7 +2991,8 @@
               '<div class="comment-avatar">' + rAvatar + '</div>' +
               '<div class="comment-body">' +
                 '<div class="comment-name">' + escHtml(r.user_name || '用户') + '</div>' +
-                '<div class="comment-text">' + escHtml(r.content) + '</div>' +
+                (r.content ? '<div class="comment-text">' + escHtml(r.content) + '</div>' : '') +
+                renderCommentMedia(r) +
                 '<div class="comment-time">' + timeAgo(r.created_at) + (rMine ? ' · <button class="comment-del-btn" onclick="deleteComment(' + r.id + ',' + itemId + ')">删除</button>' : '') + '</div>' +
               '</div>' +
             '</div>' +
@@ -2989,7 +3004,8 @@
           '<div class="comment-avatar">' + avatarHtml + '</div>' +
           '<div class="comment-body">' +
             '<div class="comment-name">' + escHtml(c.user_name || '用户') + '</div>' +
-            '<div class="comment-text">' + escHtml(c.content) + '</div>' +
+            (c.content ? '<div class="comment-text">' + escHtml(c.content) + '</div>' : '') +
+            renderCommentMedia(c) +
             '<div class="comment-time">' + timeAgo(c.created_at) + '</div>' +
             '<div class="comment-actions">' +
               '<button class="comment-action-btn" onclick="replyToComment(' + c.id + ',\'' + escHtml(c.user_name || '用户').replace(/'/g, "\\'") + '\')">💬 回复</button>' +
@@ -3021,18 +3037,79 @@
       if (inputEl) inputEl.placeholder = '说点什么...';
     }
 
+    let _commentMediaFile = null;
+
+    function commentUploadMedia(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { showToast('文件不能超过5MB'); input.value = ''; return; }
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) { showToast('仅支持图片/视频'); input.value = ''; return; }
+      _commentMediaFile = file;
+      const preview = document.getElementById('commentMediaPreview');
+      if (!preview) return;
+      preview.style.display = 'block';
+      if (file.type.startsWith('video/')) {
+        const url = URL.createObjectURL(file);
+        preview.innerHTML = '<div style="position:relative;display:inline-block">' +
+          '<video src="' + url + '" style="max-height:80px;border-radius:6px" muted></video>' +
+          '<span onclick="clearCommentMedia()" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer">✕</span>' +
+        '</div>';
+      } else {
+        const url = URL.createObjectURL(file);
+        preview.innerHTML = '<div style="position:relative;display:inline-block">' +
+          '<img src="' + url + '" style="max-height:80px;border-radius:6px" />' +
+          '<span onclick="clearCommentMedia()" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer">✕</span>' +
+        '</div>';
+      }
+    }
+
+    function clearCommentMedia() {
+      _commentMediaFile = null;
+      const preview = document.getElementById('commentMediaPreview');
+      if (preview) { preview.innerHTML = ''; preview.style.display = 'none'; }
+      const fileInput = document.querySelector('.comment-media-btn input[type=file]');
+      if (fileInput) fileInput.value = '';
+    }
+
+    function toggleCommentEmoji() {
+      const panel = document.getElementById('commentEmojiPanel');
+      if (!panel) return;
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        if (!panel.innerHTML) {
+          const emojis = ['😀','😂','🤣','😊','😍','🥰','😘','😜','🤔','😎','🥺','😢','😤','👍','👏','🙏','💪','🎉','❤️','🔥','💯','✨','👀','🤝','💰','🎁','📦','🛒','📱','💻','📚','🎮','🎵','🍕','🍔','☕','🍦','⚽','🏠','🚀','⭐','🌈','💡','🔔','💬','🤗','😌','🤩','😇','🥳'];
+          panel.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:4px;padding:8px;background:var(--bg);border-radius:10px;max-height:160px;overflow-y:auto">' +
+            emojis.map(e => '<span style="font-size:22px;cursor:pointer;padding:4px;border-radius:6px;transition:background 0.15s" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'" onclick="insertCommentEmoji(\'' + e + '\')">' + e + '</span>').join('') +
+          '</div>';
+        }
+      } else {
+        panel.style.display = 'none';
+      }
+    }
+
+    function insertCommentEmoji(emoji) {
+      const input = document.getElementById('commentInput');
+      if (input) {
+        const start = input.selectionStart;
+        input.value = input.value.substring(0, start) + emoji + input.value.substring(input.selectionEnd);
+        input.selectionStart = input.selectionEnd = start + emoji.length;
+        input.focus();
+      }
+    }
+
     async function sendComment(itemId) {
       if (!currentUser) { showToast('请先登录'); return; }
       const inputEl = document.getElementById('commentInput');
       const sendBtn = document.getElementById('commentSendBtn');
       if (!inputEl) return;
       const content = inputEl.value.trim();
-      if (!content) { showToast('请输入留言内容'); return; }
+      if (!content && !_commentMediaFile) { showToast('请输入内容或上传图片/视频'); return; }
       if (sendBtn) sendBtn.disabled = true;
       try {
-        const res = await API.postMarketComment(itemId, content, _replyToCommentId);
+        const res = await API.postMarketComment(itemId, content, _replyToCommentId, _commentMediaFile);
         if (res.ok) {
           inputEl.value = '';
+          clearCommentMedia();
           cancelReplyComment();
           loadMarketComments(itemId);
           showToast('留言成功 ✅');

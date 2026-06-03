@@ -373,13 +373,26 @@ router.get('/items/:id/comments', (req, res) => JSON_RES(res, () => {
   return { comments, total };
 }));
 
-// 发表评论
-router.post('/items/:id/comments', requireAuth, (req, res) => JSON_RES(res, () => {
+// 发表评论（支持图片/视频）
+const commentUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+    filename: (req, file, cb) => cb(null, 'comment-' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + path.extname(file.originalname))
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) cb(null, true);
+    else cb(new Error('仅支持图片/视频'));
+  }
+});
+
+router.post('/items/:id/comments', requireAuth, commentUpload.single('media'), (req, res) => JSON_RES(res, () => {
   const phone = req.user.phone;
   if (!phone) return makeError('请先登录', 'AUTH_001');
-  const { content, parent_id } = req.body;
-  if (!content || !content.trim()) return makeError('评论内容不能为空', ErrorCode.PARAM_MISSING);
-  if (content.trim().length > 500) return makeError('评论最多500字', ErrorCode.PARAM_INVALID);
+  const content = (req.body.content || '').trim();
+  const parent_id = req.body.parent_id || null;
+  if (!content && !req.file) return makeError('请输入内容或上传媒体', ErrorCode.PARAM_MISSING);
+  if (content.length > 500) return makeError('评论最多500字', ErrorCode.PARAM_INVALID);
 
   const itemId = req.params.id;
   const item = db.prepare('SELECT id, seller_phone FROM market_items WHERE id = ?').get(itemId);
@@ -392,9 +405,12 @@ router.post('/items/:id/comments', requireAuth, (req, res) => JSON_RES(res, () =
     if (parent.item_id !== parseInt(itemId)) return makeError('回复的评论不属于该商品', 'MKT_010');
   }
 
+  const media_url = req.file ? '/uploads/market/' + req.file.filename : null;
+  const media_type = req.file ? (req.file.mimetype.startsWith('video/') ? 'video' : 'image') : null;
+
   const result = db.prepare(
-    'INSERT INTO market_comments (item_id, user_phone, content, parent_id, created_at) VALUES (?,?,?,?,datetime(\'now\',\'localtime\'))'
-  ).run(itemId, phone, content.trim(), parent_id || null);
+    'INSERT INTO market_comments (item_id, user_phone, content, parent_id, media_url, media_type, created_at) VALUES (?,?,?,?,?,?,datetime(\'now\',\'localtime\'))'
+  ).run(itemId, phone, content || '', parent_id, media_url, media_type);
 
   // 给卖家发通知（非自己评论自己商品时）
   if (item.seller_phone !== phone && !parent_id) {
@@ -403,7 +419,7 @@ router.post('/items/:id/comments', requireAuth, (req, res) => JSON_RES(res, () =
       db.prepare(
         'INSERT INTO notifications (user_phone, type, title, content, created_at) VALUES (?,?,?,?,datetime(\'now\',\'localtime\'))'
       ).run(item.seller_phone, 'market_comment', '商品新留言',
-        (user?.name || '有人') + '对你的商品留言了：' + content.trim().substring(0, 50));
+        (user?.name || '有人') + '对你的商品留言了' + (content ? '：' + content.substring(0, 50) : '（附带媒体）'));
     } catch(e) { /* 通知失败不影响评论 */ }
   }
 
