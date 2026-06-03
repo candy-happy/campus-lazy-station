@@ -86,10 +86,27 @@
  .form-error { font-size: 0.75rem; color: var(--red); margin-top: 4px; }
  .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--dark); color: white; padding: 12px 24px; border-radius: 24px; font-size: 0.9rem; font-weight: 600; z-index: 300; opacity: 0; transition: all 0.3s ease; }
  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
- .login-form { text-align: center; padding: 20px 0; }
- .login-logo { font-size: 3rem; margin-bottom: 8px; }
- .login-title { font-size: 1.3rem; font-weight: 900; margin-bottom: 4px; }
- .login-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px; }
+ .login-form { text-align: center; padding: 40px 0 20px; }
+ .login-logo { font-size: 4rem; margin-bottom: 12px; }
+ .login-title { font-size: 1.5rem; font-weight: 900; margin-bottom: 6px; }
+ .login-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 28px; }
+ #loginPage_sub .form-input {
+   border-radius: 12px; padding: 14px 16px; font-size: 15px;
+   border: 1.5px solid var(--border); background: var(--bg);
+   transition: border-color 0.2s;
+ }
+ #loginPage_sub .form-input:focus {
+   border-color: var(--green); outline: none;
+   box-shadow: 0 0 0 3px rgba(46,204,113,0.15);
+ }
+ #loginPage_sub .btn-success {
+   margin-top: 8px; padding: 14px; border-radius: 12px;
+   font-size: 16px; font-weight: 700;
+   background: linear-gradient(135deg, #2ECC71, #27AE60);
+   box-shadow: 0 4px 16px rgba(46,204,113,0.3);
+   transition: all 0.2s;
+ }
+ #loginPage_sub .btn-success:active { transform: scale(0.97); }
  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
  .empty-state-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
  .entry-links { display: flex; justify-content: center; gap: 16px; padding: 16px; background: var(--bg); border-top: 1px solid var(--border); }
@@ -443,23 +460,23 @@
       </div>
       <div class="sub-page-body" id="detailContent"></div>
     </div>
- <div class="modal-overlay" id="loginModal">
- <div class="modal-content">
- <div class="modal-header"><span class="modal-title">骑手登录</span><button class="modal-close" onclick="closeModal('loginModal')">✕</button></div>
- <div class="modal-body">
- <div class="login-form">
- <div class="login-logo">🛵</div><div class="login-title">骑手端</div><div class="login-subtitle">登录后即可接单配送</div>
- <form onsubmit="login(event)">
- <div class="form-group"><input type="text" class="form-input" id="loginUid" placeholder="请输入UID编号" required></div>
- <div class="form-group"><input type="text" class="form-input" id="loginName" placeholder="请输入姓名" required></div>
- <div class="form-group"><input type="text" class="form-input" id="loginStudentId" placeholder="请输入学号" required></div>
- <div class="form-group"><input type="tel" class="form-input" id="loginPhone" placeholder="请输入11位手机号" maxlength="11" required><div class="form-error" id="loginPhoneError" style="display: none;">请输入正确的11位手机号码</div></div>
- <button type="submit" class="btn btn-success">立即登录</button>
- </form>
- </div>
- </div>
- </div>
- </div>
+ <div class="sub-page" id="loginPage_sub">
+      <div class="sub-page-header">
+        <span class="sub-page-title">🛵 骑手登录</span>
+      </div>
+      <div class="sub-page-body">
+        <div class="login-form">
+          <div class="login-logo">🛵</div><div class="login-title">骑手端</div><div class="login-subtitle">登录后即可接单配送</div>
+          <form onsubmit="login(event)">
+            <div class="form-group"><input type="text" class="form-input" id="loginUid" placeholder="请输入UID编号" required></div>
+            <div class="form-group"><input type="text" class="form-input" id="loginName" placeholder="请输入姓名" required></div>
+            <div class="form-group"><input type="text" class="form-input" id="loginStudentId" placeholder="请输入学号" required></div>
+            <div class="form-group"><input type="tel" class="form-input" id="loginPhone" placeholder="请输入11位手机号" maxlength="11" required><div class="form-error" id="loginPhoneError" style="display: none;">请输入正确的11位手机号码</div></div>
+            <button type="submit" class="btn btn-success">立即登录</button>
+          </form>
+        </div>
+      </div>
+    </div>
 
  <!-- 骑手提现弹窗 -->
  <div class="modal-overlay" id="withdrawModal">
@@ -510,6 +527,24 @@
 
  <script>
  const $ = (id) => document.getElementById(id);
+ let _pageStack = [];
+ function openSubPage(id) {
+   const el = document.getElementById(id);
+   if (!el) return;
+   _pageStack.push(id);
+   el.classList.add('active');
+ }
+ function closeSubPage(id) {
+   const el = document.getElementById(id);
+   if (!el) return;
+   el.classList.remove('active');
+   _pageStack = _pageStack.filter(p => p !== id);
+   if (_pageStack.length === 0) document.body.style.overflow = '';
+ }
+ function goBack() {
+   if (_pageStack.length > 0) closeSubPage(_pageStack[_pageStack.length - 1]);
+ }
+ window.addEventListener('popstate', () => goBack());
  const phoneRegex = /^1[3-9]\d{9}$/;
  const fmtPhone = (p) => p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : '';
  const fmtTime = (ts) => {
@@ -554,10 +589,10 @@
  if (localStorage.getItem('lazyTheme') === 'dark') document.body.classList.add('dark');
  const saved = API.restoreSession();
  if (saved && saved.role === 'rider' && saved.phone) {
- if (saved.phone.includes('*')) { API.logout(); $('loginModal').classList.add('active'); $('mainContent').style.display = 'none'; }
+ if (saved.phone.includes('*')) { API.logout(); openSubPage('loginPage_sub'); $('mainContent').style.display = 'none'; }
  else { await restoreRiderSession(saved.phone, saved.name); }
  } else {
- $('loginModal').classList.add('active');
+ openSubPage('loginPage_sub');
  $('mainContent').style.display = 'none';
  $('profilePage').classList.remove('active');
  }
@@ -579,11 +614,11 @@
  $('userPhoneDisplay').textContent = phone;
  $('userUidDisplay').textContent = r.uid || '--';
  $('mainContent').style.display = 'block';
- $('loginModal').classList.remove('active');
+ closeSubPage('loginPage_sub');
  updateStatusUI(currentRider.status);
  await Promise.all([refreshOrders(), updateProfile()]);
  setInterval(refreshOrders, 15000);
- } catch (e) { showToast('恢复登录失败，请重新登录'); $('loginModal').classList.add('active'); }
+ } catch (e) { showToast('恢复登录失败，请重新登录'); openSubPage('loginPage_sub'); }
  }
 
  async function login(e) {
@@ -603,7 +638,7 @@
  $('userPhoneDisplay').textContent = phone;
  $('userUidDisplay').textContent = r.uid || uid;
  $('mainContent').style.display = 'block';
- $('loginModal').classList.remove('active');
+ closeSubPage('loginPage_sub');
  updateStatusUI('online');
  await Promise.all([refreshOrders(), updateProfile()]);
  setInterval(refreshOrders, 15000);
