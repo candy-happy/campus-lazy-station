@@ -229,6 +229,14 @@ const API = {
   async adminWithdrawList() { return fetch('/api/admin/withdraw', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
   async adminWithdrawAction(id, status, reason) { return fetch('/api/admin/withdraw/' + id, { method: 'POST', headers: this._headers(), body: JSON.stringify({status, reason}) }).then(r => r.json()); },
 
+  // ─── 聊天文件上传 ───
+  async chatUpload(file) {
+    const fd = new FormData(); fd.append('file', file);
+    const h = {}; if (this._token) h['Authorization'] = 'Bearer ' + this._token;
+    const res = await fetch('/api/chat/upload', { method: 'POST', headers: h, body: fd });
+    return res.json();
+  },
+
 
   // ─── 会话恢复 ───
   restoreSession() {

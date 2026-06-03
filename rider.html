@@ -693,9 +693,18 @@
         <button class="sub-page-back" onclick="closeSubPage('chatConvPage_sub')">←</button>
         <span class="sub-page-title" id="chatConvTitle">对话</span>
       </div>
-      <div class="sub-page-body" style="display:flex;flex-direction:column;height:calc(100% - 56px);padding:0">
+      <div class="sub-page-body" style="display:flex;flex-direction:column;height:calc(100% - 56px);padding:0;position:relative">
         <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px 16px;scrollbar-width:none"></div>
-        <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:8px;background:var(--bg)">
+        <!-- 表情选择器 -->
+        <div id="riderEmojiPicker" style="display:none;padding:8px 12px;border-top:1px solid var(--border);background:var(--bg);max-height:220px;overflow-y:auto">
+          <div style="display:flex;flex-wrap:wrap;gap:2px" id="riderEmojiGrid"></div>
+        </div>
+        <!-- 输入区 -->
+        <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:6px;background:var(--bg);align-items:center">
+          <span style="font-size:22px;cursor:pointer" onclick="toggleRiderEmojiPicker()">😊</span>
+          <label style="font-size:20px;cursor:pointer;display:flex;align-items:center" title="发送图片/视频">
+            📎<input type="file" accept="image/*,video/*" style="display:none" onchange="riderChatUpload(this)">
+          </label>
           <input id="chatInput" type="text" placeholder="输入消息..." style="flex:1;padding:10px 14px;border-radius:20px;border:1px solid var(--border);background:var(--card-bg);color:var(--text);font-size:14px;outline:none" onkeypress="if(event.key==='Enter')sendChatMsg()">
           <button onclick="sendChatMsg()" style="padding:10px 16px;border-radius:20px;background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;border:none;font-size:14px;cursor:pointer">发送</button>
         </div>
@@ -1093,11 +1102,21 @@
  async function loadRiderChatMessages() {
    if (!riderConvId) return;
    const msgs = await API.chatMessages(riderConvId, currentRider.phone);
+   if (!Array.isArray(msgs)) return;
    const el = document.getElementById('chatMessages');
    el.innerHTML = msgs.map(m => {
      const isMe = m.sender_phone === currentRider.phone;
+     const bubbleStyle = 'max-width:72%;padding:10px 14px;border-radius:' + (isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px') + ';font-size:14px;line-height:1.6;background:'+(isMe?'linear-gradient(135deg,#2ECC71,#27AE60)':'var(--card-bg)')+';color:'+(isMe?'#fff':'var(--text)')+';border:1px solid '+(isMe?'transparent':'var(--border)')+';box-shadow:0 1px 4px rgba(0,0,0,.06)';
+     let content;
+     if (m.type === 'image') {
+       content = '<img src="'+escHtml(m.content)+'" style="max-width:100%;border-radius:8px;display:block" onclick="window.open(this.src)" />';
+     } else if (m.type === 'video') {
+       content = '<video src="'+escHtml(m.content)+'" style="max-width:100%;border-radius:8px;display:block" controls preload="metadata"></video>';
+     } else {
+       content = escHtml(m.content);
+     }
      return '<div style="display:flex;justify-content:'+(isMe?'flex-end':'flex-start')+';margin-bottom:12px">' +
-       '<div style="max-width:72%;padding:10px 14px;border-radius:' + (isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px') + ';font-size:14px;line-height:1.6;background:'+(isMe?'linear-gradient(135deg,#2ECC71,#27AE60)':'var(--card-bg)')+';color:'+(isMe?'#fff':'var(--text)')+';border:1px solid '+(isMe?'transparent':'var(--border)')+';box-shadow:0 1px 4px rgba(0,0,0,.06)">'+escHtml(m.content)+'</div></div>';
+       '<div style="'+bubbleStyle+'">'+content+'</div></div>';
    }).join('');
    el.scrollTop = el.scrollHeight;
  }
@@ -1110,6 +1129,55 @@
    if (res.error) return showToast(res.error);
    input.value = '';
    await loadRiderChatMessages();
+ }
+
+ // ═══════════════════════════════════════════════════════
+ // 😊 骑手端表情选择器
+ // ═══════════════════════════════════════════════════════
+ const riderEmojiList = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','🥰','😘','😗','😙','😚','🙂','🤗','🤩','🤔','🤨','😐','😑','😶','🙄','😏','😣','😥','😮','🤐','😯','😪','😫','😴','😌','😛','😜','😝','🤤','😒','😓','😔','😕','🙃','🤑','😲','🙁','😖','😞','😟','😤','😢','😭','😦','😧','😨','😩','🤯','😬','😰','😱','🥵','🥶','😳','🤪','😵','😡','😠','🤬','😷','🤒','🤕','🤢','🤮','🥴','😇','🥳','🥺','🤠','🤡','🤥','🤫','🤭','🧐','🤓','💪','👍','👎','👏','🙏','🤝','❤️','💔','🔥','💯','✨','🎉','🎊','⭐','🌟','💬','💭','🤷','🤦','👋','✌️','🤞','🤟','🤘','👌','🤙','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','🤌','🫶','🫡','🫣','🫠'];
+ let riderEmojiInited = false;
+ function toggleRiderEmojiPicker() {
+   const picker = document.getElementById('riderEmojiPicker');
+   if (!picker) return;
+   if (!riderEmojiInited) {
+     const grid = document.getElementById('riderEmojiGrid');
+     if (grid) grid.innerHTML = riderEmojiList.map(e => '<span style="font-size:24px;cursor:pointer;padding:4px;border-radius:6px;display:inline-block;transition:background .15s" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'" onclick="insertRiderEmoji(\''+e+'\')">' + e + '</span>').join('');
+     riderEmojiInited = true;
+   }
+   picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+ }
+ function insertRiderEmoji(emoji) {
+   const input = document.getElementById('chatInput');
+   if (input) { input.value += emoji; input.focus(); }
+   const picker = document.getElementById('riderEmojiPicker');
+   if (picker) picker.style.display = 'none';
+ }
+
+ // ═══════════════════════════════════════════════════════
+ // 📎 骑手端图片/视频上传
+ // ═══════════════════════════════════════════════════════
+ async function riderChatUpload(input) {
+   const file = input.files && input.files[0];
+   if (!file || !riderConvId) return;
+   // 文件大小检查
+   if (file.size > 20 * 1024 * 1024) return showToast('文件不能超过20MB');
+   showToast('上传中...');
+   try {
+     const res = await API.chatUpload(file);
+     if (res.error) return showToast(res.error);
+     // 发送媒体消息
+     const sendRes = await API.chatSend({
+       conversation_id: riderConvId,
+       sender_phone: currentRider.phone,
+       content: res.url,
+       type: res.type
+     });
+     if (sendRes.error) return showToast(sendRes.error);
+     await loadRiderChatMessages();
+   } catch(e) {
+     showToast('上传失败: ' + (e.message||e));
+   }
+   input.value = '';
  }
 
  // ═══════════════════════════════════════════════════════

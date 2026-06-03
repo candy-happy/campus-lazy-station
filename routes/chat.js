@@ -4,6 +4,37 @@ const router = express.Router();
 const db = require('../config/database');
 const { requireAuth } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// ─── 聊天文件上传配置 ──────────────────────────────────────
+const CHAT_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'chat');
+if (!fs.existsSync(CHAT_UPLOAD_DIR)) fs.mkdirSync(CHAT_UPLOAD_DIR, { recursive: true });
+
+const chatStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, CHAT_UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || (file.mimetype.startsWith('video') ? '.mp4' : '.jpg');
+    cb(null, Date.now() + '-' + Math.random().toString(36).slice(2, 8) + ext);
+  }
+});
+const chatUpload = multer({
+  storage: chatStorage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ok = file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/');
+    cb(null, ok);
+  }
+});
+
+// ─── 聊天文件上传 ──────────────────────────────────────────
+router.post('/upload', requireAuth, chatUpload.single('file'), (req, res) => JSON_RES(res, () => {
+  if (!req.file) return makeError('请选择文件', ErrorCode.PARAM_MISSING);
+  const url = '/uploads/chat/' + req.file.filename;
+  const type = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+  return { ok: true, url, type, filename: req.file.filename };
+}));
 
 // ─── 获取或创建会话 ──────────────────────────────────────
 router.post('/conversation', requireAuth, (req, res) => JSON_RES(res, () => {
