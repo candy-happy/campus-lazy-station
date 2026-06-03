@@ -286,6 +286,20 @@
     .rd-status-end {
       text-align: center; color: var(--text-muted); font-size: 14px; padding: 12px;
     }
+
+    /* ═══════════════════════════════════════════════════════
+       📄 子页面系统
+    ═══════════════════════════════════════════════════════ */
+    .sub-page { display: none; position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; height: 100%; background: var(--bg); z-index: 1000; overflow-y: auto; }
+    .sub-page.active { display: block; }
+    .sub-page-header { background: linear-gradient(135deg, #2ECC71, #27AE60); padding: 16px 20px; color: white; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; }
+    .sub-page-back { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .sub-page-back:hover { background: rgba(255,255,255,0.3); }
+    .sub-page-back:active { transform: scale(0.92); }
+    .sub-page-title { font-size: 16px; font-weight: 800; }
+    .sub-page-body { padding: 16px; }
+    body.dark .sub-page-header { background: linear-gradient(135deg, #1a1a2e, #16213e); }
+
 </style>
 <script src="api.js"></script>
 </head>
@@ -422,12 +436,13 @@
  <div style="padding: 16px;"><button class="btn btn-secondary" style="width: 100%;" onclick="logout()">退出登录</button></div>
  </div>
  </div>
- <div class="modal-overlay" id="detailModal">
- <div class="modal-content">
- <div class="modal-header"><span class="modal-title">订单详情</span><button class="modal-close" onclick="closeModal('detailModal')">✕</button></div>
- <div class="modal-body" id="detailContent"></div>
- </div>
- </div>
+ <div class="sub-page" id="detailPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('detailPage_sub')">←</button>
+        <span class="sub-page-title">订单详情</span>
+      </div>
+      <div class="sub-page-body" id="detailContent"></div>
+    </div>
  <div class="modal-overlay" id="loginModal">
  <div class="modal-content">
  <div class="modal-header"><span class="modal-title">骑手登录</span><button class="modal-close" onclick="closeModal('loginModal')">✕</button></div>
@@ -720,15 +735,14 @@
      ${chatBtn}
    </div>
  `;
- $('detailModal').classList.add('active');
- document.body.style.overflow = 'hidden';
+ openSubPage('detailPage_sub');
  }
 
  async function acceptOrder(orderNo) {
  try {
  await API.acceptOrder(orderNo, currentRider.phone, currentRider.name);
  showToast('接单成功！');
- closeModal('detailModal');
+ closeSubPage('detailPage_sub');
  await refreshOrders();
  await updateProfile();
  } catch (e) { showToast(e.message || '接单失败'); }
@@ -738,7 +752,7 @@
  try {
  await API.startDelivery(orderNo);
  showToast('已开始配送');
- closeModal('detailModal');
+ closeSubPage('detailPage_sub');
  await refreshOrders();
  } catch (e) { showToast(e.message || '操作失败'); }
  }
@@ -747,7 +761,7 @@
  try {
  await API.completeOrder(orderNo);
  showToast('订单已完成！🎉');
- closeModal('detailModal');
+ closeSubPage('detailPage_sub');
  await refreshOrders();
  await updateProfile();
  } catch (e) { showToast(e.message || '操作失败'); }
@@ -966,7 +980,7 @@
        order_id: o.id || o.order_no,
        order_title: (serviceNames[o.type]||'服务') + ' - ' + (o.pickup_location||'')
      });
-     closeModal('detailModal');
+     closeSubPage('detailPage_sub');
      await openRiderConv(conv.id, o.phone, o.user_name || '用户');
    } catch(e) {
      showToast('打开聊天失败');
@@ -1141,6 +1155,9 @@
  window.toggleOnlineStatus = toggleOnlineStatus;
  window.switchTab = switchTab;
  window.showOrderDetail = showOrderDetail;
+window.openSubPage = openSubPage;
+window.closeSubPage = closeSubPage;
+window.goBack = goBack;
  window.acceptOrder = acceptOrder;
  window.startDelivery = startDelivery;
  window.completeOrder = completeOrder;
