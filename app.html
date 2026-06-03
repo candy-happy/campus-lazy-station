@@ -1168,6 +1168,327 @@
     body.dark .profile-avatar-option { background: var(--bg); }
     body.dark .profile-avatar-option.selected { background: rgba(255,107,53,0.15); }
     body.dark .profile-form-card { box-shadow: var(--shadow); }
+
+    /* ═══════════════════════════════════════════════════════
+       📋 通用子页面内容卡片
+    ═══════════════════════════════════════════════════════ */
+    .sp-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .sp-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px 16px 8px;
+      color: var(--text);
+    }
+    .sp-card-body {
+      padding: 0 16px 16px;
+    }
+
+    /* 积分页 */
+    .points-hero {
+      text-align: center;
+      padding: 24px 16px;
+      background: var(--gradient);
+      border-radius: var(--radius);
+      color: #fff;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(255,107,53,0.25);
+    }
+    .points-hero-label { font-size: 13px; opacity: 0.8; }
+    .points-hero-num { font-size: 48px; font-weight: 900; margin: 8px 0; }
+    .points-hero-hint { font-size: 12px; opacity: 0.7; }
+    .points-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .points-item:last-child { border-bottom: none; }
+    .points-item-info { flex: 1; }
+    .points-item-desc { font-size: 14px; font-weight: 500; }
+    .points-item-time { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+    .points-item-val { font-size: 17px; font-weight: 800; flex-shrink: 0; margin-left: 12px; }
+    .points-item-val.pos { color: #22c55e; }
+    .points-item-val.neg { color: var(--danger); }
+
+    /* 优惠券页 */
+    .coupon-item {
+      display: flex;
+      align-items: center;
+      padding: 14px;
+      margin-bottom: 8px;
+      background: var(--bg);
+      border-radius: var(--radius);
+      transition: opacity 0.2s;
+      border: 1px solid var(--border);
+    }
+    .coupon-item.used { opacity: 0.4; }
+    .coupon-item.claimed { opacity: 0.5; }
+    .coupon-left {
+      flex: 1;
+      min-width: 0;
+    }
+    .coupon-name { font-weight: 700; font-size: 15px; }
+    .coupon-desc { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+    .coupon-amount {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--danger);
+      margin: 0 12px;
+      flex-shrink: 0;
+    }
+    .coupon-amount.used { color: var(--text-secondary); }
+    .coupon-btn {
+      border: none;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s;
+    }
+    .coupon-btn:active { transform: scale(0.95); }
+    .coupon-btn-primary { background: var(--primary); color: #fff; }
+    .coupon-btn-disabled { background: var(--bg); color: var(--text-light); cursor: default; }
+
+    /* 地址页 */
+    .addr-item {
+      padding: 14px;
+      margin-bottom: 8px;
+      background: var(--bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+    .addr-default-badge {
+      position: absolute;
+      top: 10px; right: 10px;
+      font-size: 11px;
+      background: var(--primary);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .addr-name { font-weight: 700; font-size: 15px; }
+    .addr-location { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+    .addr-note { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .addr-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .addr-action-btn {
+      font-size: 12px;
+      background: none;
+      border-radius: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: opacity 0.15s;
+    }
+    .addr-action-btn:active { opacity: 0.7; }
+    .addr-action-btn.edit { border: 1px solid var(--primary); color: var(--primary); }
+    .addr-action-btn.default { border: 1px solid #22c55e; color: #22c55e; }
+    .addr-action-btn.delete { border: 1px solid var(--danger); color: var(--danger); }
+    .addr-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .addr-add-btn:active { transform: scale(0.95); }
+
+    /* 地址编辑表单 */
+    .addr-form-group {
+      margin-bottom: 14px;
+    }
+    .addr-form-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      display: block;
+    }
+    .addr-form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .addr-form-input:focus { border-color: var(--primary); }
+    .addr-form-check {
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .addr-form-check input { width: 18px; height: 18px; accent-color: var(--primary); }
+    .addr-form-save {
+      width: 100%;
+      padding: 12px;
+      background: var(--gradient);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(255,107,53,0.3);
+      transition: transform 0.15s;
+    }
+    .addr-form-save:active { transform: scale(0.97); }
+
+    /* 设置页 */
+    .settings-section {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .settings-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      padding: 12px 16px 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .settings-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-item:last-child { border-bottom: none; }
+    .settings-item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .settings-item-right {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    /* 开关 */
+    .toggle-switch {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      display: inline-block;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 26px;
+      transition: 0.3s;
+    }
+    .toggle-track.off { background: #ccc; }
+    .toggle-track.on { background: var(--primary); }
+    .toggle-thumb {
+      position: absolute;
+      height: 20px; width: 20px;
+      bottom: 3px;
+      border-radius: 50%;
+      background: #fff;
+      transition: 0.3s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle-thumb.off { left: 3px; }
+    .toggle-thumb.on { left: 24px; }
+    .settings-logout-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .settings-logout-btn:active { transform: scale(0.97); opacity: 0.9; }
+    .settings-version {
+      text-align: center;
+      padding: 16px 0;
+      color: var(--text-light);
+      font-size: 12px;
+    }
+
+    /* 消息列表 */
+    .chat-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .chat-item:active { background: var(--bg); }
+    .chat-item-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .chat-item-info { flex: 1; min-width: 0; }
+    .chat-item-top { display: flex; justify-content: space-between; align-items: center; }
+    .chat-item-name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-item-time { font-size: 11px; color: var(--text-secondary); flex-shrink: 0; }
+    .chat-item-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+    .chat-item-msg { font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .chat-item-badge {
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      width: 20px; height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+
+    /* 暗色模式 */
+    body.dark .sp-card { box-shadow: var(--shadow); }
+    body.dark .points-hero { box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+    body.dark .settings-section { box-shadow: var(--shadow); }
+    body.dark .coupon-item { border-color: var(--border); }
+    body.dark .addr-item { border-color: var(--border); }
+    body.dark .addr-form-input { background: var(--bg); border-color: var(--border); }
 </style>
 <script src="api.js"></script>
 </head>
@@ -2325,16 +2646,16 @@
         return;
       }
       el.innerHTML = list.map(c => `
-        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer" onclick="openChatConv(${c.id},'${escHtml(c.other_phone)}','${escHtml(c.other_name)}')">
-          <div style="width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${(c.other_name||'?')[0]}</div>
-          <div style="flex:1;min-width:0">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(c.other_name||c.other_phone)}</span>
-              <span style="font-size:11px;color:var(--text-secondary);flex-shrink:0">${timeAgo(c.last_message_at)}</span>
+        <div class="chat-item" onclick="openChatConv(${c.id},'${escHtml(c.other_phone)}','${escHtml(c.other_name)}')">
+          <div class="chat-item-avatar">${(c.other_name||'?')[0]}</div>
+          <div class="chat-item-info">
+            <div class="chat-item-top">
+              <span class="chat-item-name">${escHtml(c.other_name||c.other_phone)}</span>
+              <span class="chat-item-time">${timeAgo(c.last_message_at)}</span>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-              <span style="font-size:13px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml((c.last_sender===currentUser.phone?'我:':'')+ (c.last_message||''))}</span>
-              ${c.unread? '<span style="background:var(--primary);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">' + c.unread + '</span>':''}
+            <div class="chat-item-bottom">
+              <span class="chat-item-msg">${escHtml((c.last_sender===currentUser.phone?'我:':'')+ (c.last_message||''))}</span>
+              ${c.unread? '<span class="chat-item-badge">' + c.unread + '</span>':''}
             </div>
           </div>
         </div>
@@ -2708,25 +3029,35 @@
       try {
         const [available, mine] = await Promise.all([API.getCoupons(), currentUser ? API.getMyCoupons(currentUser.phone) : []]);
         const mineIds = new Set((mine||[]).map(c=>c.id));
-        let h = '<div style="padding:16px">';
-        h += '<h3 style="margin:0 0 12px;font-size:16px">🎟️ 可领取优惠券</h3>';
+        let el = document.getElementById('couponPage_sub');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'couponPage_sub';
+          el.className = 'sub-page';
+          el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'couponPage_sub\')">←</button><span class="sub-page-title">🎫 优惠券</span></div><div class="sub-page-body"></div>';
+          document.body.appendChild(el);
+        }
+        let h = '';
+        h += '<div class="sp-card"><div class="sp-card-title">🎟️ 可领取优惠券</div><div class="sp-card-body">';
         if (!available.length) h += '<div style="text-align:center;color:var(--text-secondary);padding:20px">暂无可用优惠券</div>';
         available.forEach(c => {
           const cl = mineIds.has(c.id);
-          h += '<div style="display:flex;align-items:center;padding:12px;margin-bottom:8px;background:var(--bg-secondary);border-radius:12px;'+(cl?'opacity:0.5':'')+'">';
-          h += '<div style="flex:1"><div style="font-weight:700;font-size:15px">'+escHtml(c.name)+'</div><div style="font-size:12px;color:var(--text-secondary)">满'+c.min_amount+'可用 | 有效期至'+c.expire_at.slice(0,10)+'</div></div>';
-          h += '<div style="font-size:20px;font-weight:900;color:var(--red);margin:0 8px">\u00a5'+c.value+'</div>';
-          h += '<button onclick="claimCoupon('+c.id+')" '+(cl?'disabled style="opacity:0.5"':'style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:6px 12px;cursor:pointer"')+'>'+(cl?'已领取':'领取')+'</button></div>';
+          h += '<div class="coupon-item' + (cl?' claimed':'') + '">';
+          h += '<div class="coupon-left"><div class="coupon-name">' + escHtml(c.name) + '</div><div class="coupon-desc">满' + c.min_amount + '可用 | 有效期至' + c.expire_at.slice(0,10) + '</div></div>';
+          h += '<div class="coupon-amount">\u00a5' + c.value + '</div>';
+          h += '<button onclick="claimCoupon(' + c.id + ')" class="coupon-btn ' + (cl?'coupon-btn-disabled':'coupon-btn-primary') + '"' + (cl?' disabled':'') + '>' + (cl?'已领取':'领取') + '</button></div>';
         });
-        h += '<h3 style="margin:16px 0 12px;font-size:16px">🎒 我的优惠券</h3>';
+        h += '</div></div>';
+        h += '<div class="sp-card"><div class="sp-card-title">🎒 我的优惠券</div><div class="sp-card-body">';
         if (!mine||!mine.length) h += '<div style="text-align:center;color:var(--text-secondary);padding:20px">暂无已领取优惠券</div>';
         (mine||[]).forEach(c => {
-          h += '<div style="display:flex;align-items:center;padding:12px;margin-bottom:8px;background:var(--bg-secondary);border-radius:12px;'+(c.used?'opacity:0.4':'')+'">';
-          h += '<div style="flex:1"><div style="font-weight:700;font-size:15px">'+escHtml(c.name)+'</div><div style="font-size:12px;color:var(--text-secondary)">满'+c.min_amount+'可用 | '+(c.used?'已使用':'可用')+' | 有效期至'+c.expire_at.slice(0,10)+'</div></div>';
-          h += '<div style="font-size:20px;font-weight:900;color:'+(c.used?'var(--text-secondary)':'var(--red)')+'">\u00a5'+c.value+'</div></div>';
+          h += '<div class="coupon-item' + (c.used?' used':'') + '">';
+          h += '<div class="coupon-left"><div class="coupon-name">' + escHtml(c.name) + '</div><div class="coupon-desc">满' + c.min_amount + '可用 | ' + (c.used?'已使用':'可用') + ' | 有效期至' + c.expire_at.slice(0,10) + '</div></div>';
+          h += '<div class="coupon-amount' + (c.used?' used':'') + '">\u00a5' + c.value + '</div></div>';
         });
-        h += '</div>';
-        openModal('\u00a5 优惠券', h);
+        h += '</div></div>';
+        el.querySelector('.sub-page-body').innerHTML = h;
+        openSubPage('couponPage_sub');
       } catch(e) { showToast('加载失败'); }
     }
     async function claimCoupon(id) {
@@ -2737,58 +3068,84 @@
       if (!currentUser) return showToast('请先登录');
       try {
         const data = await API.getPoints(currentUser.phone);
-        let h = '<div style="padding:16px;text-align:center">';
-        h += '<div style="font-size:13px;color:var(--text-secondary)">我的积分</div>';
-        h += '<div style="font-size:42px;font-weight:900;color:var(--primary);margin:8px 0">'+(data.total||0)+'</div>';
-        h += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px">积分可在下单时抵扣</div>';
-        h += '<h3 style="text-align:left;margin:0 0 12px;font-size:15px">📜 积分明细</h3>';
+        let el = document.getElementById('pointsPage_sub');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'pointsPage_sub';
+          el.className = 'sub-page';
+          el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'pointsPage_sub\')">←</button><span class="sub-page-title">⭐ 积分</span></div><div class="sub-page-body"></div>';
+          document.body.appendChild(el);
+        }
+        let h = '<div class="points-hero">';
+        h += '<div class="points-hero-label">我的积分</div>';
+        h += '<div class="points-hero-num">' + (data.total||0) + '</div>';
+        h += '<div class="points-hero-hint">积分可在下单时抵扣</div></div>';
+        h += '<div class="sp-card"><div class="sp-card-title">📜 积分明细</div><div class="sp-card-body">';
         if (!data.history||!data.history.length) h += '<div style="text-align:center;color:var(--text-secondary);padding:20px">暂无积分记录</div>';
         (data.history||[]).forEach(l => {
           const isAdd = l.amount > 0;
-          h += '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">';
-          h += '<div><div style="font-size:14px">'+escHtml(l.description||l.type)+'</div><div style="font-size:11px;color:var(--text-secondary)">'+l.created_at+'</div></div>';
-          h += '<div style="font-size:16px;font-weight:700;color:'+(isAdd?'var(--green)':'var(--red)')+'">'+(isAdd?'+':'')+l.amount+'</div></div>';
+          h += '<div class="points-item">';
+          h += '<div class="points-item-info"><div class="points-item-desc">' + escHtml(l.description||l.type) + '</div><div class="points-item-time">' + l.created_at + '</div></div>';
+          h += '<div class="points-item-val ' + (isAdd?'pos':'neg') + '">' + (isAdd?'+':'') + l.amount + '</div></div>';
         });
-        h += '</div>';
-        openModal('\u2b50 积分', h);
+        h += '</div></div>';
+        el.querySelector('.sub-page-body').innerHTML = h;
+        openSubPage('pointsPage_sub');
       } catch(e) { showToast('加载失败'); }
     }
     async function showAddresses() {
       if (!currentUser) return showToast('请先登录');
       try {
         const list = await API.getAddresses(currentUser.phone);
-        let h = '<div style="padding:16px">';
-        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
-        h += '<h3 style="margin:0;font-size:16px">📍 我的地址</h3>';
-        h += '<button onclick="editAddress()" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px">+ 新增</button></div>';
+        let el = document.getElementById('addrPage_sub');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'addrPage_sub';
+          el.className = 'sub-page';
+          el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'addrPage_sub\')">←</button><span class="sub-page-title">📍 地址管理</span></div><div class="sub-page-body"></div>';
+          document.body.appendChild(el);
+        }
+        let h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
+        h += '<div style="font-weight:700;font-size:16px">我的地址</div>';
+        h += '<button class="addr-add-btn" onclick="editAddress()">+ 新增</button></div>';
         if (!list||!list.length) h += '<div style="text-align:center;color:var(--text-secondary);padding:30px">暂无地址，点击右上角新增</div>';
         (list||[]).forEach(a => {
-          h += '<div style="padding:12px;margin-bottom:8px;background:var(--bg-secondary);border-radius:12px;position:relative">';
-          if (a.is_default) h += '<span style="position:absolute;top:8px;right:8px;font-size:11px;background:var(--primary);color:#fff;padding:2px 8px;border-radius:4px">默认</span>';
-          h += '<div style="font-weight:700;font-size:15px">'+escHtml(a.name)+'</div>';
-          h += '<div style="font-size:13px;color:var(--text-secondary);margin-top:4px">'+escHtml(a.location)+'</div>';
-          if (a.note) h += '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px">备注: '+escHtml(a.note)+'</div>';
-          h += '<div style="display:flex;gap:8px;margin-top:8px">';
-          h += '<button onclick="editAddress('+a.id+')" style="font-size:12px;background:none;border:1px solid var(--primary);color:var(--primary);border-radius:6px;padding:4px 10px;cursor:pointer">编辑</button>';
-          if (!a.is_default) h += '<button onclick="setDefaultAddr('+a.id+')" style="font-size:12px;background:none;border:1px solid var(--green);color:var(--green);border-radius:6px;padding:4px 10px;cursor:pointer">设为默认</button>';
-          h += '<button onclick="deleteAddr('+a.id+')" style="font-size:12px;background:none;border:1px solid var(--red);color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer">删除</button>';
+          h += '<div class="addr-item">';
+          if (a.is_default) h += '<span class="addr-default-badge">默认</span>';
+          h += '<div class="addr-name">' + escHtml(a.name) + '</div>';
+          h += '<div class="addr-location">' + escHtml(a.location) + '</div>';
+          if (a.note) h += '<div class="addr-note">备注: ' + escHtml(a.note) + '</div>';
+          h += '<div class="addr-actions">';
+          h += '<button class="addr-action-btn edit" onclick="editAddress(' + a.id + ')">编辑</button>';
+          if (!a.is_default) h += '<button class="addr-action-btn default" onclick="setDefaultAddr(' + a.id + ')">设为默认</button>';
+          h += '<button class="addr-action-btn delete" onclick="deleteAddr(' + a.id + ')">删除</button>';
           h += '</div></div>';
         });
-        h += '</div>';
-        openModal('📍 地址管理', h);
+        el.querySelector('.sub-page-body').innerHTML = h;
+        openSubPage('addrPage_sub');
       } catch(e) { showToast('加载失败'); }
     }
     async function editAddress(id) {
       let addr = {};
       if (id) { const list = await API.getAddresses(currentUser.phone); addr = list.find(a=>a.id===id)||{}; }
-      let h = '<div style="padding:16px">';
-      h += '<div style="margin-bottom:12px"><label style="font-size:13px;color:var(--text-secondary)">名称</label><input id="addrName" value="'+escHtml(addr.name||'')+'" placeholder="如：宿舍楼" style="width:100%;padding:10px;margin-top:4px;border:1px solid var(--border);border-radius:8px;font-size:14px"></div>';
-      h += '<div style="margin-bottom:12px"><label style="font-size:13px;color:var(--text-secondary)">详细地址</label><input id="addrLocation" value="'+escHtml(addr.location||'')+'" placeholder="如：3号楼405" style="width:100%;padding:10px;margin-top:4px;border:1px solid var(--border);border-radius:8px;font-size:14px"></div>';
-      h += '<div style="margin-bottom:12px"><label style="font-size:13px;color:var(--text-secondary)">备注</label><input id="addrNote" value="'+escHtml(addr.note||'')+'" placeholder="如：放门口" style="width:100%;padding:10px;margin-top:4px;border:1px solid var(--border);border-radius:8px;font-size:14px"></div>';
-      h += '<label style="font-size:13px;display:flex;align-items:center;gap:6px"><input type="checkbox" id="addrDefault" '+(addr.is_default?'checked':'')+' style="width:16px;height:16px"> 设为默认地址</label>';
-      h += '<button onclick="saveAddress('+(id||'null')+')" style="width:100%;margin-top:16px;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">保存</button>';
-      h += '</div>';
-      openModal(id?'编辑地址':'新增地址', h);
+      let el = document.getElementById('addrEditPage_sub');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'addrEditPage_sub';
+        el.className = 'sub-page';
+        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'addrEditPage_sub\')">←</button><span class="sub-page-title" id="addrEditTitle"></span></div><div class="sub-page-body"></div>';
+        document.body.appendChild(el);
+      }
+      document.getElementById('addrEditTitle').textContent = id ? '编辑地址' : '新增地址';
+      let h = '<div class="sp-card"><div class="sp-card-body">';
+      h += '<div class="addr-form-group"><label class="addr-form-label">名称</label><input class="addr-form-input" id="addrName" value="' + escHtml(addr.name||'') + '" placeholder="如：宿舍楼" /></div>';
+      h += '<div class="addr-form-group"><label class="addr-form-label">详细地址</label><input class="addr-form-input" id="addrLocation" value="' + escHtml(addr.location||'') + '" placeholder="如：3号楼405" /></div>';
+      h += '<div class="addr-form-group"><label class="addr-form-label">备注</label><input class="addr-form-input" id="addrNote" value="' + escHtml(addr.note||'') + '" placeholder="如：放门口" /></div>';
+      h += '<label class="addr-form-check"><input type="checkbox" id="addrDefault" ' + (addr.is_default?'checked':'') + ' /> 设为默认地址</label>';
+      h += '<button class="addr-form-save" onclick="saveAddress(' + (id||'null') + ')">保存</button>';
+      h += '</div></div>';
+      el.querySelector('.sub-page-body').innerHTML = h;
+      openSubPage('addrEditPage_sub');
     }
     async function saveAddress(id) {
       const name = document.getElementById('addrName').value.trim();
@@ -2825,20 +3182,20 @@
         document.body.appendChild(el);
       }
       el.querySelector('.sub-page-body').innerHTML =
-        '<div style="padding:16px 0;border-bottom:1px solid var(--border)">' +
-        '<div style="font-weight:600;margin-bottom:12px">外观</div>' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">' +
-        '<span>🌙 深色模式</span>' +
-        '<label style="position:relative;width:48px;height:26px;display:inline-block"><input type="checkbox" id="darkToggle" ' + (isDark ? 'checked' : '') + ' onchange="toggleDark(this.checked)" style="opacity:0;width:0;height:0"><span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:' + (isDark ? 'var(--primary)' : '#ccc') + ';border-radius:26px;transition:.3s"></span><span style="position:absolute;height:20px;width:20px;left:' + (isDark ? '24px' : '3px') + ';bottom:3px;background:#fff;border-radius:50%;transition:.3s"></span></label>' +
+        '<div class="settings-section">' +
+        '<div class="settings-section-title">外观</div>' +
+        '<div class="settings-item">' +
+        '<div class="settings-item-left">🌙 深色模式</div>' +
+        '<label class="toggle-switch"><input type="checkbox" id="darkToggle" ' + (isDark ? 'checked' : '') + ' onchange="toggleDark(this.checked)"><span class="toggle-track ' + (isDark?'on':'off') + '"></span><span class="toggle-thumb ' + (isDark?'on':'off') + '"></span></label>' +
         '</div></div>' +
-        '<div style="padding:16px 0;border-bottom:1px solid var(--border)">' +
-        '<div style="font-weight:600;margin-bottom:12px">账户</div>' +
-        '<div style="font-size:14px;color:var(--text-secondary);margin-bottom:8px">手机号: ' + escHtml(currentUser.phone) + '</div>' +
-        '</div>' +
-        '<div style="padding:16px 0">' +
-        '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyUser\');location.reload()}" style="width:100%;padding:12px;border:none;border-radius:12px;background:var(--danger);color:#fff;font-size:15px;font-weight:600;cursor:pointer">退出登录</button>' +
-        '</div>' +
-        '<div style="text-align:center;padding:16px 0;color:var(--text-light);font-size:12px">校园懒人效率站 v3.0</div>';
+        '<div class="settings-section">' +
+        '<div class="settings-section-title">账户</div>' +
+        '<div class="settings-item">' +
+        '<div class="settings-item-left">📱 手机号</div>' +
+        '<div class="settings-item-right">' + escHtml(currentUser.phone) + '</div>' +
+        '</div></div>' +
+        '<button class="settings-logout-btn" onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyUser\');location.reload()}">退出登录</button>' +
+        '<div class="settings-version">校园懒人效率站 v3.0</div>';
       openSubPage('settingsPage_sub');
     }
     function toggleDark(on) {
