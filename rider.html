@@ -46,7 +46,7 @@
  .stat-item { text-align: center; }
  .stat-value { font-size: 1.5rem; font-weight: 900; color: var(--dark); }
  .stat-label { font-size: 0.75rem; color: var(--text-muted); }
- .app-main { padding: 16px; padding-bottom: 100px; }
+ .app-main { padding: 16px; padding-bottom: 40px; }
  .section-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
  /* 订单筛选标签 */
  .order-tabs { display: flex; border-bottom: 1px solid var(--border); margin: 0 -16px 16px; padding: 0 8px; }
@@ -138,8 +138,7 @@
  .detail-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
  .detail-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
  .detail-value { font-size: 1rem; font-weight: 600; color: var(--dark); }
- .profile-page { display: none; min-height: 100vh; background: var(--bg); padding-bottom: 100px; }
- .profile-page.active { display: block; }
+ .profile-section { background: var(--bg); margin-top: 24px; }
  .profile-header { background: linear-gradient(135deg, #2ECC71 0%, #27AE60 50%, #1E8449 100%); padding: 20px 16px 70px; position: relative; overflow: hidden; }
  .profile-header::before { content: ''; position: absolute; top: -50%; right: -30%; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; }
  .profile-header::after { content: ''; position: absolute; bottom: -30%; left: -20%; width: 150px; height: 150px; background: rgba(255,255,255,0.08); border-radius: 50%; }
@@ -553,16 +552,8 @@
    <!-- 统一订单列表 -->
    <div id="allRiderOrders"></div>
  </div>
- </main>
- <nav class="bottom-nav">
- <div class="nav-item active" onclick="riderSwitchTab('home', event)"><span class="nav-item-icon">🏠</span><span class="nav-item-label">订单</span></div>
- <div class="nav-item" onclick="riderSwitchTab('profile', event)"><span class="nav-item-icon">👤</span><span class="nav-item-label">我的</span></div>
- </nav>
- <div class="entry-links">
- <a href="index.html" class="entry-link">🏠 首页</a>
- <a href="app.html" class="entry-link">📱 用户端</a>
- </div>
- <div class="profile-page" id="profilePage">
+ <!-- 我的 信息区 -->
+ <div class="profile-section" id="profileSection">
  <div class="profile-header">
  <div class="profile-top">
  <div class="profile-title">我的</div>
@@ -656,7 +647,8 @@
 
  <div style="padding: 16px;"><button class="btn btn-secondary" style="width: 100%;" onclick="logout()">退出登录</button></div>
  </div>
- </div>
+ </main>
+ <!-- 我的 信息区（在底部导航下面） -->
  <div class="sub-page" id="detailPage_sub">
       <div class="sub-page-header">
         <button class="sub-page-back" onclick="closeSubPage('detailPage_sub')">←</button>
@@ -1046,20 +1038,15 @@
  } catch(e){ console.error(e); }
  }
 
- // ══════ Tab切换 ══════
+ // ══════ Tab切换（简化版） ══════
  function riderSwitchTab(tab, evt) {
-   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-   if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
-   document.body.classList.remove('tab-home', 'tab-history', 'tab-profile');
-   document.body.classList.add('tab-' + tab);
    if (tab === 'home') {
-     $('mainContent').style.display = 'block';
-     $('profilePage').classList.remove('active');
      refreshOrders();
    } else if (tab === 'profile') {
-     $('mainContent').style.display = 'none';
-     $('profilePage').classList.add('active');
      updateProfile();
+     // 滚动到我的信息区
+     const el = document.getElementById('profileSection');
+     if (el) el.scrollIntoView({ behavior: 'smooth' });
    }
  }
 
