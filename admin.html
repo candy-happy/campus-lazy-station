@@ -281,10 +281,7 @@
  <div class="form-group"><label class="form-label">图标(emoji，无媒体时显示)</label><input type="text" class="form-input" id="adImage" value="🎁" maxlength="4"></div>
  <div class="form-group">
   <label class="form-label">媒体文件（图片/视频）</label>
-  <div style="display:flex;gap:8px;align-items:center">
-   <input type="file" class="form-input" id="adMediaFile" accept="image/*,video/*" style="padding:4px">
-   <button type="button" class="btn btn-secondary btn-sm" onclick="uploadAdMedia()">上传</button>
-  </div>
+  <input type="file" class="form-input" id="adMediaFile" accept="image/*,video/*" style="padding:4px" onchange="uploadAdMedia()">
   <div id="adMediaPreview" style="margin-top:6px;display:none"></div>
   <input type="hidden" id="adMediaUrl">
  </div>
