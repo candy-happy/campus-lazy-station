@@ -109,10 +109,106 @@ router.post('/:id/complete', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 取消订单 ─────────────────────────────────────────────
+// pending→用户直接取消; accepted/running→发起取消申请等待审核
 router.post('/:id/cancel', requireAuth, (req, res) => JSON_RES(res, () => {
-  db.prepare(`UPDATE orders SET status='cancelled', cancelled_at=datetime('now','localtime'), cancel_reason=?
-    WHERE (id=? OR order_no=?) AND status IN ('pending','accepted')`)
-    .run(req.body.reason || '用户取消', req.params.id, req.params.id);
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
+  if (!order) return makeError('订单不存在', ErrorCode.ORDER_NOT_FOUND, 404);
+  const { reason } = req.body;
+
+  // 已有取消申请待审核
+  if (order.cancel_request_status === 'pending') return makeError('已有取消申请待审核');
+  // 已有退款申请待审核
+  if (order.refund_status === 'pending') return makeError('已有退款申请待审核');
+
+  if (order.status === 'pending') {
+    // 未接单：用户直接取消
+    db.prepare(`UPDATE orders SET status='cancelled', cancelled_at=datetime('now','localtime'), cancel_reason=?
+      WHERE id=?`).run(reason || '用户取消', order.id);
+    return { ok: true, direct: true };
+  } else if (order.status === 'accepted' || order.status === 'running') {
+    // 已接单/配送中：发起取消申请
+    db.prepare(`UPDATE orders SET cancel_request_status='pending', cancel_request_reason=?, cancel_requested_at=datetime('now','localtime')
+      WHERE id=?`).run(reason || '用户申请取消', order.id);
+    return { ok: true, direct: false, message: '取消申请已提交，等待审核' };
+  } else {
+    return makeError('当前订单状态不可取消');
+  }
+}));
+
+// ─── 退款申请（已完成订单）─────────────────────────────────
+router.post('/:id/refund', requireAuth, (req, res) => JSON_RES(res, () => {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
+  if (!order) return makeError('订单不存在', ErrorCode.ORDER_NOT_FOUND, 404);
+  const { reason } = req.body;
+
+  if (order.status !== 'completed') return makeError('只有已完成的订单可以申请退款');
+  if (order.refund_status === 'pending') return makeError('已有退款申请待审核');
+  if (order.refund_status === 'approved_full' || order.refund_status === 'approved_partial') return makeError('退款已处理');
+
+  db.prepare(`UPDATE orders SET refund_status='pending', refund_reason=?, refund_requested_at=datetime('now','localtime')
+    WHERE id=?`).run(reason || '用户申请退款', order.id);
+  return { ok: true, message: '退款申请已提交，等待管理员审核' };
+}));
+
+// ─── 管理员审核取消申请 ─────────────────────────────────────
+router.post('/:id/cancel-review', requireAuth, (req, res) => JSON_RES(res, () => {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
+  if (!order) return makeError('订单不存在', ErrorCode.ORDER_NOT_FOUND, 404);
+  const { action, admin_name } = req.body; // action: 'approve' | 'reject'
+
+  if (order.cancel_request_status !== 'pending') return makeError('无待审核的取消申请');
+
+  if (action === 'approve') {
+    db.prepare(`UPDATE orders SET status='cancelled', cancel_request_status='approved', cancelled_at=datetime('now','localtime'),
+      cancel_reason=?, cancel_resolved_at=datetime('now','localtime'), cancel_resolved_by=? WHERE id=?`)
+      .run(order.cancel_request_reason, admin_name || '管理员', order.id);
+  } else {
+    db.prepare(`UPDATE orders SET cancel_request_status='rejected', cancel_resolved_at=datetime('now','localtime'), cancel_resolved_by=? WHERE id=?`)
+      .run(admin_name || '管理员', order.id);
+  }
+  return { ok: true };
+}));
+
+// ─── 骑手审核取消申请 ─────────────────────────────────────
+router.post('/:id/cancel-rider-review', requireAuth, (req, res) => JSON_RES(res, () => {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
+  if (!order) return makeError('订单不存在', ErrorCode.ORDER_NOT_FOUND, 404);
+  const { action, rider_name } = req.body;
+
+  if (order.cancel_request_status !== 'pending') return makeError('无待审核的取消申请');
+
+  if (action === 'approve') {
+    db.prepare(`UPDATE orders SET status='cancelled', cancel_request_status='approved', cancelled_at=datetime('now','localtime'),
+      cancel_reason=?, cancel_resolved_at=datetime('now','localtime'), cancel_resolved_by=? WHERE id=?`)
+      .run(order.cancel_request_reason, '骑手:' + (rider_name || ''), order.id);
+  } else {
+    db.prepare(`UPDATE orders SET cancel_request_status='rejected', cancel_resolved_at=datetime('now','localtime'), cancel_resolved_by=? WHERE id=?`)
+      .run('骑手:' + (rider_name || ''), order.id);
+  }
+  return { ok: true };
+}));
+
+// ─── 管理员审核退款申请 ─────────────────────────────────────
+router.post('/:id/refund-review', requireAuth, (req, res) => JSON_RES(res, () => {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
+  if (!order) return makeError('订单不存在', ErrorCode.ORDER_NOT_FOUND, 404);
+  const { action, refund_amount, admin_name } = req.body;
+  // action: 'approve_full' | 'approve_partial' | 'reject'
+
+  if (order.refund_status !== 'pending') return makeError('无待审核的退款申请');
+
+  if (action === 'approve_full') {
+    db.prepare(`UPDATE orders SET refund_status='approved_full', refund_amount=?, refund_resolved_at=datetime('now','localtime'), refund_resolved_by=? WHERE id=?`)
+      .run(order.price, admin_name || '管理员', order.id);
+  } else if (action === 'approve_partial') {
+    if (!refund_amount || refund_amount <= 0) return makeError('请填写退款金额');
+    if (refund_amount > order.price) return makeError('退款金额不能超过订单金额');
+    db.prepare(`UPDATE orders SET refund_status='approved_partial', refund_amount=?, refund_resolved_at=datetime('now','localtime'), refund_resolved_by=? WHERE id=?`)
+      .run(refund_amount, admin_name || '管理员', order.id);
+  } else {
+    db.prepare(`UPDATE orders SET refund_status='rejected', refund_resolved_at=datetime('now','localtime'), refund_resolved_by=? WHERE id=?`)
+      .run(admin_name || '管理员', order.id);
+  }
   return { ok: true };
 }));
 

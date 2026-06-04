@@ -851,6 +851,11 @@
    } else {
      actionBtn = '<div class="rd-status-end">订单已结束</div>';
    }
+   // 骑手审核取消申请
+   let cancelReviewBtn = '';
+   if (o.cancel_request_status === 'pending') {
+     cancelReviewBtn = '<div style="padding:12px;background:#FFF8E1;border-radius:10px;margin:8px 0"><div style="font-size:13px;color:#F39C12;margin-bottom:8px">⚠️ 用户申请取消此订单</div><div style="font-size:12px;color:#666;margin-bottom:8px">原因: '+escHtml(o.cancel_request_reason||'')+'</div><button onclick="riderReviewCancel(\''+o.order_no+'\',\'approve\')" class="rd-btn rd-btn-success" style="margin-right:8px">✅ 同意取消</button><button onclick="riderReviewCancel(\''+o.order_no+'\',\'reject\')" class="rd-btn" style="background:#E74C3C;color:#fff">❌ 拒绝</button></div>';
+   }
    const chatBtn = (mode !== 'accept' && o.phone) ? '<button data-order="'+o.order_no+'" onclick="openChatFromOrder(this.dataset.order)" class="rd-btn rd-btn-chat">💬 联系用户</button>' : '';
    content.innerHTML = `
    <div class="rd-status-hero" style="background:${statusColor[o.status]||'#95A5A6'}">
@@ -893,6 +898,7 @@
      </div>
    </div>
    <div class="rd-actions">
+     ${cancelReviewBtn}
      ${actionBtn}
      ${chatBtn}
    </div>
@@ -1044,6 +1050,21 @@
  await refreshOrders();
  await updateProfile();
  } catch (e) { showToast(e.message || '操作失败'); }
+ }
+
+ // 骑手审核取消申请
+ async function riderReviewCancel(orderNo, action) {
+   const label = action === 'approve' ? '同意取消' : '拒绝取消';
+   if (!confirm('确定' + label + '？')) return;
+   try {
+     const r = JSON.parse(localStorage.getItem('lazyRider') || '{}');
+     const res = await API.riderReviewCancel(orderNo, action, r.name || '');
+     if (res.ok) {
+       showToast(label + '成功');
+       closeSubPage('detailPage_sub');
+       await refreshOrders();
+     } else { showToast(res.error || '操作失败'); }
+   } catch(e) { showToast(e.message || '操作失败'); }
  }
 
  async function updateProfile() {

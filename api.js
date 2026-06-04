@@ -93,6 +93,22 @@ const API = {
     method: 'POST', headers: this._headers(),
     body: JSON.stringify({ reason })
   }).then(r => r.json()); },
+  async requestRefund(id, reason) { return fetch('/api/orders/' + id + '/refund', {
+    method: 'POST', headers: this._headers(),
+    body: JSON.stringify({ reason })
+  }).then(r => r.json()); },
+  async reviewCancel(id, action, name) { return fetch('/api/orders/' + id + '/cancel-review', {
+    method: 'POST', headers: this._headers(),
+    body: JSON.stringify({ action, admin_name: name })
+  }).then(r => r.json()); },
+  async riderReviewCancel(id, action, name) { return fetch('/api/orders/' + id + '/cancel-rider-review', {
+    method: 'POST', headers: this._headers(),
+    body: JSON.stringify({ action, rider_name: name })
+  }).then(r => r.json()); },
+  async reviewRefund(id, action, refundAmount, name) { return fetch('/api/orders/' + id + '/refund-review', {
+    method: 'POST', headers: this._headers(),
+    body: JSON.stringify({ action, refund_amount: refundAmount, admin_name: name })
+  }).then(r => r.json()); },
   async rateOrder(id, stars, comment, phone) { return fetch('/api/orders/' + id + '/rate', {
     method: 'POST', headers: this._headers(),
     body: JSON.stringify({ stars, comment, phone })

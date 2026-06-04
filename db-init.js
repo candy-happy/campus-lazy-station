@@ -56,6 +56,17 @@ db.exec(`
     rating_comment TEXT,
     rating_at TEXT,
     cancel_reason TEXT,
+    cancel_request_status TEXT CHECK(cancel_request_status IS NULL OR cancel_request_status IN ('pending','approved','rejected')),
+    cancel_request_reason TEXT,
+    cancel_requested_at TEXT,
+    cancel_resolved_at TEXT,
+    cancel_resolved_by TEXT,
+    refund_status TEXT CHECK(refund_status IS NULL OR refund_status IN ('pending','approved_full','approved_partial','rejected')),
+    refund_reason TEXT,
+    refund_amount REAL,
+    refund_requested_at TEXT,
+    refund_resolved_at TEXT,
+    refund_resolved_by TEXT,
     FOREIGN KEY (phone) REFERENCES users(phone)
   );
 

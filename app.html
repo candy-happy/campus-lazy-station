@@ -1185,6 +1185,26 @@
       color: #E74C3C;
       border: 1px solid #E74C3C;
     }
+    .od-btn-warning {
+      background: #fff;
+      color: #F39C12;
+      border: 1px solid #F39C12;
+    }
+    .od-btn-refund {
+      background: #fff;
+      color: #8E44AD;
+      border: 1px solid #8E44AD;
+    }
+    .od-status-tag {
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: center;
+    }
+    .od-tag-waiting { background: #FFF8E1; color: #F39C12; }
+    .od-tag-rejected { background: #FFEBEE; color: #E74C3C; }
+    .od-tag-approved { background: #E8F5E9; color: #27AE60; }
     body.dark .od-fee-row { background: var(--card); }
 
     /* ═══════════════════════════════════════════════════════
@@ -4518,8 +4538,13 @@
       const typeLabel = { delivery:'代取外卖', express:'代取快递', purchase:'代买东西', laundry:'代取洗衣', errand:'跑腿办事', other:'其他服务' };
       const typeIcon = { delivery:'🍱', express:'📦', purchase:'🛒', laundry:'👔', errand:'🏃', other:'📋' };
       const canChat = o.rider_phone && ['accepted','running'].includes(o.status);
-      const canCancel = o.status === 'pending';
+      const canCancelDirect = o.status === 'pending'; // 未接单可直接取消
+      const canRequestCancel = ['accepted','running'].includes(o.status) && !o.cancel_request_status; // 已接单可申请取消
+      const cancelPending = o.cancel_request_status === 'pending'; // 取消申请待审核
+      const cancelRejected = o.cancel_request_status === 'rejected'; // 取消申请被拒绝
       const canRate = o.status === 'completed' && !o.rating_stars;
+      const canRefund = o.status === 'completed' && !o.refund_status && !o.rating_stars; // 已完成未评价可申请退款
+      const refundPending = o.refund_status === 'pending';
       const content = document.getElementById('detailContent');
       content.innerHTML = `
         <!-- 状态头部 -->
@@ -4593,21 +4618,58 @@
         <div class="od-actions">
           ${canChat ? '<button class="od-btn od-btn-primary" onclick="openChatFromOrder(\''+o.id+'\',\''+o.rider_phone+'\',\''+escHtml(o.rider_name||'')+'\')">💬 联系骑手</button>' : ''}
           ${canRate ? '<button class="od-btn od-btn-primary" onclick="openRateModal(\''+o.id+'\')">⭐ 评价订单</button>' : ''}
-          ${canCancel ? '<button class="od-btn od-btn-danger" onclick="cancelOrder(\''+o.id+'\')">取消订单</button>' : ''}
+          ${canCancelDirect ? '<button class="od-btn od-btn-danger" onclick="cancelOrder(\''+o.id+'\')">❌ 取消订单</button>' : ''}
+          ${canRequestCancel ? '<button class="od-btn od-btn-warning" onclick="requestCancelOrder(\''+o.id+'\')">🚫 申请取消</button>' : ''}
+          ${cancelPending ? '<div class="od-status-tag od-tag-waiting">⏳ 取消申请审核中...</div>' : ''}
+          ${cancelRejected ? '<div class="od-status-tag od-tag-rejected">❌ 取消申请已被拒绝</div><button class="od-btn od-btn-warning" onclick="requestCancelOrder(\''+o.id+'\')">🔄 重新申请</button>' : ''}
+          ${canRefund ? '<button class="od-btn od-btn-refund" onclick="requestRefund(\''+o.id+'\')">💰 申请退款</button>' : ''}
+          ${refundPending ? '<div class="od-status-tag od-tag-waiting">⏳ 退款申请审核中...</div>' : ''}
+          ${o.refund_status==='approved_full' ? '<div class="od-status-tag od-tag-approved">✅ 已全额退款 ¥'+(o.refund_amount||0).toFixed(2)+'</div>' : ''}
+          ${o.refund_status==='approved_partial' ? '<div class="od-status-tag od-tag-approved">✅ 已部分退款 ¥'+(o.refund_amount||0).toFixed(2)+'</div>' : ''}
+          ${o.refund_status==='rejected' ? '<div class="od-status-tag od-tag-rejected">❌ 退款申请被拒绝</div>' : ''}
         </div>
       `;
       openSubPage('detailPage_sub');
     }
 
     async function cancelOrder(id) {
-      if (!confirm('确定取消璇ヨ鍗曞悧锛')) return;
+      if (!confirm('确定取消该订单吗？')) return;
       try {
-        await API.cancelOrder(id, '鐢ㄦ埛取消');
-        const idx = orders.findIndex(o => (o.order_no||o.id) == id);
-        closeSubPage('detailPage_sub');
-        await refreshOrders();
-        showToast('订单已取消');
-      } catch(e) { showToast(e.message || '取消澶辫触'); }
+        const res = await API.cancelOrder(id, '用户取消');
+        if (res.ok) {
+          closeSubPage('detailPage_sub');
+          await refreshOrders();
+          showToast(res.direct ? '订单已取消' : (res.message || '取消申请已提交'));
+        } else { showToast(res.error || '取消失败'); }
+      } catch(e) { showToast(e.message || '取消失败'); }
+    }
+
+    // 申请取消（已接单/配送中）
+    async function requestCancelOrder(id) {
+      const reason = prompt('请填写取消原因：');
+      if (!reason) return;
+      try {
+        const res = await API.cancelOrder(id, reason);
+        if (res.ok) {
+          closeSubPage('detailPage_sub');
+          await refreshOrders();
+          showToast(res.message || '取消申请已提交，等待审核');
+        } else { showToast(res.error || '申请失败'); }
+      } catch(e) { showToast(e.message || '申请失败'); }
+    }
+
+    // 申请退款（已完成订单）
+    async function requestRefund(id) {
+      const reason = prompt('请填写退款原因：');
+      if (!reason) return;
+      try {
+        const res = await API.requestRefund(id, reason);
+        if (res.ok) {
+          closeSubPage('detailPage_sub');
+          await refreshOrders();
+          showToast(res.message || '退款申请已提交，等待管理员审核');
+        } else { showToast(res.error || '申请失败'); }
+      } catch(e) { showToast(e.message || '申请失败'); }
     }
 
     function openRateModal(id) {
