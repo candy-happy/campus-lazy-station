@@ -49,6 +49,9 @@ const ErrorCode = {
   CHAT_PARAM_INCOMPLETE: 'CHAT_001',
 
   // 限速 RATE_xxx (见 middleware/rateLimit.js)
+
+  // AI审核 AI_xxx
+  AI_VIOLATION: 'AI_001',
 };
 
 // ─── JSON 响应包装 ─────────────────────────────────────────

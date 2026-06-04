@@ -7,6 +7,7 @@ const { JSON_RES, ErrorCode, makeError, notFound } = require('../utils/response'
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const aiChecker = require('./ai');
 
 // ─── 商品图片上传配置 ─────────────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'market');
@@ -136,23 +137,50 @@ router.get('/items/:id', (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 上架商品 ─────────────────────────────────────────────
-router.post('/items', requireAuth, upload.array('images', 9), (req, res) => JSON_RES(res, () => {
-  const phone = req.user.phone;
-  if (!phone) return makeError('请先登录', 'AUTH_001');
+router.post('/items', requireAuth, upload.array('images', 9), async (req, res) => {
+  try {
+    const phone = req.user.phone;
+    if (!phone) return res.status(401).json({ error: '请先登录', code: 'AUTH_001' });
 
-  const { title, description, price, original_price, category, condition_level, contact } = req.body;
-  if (!title || !price) return makeError('标题和价格不能为空', ErrorCode.PARAM_MISSING);
+    const { title, description, price, original_price, category, condition_level, contact } = req.body;
+    if (!title || !price) return res.status(400).json({ error: '标题和价格不能为空', code: ErrorCode.PARAM_MISSING });
 
-  const images = (req.files || []).map(f => '/uploads/market/' + f.filename);
-  const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const images = (req.files || []).map(f => '/uploads/market/' + f.filename);
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
-  const result = db.prepare(
-    "INSERT INTO market_items (seller_phone, title, description, price, original_price, category, condition_level, images, contact, status, views, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,'active',0,?,?)"
-  ).run(phone, title, description || '', parseFloat(price), original_price ? parseFloat(original_price) : null,
-    category || 'other', condition_level || '9成新', JSON.stringify(images), contact || '', now, now);
+    const result = db.prepare(
+      "INSERT INTO market_items (seller_phone, title, description, price, original_price, category, condition_level, images, contact, status, views, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,'active',0,?,?)"
+    ).run(phone, title, description || '', parseFloat(price), original_price ? parseFloat(original_price) : null,
+      category || 'other', condition_level || '9成新', JSON.stringify(images), contact || '', now, now);
 
-  return { ok: true, id: result.lastInsertRowid, images };
-}));
+    const itemId = result.lastInsertRowid;
+
+    // 异步AI审核：不阻塞响应，审核完成后违规则自动下架
+    setImmediate(async () => {
+      try {
+        const item = db.prepare('SELECT * FROM market_items WHERE id = ?').get(itemId);
+        if (!item) return;
+        try { item.images = JSON.parse(item.images || '[]'); } catch(e) { item.images = []; }
+        const check = await aiChecker.checkMarketItem(item);
+        if (check.violation) {
+          // 违规：自动下架 + 通知卖家
+          db.prepare("UPDATE market_items SET status = 'offline', updated_at = datetime('now','localtime') WHERE id = ?").run(itemId);
+          db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'system', '商品被下架', ?, 0, datetime('now','localtime'))")
+            .run(phone, `你的商品「${title}」因AI审核发现违规被自动下架。原因：${check.reason || '内容不符合平台规范'}。如有疑问请联系管理员。`);
+          console.log(`[AI审核] 商品#${itemId}「${title}」违规模下架: ${check.reason}`);
+        } else {
+          console.log(`[AI审核] 商品#${itemId}「${title}」审核通过`);
+        }
+      } catch (e) {
+        console.error('[AI审核] 商品异步审核失败:', e.message);
+      }
+    });
+
+    res.json({ ok: true, id: itemId, images });
+  } catch (e) {
+    res.status(500).json({ error: e.message, code: 'SYS_001' });
+  }
+});;
 
 // ─── 编辑商品 ─────────────────────────────────────────────
 router.put('/items/:id', requireAuth, upload.array('images', 9), (req, res) => JSON_RES(res, () => {
@@ -386,45 +414,61 @@ const commentUpload = multer({
   }
 });
 
-router.post('/items/:id/comments', requireAuth, commentUpload.single('media'), (req, res) => JSON_RES(res, () => {
-  const phone = req.user.phone;
-  if (!phone) return makeError('请先登录', 'AUTH_001');
-  const content = (req.body.content || '').trim();
-  const parent_id = req.body.parent_id || null;
-  if (!content && !req.file) return makeError('请输入内容或上传媒体', ErrorCode.PARAM_MISSING);
-  if (content.length > 500) return makeError('评论最多500字', ErrorCode.PARAM_INVALID);
+router.post('/items/:id/comments', requireAuth, commentUpload.single('media'), async (req, res) => {
+  try {
+    const phone = req.user.phone;
+    if (!phone) return res.status(401).json({ error: '请先登录', code: 'AUTH_001' });
+    const content = (req.body.content || '').trim();
+    const parent_id = req.body.parent_id || null;
+    if (!content && !req.file) return res.status(400).json({ error: '请输入内容或上传媒体', code: ErrorCode.PARAM_MISSING });
+    if (content.length > 500) return res.status(400).json({ error: '评论最多500字', code: ErrorCode.PARAM_INVALID });
 
-  const itemId = req.params.id;
-  const item = db.prepare('SELECT id, seller_phone FROM market_items WHERE id = ?').get(itemId);
-  if (!item) return notFound('商品不存在');
+    const itemId = req.params.id;
+    const item = db.prepare('SELECT id, seller_phone FROM market_items WHERE id = ?').get(itemId);
+    if (!item) return res.status(404).json({ error: '商品不存在', code: 'SYS_004' });
 
-  // 如果是回复，检查父评论
-  if (parent_id) {
-    const parent = db.prepare('SELECT id, item_id FROM market_comments WHERE id = ?').get(parent_id);
-    if (!parent) return notFound('原评论不存在');
-    if (parent.item_id !== parseInt(itemId)) return makeError('回复的评论不属于该商品', 'MKT_010');
-  }
+    if (parent_id) {
+      const parent = db.prepare('SELECT id, item_id FROM market_comments WHERE id = ?').get(parent_id);
+      if (!parent) return res.status(404).json({ error: '原评论不存在', code: 'SYS_004' });
+      if (parent.item_id !== parseInt(itemId)) return res.status(400).json({ error: '回复的评论不属于该商品', code: 'MKT_010' });
+    }
 
-  const media_url = req.file ? '/uploads/market/' + req.file.filename : null;
-  const media_type = req.file ? (req.file.mimetype.startsWith('video/') ? 'video' : 'image') : null;
+    // AI审核评论内容
+    if (content) {
+      try {
+        const check = await aiChecker.checkTextContent(content, '校园二手交易平台');
+        if (check.violation && check.level !== 'low') {
+          return res.status(403).json({ error: '评论内容不符合平台规范：' + (check.reason || '请修改后重新发布'), code: 'AI_001' });
+        }
+      } catch (e) {
+        // AI审核失败不阻止发布
+        console.error('[AI审核] 市场评论审核失败:', e.message);
+      }
+    }
 
-  const result = db.prepare(
-    'INSERT INTO market_comments (item_id, user_phone, content, parent_id, media_url, media_type, created_at) VALUES (?,?,?,?,?,?,datetime(\'now\',\'localtime\'))'
-  ).run(itemId, phone, content || '', parent_id, media_url, media_type);
+    const media_url = req.file ? '/uploads/market/' + req.file.filename : null;
+    const media_type = req.file ? (req.file.mimetype.startsWith('video/') ? 'video' : 'image') : null;
+
+    const result = db.prepare(
+      "INSERT INTO market_comments (item_id, user_phone, content, parent_id, media_url, media_type, created_at) VALUES (?,?,?,?,?,?,datetime('now','localtime'))"
+    ).run(itemId, phone, content || '', parent_id, media_url, media_type);
 
   // 给卖家发通知（非自己评论自己商品时）
   if (item.seller_phone !== phone && !parent_id) {
     try {
       const user = db.prepare('SELECT name FROM users WHERE phone = ?').get(phone);
       db.prepare(
-        'INSERT INTO notifications (user_phone, type, title, content, created_at) VALUES (?,?,?,?,datetime(\'now\',\'localtime\'))'
+        "INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?,?,?,?,0,datetime('now','localtime'))"
       ).run(item.seller_phone, 'market_comment', '商品新留言',
         (user?.name || '有人') + '对你的商品留言了' + (content ? '：' + content.substring(0, 50) : '（附带媒体）'));
     } catch(e) { /* 通知失败不影响评论 */ }
   }
 
-  return { ok: true, comment_id: result.lastInsertRowid };
-}));
+  res.json({ ok: true, comment_id: result.lastInsertRowid });
+  } catch (e) {
+    res.status(500).json({ error: e.message, code: 'SYS_001' });
+  }
+});
 
 // 删除评论
 router.delete('/comments/:commentId', requireAuth, (req, res) => JSON_RES(res, () => {

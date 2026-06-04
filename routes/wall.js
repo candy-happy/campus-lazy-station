@@ -8,6 +8,7 @@ const db = require('../config/database');
 const { requireAuth } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { safeJSON, parseImageUrls } = require('../utils/helpers');
+const aiChecker = require('./ai');
 
 // ─── 文件上传配置 ──────────────────────────────────────
 const WALL_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'wall');
@@ -30,19 +31,55 @@ const wallUpload = multer({
   }
 });
 
-// ─── 发帖 ──────────────────────────────────────────────
-router.post('/posts', requireAuth, wallUpload.array('files', 9), (req, res) => JSON_RES(res, () => {
-  const { phone, nickname, avatar, content, gif_urls } = req.body;
-  if (!phone || !content) return makeError('缺少手机号或内容', ErrorCode.PARAM_MISSING);
-  const files = req.files || [];
-  const imageUrls = files.filter(f => f.mimetype.startsWith('image/')).map(f => '/uploads/wall/' + f.filename);
-  const videoUrls = files.filter(f => f.mimetype.startsWith('video/')).map(f => '/uploads/wall/' + f.filename);
-  const images = [...imageUrls, ...videoUrls].join(',');
-  const r = db.prepare(`INSERT INTO wall_posts (phone, nickname, avatar, content, images, gif_urls, like_count, comment_count, exposure_count, exposure_done, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now','localtime'), datetime('now','localtime'))`)
-    .run(phone, nickname || '匿名', avatar || '', content, images, gif_urls || '');
-  return { ok: true, id: r.lastInsertRowid };
-}));
+// ─── 清理已上传文件（审核不通过时） ────────────────────
+function cleanupUploadedFiles(files) {
+  if (!files || !Array.isArray(files)) return;
+  files.forEach(f => {
+    try {
+      const fullPath = path.join(WALL_UPLOAD_DIR, f.filename);
+      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+    } catch (e) { /* 清理失败不影响主流程 */ }
+  });
+}
+
+// ─── 发帖（含AI自动审核） ────────────────────────────────
+router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res) => {
+  try {
+    const { phone, nickname, avatar, content, gif_urls } = req.body;
+    if (!phone || !content) return res.status(400).json({ error: '缺少手机号或内容', code: 'SYS_002' });
+    const files = req.files || [];
+    const imageUrls = files.filter(f => f.mimetype.startsWith('image/')).map(f => '/uploads/wall/' + f.filename);
+    const videoUrls = files.filter(f => f.mimetype.startsWith('video/')).map(f => '/uploads/wall/' + f.filename);
+    const images = [...imageUrls, ...videoUrls].join(',');
+
+    // ── AI自动审核（同步，写入前拦截） ──────────────────
+    try {
+      const check = await aiChecker.checkWallPost({
+        title: '', content, topic: '',
+        images: imageUrls.length > 0 ? JSON.stringify(imageUrls) : '[]'
+      });
+      if (check.violation && check.level !== 'none') {
+        cleanupUploadedFiles(files);
+        console.log(`[AI审核] 校园墙帖子被拦截: phone=${phone}, reason=${check.reason}`);
+        return res.status(403).json({
+          error: '内容不符合平台规范：' + (check.reason || '请修改后重新发布'),
+          code: 'AI_001', detail: check.category
+        });
+      }
+      console.log(`[AI审核] 校园墙帖子审核通过: phone=${phone}`);
+    } catch (e) {
+      console.error('[AI审核] 校园墙帖子审核失败(放行):', e.message);
+    }
+
+    const r = db.prepare(`INSERT INTO wall_posts (phone, nickname, avatar, content, images, gif_urls, like_count, comment_count, exposure_count, exposure_done, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now','localtime'), datetime('now','localtime'))`)
+      .run(phone, nickname || '匿名', avatar || '', content, images, gif_urls || '');
+    res.json({ ok: true, id: r.lastInsertRowid });
+  } catch (e) {
+    console.error('[ERROR] 发帖失败:', e.message, e.stack);
+    res.status(500).json({ error: '服务器内部错误', code: 'SYS_001' });
+  }
+});
 
 // ─── 信息流 ──────────────────────────────────────────────
 router.get('/feed', (req, res) => JSON_RES(res, () => {
@@ -145,35 +182,53 @@ router.post('/posts/:id/like', requireAuth, (req, res) => JSON_RES(res, () => {
   }
 }));
 
-// ─── 评论 ──────────────────────────────────────────────
-router.post('/posts/:id/comments', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname } = req.body;
-  if (!phone || !content) return makeError('缺少手机号或内容', ErrorCode.PARAM_MISSING);
-  const result = db.prepare(`INSERT INTO wall_comments (post_id, phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname, like_count, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now','localtime'))`)
-    .run(req.params.id, phone, nickname || '匿名', avatar || '', content, parent_id || null, reply_to_phone || '', reply_to_nickname || '');
-  db.prepare('UPDATE wall_posts SET comment_count = comment_count + 1 WHERE id = ?').run(req.params.id);
-  // 通知
-  const post = db.prepare('SELECT phone, nickname FROM wall_posts WHERE id = ?').get(req.params.id);
-  const commenter = nickname || '有人';
-  if (parent_id && reply_to_phone) {
-    // 回复评论 → 通知被回复者
-    if (reply_to_phone !== phone) {
-      db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'wall_comment', ?, ?, 0, datetime('now','localtime'))")
-        .run(reply_to_phone, '收到回复', `${commenter} 回复了你的评论: ${content.length > 30 ? content.slice(0,30) + '...' : content}`);
+// ─── 评论（含AI自动审核） ───────────────────────────────
+router.post('/posts/:id/comments', requireAuth, async (req, res) => {
+  try {
+    const { phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname } = req.body;
+    if (!phone || !content) return res.status(400).json({ error: '缺少手机号或内容', code: 'SYS_002' });
+
+    // ── AI自动审核评论内容 ──────────────────────────────
+    try {
+      const check = await aiChecker.checkTextContent(content, '校园社交平台');
+      if (check.violation && check.level !== 'none') {
+        console.log(`[AI审核] 校园墙评论被拦截: phone=${phone}, reason=${check.reason}`);
+        return res.status(403).json({
+          error: '评论内容不符合平台规范：' + (check.reason || '请修改后重新发布'),
+          code: 'AI_001', detail: check.category
+        });
+      }
+      console.log(`[AI审核] 校园墙评论审核通过: phone=${phone}`);
+    } catch (e) {
+      console.error('[AI审核] 校园墙评论审核失败(放行):', e.message);
     }
-    // 同时通知帖子作者（如果不是自己评论自己的帖子且不是回复帖子作者）
-    if (post && post.phone !== phone && post.phone !== reply_to_phone) {
+
+    const result = db.prepare(`INSERT INTO wall_comments (post_id, phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname, like_count, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now','localtime'))`)
+      .run(req.params.id, phone, nickname || '匿名', avatar || '', content, parent_id || null, reply_to_phone || '', reply_to_nickname || '');
+    db.prepare('UPDATE wall_posts SET comment_count = comment_count + 1 WHERE id = ?').run(req.params.id);
+    // 通知
+    const post = db.prepare('SELECT phone, nickname FROM wall_posts WHERE id = ?').get(req.params.id);
+    const commenter = nickname || '有人';
+    if (parent_id && reply_to_phone) {
+      if (reply_to_phone !== phone) {
+        db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'wall_comment', ?, ?, 0, datetime('now','localtime'))")
+          .run(reply_to_phone, '收到回复', `${commenter} 回复了你的评论: ${content.length > 30 ? content.slice(0,30) + '...' : content}`);
+      }
+      if (post && post.phone !== phone && post.phone !== reply_to_phone) {
+        db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'wall_comment', ?, ?, 0, datetime('now','localtime'))")
+          .run(post.phone, '帖子新评论', `${commenter} 评论了你的帖子`);
+      }
+    } else if (post && post.phone !== phone) {
       db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'wall_comment', ?, ?, 0, datetime('now','localtime'))")
-        .run(post.phone, '帖子新评论', `${commenter} 评论了你的帖子`);
+        .run(post.phone, '帖子新评论', `${commenter} 评论了你的帖子: ${content.length > 30 ? content.slice(0,30) + '...' : content}`);
     }
-  } else if (post && post.phone !== phone) {
-    // 普通评论 → 通知帖子作者
-    db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'wall_comment', ?, ?, 0, datetime('now','localtime'))")
-      .run(post.phone, '帖子新评论', `${commenter} 评论了你的帖子: ${content.length > 30 ? content.slice(0,30) + '...' : content}`);
+    res.json({ ok: true, id: result.lastInsertRowid });
+  } catch (e) {
+    console.error('[ERROR] 评论失败:', e.message, e.stack);
+    res.status(500).json({ error: '服务器内部错误', code: 'SYS_001' });
   }
-  return { ok: true, id: result.lastInsertRowid };
-}));
+});
 
 // ─── 评论点赞 ──────────────────────────────────────────
 router.post('/comments/:commentId/like', requireAuth, (req, res) => JSON_RES(res, () => {

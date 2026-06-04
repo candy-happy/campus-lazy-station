@@ -335,4 +335,31 @@ router.post('/wall/comments/batch', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── 导出检测函数供其他路由使用 ──────────────────────────
 module.exports = router;
+module.exports.checkMarketItem = checkMarketItem;
+module.exports.checkWallPost = checkWallPost;
+
+// ─── 纯文字快速审核（用于评论等短文本） ────────────────────
+async function checkTextContent(text, context = '校园平台') {
+  const messages = [
+    {
+      role: 'system',
+      content: `你是一个${context}的内容审核AI。检查以下内容是否违规。
+违规标准：侮辱/歧视/人身攻击/低俗/色情/违法/骚扰/广告灌水/不适合校园
+严格以JSON格式回复：
+{"violation": true/false, "reason": "违规原因", "level": "high/medium/low/none", "category": "不当/违法/骚扰/广告/低俗/无"}
+只返回JSON。`
+    },
+    { role: 'user', content: text }
+  ];
+  try {
+    const result = await callDeepSeek(messages, 256);
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (jsonMatch) return JSON.parse(jsonMatch[0]);
+    return { violation: false, reason: 'AI返回格式异常', level: 'none', category: '无' };
+  } catch (e) {
+    return { violation: false, reason: 'AI检测失败: ' + e.message, level: 'none', category: '无' };
+  }
+}
+module.exports.checkTextContent = checkTextContent;
