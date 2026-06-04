@@ -104,4 +104,39 @@ router.get('/', requireAdmin, (req, res) => JSON_RES(res, () => {
   };
 }));
 
+// ── 订单统计(按时间段) ──
+// GET /api/stats/orders?from=2026-06-01&to=2026-06-04
+router.get('/orders', requireAdmin, (req, res) => {
+  try {
+    const { from, to } = req.query;
+    let dateWhere = '';
+    const params = [];
+    if (from && to) {
+      dateWhere = "date(created_at) >= ? AND date(created_at) <= ?";
+      params.push(from, to);
+    } else if (from) {
+      dateWhere = "date(created_at) >= ?";
+      params.push(from);
+    } else if (to) {
+      dateWhere = "date(created_at) <= ?";
+      params.push(to);
+    }
+    const w = dateWhere ? ' WHERE ' + dateWhere : '';
+    const orders = db.prepare(`SELECT COUNT(*) as n FROM orders${w}`).get(...params).n;
+    // 收入/已完成：按completed_at统计
+    const cParams = [...params];
+    const cw = dateWhere ? ' WHERE status=\'completed\' AND ' + dateWhere.replace(/created_at/g, 'completed_at') : " WHERE status='completed'";
+    const revenue = db.prepare(`SELECT COALESCE(SUM(price),0) as n FROM orders${cw}`).get(...cParams).n;
+    const completed = db.prepare(`SELECT COUNT(*) as n FROM orders${cw}`).get(...cParams).n;
+    // 进行中：按created_at
+    const pw = dateWhere ? " WHERE status IN ('pending','accepted','running') AND " + dateWhere : " WHERE status IN ('pending','accepted','running')";
+    const pending = db.prepare(`SELECT COUNT(*) as n FROM orders${pw}`).get(...params).n;
+    const avgPrice = orders > 0 ? Math.round(revenue / orders * 100) / 100 : 0;
+    return res.json({ orders, revenue, completed, pending, avg_price: avgPrice });
+  } catch(e) {
+    console.error('订单统计查询失败:', e);
+    return res.status(500).json({ error: '查询失败' });
+  }
+});
+
 module.exports = router;
