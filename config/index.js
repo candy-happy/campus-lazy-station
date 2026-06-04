@@ -20,7 +20,7 @@ module.exports = {
   ALLOWED_FILE_TYPES: ['image/', 'video/'],
 
   // 限速
-  RATE_LIMIT_MAX: 60,
+  RATE_LIMIT_MAX: 200,
   RATE_LIMIT_WINDOW_MS: 60000,
 
   // 上传子目录

@@ -32,9 +32,11 @@ function rateLimit(max = RATE_LIMIT_MAX, windowMs = RATE_LIMIT_WINDOW_MS) {
 // 清理过期记录（每小时执行一次）
 setInterval(() => {
   const now = Date.now();
-  for (const [key, count] of rateMaps) {
-    const window = parseInt(key.split(':')[1]) * windowMs;
-    if (now - window > windowMs * 2) {
+  const currentWindow = Math.floor(now / RATE_LIMIT_WINDOW_MS);
+  // 保留当前窗口和前一个窗口，删除更早的
+  for (const [key] of rateMaps) {
+    const keyWindow = parseInt(key.split(':').pop());
+    if (currentWindow - keyWindow > 1) {
       rateMaps.delete(key);
     }
   }

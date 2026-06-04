@@ -421,6 +421,7 @@
       <button class="market-tab active" data-tab="market" onclick="switchAiTab('market',this)">🛒 二手市场</button>
       <button class="market-tab" data-tab="wall" onclick="switchAiTab('wall',this)">📢 校园墙</button>
       <button class="market-tab" data-tab="wall-comments" onclick="switchAiTab('wall-comments',this)">💬 校园墙评论</button>
+      <button class="market-tab" data-tab="logs" onclick="switchAiTab('logs',this)">📋 审核记录</button>
     </div>
 
     <!-- Tab: 二手市场 AI 审核 -->
@@ -533,6 +534,57 @@
         <div class="table-card">
           <table class="data-table"><thead><tr><th>ID</th><th>内容</th><th>评论者</th><th>违规</th><th>等级</th><th>分类</th><th>原因</th><th>操作</th></tr></thead>
           <tbody id="aiWallCommentTable"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: 审核记录 -->
+    <div class="market-admin-panel" id="aiPanel-logs">
+      <div class="market-admin-toolbar">
+        <div class="market-admin-filters">
+          <span style="font-size:13px;color:var(--text-secondary)">来源：</span>
+          <select id="aiLogSource" class="form-input" style="width:120px;padding:6px 8px">
+            <option value="all">全部</option>
+            <option value="wall_post">校园墙帖子</option>
+            <option value="wall_comment">校园墙评论</option>
+            <option value="market_item">二手商品</option>
+            <option value="market_comment">二手评论</option>
+          </select>
+          <span style="font-size:13px;color:var(--text-secondary);margin-left:12px">等级：</span>
+          <select id="aiLogLevel" class="form-input" style="width:90px;padding:6px 8px">
+            <option value="all">全部</option>
+            <option value="high">高危</option>
+            <option value="medium">中危</option>
+            <option value="low">低危</option>
+          </select>
+          <span style="font-size:13px;color:var(--text-secondary);margin-left:12px">处理：</span>
+          <select id="aiLogAction" class="form-input" style="width:90px;padding:6px 8px">
+            <option value="all">全部</option>
+            <option value="block">已拦截</option>
+            <option value="pass">已放行</option>
+            <option value="下架">已下架</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="loadAiLogs()">🔄 刷新</button>
+      </div>
+      <!-- 统计卡片 -->
+      <div class="stats-cards" style="margin-bottom:16px" id="aiLogsStats">
+        <div class="stat-card"><div class="stat-icon" style="background:#3498DB">📊</div><div class="stat-info"><div class="stat-value" id="aiLogTotal">0</div><div class="stat-label">审核总数</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#E74C3C">⚠️</div><div class="stat-info"><div class="stat-value" id="aiLogViolations">0</div><div class="stat-label">违规次数</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#9B59B6">🚫</div><div class="stat-info"><div class="stat-value" id="aiLogBlocked">0</div><div class="stat-label">拦截次数</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#F39C12">🕐</div><div class="stat-info"><div class="stat-value" id="aiLog24h">0</div><div class="stat-label">近24小时</div></div></div>
+      </div>
+      <!-- 记录表格 -->
+      <div class="table-card">
+        <table class="data-table"><thead><tr><th>ID</th><th>来源</th><th>内容ID</th><th>发布者</th><th>内容预览</th><th>等级</th><th>分类</th><th>原因</th><th>处理</th><th>时间</th></tr></thead>
+        <tbody id="aiLogsTable"></tbody></table>
+      </div>
+      <!-- 分页 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:0 4px" id="aiLogsPagination">
+        <span style="font-size:13px;color:var(--text-secondary)" id="aiLogsPageInfo">第1页</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm" onclick="aiLogsPage(-1)" id="aiLogsPrevBtn">上一页</button>
+          <button class="btn btn-sm" onclick="aiLogsPage(1)" id="aiLogsNextBtn">下一页</button>
         </div>
       </div>
     </div>
@@ -1329,6 +1381,55 @@
       if (btn) btn.classList.add('active');
       const panel = document.getElementById('aiPanel-' + tab);
       if (panel) panel.classList.add('active');
+      // 切换到审核记录Tab时自动加载
+      if (tab === 'logs') loadAiLogs();
+    }
+
+    // ─── AI审核记录 ──────────────────────────────────────
+    let _aiLogsPage = 1;
+    async function loadAiLogs() {
+      const source = document.getElementById('aiLogSource').value;
+      const level = document.getElementById('aiLogLevel').value;
+      const action = document.getElementById('aiLogAction').value;
+      try {
+        // 加载统计
+        const statsRes = await fetch('/api/ai/stats', { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') } });
+        const stats = await statsRes.json();
+        document.getElementById('aiLogTotal').textContent = stats.total || 0;
+        document.getElementById('aiLogViolations').textContent = stats.violations || 0;
+        document.getElementById('aiLogBlocked').textContent = stats.blocked || 0;
+        document.getElementById('aiLog24h').textContent = stats.recent24h || 0;
+        // 加载记录
+        const params = new URLSearchParams({ page: _aiLogsPage, limit: 20 });
+        if (source !== 'all') params.set('source', source);
+        if (level !== 'all') params.set('level', level);
+        if (action !== 'all') params.set('action', action);
+        const res = await fetch('/api/ai/logs?' + params, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') } });
+        const data = await res.json();
+        const tbody = document.getElementById('aiLogsTable');
+        tbody.innerHTML = '';
+        const sourceMap = { wall_post: '📢墙帖子', wall_comment: '💬墙评论', market_item: '🛒商品', market_comment: '💬商品评论' };
+        const actionMap = { pass: '✅放行', block: '🚫拦截', '下架': '⬇️下架' };
+        const levelColors = { high: '#E74C3C', medium: '#F39C12', low: '#3498DB', none: '#95A5A6' };
+        (data.rows || []).forEach(r => {
+          const tr = document.createElement('tr');
+          if (r.violation) tr.style.background = 'rgba(231,76,60,0.06)';
+          tr.innerHTML = `<td>${r.id}</td><td>${sourceMap[r.source]||r.source}</td><td>${r.source_id}</td><td>${escHtml(r.phone)}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(r.content_preview||'')}">${escHtml((r.content_preview||'').slice(0,30))}</td><td><span style="color:${levelColors[r.level]||'#999'};font-weight:600">${({high:'高危',medium:'中危',low:'低危',none:'无'}[r.level]||r.level)}</span></td><td>${escHtml(r.category||'无')}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(r.reason||'')}">${escHtml((r.reason||'').slice(0,30))}</td><td>${actionMap[r.action]||r.action}</td><td style="font-size:12px;color:var(--text-secondary)">${r.created_at}</td>`;
+          tbody.appendChild(tr);
+        });
+        // 分页信息
+        const totalPages = Math.ceil((data.total || 0) / 20);
+        document.getElementById('aiLogsPageInfo').textContent = `第${_aiLogsPage}页 / 共${totalPages}页 (${data.total}条)`;
+        document.getElementById('aiLogsPrevBtn').disabled = _aiLogsPage <= 1;
+        document.getElementById('aiLogsNextBtn').disabled = _aiLogsPage >= totalPages;
+      } catch(e) {
+        showToast('加载审核记录失败: ' + e.message);
+      }
+    }
+    function aiLogsPage(delta) {
+      _aiLogsPage += delta;
+      if (_aiLogsPage < 1) _aiLogsPage = 1;
+      loadAiLogs();
     }
 
     // ─── 二手市场 AI 检测 ──────────────────────────────

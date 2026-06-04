@@ -9,6 +9,16 @@ const fs = require('fs');
 const multer = require('multer');
 const aiChecker = require('./ai');
 
+// ─── AI审核记录写入辅助 ────────────────────────────────
+function logAiReview(source, sourceId, phone, contentPreview, check, action) {
+  try {
+    db.prepare(`INSERT INTO ai_review_logs (source, source_id, phone, content_preview, violation, level, category, reason, action)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(source, sourceId, phone, (contentPreview || '').slice(0, 100),
+        check.violation ? 1 : 0, check.level || 'none', check.category || '无', check.reason || '', action || 'pass');
+  } catch(e) { console.error('[AI审核] 写入审核记录失败:', e.message); }
+}
+
 // ─── 商品图片上传配置 ─────────────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'market');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -162,14 +172,19 @@ router.post('/items', requireAuth, upload.array('images', 9), async (req, res) =
         if (!item) return;
         try { item.images = JSON.parse(item.images || '[]'); } catch(e) { item.images = []; }
         const check = await aiChecker.checkMarketItem(item);
-        if (check.violation) {
-          // 违规：自动下架 + 通知卖家
+        if (check.violation && check.level === 'high') {
+          // 严重违规：自动下架 + 通知卖家
           db.prepare("UPDATE market_items SET status = 'offline', updated_at = datetime('now','localtime') WHERE id = ?").run(itemId);
           db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'system', '商品被下架', ?, 0, datetime('now','localtime'))")
             .run(phone, `你的商品「${title}」因AI审核发现违规被自动下架。原因：${check.reason || '内容不符合平台规范'}。如有疑问请联系管理员。`);
           console.log(`[AI审核] 商品#${itemId}「${title}」违规模下架: ${check.reason}`);
+          logAiReview('market_item', itemId, phone, title, check, '下架');
+        } else if (check.violation) {
+          console.log(`[AI审核] 商品#${itemId}「${title}」提醒(未下架): level=${check.level}, reason=${check.reason}`);
+          logAiReview('market_item', itemId, phone, title, check, 'pass');
         } else {
           console.log(`[AI审核] 商品#${itemId}「${title}」审核通过`);
+          logAiReview('market_item', itemId, phone, title, check, 'pass');
         }
       } catch (e) {
         console.error('[AI审核] 商品异步审核失败:', e.message);
@@ -437,11 +452,13 @@ router.post('/items/:id/comments', requireAuth, commentUpload.single('media'), a
     if (content) {
       try {
         const check = await aiChecker.checkTextContent(content, '校园二手交易平台');
-        if (check.violation && check.level !== 'low') {
+        if (check.violation && check.level === 'high') {
+          logAiReview('market_comment', 0, phone, content, check, 'block');
           return res.status(403).json({ error: '评论内容不符合平台规范：' + (check.reason || '请修改后重新发布'), code: 'AI_001' });
         }
+        if (check.violation) console.log(`[AI审核] 市场评论提醒(未拦截): level=${check.level}, reason=${check.reason}`);
+        req._aiResult = check;
       } catch (e) {
-        // AI审核失败不阻止发布
         console.error('[AI审核] 市场评论审核失败:', e.message);
       }
     }
@@ -452,6 +469,7 @@ router.post('/items/:id/comments', requireAuth, commentUpload.single('media'), a
     const result = db.prepare(
       "INSERT INTO market_comments (item_id, user_phone, content, parent_id, media_url, media_type, created_at) VALUES (?,?,?,?,?,?,datetime('now','localtime'))"
     ).run(itemId, phone, content || '', parent_id, media_url, media_type);
+    logAiReview('market_comment', result.lastInsertRowid, phone, content, req._aiResult || {violation:false,level:'none',category:'无',reason:''}, 'pass');
 
   // 给卖家发通知（非自己评论自己商品时）
   if (item.seller_phone !== phone && !parent_id) {

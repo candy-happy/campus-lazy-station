@@ -10,6 +10,16 @@ const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { safeJSON, parseImageUrls } = require('../utils/helpers');
 const aiChecker = require('./ai');
 
+// ─── AI审核记录写入辅助 ────────────────────────────────
+function logAiReview(source, sourceId, phone, contentPreview, check, action) {
+  try {
+    db.prepare(`INSERT INTO ai_review_logs (source, source_id, phone, content_preview, violation, level, category, reason, action)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(source, sourceId, phone, (contentPreview || '').slice(0, 100),
+        check.violation ? 1 : 0, check.level || 'none', check.category || '无', check.reason || '', action || 'pass');
+  } catch(e) { console.error('[AI审核] 写入审核记录失败:', e.message); }
+}
+
 // ─── 文件上传配置 ──────────────────────────────────────
 const WALL_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'wall');
 if (!fs.existsSync(WALL_UPLOAD_DIR)) fs.mkdirSync(WALL_UPLOAD_DIR, { recursive: true });
@@ -53,20 +63,23 @@ router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res
     const images = [...imageUrls, ...videoUrls].join(',');
 
     // ── AI自动审核（同步，写入前拦截） ──────────────────
+    let aiResult = { violation: false, level: 'none', category: '无', reason: '' };
     try {
-      const check = await aiChecker.checkWallPost({
+      aiResult = await aiChecker.checkWallPost({
         title: '', content, topic: '',
         images: imageUrls.length > 0 ? JSON.stringify(imageUrls) : '[]'
       });
-      if (check.violation && check.level !== 'none') {
+      if (aiResult.violation && aiResult.level === 'high') {
         cleanupUploadedFiles(files);
-        console.log(`[AI审核] 校园墙帖子被拦截: phone=${phone}, reason=${check.reason}`);
+        console.log(`[AI审核] 校园墙帖子被拦截: phone=${phone}, level=${aiResult.level}, reason=${aiResult.reason}`);
+        logAiReview('wall_post', 0, phone, content, aiResult, 'block');
         return res.status(403).json({
-          error: '内容不符合平台规范：' + (check.reason || '请修改后重新发布'),
-          code: 'AI_001', detail: check.category
+          error: '内容不符合平台规范：' + (aiResult.reason || '请修改后重新发布'),
+          code: 'AI_001', detail: aiResult.category
         });
       }
-      console.log(`[AI审核] 校园墙帖子审核通过: phone=${phone}`);
+      if (aiResult.violation) console.log(`[AI审核] 校园墙帖子提醒(未拦截): phone=${phone}, level=${aiResult.level}, reason=${aiResult.reason}`);
+      else console.log(`[AI审核] 校园墙帖子审核通过: phone=${phone}`);
     } catch (e) {
       console.error('[AI审核] 校园墙帖子审核失败(放行):', e.message);
     }
@@ -74,6 +87,7 @@ router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res
     const r = db.prepare(`INSERT INTO wall_posts (phone, nickname, avatar, content, images, gif_urls, like_count, comment_count, exposure_count, exposure_done, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now','localtime'), datetime('now','localtime'))`)
       .run(phone, nickname || '匿名', avatar || '', content, images, gif_urls || '');
+    logAiReview('wall_post', r.lastInsertRowid, phone, content, aiResult, 'pass');
     res.json({ ok: true, id: r.lastInsertRowid });
   } catch (e) {
     console.error('[ERROR] 发帖失败:', e.message, e.stack);
@@ -189,16 +203,19 @@ router.post('/posts/:id/comments', requireAuth, async (req, res) => {
     if (!phone || !content) return res.status(400).json({ error: '缺少手机号或内容', code: 'SYS_002' });
 
     // ── AI自动审核评论内容 ──────────────────────────────
+    let aiResult = { violation: false, level: 'none', category: '无', reason: '' };
     try {
-      const check = await aiChecker.checkTextContent(content, '校园社交平台');
-      if (check.violation && check.level !== 'none') {
-        console.log(`[AI审核] 校园墙评论被拦截: phone=${phone}, reason=${check.reason}`);
+      aiResult = await aiChecker.checkTextContent(content, '校园社交平台');
+      if (aiResult.violation && aiResult.level === 'high') {
+        console.log(`[AI审核] 校园墙评论被拦截: phone=${phone}, level=${aiResult.level}, reason=${aiResult.reason}`);
+        logAiReview('wall_comment', 0, phone, content, aiResult, 'block');
         return res.status(403).json({
-          error: '评论内容不符合平台规范：' + (check.reason || '请修改后重新发布'),
-          code: 'AI_001', detail: check.category
+          error: '评论内容不符合平台规范：' + (aiResult.reason || '请修改后重新发布'),
+          code: 'AI_001', detail: aiResult.category
         });
       }
-      console.log(`[AI审核] 校园墙评论审核通过: phone=${phone}`);
+      if (aiResult.violation) console.log(`[AI审核] 校园墙评论提醒(未拦截): phone=${phone}, level=${aiResult.level}, reason=${aiResult.reason}`);
+      else console.log(`[AI审核] 校园墙评论审核通过: phone=${phone}`);
     } catch (e) {
       console.error('[AI审核] 校园墙评论审核失败(放行):', e.message);
     }
@@ -206,6 +223,7 @@ router.post('/posts/:id/comments', requireAuth, async (req, res) => {
     const result = db.prepare(`INSERT INTO wall_comments (post_id, phone, nickname, avatar, content, parent_id, reply_to_phone, reply_to_nickname, like_count, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now','localtime'))`)
       .run(req.params.id, phone, nickname || '匿名', avatar || '', content, parent_id || null, reply_to_phone || '', reply_to_nickname || '');
+    logAiReview('wall_comment', result.lastInsertRowid, phone, content, aiResult, 'pass');
     db.prepare('UPDATE wall_posts SET comment_count = comment_count + 1 WHERE id = ?').run(req.params.id);
     // 通知
     const post = db.prepare('SELECT phone, nickname FROM wall_posts WHERE id = ?').get(req.params.id);

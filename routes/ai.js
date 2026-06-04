@@ -148,19 +148,22 @@ async function checkWallPost(post) {
   const messages = [
     {
       role: 'system',
-      content: `你是一个校园社交平台的内容审核AI。请检查以下校园墙帖子是否违规。
+      content: `你是一个校园社交平台的内容审核AI。请检查以下校园墙帖子是否含有**严重违规**内容。
 
-违规标准：
-1. 违法信息：涉黄/赌/毒/枪/违禁品
-2. 欺诈信息：虚假宣传、诈骗、传销
-3. 不当内容：侮辱/歧视/人身攻击/低俗/色情暗示
-4. 敏感信息：政治敏感、宗教极端
-5. 校园不当：代写代考/答案出售/作弊工具/校园贷/烟草酒精
-6. 骚扰信息：人肉搜索/隐私泄露/恶意曝光
-7. 广告灌水：无意义的重复广告
+**只拦截以下严重违规（level=high）：**
+1. 违法信息：涉黄/赌/毒/枪/违禁品交易
+2. 严重欺诈：诈骗、传销、校园贷
+3. 严重人身攻击：明确的辱骂、恐吓、威胁
+4. 色情内容：色情图片/文字/暗示
+
+**以下情况不算违规（允许发布）：**
+- 轻微吐槽、玩笑、日常抱怨
+- 普通广告（非诈骗）
+- 情感表达、争议性观点（无攻击性）
+- 正常校园生活内容
 
 请严格以JSON格式回复：
-{"violation": true/false, "reason": "违规原因(无违规则为空)", "level": "high/medium/low/none", "category": "违法/欺诈/不当/敏感/校园不当/骚扰/广告/无"}
+{"violation": true/false, "reason": "违规原因(无违规则为空)", "level": "high/medium/low/none", "category": "违法/欺诈/不当/色情/无"}
 
 只返回JSON，不要其他文字。`
     },
@@ -335,6 +338,43 @@ router.post('/wall/comments/batch', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── 审核记录查询API ─────────────────────────────────
+// 查询审核记录（必须在 /:id 路由之前）
+router.get('/logs', requireAdmin, (req, res) => {
+  try {
+    const { source, level, action, page = 1, limit = 20 } = req.query;
+    const p = Math.max(1, parseInt(page));
+    const l = Math.min(100, parseInt(limit) || 20);
+    const offset = (p - 1) * l;
+    let where = [];
+    const params = [];
+    if (source) { where.push('source = ?'); params.push(source); }
+    if (level && level !== 'all') { where.push('level = ?'); params.push(level); }
+    if (action && action !== 'all') { where.push('action = ?'); params.push(action); }
+    const whereClause = where.length > 0 ? 'WHERE ' + where.join(' AND ') : '';
+    const total = db.prepare(`SELECT count(*) as cnt FROM ai_review_logs ${whereClause}`).get(...params).cnt;
+    const rows = db.prepare(`SELECT * FROM ai_review_logs ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`).all(...params, l, offset);
+    res.json({ total, page: p, limit: l, rows });
+  } catch(e) {
+    res.status(500).json({ error: e.message, code: 'SYS_001' });
+  }
+});
+
+// 审核统计
+router.get('/stats', requireAdmin, (req, res) => {
+  try {
+    const total = db.prepare('SELECT count(*) as cnt FROM ai_review_logs').get().cnt;
+    const violations = db.prepare("SELECT count(*) as cnt FROM ai_review_logs WHERE violation = 1").get().cnt;
+    const blocked = db.prepare("SELECT count(*) as cnt FROM ai_review_logs WHERE action = 'block'").get().cnt;
+    const byLevel = db.prepare("SELECT level, count(*) as cnt FROM ai_review_logs GROUP BY level").all();
+    const bySource = db.prepare("SELECT source, count(*) as cnt, sum(violation) as violations FROM ai_review_logs GROUP BY source").all();
+    const recent24h = db.prepare("SELECT count(*) as cnt FROM ai_review_logs WHERE created_at > datetime('now','localtime','-1 day')").get().cnt;
+    res.json({ total, violations, blocked, byLevel, bySource, recent24h });
+  } catch(e) {
+    res.status(500).json({ error: e.message, code: 'SYS_001' });
+  }
+});
+
 // ─── 导出检测函数供其他路由使用 ──────────────────────────
 module.exports = router;
 module.exports.checkMarketItem = checkMarketItem;
@@ -345,10 +385,21 @@ async function checkTextContent(text, context = '校园平台') {
   const messages = [
     {
       role: 'system',
-      content: `你是一个${context}的内容审核AI。检查以下内容是否违规。
-违规标准：侮辱/歧视/人身攻击/低俗/色情/违法/骚扰/广告灌水/不适合校园
+      content: `你是一个${context}的内容审核AI。检查以下内容是否含有**严重违规**。
+
+**只拦截严重违规（level=high）：**
+- 违法信息：涉黄/赌/毒/枪/违禁品
+- 严重人身攻击：明确辱骂/恐吓/威胁
+- 色情内容
+- 诈骗/传销
+
+**以下不算违规：**
+- 轻微吐槽、玩笑、日常抱怨
+- 情感表达、争议观点（无攻击性）
+- 普通广告
+
 严格以JSON格式回复：
-{"violation": true/false, "reason": "违规原因", "level": "high/medium/low/none", "category": "不当/违法/骚扰/广告/低俗/无"}
+{"violation": true/false, "reason": "违规原因", "level": "high/medium/low/none", "category": "不当/违法/色情/欺诈/无"}
 只返回JSON。`
     },
     { role: 'user', content: text }
