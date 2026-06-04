@@ -85,11 +85,12 @@
  .table-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
  .table-title { font-size: 1rem; font-weight: 700; color: var(--dark); }
  .data-table { width: 100%; border-collapse: collapse; }
- .data-table th, .data-table td { padding: 14px 20px; text-align: left; font-size: 0.85rem; }
+ .data-table th, .data-table td { padding: 12px 16px; text-align: left; font-size: 0.85rem; }
  .data-table th { background: var(--bg); font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
  .data-table tr { border-bottom: 1px solid var(--border); }
  .data-table tr:last-child { border-bottom: none; }
- .data-table tr:hover { background: var(--bg); }
+ .data-table tr:hover { background: var(--orange-pale); }
+ .data-table tr { transition: background 0.15s; }
  .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
  .status-pending { background: #FFF3E0; color: var(--yellow); }
  .status-accepted { background: #E3F2FD; color: var(--blue); }
@@ -99,11 +100,49 @@
  .table-actions { display: flex; gap: 8px; }
  .page-section { display: none; }
  .page-section.active { display: block; }
- .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center; }
+ .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
  .modal-overlay.active { display: flex; }
 .sp-input { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; outline: none; transition: border 0.2s; }
 .sp-input:focus { border-color: var(--orange); }
- .modal-content { background: var(--card-bg); border-radius: var(--radius); width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+ .modal-content { background: var(--card-bg); border-radius: var(--radius); width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+ .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+ .empty-state-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.4; }
+ .empty-state-text { font-size: 0.95rem; margin-bottom: 16px; }
+ .page-desc { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+ .stats-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 16px; margin-bottom: 20px; }
+ .stat-card .stat-info { flex: 1; }
+ .stat-card .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+ .stat-card { display: flex; align-items: center; gap: 14px; }
+ .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+ .search-box { display: flex; align-items: center; gap: 8px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 24px; padding: 4px 4px 4px 14px; }
+ .search-box input { border: none; outline: none; background: transparent; font-size: 0.9rem; width: 180px; color: var(--text); font-family: inherit; }
+ .search-box button { background: var(--orange); color: #fff; border: none; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; font-weight: 600; }
+ .tab-bar { display: flex; gap: 4px; margin-bottom: 20px; background: var(--bg); border-radius: 12px; padding: 4px; }
+ .tab-btn { padding: 8px 20px; border: none; background: transparent; border-radius: 8px; font-size: 0.85rem; cursor: pointer; font-weight: 500; color: var(--text-muted); transition: all 0.2s; font-family: inherit; }
+ .tab-btn:hover { color: var(--orange); }
+ .tab-btn.active { background: var(--card-bg); color: var(--orange); font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+ .table-card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+ .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding: 0 4px; }
+ .pagination-info { font-size: 0.85rem; color: var(--text-muted); }
+ .pagination-btns { display: flex; gap: 8px; }
+ .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+ .badge-orange { background: var(--orange-pale); color: var(--orange); }
+ .badge-green { background: #E8F5E9; color: #2ECC71; }
+ .badge-red { background: #FFEBEE; color: #E74C3C; }
+ .badge-blue { background: #E3F2FD; color: #3498DB; }
+ .badge-yellow { background: #FFF8E1; color: #F39C12; }
+ .badge-purple { background: #F3E5F5; color: #9B59B6; }
+ .badge-gray { background: var(--bg); color: var(--text-muted); }
+ body.dark .badge-orange { background: #2A1F14; }
+ body.dark .badge-green { background: #1A2E1A; }
+ body.dark .badge-red { background: #2E1A1A; }
+ body.dark .badge-blue { background: #1A2A3E; }
+ body.dark .badge-yellow { background: #2E2A1A; }
+ body.dark .badge-purple { background: #2A1A2E; }
+ body.dark .search-box { background: var(--card-bg); border-color: var(--border); }
+ body.dark .search-box input { color: var(--text); }
+ body.dark .tab-bar { background: var(--dark-2); }
+ body.dark .tab-btn.active { background: var(--card-bg); }
  .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
  .modal-title { font-size: 1.1rem; font-weight: 700; }
  .modal-close { width: 32px; height: 32px; border-radius: 50%; background: var(--bg); border: none; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
@@ -117,10 +156,10 @@
  .toast { position: fixed; top: 24px; right: 24px; background: var(--dark); color: white; padding: 14px 24px; border-radius: 24px; font-size: 0.9rem; font-weight: 600; z-index: 300; opacity: 0; transform: translateX(100px); transition: all 0.3s ease; }
  .toast.show { opacity: 1; transform: translateX(0); }
  .login-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, var(--dark), var(--dark-2)); }
- .login-card { background: var(--card-bg); border-radius: var(--radius); padding: 40px; width: 100%; max-width: 400px; text-align: center; box-shadow: var(--shadow-lg); }
- .login-logo { font-size: 3rem; margin-bottom: 8px; }
- .login-title { font-size: 1.5rem; font-weight: 900; margin-bottom: 4px; }
- .login-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px; }
+ .login-card { background: var(--card-bg); border-radius: 20px; padding: 48px 40px; width: 100%; max-width: 420px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15); border: 1px solid var(--border); }
+ .login-logo { font-size: 4rem; margin-bottom: 12px; }
+ .login-title { font-size: 1.6rem; font-weight: 900; margin-bottom: 4px; background: linear-gradient(135deg, var(--orange), var(--red)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+ .login-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 28px; letter-spacing: 1px; }
  .pending-badge { background: var(--red); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-left: 8px; }
  @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .charts-grid { grid-template-columns: 1fr; } }
  @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; padding: 16px; } .stats-grid { grid-template-columns: 1fr; } }
@@ -174,16 +213,16 @@
 <body>
  <div class="login-container" id="loginScreen">
  <div class="login-card">
- <div class="login-logo">🔒</div>
- <div class="login-title">管理后台</div>
- <div class="login-subtitle">请使用管理员账号登录</div>
+ <div class="login-logo">🦥</div>
+ <div class="login-title">校园懒人效率站</div>
+ <div class="login-subtitle">管理后台 · 安全登录</div>
  <form onsubmit="login(event)">
- <div class="form-group"><input type="text" class="form-input" id="loginUsername" placeholder="用户名" required></div>
- <div class="form-group"><input type="password" class="form-input" id="loginPassword" placeholder="密码" required></div>
+ <div class="form-group"><input type="text" class="form-input" id="loginUsername" placeholder="👤 用户名" required></div>
+ <div class="form-group"><input type="password" class="form-input" id="loginPassword" placeholder="🔑 密码" required></div>
  <div class="form-error" id="loginError" style="display: none; margin-bottom: 16px;"></div>
- <button type="submit" class="btn btn-primary" style="width: 100%;">登录</button>
+ <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px;">🔐 登录系统</button>
  </form>
- <div style="margin-top: 16px; font-size: 0.8rem; color: var(--text-muted);">默认总管理员：admin / admin123</div>
+ <div style="margin-top: 16px; font-size: 0.8rem; color: var(--text-muted);">默认：admin / admin123</div>
  </div>
  </div>
  <div class="admin-layout" id="adminDashboard" style="display: none;">
@@ -233,7 +272,7 @@
  <main class="main-content">
  <div class="page-section active" id="page-dashboard">
  <div class="page-header">
- <h1 class="page-title">数据概览</h1>
+ <h1 class="page-title">数据概览</h1><p class="page-desc">平台核心数据一览</p>
  <div class="page-actions">
  <button class="btn btn-secondary" onclick="refreshData()">🔄 刷新</button>
  <button class="btn btn-primary" onclick="exportData()">📥 导出数据</button>
@@ -255,13 +294,37 @@
  </div>
  </div>
  <div class="page-section" id="page-orders">
- <div class="page-header"><h1 class="page-title">订单管理</h1></div>
+ <div class="page-header"><h1 class="page-title">订单管理</h1><p class="page-desc">查看和管理所有服务订单</p></div>
+ <div class="stats-cards" id="ordersStats">
+   <div class="stat-card"><div class="stat-icon" style="background:#E3F2FD">📋</div><div class="stat-info"><div class="stat-value" id="statOrdersTotal">0</div><div class="stat-label">总订单</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#FFF8E1">⏳</div><div class="stat-info"><div class="stat-value" id="statOrdersPending">0</div><div class="stat-label">待接单</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#E8F5E9">✅</div><div class="stat-info"><div class="stat-value" id="statOrdersDone">0</div><div class="stat-label">已完成</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:var(--orange-pale)">💰</div><div class="stat-info"><div class="stat-value" id="statOrdersRevenue">¥0</div><div class="stat-label">总金额</div></div></div>
+ </div>
+ <div class="filter-bar">
+   <button class="ads-filter-btn active" data-filter="all" onclick="filterOrders('all',this)">全部</button>
+   <button class="ads-filter-btn" data-filter="pending" onclick="filterOrders('pending',this)">待接单</button>
+   <button class="ads-filter-btn" data-filter="accepted" onclick="filterOrders('accepted',this)">已接单</button>
+   <button class="ads-filter-btn" data-filter="running" onclick="filterOrders('running',this)">配送中</button>
+   <button class="ads-filter-btn" data-filter="completed" onclick="filterOrders('completed',this)">已完成</button>
+   <button class="ads-filter-btn" data-filter="cancelled" onclick="filterOrders('cancelled',this)">已取消</button>
+   <div class="search-box"><input type="text" id="orderSearchInput" placeholder="搜索订单号/地点/手机号" onkeydown="if(event.key==='Enter')renderOrdersTable()"><button onclick="renderOrdersTable()">🔍</button></div>
+ </div>
  <div class="table-card">
  <table class="data-table"><thead><tr><th>订单号</th><th>服务类型</th><th>取货地点</th><th>送达地点</th><th>联系电话</th><th>金额</th><th>状态</th><th>骑手</th><th>操作</th></tr></thead><tbody id="ordersTable"></tbody></table>
  </div>
  </div>
  <div class="page-section" id="page-riders">
- <div class="page-header"><h1 class="page-title">骑手管理</h1><div class="page-actions"><button class="btn btn-primary" onclick="showAddRiderModal()">+ 添加骑手</button></div></div>
+ <div class="page-header"><h1 class="page-title">骑手管理</h1><p class="page-desc">管理骑手账号、冻结与解冻</p><div class="page-actions"><button class="btn btn-primary" onclick="showAddRiderModal()">+ 添加骑手</button></div></div>
+ <div class="stats-cards" id="ridersStats">
+   <div class="stat-card"><div class="stat-icon" style="background:#E3F2FD">🛵</div><div class="stat-info"><div class="stat-value" id="statRidersTotal">0</div><div class="stat-label">骑手总数</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#E8F5E9">🟢</div><div class="stat-info"><div class="stat-value" id="statRidersOnline">0</div><div class="stat-label">在线</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#FFEBEE">🔴</div><div class="stat-info"><div class="stat-value" id="statRidersFrozen">0</div><div class="stat-label">已冻结</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:var(--orange-pale)">⭐</div><div class="stat-info"><div class="stat-value" id="statRidersAvgRating">0</div><div class="stat-label">平均评分</div></div></div>
+ </div>
+ <div class="filter-bar">
+   <div class="search-box"><input type="text" id="riderSearchInput" placeholder="搜索UID/姓名/手机号" onkeydown="if(event.key==='Enter')renderRidersTable()"><button onclick="renderRidersTable()">🔍</button></div>
+ </div>
  <div class="table-card">
  <table class="data-table"><thead><tr><th>UID</th><th>姓名</th><th>学号</th><th>联系电话</th><th>总接单</th><th>总收入</th><th>评分</th><th>状态</th><th>操作</th></tr></thead><tbody id="ridersTable"></tbody></table>
  </div>
@@ -298,38 +361,50 @@
  </div>
  </div>
  <div class="page-section" id="page-admins">
- <div class="page-header"><h1 class="page-title">管理员管理</h1><div class="page-actions" id="addAdminBtn" style="display: none;"><button class="btn btn-primary" onclick="showModal('addAdminModal')">+ 添加管理员</button></div></div>
+ <div class="page-header"><h1 class="page-title">管理员管理</h1><p class="page-desc">管理系统管理员账号</p><div class="page-actions" id="addAdminBtn" style="display: none;"><button class="btn btn-primary" onclick="showModal('addAdminModal')">+ 添加管理员</button></div></div>
  <div class="table-card" id="pendingApprovalsCard" style="display: none; margin-bottom: 20px;">
- <div class="table-header"><span class="table-title">待审批申请</span></div>
+ <div class="table-header"><span class="table-title">⏳ 待审批申请</span></div>
  <table class="data-table"><thead><tr><th>用户名</th><th>姓名</th><th>联系电话</th><th>申请时间</th><th>操作</th></tr></thead><tbody id="pendingTable"></tbody></table>
  </div>
  <div class="table-card">
- <div class="table-header"><span class="table-title">管理员列表</span></div>
+ <div class="table-header"><span class="table-title">👥 管理员列表</span></div>
  <table class="data-table"><thead><tr><th>用户名</th><th>姓名</th><th>联系电话</th><th>角色</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="adminsTable"></tbody></table>
  </div>
  </div>
  <div class="page-section" id="page-ads">
- <div class="page-header"><h1 class="page-title">广告管理</h1><div class="page-actions"><button class="btn btn-primary" onclick="showAdForm()">+ 新增广告</button></div></div>
- <div class="ads-filter-bar" id="adsFilterBar">
+ <div class="page-header"><h1 class="page-title">广告管理</h1><p class="page-desc">管理首页Banner广告位</p><div class="page-actions"><button class="btn btn-primary" onclick="showAdForm()">+ 新增广告</button></div></div>
+ <div class="stats-cards" id="adsStats">
+   <div class="stat-card"><div class="stat-icon" style="background:#E3F2FD">🖼️</div><div class="stat-info"><div class="stat-value" id="statAdsTotal">0</div><div class="stat-label">广告总数</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#E8F5E9">🟢</div><div class="stat-info"><div class="stat-value" id="statAdsActive">0</div><div class="stat-label">进行中</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:var(--orange-pale)">👁️</div><div class="stat-info"><div class="stat-value" id="statAdsViews">0</div><div class="stat-label">总曝光</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#F3E5F5">👆</div><div class="stat-info"><div class="stat-value" id="statAdsClicks">0</div><div class="stat-label">总点击</div></div></div>
+ </div>
+ <div class="filter-bar" id="adsFilterBar">
    <button class="ads-filter-btn active" data-filter="all" onclick="filterAds('all',this)">全部</button>
-   <button class="ads-filter-btn" data-filter="active" onclick="filterAds('active',this)">正在进行</button>
+   <button class="ads-filter-btn" data-filter="active" onclick="filterAds('active',this)">进行中</button>
    <button class="ads-filter-btn" data-filter="ended" onclick="filterAds('ended',this)">已结束</button>
    <button class="ads-filter-btn" data-filter="inactive" onclick="filterAds('inactive',this)">已停用</button>
-   <span class="ads-filter-count" id="adsFilterCount"></span>
+   <span class="badge badge-gray" id="adsFilterCount">0 条</span>
  </div>
  <div class="table-card">
  <table class="data-table"><thead><tr><th>预览</th><th>标题</th><th>展示</th><th>点击</th><th>点击率</th><th>排序</th><th>状态</th><th>链接</th><th>有效期</th><th>操作</th></tr></thead><tbody id="adsTable"></tbody></table>
  </div>
  </div>
  <div class="page-section" id="page-withdraw">
- <div class="page-header"><h1 class="page-title">提现审核</h1></div>
+ <div class="page-header"><h1 class="page-title">提现审核</h1><p class="page-desc">处理骑手提现申请</p></div>
+ <div class="stats-cards">
+   <div class="stat-card"><div class="stat-icon" style="background:#E3F2FD">💸</div><div class="stat-info"><div class="stat-value" id="statWithdrawTotal">0</div><div class="stat-label">总申请数</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#FFF8E1">⏳</div><div class="stat-info"><div class="stat-value" id="statWithdrawPending">0</div><div class="stat-label">待审核</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#E8F5E9">✅</div><div class="stat-info"><div class="stat-value" id="statWithdrawApproved">0</div><div class="stat-label">已通过</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:var(--orange-pale)">💰</div><div class="stat-info"><div class="stat-value" id="statWithdrawAmount">¥0</div><div class="stat-label">总金额</div></div></div>
+ </div>
  <div class="table-card">
- <div class="table-header"><span class="table-title">提现申请列表</span></div>
+ <div class="table-header"><span class="table-title">📋 提现申请列表</span></div>
  <table class="data-table"><thead><tr><th>骑手</th><th>金额</th><th>状态</th><th>申请时间</th><th>操作</th></tr></thead><tbody id="withdrawTable"></tbody></table>
  </div>
  </div>
  <div class="page-section" id="page-market">
-  <div class="page-header"><h1 class="page-title">二手市场管理</h1></div>
+  <div class="page-header"><h1 class="page-title">二手市场管理</h1><p class="page-desc">管理商品、交易、留言与数据统计</p></div>
   <div class="market-admin-tabs">
     <button class="market-tab active" data-tab="items" onclick="switchMarketTab('items',this)">📦 商品管理</button>
     <button class="market-tab" data-tab="orders" onclick="switchMarketTab('orders',this)">💰 交易订单</button>
@@ -416,7 +491,7 @@
 
   <!-- AI 审核页面 -->
   <div class="page-section" id="page-ai">
-    <div class="page-header"><h1 class="page-title">🤖 AI 智能审核</h1><p style="color:var(--text-secondary);font-size:13px;margin-top:4px">基于 DeepSeek AI 自动检测违规内容，包括文字和图片</p></div>
+    <div class="page-header"><h1 class="page-title">🤖 AI 智能审核</h1><p class="page-desc">基于 DeepSeek AI 自动检测违规内容，支持文字和图片分析</p></div>
     <div class="market-admin-tabs">
       <button class="market-tab active" data-tab="market" onclick="switchAiTab('market',this)">🛒 二手市场</button>
       <button class="market-tab" data-tab="wall" onclick="switchAiTab('wall',this)">📢 校园墙</button>
@@ -789,28 +864,56 @@
 
  function renderRecentOrders() {
  document.getElementById('recentOrdersTable').innerHTML = orders.slice(0,5).map(o => `
- <tr><td>${o.id||o.order_no}</td><td>${services[o.type]?.icon||'📦'} ${services[o.type]?.name||o.type}</td><td>${escHtml(o.pickupLocation||o.pickup_location)}</td><td>¥${(o.price||0).toFixed(2)}</td><td><span class="status-badge ${statusMap[o.status]?.class||''}">${statusMap[o.status]?.label||o.status}</span></td></tr>`).join('');
+ <tr><td><span style="font-weight:600">${o.id||o.order_no}</span></td><td>${services[o.type]?.icon||'📦'} ${services[o.type]?.name||o.type}</td><td>${escHtml(o.pickupLocation||o.pickup_location)}</td><td><span style="font-weight:600">¥${(o.price||0).toFixed(2)}</span></td><td><span class="badge ${o.status==='completed'?'badge-green':o.status==='cancelled'?'badge-red':o.status==='pending'?'badge-yellow':o.status==='running'?'badge-orange':'badge-blue'}">${statusMap[o.status]?.label||o.status}</span></td></tr>`).join('');
  }
 
+ let orderFilter = 'all';
+ function filterOrders(filter, btn) {
+   orderFilter = filter;
+   document.querySelectorAll('#page-orders .ads-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+   renderOrdersTable();
+ }
  function renderOrdersTable() {
- document.getElementById('ordersTable').innerHTML = orders.map(o => `
- <tr><td>${o.id||o.order_no}</td><td>${services[o.type]?.icon||'📦'} ${services[o.type]?.name||o.type}</td><td>${escHtml(o.pickupLocation||o.pickup_location)}</td><td>${escHtml(o.deliveryLocation||o.delivery_location)}</td><td>${escHtml(o.phone)}</td><td>¥${(o.price||0).toFixed(2)}</td><td><span class="status-badge ${statusMap[o.status]?.class||''}">${statusMap[o.status]?.label||o.status}</span></td><td>${escHtml(o.riderName||o.rider_name||'-')}</td><td><div class="table-actions">${o.status==='pending'?`<button class="btn btn-secondary btn-sm" onclick="cancelOrder('${o.id||o.order_no}')">取消</button>`:''}</div></td></tr>`).join('');
+ const q = (document.getElementById('orderSearchInput')?.value||'').toLowerCase();
+ const filtered = orders.filter(o => {
+   if (orderFilter !== 'all' && o.status !== orderFilter) return false;
+   if (q && !(o.id||o.order_no||'').toLowerCase().includes(q) && !(o.pickupLocation||o.pickup_location||'').toLowerCase().includes(q) && !(o.phone||'').includes(q)) return false;
+   return true;
+ });
+ // 更新统计
+ const allOrders = orders;
+ document.getElementById('statOrdersTotal').textContent = allOrders.length;
+ document.getElementById('statOrdersPending').textContent = allOrders.filter(o=>o.status==='pending').length;
+ document.getElementById('statOrdersDone').textContent = allOrders.filter(o=>o.status==='completed').length;
+ document.getElementById('statOrdersRevenue').textContent = '¥' + allOrders.reduce((s,o)=>s+(o.price||0),0).toFixed(0);
+ document.getElementById('ordersTable').innerHTML = filtered.length ? filtered.map(o => `
+ <tr><td><span style="font-weight:600">${o.id||o.order_no}</span></td><td>${services[o.type]?.icon||'📦'} ${services[o.type]?.name||o.type}</td><td>${escHtml(o.pickupLocation||o.pickup_location)}</td><td>${escHtml(o.deliveryLocation||o.delivery_location)}</td><td>${escHtml(o.phone)}</td><td><span style="font-weight:600">¥${(o.price||0).toFixed(2)}</span></td><td><span class="badge ${o.status==='completed'?'badge-green':o.status==='cancelled'?'badge-red':o.status==='pending'?'badge-yellow':o.status==='running'?'badge-orange':'badge-blue'}">${statusMap[o.status]?.label||o.status}</span></td><td>${escHtml(o.riderName||o.rider_name||'-')}</td><td><div class="table-actions">${o.status==='pending'?`<button class="btn btn-secondary btn-sm" onclick="cancelOrder('${o.id||o.order_no}')">取消</button>`:''}</div></td></tr>`).join('') : '<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">暂无订单数据</div></div></td></tr>';
  }
 
  function renderRidersTable() {
- const token = localStorage.getItem('lazy_token') || '';
- document.getElementById('ridersTable').innerHTML = riders.map(r => {
+ const q = (document.getElementById('riderSearchInput')?.value||'').toLowerCase();
+ const filtered = riders.filter(r => {
+   if (q && !(r.uid||'').toLowerCase().includes(q) && !(r.name||'').includes(q) && !(r.phone||'').includes(q)) return false;
+   return true;
+ });
+ // 更新统计
+ document.getElementById('statRidersTotal').textContent = riders.length;
+ document.getElementById('statRidersOnline').textContent = riders.filter(r=>r.status==='online'&&!r.frozen).length;
+ document.getElementById('statRidersFrozen').textContent = riders.filter(r=>r.frozen===1).length;
+ const avg = riders.length ? (riders.reduce((s,r)=>s+(r.rating||5),0)/riders.length).toFixed(1) : '0';
+ document.getElementById('statRidersAvgRating').textContent = avg;
+ document.getElementById('ridersTable').innerHTML = filtered.length ? filtered.map(r => {
    const isFrozen = r.frozen === 1;
    const statusBadge = isFrozen
-     ? '<span class="status-badge" style="background:#FEE;color:#C00">已冻结</span>'
+     ? '<span class="badge badge-red">🔴 已冻结</span>'
      : r.status === 'online'
-       ? '<span class="status-badge status-running">在线</span>'
-       : '<span class="status-badge status-completed">离线</span>';
+       ? '<span class="badge badge-green">🟢 在线</span>'
+       : '<span class="badge badge-gray">⚪ 离线</span>';
    const actions = isFrozen
-     ? `<button class="btn btn-success btn-sm" onclick="unfreezeRider(${r.id})" style="background:var(--green);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer">解冻</button>`
-     : `<button class="btn btn-danger btn-sm" onclick="showFreezeModal(${r.id},'${escHtml(r.name)}','${escHtml(r.uid||'')}')" style="background:var(--red);color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer">冻结</button>`;
-   return `<tr><td>${r.uid||'-'}</td><td>${escHtml(r.name)}</td><td>${escHtml(r.student_id||'-')}</td><td>${escHtml(r.phone)}</td><td>${r.total_orders||0}</td><td>¥${(r.total_earnings||0).toFixed(2)}</td><td>${r.rating||5.0}</td><td>${statusBadge}</td><td>${actions} <button class="btn btn-danger btn-sm" onclick="removeRider(${r.id})" style="margin-left:4px;padding:4px 8px;border-radius:6px;cursor:pointer">移除</button></td></tr>`;
- }).join('') || '<tr><td colspan="9" style="text-align:center">暂无骑手</td></tr>';
+     ? `<button class="btn btn-sm" style="background:var(--green);color:#fff;border:none;padding:5px 12px;border-radius:8px;cursor:pointer;font-weight:600" onclick="unfreezeRider(${r.id})">解冻</button>`
+     : `<button class="btn btn-sm" style="background:var(--red);color:#fff;border:none;padding:5px 12px;border-radius:8px;cursor:pointer;font-weight:600" onclick="showFreezeModal(${r.id},'${escHtml(r.name)}','${escHtml(r.uid||'')}')">冻结</button>`;
+   return `<tr><td><span style="font-weight:600;color:var(--orange)">${r.uid||'-'}</span></td><td>${escHtml(r.name)}</td><td>${escHtml(r.student_id||'-')}</td><td>${escHtml(r.phone)}</td><td>${r.total_orders||0}</td><td><span style="font-weight:600">¥${(r.total_earnings||0).toFixed(0)}</span></td><td><span style="color:#F39C12">⭐</span> ${r.rating||5.0}</td><td>${statusBadge}</td><td style="white-space:nowrap">${actions} <button class="btn btn-sm" style="background:#999;color:#fff;border:none;padding:5px 10px;border-radius:8px;cursor:pointer;margin-left:4px" onclick="removeRider(${r.id})">移除</button></td></tr>`;
+ }).join('') : '<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">🛵</div><div class="empty-state-text">暂无骑手数据</div></div></td></tr>';
  }
 
  let freezeTargetId = null;
@@ -890,10 +993,14 @@
 
  function renderAdminsTable() {
  document.getElementById('pendingApprovalsCard').style.display = 'none';
+ // 更新统计
+ document.getElementById('statAdminsTotal').textContent = admins.length;
+ document.getElementById('statAdminsSuper').textContent = admins.filter(a=>a.role==='super').length;
+ document.getElementById('statAdminsNormal').textContent = admins.filter(a=>a.role!=='super').length;
  const tbody = document.getElementById('adminsTable');
- if (!admins.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">暂无管理员</td></tr>'; return; }
+ if (!admins.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-text">暂无管理员数据</div></div></td></tr>'; return; }
  tbody.innerHTML = admins.map(a => `
- <tr><td>${escHtml(a.username)}</td><td>${a.name||'-'}</td><td>${a.phone||'-'}</td><td><span class="status-badge ${a.role==='super'?'status-running':'status-completed'}">${a.role==='super'?'总管理员':'管理员'}</span></td><td>${a.created_at?new Date(a.created_at).toLocaleDateString('zh-CN'):'-'}</td><td>${a.role!=='super'&&currentAdmin?.role==='super'?`<button class="btn btn-danger btn-sm" onclick="deleteAdmin(${a.id})">删除</button>`:'-'}</td></tr>`).join('');
+ <tr><td><span style="font-weight:600">${escHtml(a.username)}</span></td><td>${a.name||'-'}</td><td>${a.phone||'-'}</td><td><span class="badge ${a.role==='super'?'badge-orange':'badge-blue'}">${a.role==='super'?'👑 总管理员':'🛡️ 管理员'}</span></td><td>${a.created_at?new Date(a.created_at).toLocaleDateString('zh-CN'):'-'}</td><td>${a.role!=='super'&&currentAdmin?.role==='super'?`<button class="btn btn-sm" style="background:var(--red);color:#fff;border:none;padding:5px 12px;border-radius:8px;cursor:pointer;font-weight:600" onclick="deleteAdmin(${a.id})">删除</button>`:'-'}</td></tr>`).join('');
  }
 
  async function cancelOrder(id) {
@@ -959,10 +1066,18 @@
  async function renderWithdrawTable() {
  const list = await API.adminWithdrawList();
  const tbody = document.getElementById('withdrawTable');
- if (!list || !list.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-secondary)">暂无提现申请</td></tr>'; return; }
- const statusMap = { pending:'审核中', approved:'已通过', rejected:'已驳回' };
- const colorMap = { pending:'#F39C12', approved:'#2ECC71', rejected:'#E74C3C' };
- tbody.innerHTML = list.map(w => '<tr><td>' + (escHtml(w.rider_name||w.phone)) + '</td><td>¥' + (w.amount||0).toFixed(2) + '</td><td style="color:' + (colorMap[w.status]||'') + ';font-weight:600">' + (statusMap[w.status]||w.status) + '</td><td>' + (w.created_at||'') + '</td><td>' + (w.status==='pending' ? '<button onclick="approveWithdraw('+w.id+',\'approved\')" style="background:#2ECC71;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;margin-right:6px">通过</button><button onclick="approveWithdraw('+w.id+',\'rejected\')" style="background:#E74C3C;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer">驳回</button>' : (w.reason||'-')) + '</td></tr>').join('');
+ // 更新统计
+ const totalAmount = (list||[]).reduce((s,w)=>s+(w.amount||0),0);
+ document.getElementById('statWithdrawTotal').textContent = (list||[]).length;
+ document.getElementById('statWithdrawPending').textContent = (list||[]).filter(w=>w.status==='pending').length;
+ document.getElementById('statWithdrawApproved').textContent = (list||[]).filter(w=>w.status==='approved').length;
+ document.getElementById('statWithdrawAmount').textContent = '¥' + totalAmount.toFixed(0);
+ if (!list || !list.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">💸</div><div class="empty-state-text">暂无提现申请</div></div></td></tr>'; return; }
+ const statusLabel = { pending:{text:'⏳ 审核中',cls:'badge-yellow'}, approved:{text:'✅ 已通过',cls:'badge-green'}, rejected:{text:'❌ 已驳回',cls:'badge-red'} };
+ tbody.innerHTML = list.map(w => {
+   const st = statusLabel[w.status] || {text:w.status,cls:'badge-gray'};
+   return '<tr><td><span style="font-weight:600">' + (escHtml(w.rider_name||w.phone)) + '</span></td><td><span style="font-weight:600;color:var(--orange)">¥' + (w.amount||0).toFixed(2) + '</span></td><td><span class="badge ' + st.cls + '">' + st.text + '</span></td><td style="font-size:13px;color:var(--text-muted)">' + (w.created_at||'') + '</td><td>' + (w.status==='pending' ? '<button onclick="approveWithdraw('+w.id+',\'approved\')" style="background:var(--green);color:#fff;border:none;padding:5px 14px;border-radius:8px;cursor:pointer;font-weight:600;margin-right:6px">✓ 通过</button><button onclick="approveWithdraw('+w.id+',\'rejected\')" style="background:var(--red);color:#fff;border:none;padding:5px 14px;border-radius:8px;cursor:pointer;font-weight:600">✗ 驳回</button>' : (w.reason||'-')) + '</td></tr>';
+ }).join('');
  // 更新待审核徽章
  const pendingCount = list.filter(w => w.status === 'pending').length;
  const badge = document.getElementById('withdrawBadge');
@@ -981,6 +1096,11 @@
  let adsFilter = 'all';
  async function loadAds() {
  adsList = await API.getAdminAds();
+ // 更新广告统计
+ document.getElementById('statAdsTotal').textContent = adsList.length;
+ document.getElementById('statAdsActive').textContent = adsList.filter(a=>a.status==='active').length;
+ document.getElementById('statAdsViews').textContent = adsList.reduce((s,a)=>s+(a.view_count||0),0);
+ document.getElementById('statAdsClicks').textContent = adsList.reduce((s,a)=>s+(a.click_count||0),0);
  renderAdsTable();
  }
  function filterAds(filter, btn) {
@@ -1010,8 +1130,8 @@
  const countEl = document.getElementById('adsFilterCount');
  if (countEl) countEl.textContent = filtered.length + ' / ' + adsList.length + ' 条';
  const statusLabel = (s, a) => {
-   if (a.end_time && new Date(a.end_time) <= new Date()) return '<span style="color:#E67E22">已结束</span>';
-   return s === 'active' ? '<span style="color:#27AE60">启用</span>' : '<span style="color:#999">停用</span>';
+   if (a.end_time && new Date(a.end_time) <= new Date()) return '<span class="badge badge-yellow">已结束</span>';
+   return s === 'active' ? '<span class="badge badge-green">启用</span>' : '<span class="badge badge-gray">停用</span>';
  };
  const mediaPreview = (url, img) => {
   if (!url) return '<span style="font-size:20px">'+(img||'🎁')+'</span>';
@@ -1131,6 +1251,7 @@
  window.login = login; window.switchPage = switchPage; window.addAdmin = addAdmin; window.deleteAdmin = deleteAdmin;
  window.cancelOrder = cancelOrder; window.removeRider = removeRider; window.refreshData = refreshData; window.exportData = exportData;
  window.approveWithdraw = approveWithdraw;
+ window.filterOrders = filterOrders;
  window.showAddAdminModal = () => showModal('addAdminModal'); window.closeModal = closeModal;
  window.showAdForm = showAdForm; window.editAd = editAd; window.saveAd = saveAd; window.deleteAd = deleteAd; window.uploadAdMedia = uploadAdMedia; window.clearAdMedia = clearAdMedia;
  window.switchMarketTab = switchMarketTab; window.filterMarketItems = filterMarketItems; window.loadMarketItems = loadMarketItems; window.toggleAllMarketItems = toggleAllMarketItems;
@@ -1151,8 +1272,8 @@
  let marketCategoryChart = null;
  const marketCategoryMap = { textbook:'教材', digital:'数码', daily:'日用', clothing:'服饰', sports:'运动', food:'食品', other:'其他' };
  const marketCondMap = { new:'全新', like_new:'几乎全新', good:'良好', fair:'一般' };
- const marketOrderStatusMap = { pending:{label:'待确认',cls:'status-pending'}, confirmed:{label:'已确认',cls:'status-running'}, completed:{label:'已完成',cls:'status-completed'}, cancelled:{label:'已取消',cls:'status-cancelled'} };
- const marketItemStatusMap = { active:{label:'在售',cls:'status-running'}, sold:{label:'已售',cls:'status-completed'}, offline:{label:'已下架',cls:'status-cancelled'}, removed:{label:'已删除',cls:''} };
+ const marketOrderStatusMap = { pending:{label:'待确认',cls:'badge-yellow'}, confirmed:{label:'已确认',cls:'badge-orange'}, completed:{label:'已完成',cls:'badge-green'}, cancelled:{label:'已取消',cls:'badge-red'} };
+ const marketItemStatusMap = { active:{label:'在售',cls:'badge-green'}, sold:{label:'已售',cls:'badge-blue'}, offline:{label:'已下架',cls:'badge-gray'}, removed:{label:'已删除',cls:'badge-red'} };
 
  async function fetchMarketAPI(path) {
    const res = await fetch('/api/market/admin/' + path, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') } });
@@ -1201,10 +1322,10 @@
        '<td>' + (marketCategoryMap[item.category]||item.category) + '</td>' +
        '<td>' + (marketCondMap[item.condition_level]||item.condition_level||'-') + '</td>' +
        '<td style="text-align:center">' + (item.views||0) + '</td>' +
-       '<td><span class="status-badge ' + status.cls + '">' + status.label + '</span></td>' +
+       '<td><span class="badge ' + status.cls + '">' + status.label + '</span></td>' +
        '<td style="font-size:12px">' + (item.created_at||'').slice(0,16) + '</td>' +
        '<td><button class="btn btn-sm" onclick="offlineMarketItem(' + item.id + ')">下架</button> <button class="btn btn-sm btn-danger" onclick="deleteMarketItem(' + item.id + ')">删除</button></td></tr>';
-   }).join('') || '<tr><td colspan="11" style="text-align:center">暂无商品</td></tr>';
+   }).join('') || '<tr><td colspan="11"><div class="empty-state"><div class="empty-state-icon">🛒</div><div class="empty-state-text">暂无商品数据</div></div></td></tr>';
  }
  function toggleAllMarketItems(el) {
    document.querySelectorAll('.market-item-check').forEach(c => c.checked = el.checked);
@@ -1261,10 +1382,10 @@
        '<td>' + escHtml(o.buyer_name || o.buyer_phone) + '</td>' +
        '<td>' + escHtml(o.seller_name || o.seller_phone) + '</td>' +
        '<td>¥' + (o.price||0).toFixed(2) + '</td>' +
-       '<td><span class="status-badge ' + status.cls + '">' + status.label + '</span></td>' +
+       '<td><span class="badge ' + status.cls + '">' + status.label + '</span></td>' +
        '<td style="font-size:12px">' + (o.created_at||'').slice(0,16) + '</td>' +
        '<td>' + (canResolve ? '<button class="btn btn-sm" onclick="resolveMarketOrder(' + o.id + ',\'complete\')">确认完成</button> <button class="btn btn-sm btn-danger" onclick="resolveMarketOrder(' + o.id + ',\'cancel\')">取消</button>' : '-') + '</td></tr>';
-   }).join('') || '<tr><td colspan="8" style="text-align:center">暂无订单</td></tr>';
+   }).join('') || '<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">💰</div><div class="empty-state-text">暂无订单数据</div></div></td></tr>';
  }
  async function resolveMarketOrder(id, action) {
    const label = action === 'complete' ? '确认完成' : '取消';
@@ -1294,7 +1415,7 @@
        '<td>' + media + '</td>' +
        '<td style="font-size:12px">' + (c.created_at||'').slice(0,16) + '</td>' +
        '<td><button class="btn btn-sm btn-danger" onclick="deleteMarketComment(' + c.id + ')">删除</button></td></tr>';
-   }).join('') || '<tr><td colspan="7" style="text-align:center">暂无留言</td></tr>';
+   }).join('') || '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">暂无留言数据</div></div></td></tr>';
  }
  function toggleAllMarketComments(el) {
    document.querySelectorAll('.market-comment-check').forEach(c => c.checked = el.checked);
