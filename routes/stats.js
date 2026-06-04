@@ -139,4 +139,43 @@ router.get('/orders', requireAdmin, (req, res) => {
   }
 });
 
+// ── 订单明细列表(按时间段+状态筛选，分页) ──
+// GET /api/stats/orders/list?from=&to=&filter=all|completed|pending|revenue&page=1&size=10
+router.get('/orders/list', requireAdmin, (req, res) => {
+  try {
+    const { from, to, filter = 'all', page = 1, size = 10 } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const sizeNum = Math.min(100, Math.max(1, parseInt(size) || 10));
+    const offset = (pageNum - 1) * sizeNum;
+
+    let statusClause = '';
+    if (filter === 'completed' || filter === 'revenue') statusClause = " AND status='completed'";
+    else if (filter === 'pending') statusClause = " AND status IN ('pending','accepted','running')";
+
+    let dateClause = '';
+    const params = [];
+    if (from && to) {
+      dateClause = ' AND date(created_at) >= ? AND date(created_at) <= ?';
+      params.push(from, to);
+    } else if (from) {
+      dateClause = ' AND date(created_at) >= ?';
+      params.push(from);
+    } else if (to) {
+      dateClause = ' AND date(created_at) <= ?';
+      params.push(to);
+    }
+
+    const where = 'WHERE 1=1' + statusClause + dateClause;
+    const total = db.prepare(`SELECT COUNT(*) as n FROM orders ${where}`).get(...params).n;
+    const list = db.prepare(
+      `SELECT id, type, pickup_location, delivery_location, price, status, created_at FROM orders ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    ).all(...params, sizeNum, offset);
+
+    return res.json({ total, page: pageNum, size: sizeNum, list });
+  } catch(e) {
+    console.error('订单明细查询失败:', e);
+    return res.status(500).json({ error: '查询失败' });
+  }
+});
+
 module.exports = router;

@@ -55,8 +55,28 @@
  .range-date-input { padding: 4px 8px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 0.82rem; color: var(--text); background: var(--card-bg); cursor: pointer; }
  .range-date-input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,107,43,0.15); }
  .order-stats-row { display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
- .order-stat-block { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 160px; padding: 16px 20px; background: var(--bg); border-radius: 14px; border: 1px solid var(--border); transition: all 0.2s; }
- .order-stat-block:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+ .order-stat-block { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 160px; padding: 16px 20px; background: var(--bg); border-radius: 14px; border: 1px solid var(--border); transition: all 0.2s; cursor: pointer; position: relative; }
+ .order-stat-block:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-color: var(--orange); }
+ .order-stat-block.active-filter { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,107,43,0.18); }
+ .order-stat-block::after { content: '▶ 查看详情'; position: absolute; bottom: 4px; right: 12px; font-size: 0.7rem; color: var(--orange); opacity: 0; transition: opacity 0.2s; }
+ .order-stat-block:hover::after { opacity: 1; }
+ /* 订单详情展开区 */
+ .order-detail-panel { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; display: none; }
+ .order-detail-panel.show { display: block; animation: slideDown 0.25s ease; }
+ @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+ .order-detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+ .order-detail-title { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+ .order-detail-close { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--text-muted); padding: 4px 8px; border-radius: 6px; transition: all 0.2s; }
+ .order-detail-close:hover { background: var(--bg); color: var(--text); }
+ .order-detail-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+ .order-detail-table th { padding: 8px 12px; text-align: left; font-weight: 600; color: var(--text-muted); border-bottom: 2px solid var(--border); font-size: 0.8rem; }
+ .order-detail-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+ .order-detail-table tr:hover td { background: rgba(255,107,43,0.04); }
+ .order-detail-table .status-badge { padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+ .order-detail-pager { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 12px; font-size: 0.85rem; color: var(--text-muted); }
+ .order-detail-pager button { padding: 4px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+ .order-detail-pager button:hover { border-color: var(--orange); color: var(--orange); }
+ .order-detail-pager button:disabled { opacity: 0.4; cursor: default; }
  .order-stat-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #fff; flex-shrink: 0; }
  .order-stat-info { flex: 1; min-width: 0; }
  .order-stat-value { font-size: 1.5rem; font-weight: 900; color: var(--dark); line-height: 1.2; }
@@ -380,41 +400,53 @@
  </div>
  </div>
  <div class="order-stats-row">
- <div class="order-stat-block">
+ <div class="order-stat-block" onclick="showOrderDetail('all')">
  <div class="order-stat-icon" style="background:linear-gradient(135deg,#3498DB,#2980B9)">📦</div>
  <div class="order-stat-info">
  <div class="order-stat-value" id="statRangeOrders">0</div>
  <div class="order-stat-label">订单数</div>
  </div>
  </div>
- <div class="order-stat-block">
+ <div class="order-stat-block" onclick="showOrderDetail('revenue')">
  <div class="order-stat-icon" style="background:linear-gradient(135deg,#FF6B2B,#E55A1B)">💰</div>
  <div class="order-stat-info">
  <div class="order-stat-value" id="statRangeRevenue">¥0</div>
  <div class="order-stat-label">收入</div>
  </div>
  </div>
- <div class="order-stat-block">
+ <div class="order-stat-block" onclick="showOrderDetail('completed')">
  <div class="order-stat-icon" style="background:linear-gradient(135deg,#2ECC71,#27AE60)">✅</div>
  <div class="order-stat-info">
  <div class="order-stat-value" id="statRangeCompleted">0</div>
  <div class="order-stat-label">已完成</div>
  </div>
  </div>
- <div class="order-stat-block">
+ <div class="order-stat-block" onclick="showOrderDetail('pending')">
  <div class="order-stat-icon" style="background:linear-gradient(135deg,#F39C12,#E67E22)">⏳</div>
  <div class="order-stat-info">
  <div class="order-stat-value" id="statRangePending">0</div>
  <div class="order-stat-label">进行中</div>
  </div>
  </div>
- <div class="order-stat-block">
+ <div class="order-stat-block" onclick="showOrderDetail('all')">
  <div class="order-stat-icon" style="background:linear-gradient(135deg,#9B59B6,#8E44AD)">📊</div>
  <div class="order-stat-info">
  <div class="order-stat-value" id="statRangeAvg">¥0</div>
  <div class="order-stat-label">客单价</div>
  </div>
  </div>
+ </div>
+ <!-- 订单详情展开区 -->
+ <div class="order-detail-panel" id="orderDetailPanel">
+ <div class="order-detail-header">
+ <span class="order-detail-title" id="orderDetailTitle">📋 订单详情</span>
+ <button class="order-detail-close" onclick="closeOrderDetail()">✕ 收起</button>
+ </div>
+ <table class="order-detail-table">
+ <thead><tr><th>订单号</th><th>服务类型</th><th>取货地点</th><th>送达地点</th><th>金额</th><th>状态</th><th>时间</th></tr></thead>
+ <tbody id="orderDetailBody"></tbody>
+ </table>
+ <div class="order-detail-pager" id="orderDetailPager"></div>
  </div>
  </div>
  <!-- 快捷指标 -->
@@ -1078,6 +1110,85 @@
  } catch(e) {
  console.error('订单统计查询失败', e);
  showToast('查询失败','error');
+ }
+ }
+
+ let _orderDetailFilter = null;
+ let _orderDetailPage = 1;
+ const _orderDetailPageSize = 10;
+ const _statusMap = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
+ const _statusColor = { pending:'#F39C12', accepted:'#3498DB', running:'#9B59B6', completed:'#2ECC71', cancelled:'#E74C3C' };
+ const _services = { errand:'跑腿代购', delivery:'快递代取', print:'文件代打', laundry:'衣物代洗', food:'食堂代买', other:'其他' };
+
+ function showOrderDetail(filter) {
+ _orderDetailFilter = filter;
+ _orderDetailPage = 1;
+ // 高亮当前卡片
+ document.querySelectorAll('.order-stat-block').forEach(b => b.classList.remove('active-filter'));
+ event.currentTarget.classList.add('active-filter');
+ const panel = document.getElementById('orderDetailPanel');
+ panel.classList.add('show');
+ const titles = { all:'📋 全部订单', revenue:'💰 收入明细（已完成订单）', completed:'✅ 已完成订单', pending:'⏳ 进行中订单' };
+ document.getElementById('orderDetailTitle').textContent = titles[filter] || '📋 订单详情';
+ loadOrderDetailPage();
+ }
+
+ function closeOrderDetail() {
+ document.getElementById('orderDetailPanel').classList.remove('show');
+ document.querySelectorAll('.order-stat-block').forEach(b => b.classList.remove('active-filter'));
+ _orderDetailFilter = null;
+ }
+
+ async function loadOrderDetailPage() {
+ if (!_orderDetailFilter) return;
+ // 计算日期范围
+ let from = '', to = '';
+ const range = _currentOrderRange;
+ const today = new Date().toISOString().slice(0,10);
+ if (range === 'today') { from = today; to = today; }
+ else if (range === '7d') { from = new Date(Date.now()-6*86400000).toISOString().slice(0,10); to = today; }
+ else if (range === '30d') { from = new Date(Date.now()-29*86400000).toISOString().slice(0,10); to = today; }
+ else if (range === 'custom') { from = document.getElementById('orderDateFrom').value; to = document.getElementById('orderDateTo').value; }
+ // all → 不传日期
+ const params = new URLSearchParams();
+ if (from) params.set('from', from);
+ if (to) params.set('to', to);
+ params.set('filter', _orderDetailFilter);
+ params.set('page', _orderDetailPage);
+ params.set('size', _orderDetailPageSize);
+ try {
+ const res = await fetch('/api/stats/orders/list?' + params, { headers: API._headers() });
+ if (!res.ok) throw new Error('请求失败');
+ const d = await res.json();
+ const tbody = document.getElementById('orderDetailBody');
+ if (!d.list || d.list.length === 0) {
+ tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">暂无数据</td></tr>';
+ } else {
+ tbody.innerHTML = d.list.map(o => `<tr>
+ <td style="font-weight:600;font-size:0.82rem">#${o.id}</td>
+ <td>${_services[o.type] || o.type || '-'}</td>
+ <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.pickup_location||''}">${o.pickup_location || '-'}</td>
+ <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.delivery_location||''}">${o.delivery_location || '-'}</td>
+ <td style="font-weight:700;color:var(--orange)">¥${o.price||0}</td>
+ <td><span class="status-badge" style="background:${_statusColor[o.status]||'#999'}20;color:${_statusColor[o.status]||'#999'}">${_statusMap[o.status]||o.status}</span></td>
+ <td style="font-size:0.8rem;color:var(--text-muted)">${o.created_at ? o.created_at.slice(0,16).replace('T',' ') : '-'}</td>
+ </tr>`).join('');
+ }
+ // 分页
+ const pager = document.getElementById('orderDetailPager');
+ const total = d.total || 0;
+ const totalPages = Math.ceil(total / _orderDetailPageSize);
+ if (totalPages <= 1) { pager.innerHTML = `<span>共 ${total} 条</span>`; }
+ else {
+ pager.innerHTML = `<button onclick="_orderDetailPage=1;loadOrderDetailPage()" ${_orderDetailPage<=1?'disabled':''}>首页</button>
+ <button onclick="_orderDetailPage--;loadOrderDetailPage()" ${_orderDetailPage<=1?'disabled':''}>上一页</button>
+ <span>${_orderDetailPage} / ${totalPages} 页，共 ${total} 条</span>
+ <button onclick="_orderDetailPage++;loadOrderDetailPage()" ${_orderDetailPage>=totalPages?'disabled':''}>下一页</button>
+ <button onclick="_orderDetailPage=${totalPages};loadOrderDetailPage()" ${_orderDetailPage>=totalPages?'disabled':''}>末页</button>`;
+ }
+ } catch(e) {
+ console.error('订单详情加载失败', e);
+ document.getElementById('orderDetailBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#E74C3C;padding:24px">加载失败</td></tr>';
  }
  }
 
