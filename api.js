@@ -8,6 +8,7 @@ const API = {
   _role: 'user', // 'user' | 'rider' | 'admin'
   _token: null,
   _headers() { const h = { 'Content-Type': 'application/json' }; if (this._token) h['Authorization'] = 'Bearer ' + this._token; return h; },
+  _authHeaders() { const h = {}; if (this._token) h['Authorization'] = 'Bearer ' + this._token; return h; },
 
   // 恢复token（按角色读取各自独立的token key，避免跨端覆盖）
   _init() {
@@ -98,7 +99,7 @@ const API = {
   }).then(r => r.json()); },
 
   // ─── 骑手数据 ───
-  async getRiders() { return fetch('/api/riders', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
+  async getRiders() { return fetch('/api/riders', { headers: this._headers() }).then(r => r.json()); },
   async getRider(phone) { return fetch('/api/riders/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async frozenCheck(phone) { return fetch('/api/riders/frozen-check/' + phone).then(r => r.json()); },
   async riderRanking() { return fetch('/api/riders/stats/ranking', { headers: this._headers() }).then(r => r.json()); },
@@ -113,28 +114,26 @@ const API = {
   }).then(r => r.json()); },
   async uploadRiderAvatar(phone, file) {
     const fd = new FormData(); fd.append('avatar', file);
-    const headers = {};
-    if (this._token) headers['Authorization'] = 'Bearer ' + this._token;
+    const headers = this._authHeaders();
     return fetch('/api/riders/' + phone + '/avatar', {
       method: 'POST', headers, body: fd
     }).then(r => r.json());
   },
 
   // ─── 用户数据 ───
-  async getUsers() { return fetch('/api/users', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
+  async getUsers() { return fetch('/api/users', { headers: this._headers() }).then(r => r.json()); },
   async getUser(phone) { return fetch('/api/users/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async updateUser(phone, data) { return fetch('/api/users/' + phone, { method: 'PUT', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },
   async uploadUserAvatar(phone, file) {
     const fd = new FormData(); fd.append('avatar', file);
-    const headers = {};
-    if (this._token) headers['Authorization'] = 'Bearer ' + this._token;
+    const headers = this._authHeaders();
     return fetch('/api/users/' + phone + '/avatar', {
       method: 'POST', headers, body: fd
     }).then(r => r.json());
   },
 
   // ─── 优惠券 ───
-  async getCoupons() { return fetch('/api/coupons', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
+  async getCoupons() { return fetch('/api/coupons', { headers: this._headers() }).then(r => r.json()); },
   async claimCoupon(phone, coupon_id) {
     const res = await fetch('/api/coupons/claim', { method: 'POST', headers: this._headers(), body: JSON.stringify({ phone, coupon_id }) }).then(r => r.json());
     if (res.error) throw new Error(res.error);
@@ -164,8 +163,8 @@ const API = {
   },
 
   // ─── 广告 ───
-  async getAds() { return fetch('/api/ads', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
-  async getAdminAds() { return fetch('/api/ads/admin', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
+  async getAds() { return fetch('/api/ads', { headers: this._headers() }).then(r => r.json()); },
+  async getAdminAds() { return fetch('/api/ads/admin', { headers: this._headers() }).then(r => r.json()); },
   async addAd(data) {
     const res = await fetch('/api/ads/admin', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
     if (res.error) throw new Error(res.error);
@@ -188,7 +187,7 @@ const API = {
   // 管理员：广告统计
   async adStats(startDate) {
     const qs = startDate ? '?start_date=' + startDate : '';
-    return fetch('/api/ads/admin/stats' + qs, { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json());
+    return fetch('/api/ads/admin/stats' + qs, { headers: this._headers() }).then(r => r.json());
   },
 
   // ─── 通知 ───
@@ -199,13 +198,13 @@ const API = {
   }).then(r => r.json()); },
 
   // ─── 统计 ───
-  async getStats() { return fetch('/api/stats', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
+  async getStats() { return fetch('/api/stats', { headers: this._headers() }).then(r => r.json()); },
 
   // ─── 服务 ───
-  async getServices() { return fetch('/api/services', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
+  async getServices() { return fetch('/api/services', { headers: this._headers() }).then(r => r.json()); },
 
   // ─── 管理员管理 ───
-  async getAdmins() { return fetch('/api/admins', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
+  async getAdmins() { return fetch('/api/admins', { headers: this._headers() }).then(r => r.json()); },
   async addAdmin(username, password, role) { return fetch('/api/admins', {
     method: 'POST', headers: this._headers(),
     body: JSON.stringify({ username, password, role })
@@ -222,7 +221,7 @@ const API = {
       const fd = new FormData();
       Object.entries(data).forEach(([k, v]) => fd.append(k, v));
       files.forEach(f => fd.append('files', f));
-      const fdHeaders = {}; if (this._token) fdHeaders['Authorization'] = 'Bearer ' + this._token;
+      const fdHeaders = this._authHeaders();
       return fetch('/api/wall/posts', { method: 'POST', headers: fdHeaders, body: fd }).then(r => r.json());
     }
     return fetch('/api/wall/posts', {
@@ -261,13 +260,13 @@ const API = {
   async riderWithdraw(phone, amount) { return fetch('/api/rider/withdraw', { method: 'POST', headers: this._headers(), body: JSON.stringify({phone, amount}) }).then(r => r.json()); },
   async riderWithdrawLogs(phone) { return fetch('/api/rider/withdraw/logs?phone=' + phone, { headers: this._headers() }).then(r => r.json()); },
   async riderEarnings(phone) { return fetch('/api/rider/earnings?phone=' + phone, { headers: this._headers() }).then(r => r.json()); },
-  async adminWithdrawList() { return fetch('/api/admin/withdraw', { headers: this._token ? { Authorization: 'Bearer ' + this._token } : {} }).then(r => r.json()); },
+  async adminWithdrawList() { const res = await fetch('/api/admin/withdraw', { headers: this._headers() }).then(r => r.json()); return Array.isArray(res) ? res : (res.error ? [] : res); },
   async adminWithdrawAction(id, status, reason) { return fetch('/api/admin/withdraw/' + id, { method: 'POST', headers: this._headers(), body: JSON.stringify({status, reason}) }).then(r => r.json()); },
 
   // ─── 聊天文件上传 ───
   async chatUpload(file) {
     const fd = new FormData(); fd.append('file', file);
-    const h = {}; if (this._token) h['Authorization'] = 'Bearer ' + this._token;
+    const h = this._authHeaders();
     const res = await fetch('/api/chat/upload', { method: 'POST', headers: h, body: fd });
     return res.json();
   },
@@ -285,7 +284,7 @@ const API = {
       const fd = new FormData();
       Object.entries(data).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v); });
       files.forEach(f => fd.append('images', f));
-      const h = {}; if (this._token) h['Authorization'] = 'Bearer ' + this._token;
+      const h = this._authHeaders();
       return fetch('/api/market/items', { method: 'POST', headers: h, body: fd }).then(r => r.json());
     }
     return fetch('/api/market/items', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
@@ -295,7 +294,7 @@ const API = {
       const fd = new FormData();
       Object.entries(data).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v); });
       files.forEach(f => fd.append('images', f));
-      const h = {}; if (this._token) h['Authorization'] = 'Bearer ' + this._token;
+      const h = this._authHeaders();
       return fetch('/api/market/items/' + id, { method: 'PUT', headers: h, body: fd }).then(r => r.json());
     }
     return fetch('/api/market/items/' + id, { method: 'PUT', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
@@ -315,7 +314,7 @@ const API = {
       if (content) fd.append('content', content);
       if (parentId) fd.append('parent_id', parentId);
       fd.append('media', mediaFile);
-      return fetch('/api/market/items/' + itemId + '/comments', { method: 'POST', headers: { 'Authorization': 'Bearer ' + (this._token || '') }, body: fd }).then(r => r.json());
+      return fetch('/api/market/items/' + itemId + '/comments', { method: 'POST', headers: this._authHeaders(), body: fd }).then(r => r.json());
     }
     return fetch('/api/market/items/' + itemId + '/comments', { method: 'POST', headers: this._headers(), body: JSON.stringify({ content, parent_id: parentId || null }) }).then(r => r.json());
   },
