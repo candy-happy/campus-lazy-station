@@ -889,32 +889,48 @@
  }
 
  function initCharts() {
+ // 订单趋势（30天）
  const days = [];
  const counts = [];
  const today = new Date();
- for (let i = 6; i >= 0; i--) {
+ for (let i = 29; i >= 0; i--) {
  const d = new Date(today); d.setDate(d.getDate() - i);
  const ds = d.toISOString().slice(0, 10);
  days.push(ds.slice(5));
  counts.push(orders.filter(o => (o.createdAt || o.created_at || '').startsWith(ds)).length);
  }
- const ordersCtx = document.getElementById('ordersChart').getContext('2d');
+ const ordersCtx = document.getElementById('ordersChart');
+ if (!ordersCtx) return;
  if (ordersChart) ordersChart.destroy();
- ordersChart = new Chart(ordersCtx, {
- type: 'line', data: { labels: days, datasets: [{ label: '订单数', data: counts, borderColor: '#FF6B2B', backgroundColor: 'rgba(255,107,43,0.1)', fill: true, tension: 0.4 }] },
- options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#EDEAE4' } }, x: { grid: { display: false } } } }
+ ordersChart = new Chart(ordersCtx.getContext('2d'), {
+ type: 'line', data: { labels: days, datasets: [{ label: '订单数', data: counts, borderColor: '#FF6B2B', backgroundColor: 'rgba(255,107,43,0.1)', fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5 }] },
+ options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.06)' } }, x: { grid: { display: false }, ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 10 } } } }
  });
 
+ // 服务分布（含空类型归为"其他"）
  const typeCounts = {};
- orders.forEach(o => { typeCounts[o.type] = (typeCounts[o.type] || 0) + 1; });
- const serviceKeys = Object.keys(services);
- const serviceData = serviceKeys.map(k => typeCounts[k] || 0);
- const servicesCtx = document.getElementById('servicesChart').getContext('2d');
+ orders.forEach(o => {
+ const t = o.type && o.type.trim() ? o.type : 'other';
+ typeCounts[t] = (typeCounts[t] || 0) + 1;
+ });
+ const allTypes = Object.keys(typeCounts);
+ const labels = allTypes.map(k => services[k] ? services[k].name : (k === 'other' ? '其他' : k));
+ const serviceData = allTypes.map(k => typeCounts[k]);
+ const colors = ['#FF6B2B','#3498DB','#2ECC71','#9B59B6','#F39C12','#E74C3C','#1ABC9C','#95A5A6','#34495E'];
+ const servicesCtx = document.getElementById('servicesChart');
+ if (!servicesCtx) return;
  if (servicesChart) servicesChart.destroy();
- servicesChart = new Chart(servicesCtx, {
- type: 'doughnut', data: { labels: serviceKeys.map(k => services[k].name), datasets: [{ data: serviceData, backgroundColor: ['#FF6B2B','#3498DB','#2ECC71','#9B59B6','#F39C12','#E74C3C','#1ABC9C'] }] },
+ if (orders.length === 0) {
+ servicesChart = new Chart(servicesCtx.getContext('2d'), {
+ type: 'doughnut', data: { labels: ['暂无数据'], datasets: [{ data: [1], backgroundColor: ['#E0E0E0'] }] },
  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
  });
+ } else {
+ servicesChart = new Chart(servicesCtx.getContext('2d'), {
+ type: 'doughnut', data: { labels: labels, datasets: [{ data: serviceData, backgroundColor: colors.slice(0, allTypes.length) }] },
+ options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+ });
+ }
  }
 
  function renderRecentOrders() {
