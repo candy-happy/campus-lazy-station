@@ -840,9 +840,226 @@
       flex: 1;
     }
     .sub-page-body {
-      padding: 16px;
+      padding: 20px 16px 32px;
+      background: var(--bg);
     }
     body.dark .sub-page-header { background: linear-gradient(135deg, #1a1a2e, #16213e); }
+
+    /* ═══════════════════════════════════════════════════════
+       📝 全局表单样式（下单/服务子页面通用）
+    ═══════════════════════════════════════════════════════ */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .form-label span { color: var(--danger); font-size: 14px; }
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 13px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      background: var(--card);
+      color: var(--text);
+      outline: none;
+      box-sizing: border-box;
+      transition: all 0.25s;
+      -webkit-appearance: none;
+    }
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--primary);
+      background: var(--bg);
+      box-shadow: 0 0 0 3px rgba(255,107,53,0.12);
+    }
+    .form-input::placeholder, .form-textarea::placeholder {
+      color: var(--text-light);
+    }
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 14px;
+      background: var(--gradient);
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(255,107,53,0.35);
+      transition: all 0.25s;
+      margin-top: 8px;
+    }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255,107,53,0.45);
+    }
+    .submit-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+    .price-display {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .price-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .price-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--primary);
+    }
+    body.dark .form-input, body.dark .form-textarea { background: #1e1e2e; border-color: #333; color: #eee; }
+    body.dark .form-input:focus, body.dark .form-textarea:focus { background: #252540; border-color: var(--primary); }
+    body.dark .price-display { background: #1e1e2e; border-color: #333; }
+
+    /* 服务卡片图标区（下单页顶部） */
+    .service-icon-hero {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      background: var(--card);
+      border-radius: 16px;
+      margin-bottom: 22px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .service-icon-hero .si-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+    .service-icon-hero .si-info { flex: 1; }
+    .service-icon-hero .si-name { font-size: 17px; font-weight: 800; color: var(--text); }
+    .service-icon-hero .si-desc { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+    body.dark .service-icon-hero { background: #1e1e2e; border-color: #333; }
+
+    /* 通知项美化 */
+    .notif-item {
+      display: flex;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .notif-item:hover { background: rgba(255,107,53,0.04); }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-icon {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .notif-icon.order { background: #FFF0EB; }
+    .notif-icon.system { background: #E3F2FD; }
+    .notif-icon.promo { background: #E8F5E9; }
+    .notif-body { flex: 1; min-width: 0; }
+    .notif-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .notif-text { font-size: 13px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4; }
+    .notif-time { font-size: 11px; color: var(--text-light); margin-top: 6px; }
+    .notif-unread { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 6px; }
+    body.dark .notif-item:hover { background: rgba(255,107,53,0.08); }
+    body.dark .notif-icon.order { background: #3d2010; }
+    body.dark .notif-icon.system { background: #1a2d40; }
+    body.dark .notif-icon.promo { background: #1a3020; }
+
+    /* 聊天输入栏美化 */
+    .chat-input-bar {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      background: var(--card);
+      align-items: center;
+      position: relative;
+    }
+    .chat-attach-btn {
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      transition: transform 0.15s;
+    }
+    .chat-attach-btn:hover { transform: scale(1.15); }
+    .chat-attach-btn:active { transform: scale(0.9); }
+    .chat-input-field {
+      flex: 1;
+      padding: 10px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 22px;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    .chat-input-field:focus { border-color: var(--primary); }
+    .chat-send-btn {
+      padding: 9px 18px;
+      background: var(--gradient);
+      color: #fff;
+      border: none;
+      border-radius: 22px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .chat-send-btn:hover { box-shadow: 0 4px 12px rgba(255,107,53,0.4); }
+    .chat-send-btn:active { transform: scale(0.95); }
+    .chat-emoji-picker {
+      display: none;
+      position: absolute;
+      bottom: 60px;
+      left: 8px;
+      right: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: var(--shadow-lg);
+      z-index: 9999;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    body.dark .chat-input-bar { background: #1e1e2e; border-color: #333; }
+    body.dark .chat-input-field { background: #252540; border-color: #333; color: #eee; }
+
+    /* 子页面空状态 */
+    .sub-empty {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-light);
+    }
+    .sub-empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.6; }
+    .sub-empty-text { font-size: 14px; }
 
     /* ═══════════════════════════════════════════════════════
        📋 订单详情美化
@@ -2144,23 +2361,30 @@
         <span class="sub-page-title" id="modalTitle">代取外卖</span>
       </div>
       <div class="sub-page-body">
+        <div class="service-icon-hero" id="serviceHero">
+          <div class="si-icon" id="serviceIcon" style="background:#FFF0EB">🍔</div>
+          <div class="si-info">
+            <div class="si-name" id="serviceName">代取外卖</div>
+            <div class="si-desc" id="serviceDesc">骑手代取，送达宿舍</div>
+          </div>
+        </div>
         <form id="orderForm">
           <input type="hidden" id="tipInput" value="0" />
           <div class="form-group">
-            <label class="form-label">取货地点 <span>*</span></label>
+            <label class="form-label">📦 取货地点 <span>*</span></label>
             <input type="text" class="form-input" id="pickupLocation" placeholder="例如：西门外卖柜" required />
           </div>
           <div class="form-group">
-            <label class="form-label">送达地点 <span>*</span></label>
+            <label class="form-label">🏠 送达地点 <span>*</span></label>
             <input type="text" class="form-input" id="deliveryLocation" placeholder="例如：3号宿舍楼301室" required />
             <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;cursor:pointer;display:none" id="addrHint" onclick="closeSubPage('orderPage_sub');showAddresses()">💡 点击选择常用地址</div>
           </div>
           <div class="form-group">
-            <label class="form-label">详细说明 <span>*</span></label>
+            <label class="form-label">📝 详细说明 <span>*</span></label>
             <textarea class="form-textarea" id="orderDetails" placeholder="请描述物品信息、取件码、备注等..." required></textarea>
           </div>
           <div class="form-group">
-            <label class="form-label">联系电话 <span>*</span></label>
+            <label class="form-label">📱 联系电话 <span>*</span></label>
             <input type="tel" class="form-input" id="phone" placeholder="您的手机号" required />
           </div>
           <div class="form-group" id="tipSection" style="display:none">
@@ -2180,7 +2404,7 @@
             <div class="price-label">预估费用</div>
             <div class="price-value" id="priceValue">¥2.00</div>
           </div>
-          <button type="submit" class="submit-btn">提交订单</button>
+          <button type="submit" class="submit-btn">🚀 提交订单</button>
         </form>
       </div>
     </div>
@@ -2192,7 +2416,7 @@
     <div class="sub-page" id="detailPage_sub">
       <div class="sub-page-header">
         <button class="sub-page-back" onclick="closeSubPage('detailPage_sub')">←</button>
-        <span class="sub-page-title">订单详情</span>
+        <span class="sub-page-title">📋 订单详情</span>
       </div>
       <div class="sub-page-body" id="detailContent"></div>
     </div>
@@ -2270,7 +2494,6 @@
         </div>
       </div>
     </div>
-    </div>
 
     <!-- 帖子详情子页面 -->
     <div class="sub-page" id="wallDetailPage_sub">
@@ -2297,14 +2520,14 @@
         <span class="sub-page-title" id="chatConvTitle">对话</span>
       </div>
       <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px;min-height:calc(100vh - 180px)"></div>
-      <div style="display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--border);background:var(--card);align-items:center;position:relative">
-        <span style="font-size:22px;cursor:pointer" onclick="toggleEmojiPicker()">😊</span>
-        <label style="font-size:20px;cursor:pointer;display:flex;align-items:center" title="发送图片/视频">
+      <div class="chat-input-bar">
+        <span class="chat-attach-btn" onclick="toggleEmojiPicker()">😊</span>
+        <label class="chat-attach-btn" title="发送图片/视频">
           📎<input type="file" accept="image/*,video/*" style="display:none" onchange="userChatUpload(this)">
         </label>
-        <input id="chatInput" placeholder="输入消息..." style="flex:1;padding:10px;border:1px solid var(--border);border-radius:20px;outline:none;background:var(--bg);color:var(--text)" onkeydown="if(event.key==='Enter')sendChatMsg()" />
-        <button onclick="sendChatMsg()" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer">发送</button>
-        <div id="emojiPicker" style="display:none;position:absolute;bottom:60px;left:8px;right:8px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow-lg);z-index:9999;max-height:260px;overflow-y:auto">
+        <input id="chatInput" class="chat-input-field" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChatMsg()" />
+        <button onclick="sendChatMsg()" class="chat-send-btn">发送</button>
+        <div id="emojiPicker" class="chat-emoji-picker">
           <div style="display:flex;gap:8px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:8px">
             <span id="tabEmoji" style="font-size:13px;font-weight:600;color:var(--primary);cursor:pointer;padding:4px 8px;border-radius:8px;background:var(--bg)">😊 表情</span>
             <span id="tabGif" style="font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:8px" onclick="switchPickerTab('gif')">🖼️ GIF</span>
@@ -2326,23 +2549,6 @@
         </div>
       </div>
     </div>
-            <div id="gifTabContent" style="display:none">
-              <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('hello')">👋 打招呼</span>
-                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('thanks')">🙏 感谢</span>
-                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('happy')">😊 开心</span>
-                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('funny')">😂 搞笑</span>
-                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('cool')">😎 酷</span>
-                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('love')">❤️ 爱</span>
-                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('sad')">😢 难过</span>
-                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('food')">🍔 美食</span>
-              </div>
-              <div id="gifResults" style="display:flex;flex-wrap:wrap;gap:6px"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- ═══════════════════════════════════════════════════════
          ⭐ 评价弹窗
@@ -2351,7 +2557,7 @@
     <div class="sub-page" id="ratePage_sub">
       <div class="sub-page-header">
         <button class="sub-page-back" onclick="closeSubPage('ratePage_sub')">←</button>
-        <span class="sub-page-title">评价订单</span>
+        <span class="sub-page-title">⭐ 评价订单</span>
       </div>
       <div class="sub-page-body">
         <div class="rate-hero">
@@ -2517,12 +2723,11 @@
     <div class="sub-page" id="notifPage_sub">
       <div class="sub-page-header">
         <button class="sub-page-back" onclick="closeSubPage('notifPage_sub')">←</button>
-        <span class="sub-page-title">通知</span>
+        <span class="sub-page-title">🔔 通知</span>
       </div>
       <div class="sub-page-body" style="padding:0">
         <div id="notifList"></div>
       </div>
-    </div>
     </div>
 
 
@@ -3308,7 +3513,7 @@
         const res = await API.getMarketOrders(tradeTab === 'all' ? '' : tradeTab);
         const orders = res.orders || [];
         if (!orders.length) {
-          container.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">📭</div><div style="color:var(--text-secondary)">暂无交易记录</div></div>';
+          container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">📭</div><div class="sub-empty-text">暂无交易记录</div></div>';
           return;
         }
         container.innerHTML = orders.map(o => {
@@ -3416,7 +3621,7 @@
         const res = await API.getMyMarketItems();
         const items = res.items || [];
         if (!items.length) {
-          container.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">📦</div><div style="color:var(--text-secondary)">暂无在售商品</div><button onclick="closeSubPage(\'myListingsPage_sub\');openPublishItem()" style="margin-top:16px;padding:10px 24px;border:2px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-weight:600;cursor:pointer">发布商品</button></div>';
+          container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">📦</div><div class="sub-empty-text">暂无在售商品</div><button onclick="closeSubPage(\'myListingsPage_sub\');openPublishItem()" style="margin-top:16px;padding:10px 24px;border:2px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-weight:600;cursor:pointer">发布商品</button></div>';
           return;
         }
         const statusLabel = { active:'在售', trading:'交易中', sold:'已售', removed:'已下架' };
@@ -4177,14 +4382,29 @@
       if (!currentUser) return showLoginPage();
       currentService = type;
       currentTip = 0;
-      const svc = { delivery:{name:'...',price:2}, express:{name:'...',price:2}, print:{name:'...',price:1}, purchase:{name:'...',price:3}, laundry:{name:'...',price:2}, errand:{name:'...',price:5}, other:{name:'...',price:3} };
-      const s = svc[type] || { name: '...', price: 2 };
+      const svc = {
+        delivery:{icon:'🍔',name:'代取外卖',desc:'骑手代取外卖，送达宿舍',price:2,color:'#FFF0EB'},
+        express:{icon:'📦',name:'代取快递',desc:'快递代取，送货上门',price:2,color:'#E3F2FD'},
+        print:{icon:'🖨️',name:'打印复印',desc:'文档打印，快速送达',price:1,color:'#E8F5E9'},
+        purchase:{icon:'🛒',name:'代买物品',desc:'代购生活用品、药品等',price:3,color:'#F3E5F5'},
+        laundry:{icon:'👕',name:'代洗衣物',desc:'取送洗衣，方便省心',price:2,color:'#FFF3E0'},
+        errand:{icon:'🏃',name:'跑腿服务',desc:'万能跑腿，随叫随到',price:5,color:'#E0F7FA'},
+        other:{icon:'✨',name:'其他服务',desc:'其他个性化需求',price:3,color:'#FCE4EC'}
+      };
+      const s = svc[type] || svc.other;
       document.getElementById('modalTitle').textContent = s.icon + ' ' + s.name;
-      document.getElementById('priceValue').textContent = '...' + s.price.toFixed(2);
+      document.getElementById('priceValue').textContent = '¥' + s.price.toFixed(2);
       document.getElementById('tipSection').style.display = 'block';
+      // 更新服务卡片
+      const heroEl = document.getElementById('serviceHero');
+      if (heroEl) {
+        document.getElementById('serviceIcon').textContent = s.icon;
+        document.getElementById('serviceIcon').style.background = s.color;
+        document.getElementById('serviceName').textContent = s.name;
+        document.getElementById('serviceDesc').textContent = s.desc;
+      }
       document.getElementById('orderForm').reset();
       openSubPage('orderPage_sub');
-      /* overflow managed by sub-page */
     }
 
     function updatePrice() {
@@ -4192,7 +4412,7 @@
       const s = svc[currentService] || { price: 2 };
       currentTip = parseInt(document.getElementById('tipInput')?.value || '0');
       const total = s.price + currentTip;
-      document.getElementById('priceValue').textContent = '...' + total.toFixed(2);
+      document.getElementById('priceValue').textContent = '¥' + total.toFixed(2);
     }
 
     async function submitOrder() {
@@ -4494,17 +4714,21 @@
       await API.markRead(currentUser.phone);
       notifications.forEach(n => n.read = true);
       updateNotifBadge();
-      list.innerHTML = notifications.length ? notifications.map(n => `
-        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start">
-          <span style="font-size:20px">${n.type==='order'?'📦':n.type==='wall_like'?'❤️':n.type==='wall_comment'?'💬':n.type==='rating'?'⭐':n.type==='promo'?'🎉':'🔔'}</span>
-          <div style="flex:1">
-            <div style="font-weight:600;font-size:14px">${escHtml(n.title)}</div>
-            <div style="font-size:13px;color:var(--text-secondary);margin-top:2px">${escHtml(n.content)}</div>
-            <div style="font-size:12px;color:var(--text-light);margin-top:4px">${fmtTime(new Date(n.created_at).getTime())}</div>
+      list.innerHTML = notifications.length ? notifications.map(n => {
+        const iconMap = {order:'📦',wall_like:'❤️',wall_comment:'💬',rating:'⭐',promo:'🎉'};
+        const clsMap = {order:'order',wall_like:'system',wall_comment:'system',rating:'promo',promo:'promo'};
+        const icon = iconMap[n.type] || '🔔';
+        const cls = clsMap[n.type] || 'system';
+        return `<div class="notif-item">
+          <div class="notif-icon ${cls}">${icon}</div>
+          <div class="notif-body">
+            <div class="notif-title">${escHtml(n.title)}</div>
+            <div class="notif-text">${escHtml(n.content)}</div>
+            <div class="notif-time">${fmtTime(new Date(n.created_at).getTime())}</div>
           </div>
-        </div>`).join('') : '';
+        </div>`;
+      }).join('') : '<div class="sub-empty"><div class="sub-empty-icon">🔔</div><div class="sub-empty-text">暂无通知</div></div>';
       openSubPage('notifPage_sub');
-      /* overflow managed by sub-page */
     }
 
     // ══════ 关闭寮圭獥 ══════
