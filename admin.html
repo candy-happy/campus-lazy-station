@@ -214,7 +214,16 @@
  /* === filter-bar增强 === */
  .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; padding: 12px 16px; background: var(--card-bg); border-radius: 14px; border: 1px solid var(--border); }
  .filter-label { font-size: 13px; font-weight: 600; color: var(--text); margin-right: 4px; white-space: nowrap; }
- .filter-divider { width: 1px; height: 20px; background: var(--border); margin: 0 6px; flex-shrink: 0; }
+ /* 订单筛选区 */
+ .order-filters { background: var(--card-bg); border-radius: 14px; border: 1px solid var(--border); padding: 14px 18px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; }
+ .filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+ .filter-tag { font-size: 13px; font-weight: 700; color: var(--text-muted); min-width: 56px; flex-shrink: 0; }
+ .filter-btns { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+ .pill-btn { padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text-muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-family: inherit; }
+ .pill-btn:hover { border-color: var(--orange); color: var(--orange); }
+ .pill-btn.active { background: linear-gradient(135deg, var(--orange), var(--orange-light)); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(255,107,43,0.25); font-weight: 600; }
+ .date-pick-row { display: flex; align-items: center; gap: 8px; padding: 8px 0 0 66px; }
+ .date-sep { color: var(--text-muted); font-size: 16px; }
  .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
  /* === 增强搜索 === */
  .search-box { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 4px 4px 4px 14px; transition: border 0.2s; }
@@ -517,27 +526,34 @@
    <div class="stat-card"><div class="stat-icon" style="background:#E8F5E9">✅</div><div class="stat-info"><div class="stat-value" id="statOrdersDone">0</div><div class="stat-label">已完成</div></div></div>
    <div class="stat-card"><div class="stat-icon" style="background:var(--orange-pale)">💰</div><div class="stat-info"><div class="stat-value" id="statOrdersRevenue">¥0</div><div class="stat-label">总金额</div></div></div>
  </div>
- <div class="filter-bar" id="ordersFilterBar">
-   <span class="filter-label">📅</span>
-   <button class="ads-filter-btn active" data-range="all" onclick="filterOrdersByTime('all',this)">全部</button>
-   <button class="ads-filter-btn" data-range="today" onclick="filterOrdersByTime('today',this)">今日</button>
-   <button class="ads-filter-btn" data-range="7d" onclick="filterOrdersByTime('7d',this)">7天</button>
-   <button class="ads-filter-btn" data-range="30d" onclick="filterOrdersByTime('30d',this)">30天</button>
-   <button class="ads-filter-btn" data-range="custom" onclick="toggleOrderDatePick()" title="自定义日期">📅</button>
-   <div id="orderDatePick" style="display:none;align-items:center;gap:4px">
+ <div class="order-filters">
+   <div class="filter-row">
+     <span class="filter-tag">📅 时间</span>
+     <div class="filter-btns" id="orderTimeBtns">
+       <button class="pill-btn active" data-range="all" onclick="filterOrdersByTime('all',this)">全部</button>
+       <button class="pill-btn" data-range="today" onclick="filterOrdersByTime('today',this)">今日</button>
+       <button class="pill-btn" data-range="7d" onclick="filterOrdersByTime('7d',this)">近7天</button>
+       <button class="pill-btn" data-range="30d" onclick="filterOrdersByTime('30d',this)">近30天</button>
+       <button class="pill-btn" data-range="custom" onclick="toggleOrderDatePick()" title="自定义日期">📅 自定义</button>
+     </div>
+     <div class="search-box"><input type="text" id="orderSearchInput" placeholder="搜索订单号/地点/手机号" onkeydown="if(event.key==='Enter')renderOrdersTable()"><button onclick="renderOrdersTable()">🔍</button></div>
+   </div>
+   <div class="date-pick-row" id="orderDatePick" style="display:none">
      <input type="date" id="orderDateFrom2" onchange="filterOrdersByTime('custom')" class="range-date-input">
-     <span style="color:var(--text-muted);font-size:12px">~</span>
+     <span class="date-sep">→</span>
      <input type="date" id="orderDateTo2" onchange="filterOrdersByTime('custom')" class="range-date-input">
    </div>
-   <span class="filter-divider"></span>
-   <span class="filter-label">📋</span>
-   <button class="ads-filter-btn active" data-filter="all" onclick="filterOrders('all',this)">全部</button>
-   <button class="ads-filter-btn" data-filter="pending" onclick="filterOrders('pending',this)">待接单</button>
-   <button class="ads-filter-btn" data-filter="accepted" onclick="filterOrders('accepted',this)">已接单</button>
-   <button class="ads-filter-btn" data-filter="running" onclick="filterOrders('running',this)">配送中</button>
-   <button class="ads-filter-btn" data-filter="completed" onclick="filterOrders('completed',this)">已完成</button>
-   <button class="ads-filter-btn" data-filter="cancelled" onclick="filterOrders('cancelled',this)">已取消</button>
-   <div class="search-box"><input type="text" id="orderSearchInput" placeholder="搜索订单号/地点/手机号" onkeydown="if(event.key==='Enter')renderOrdersTable()"><button onclick="renderOrdersTable()">🔍</button></div>
+   <div class="filter-row">
+     <span class="filter-tag">📋 状态</span>
+     <div class="filter-btns" id="orderStatusBtns">
+       <button class="pill-btn active" data-filter="all" onclick="filterOrders('all',this)">全部</button>
+       <button class="pill-btn" data-filter="pending" onclick="filterOrders('pending',this)">🟡 待接单</button>
+       <button class="pill-btn" data-filter="accepted" onclick="filterOrders('accepted',this)">🔵 已接单</button>
+       <button class="pill-btn" data-filter="running" onclick="filterOrders('running',this)">🟠 配送中</button>
+       <button class="pill-btn" data-filter="completed" onclick="filterOrders('completed',this)">🟢 已完成</button>
+       <button class="pill-btn" data-filter="cancelled" onclick="filterOrders('cancelled',this)">🔴 已取消</button>
+     </div>
+   </div>
  </div>
  <div class="table-card">
  <table class="data-table"><thead><tr><th>订单号</th><th>服务类型</th><th>取货地点</th><th>送达地点</th><th>联系电话</th><th>金额</th><th>状态</th><th>骑手</th><th>时间</th><th>操作</th></tr></thead><tbody id="ordersTable"></tbody></table>
@@ -1304,15 +1320,13 @@
    const show = dp.style.display === 'none';
    dp.style.display = show ? 'flex' : 'none';
    if (show) {
-     const bar = document.getElementById('ordersFilterBar');
-     if (bar) bar.querySelectorAll('[data-range]').forEach(b => b.classList.toggle('active', b.dataset.range === 'custom'));
+     document.querySelectorAll('#orderTimeBtns .pill-btn').forEach(b => b.classList.toggle('active', b.dataset.range === 'custom'));
      orderTimeRange = 'custom';
    }
  }
  function filterOrdersByTime(range, btn) {
    orderTimeRange = range;
-   const bar = document.getElementById('ordersFilterBar');
-   if (bar) bar.querySelectorAll('[data-range]').forEach(b => b.classList.toggle('active', b === btn));
+   document.querySelectorAll('#orderTimeBtns .pill-btn').forEach(b => b.classList.toggle('active', b === btn));
    if (range !== 'custom') {
      const dp = document.getElementById('orderDatePick');
      if (dp) dp.style.display = 'none';
@@ -1321,8 +1335,7 @@
  }
  function filterOrders(filter, btn) {
    orderFilter = filter;
-   const bar = document.getElementById('ordersFilterBar');
-   if (bar) bar.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('active', b === btn));
+   document.querySelectorAll('#orderStatusBtns .pill-btn').forEach(b => b.classList.toggle('active', b === btn));
    renderOrdersTable();
  }
  // 加载订单管理页数据
