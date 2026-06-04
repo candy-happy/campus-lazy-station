@@ -1385,21 +1385,11 @@
    if (q && !(o.id||o.order_no||'').toLowerCase().includes(q) && !(o.pickupLocation||o.pickup_location||'').toLowerCase().includes(q) && !(o.phone||'').includes(q)) return false;
    return true;
  });
- // 更新统计（基于时间筛选后的数据）
- const timeFiltered = orders.filter(o => {
-   if (dateFrom || dateTo) {
-     const createdAt = o.createdAt || o.created_at;
-     if (!createdAt) return false;
-     const d = new Date(createdAt.replace(' ', 'T'));
-     if (dateFrom && d < dateFrom) return false;
-     if (dateTo && d > dateTo) return false;
-   }
-   return true;
- });
- document.getElementById('statOrdersTotal').textContent = timeFiltered.length;
- document.getElementById('statOrdersPending').textContent = timeFiltered.filter(o=>o.status==='pending').length;
- document.getElementById('statOrdersDone').textContent = timeFiltered.filter(o=>o.status==='completed').length;
- document.getElementById('statOrdersRevenue').textContent = '¥' + timeFiltered.reduce((s,o)=>s+(o.price||0),0).toFixed(0);
+ // 更新统计（基于当前所有筛选条件的数据）
+ document.getElementById('statOrdersTotal').textContent = filtered.length;
+ document.getElementById('statOrdersPending').textContent = filtered.filter(o=>o.status==='pending').length;
+ document.getElementById('statOrdersDone').textContent = filtered.filter(o=>o.status==='completed').length;
+ document.getElementById('statOrdersRevenue').textContent = '¥' + filtered.reduce((s,o)=>s+(o.price||0),0).toFixed(0);
  document.getElementById('ordersTable').innerHTML = filtered.length ? filtered.map(o => {
    const t = o.createdAt || o.created_at || '';
    const shortTime = t ? t.replace(/^\d{4}-/, '').replace(/:\d{2}$/, '') : '-';
