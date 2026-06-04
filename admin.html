@@ -1286,6 +1286,21 @@
    document.querySelectorAll('#page-orders .ads-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
    renderOrdersTable();
  }
+ // 加载订单管理页数据
+ async function loadOrdersPage() {
+ try {
+ const rawOrders = await API.getOrders();
+ orders = rawOrders.map(o => ({ ...o, id: o.order_no, pickupLocation: o.pickup_location, deliveryLocation: o.delivery_location, riderName: o.rider_name, createdAt: o.created_at }));
+ renderOrdersTable();
+ } catch(e) { console.error('订单数据加载失败:', e); }
+ }
+ // 加载骑手管理页数据
+ async function loadRidersPage() {
+ try {
+ riders = (await API.getRiders()).map(r => ({ ...r, createdAt: r.created_at }));
+ renderRidersTable();
+ } catch(e) { console.error('骑手数据加载失败:', e); }
+ }
  function renderOrdersTable() {
  const q = (document.getElementById('orderSearchInput')?.value||'').toLowerCase();
  const filtered = orders.filter(o => {
@@ -1449,6 +1464,8 @@
  if (nav) nav.classList.add('active');
  if (page === 'ads') loadAds();
   if (page === 'market') { loadMarketItems(); }
+  if (page === 'orders') { loadOrdersPage(); }
+  if (page === 'riders') { loadRidersPage(); }
  }
 
  function showModal(id) { document.getElementById(id).classList.add('active'); }
