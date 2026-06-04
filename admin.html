@@ -214,6 +214,7 @@
  /* === filter-bar增强 === */
  .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; padding: 12px 16px; background: var(--card-bg); border-radius: 14px; border: 1px solid var(--border); }
  .filter-label { font-size: 13px; font-weight: 600; color: var(--text); margin-right: 4px; white-space: nowrap; }
+ .filter-divider { width: 1px; height: 20px; background: var(--border); margin: 0 6px; flex-shrink: 0; }
  .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
  /* === 增强搜索 === */
  .search-box { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 4px 4px 4px 14px; transition: border 0.2s; }
@@ -516,18 +517,20 @@
    <div class="stat-card"><div class="stat-icon" style="background:#E8F5E9">✅</div><div class="stat-info"><div class="stat-value" id="statOrdersDone">0</div><div class="stat-label">已完成</div></div></div>
    <div class="stat-card"><div class="stat-icon" style="background:var(--orange-pale)">💰</div><div class="stat-info"><div class="stat-value" id="statOrdersRevenue">¥0</div><div class="stat-label">总金额</div></div></div>
  </div>
- <div class="filter-bar">
-   <div class="filter-group">
-     <span class="filter-label">📅 时间</span>
-     <button class="ads-filter-btn active" data-range="all" onclick="filterOrdersByTime('all',this)">全部</button>
-     <button class="ads-filter-btn" data-range="today" onclick="filterOrdersByTime('today',this)">今日</button>
-     <button class="ads-filter-btn" data-range="7d" onclick="filterOrdersByTime('7d',this)">近7天</button>
-     <button class="ads-filter-btn" data-range="30d" onclick="filterOrdersByTime('30d',this)">近30天</button>
-     <input type="date" id="orderDateFrom" onchange="filterOrdersByTime('custom')" style="border:1px solid #ddd;border-radius:6px;padding:4px 8px;font-size:13px"> <span style="color:#999">至</span> <input type="date" id="orderDateTo" onchange="filterOrdersByTime('custom')" style="border:1px solid #ddd;border-radius:6px;padding:4px 8px;font-size:13px">
+ <div class="filter-bar" id="ordersFilterBar">
+   <span class="filter-label">📅</span>
+   <button class="ads-filter-btn active" data-range="all" onclick="filterOrdersByTime('all',this)">全部</button>
+   <button class="ads-filter-btn" data-range="today" onclick="filterOrdersByTime('today',this)">今日</button>
+   <button class="ads-filter-btn" data-range="7d" onclick="filterOrdersByTime('7d',this)">7天</button>
+   <button class="ads-filter-btn" data-range="30d" onclick="filterOrdersByTime('30d',this)">30天</button>
+   <button class="ads-filter-btn" data-range="custom" onclick="toggleOrderDatePick()" title="自定义日期">📅</button>
+   <div id="orderDatePick" style="display:none;align-items:center;gap:4px">
+     <input type="date" id="orderDateFrom2" onchange="filterOrdersByTime('custom')" class="range-date-input">
+     <span style="color:var(--text-muted);font-size:12px">~</span>
+     <input type="date" id="orderDateTo2" onchange="filterOrdersByTime('custom')" class="range-date-input">
    </div>
- </div>
- <div class="filter-bar" style="margin-top:8px">
-   <span class="filter-label">📋 状态</span>
+   <span class="filter-divider"></span>
+   <span class="filter-label">📋</span>
    <button class="ads-filter-btn active" data-filter="all" onclick="filterOrders('all',this)">全部</button>
    <button class="ads-filter-btn" data-filter="pending" onclick="filterOrders('pending',this)">待接单</button>
    <button class="ads-filter-btn" data-filter="accepted" onclick="filterOrders('accepted',this)">已接单</button>
@@ -1294,20 +1297,32 @@
 
 
  let orderFilter = 'all';
- let orderTimeRange = 'all'; // 'all'|'today'|'7d'|'30d'|'custom'
+ let orderTimeRange = 'all';
+ function toggleOrderDatePick() {
+   const dp = document.getElementById('orderDatePick');
+   if (!dp) return;
+   const show = dp.style.display === 'none';
+   dp.style.display = show ? 'flex' : 'none';
+   if (show) {
+     const bar = document.getElementById('ordersFilterBar');
+     if (bar) bar.querySelectorAll('[data-range]').forEach(b => b.classList.toggle('active', b.dataset.range === 'custom'));
+     orderTimeRange = 'custom';
+   }
+ }
  function filterOrdersByTime(range, btn) {
    orderTimeRange = range;
-   const firstBar = document.querySelector('#page-orders .filter-bar');
-   if (firstBar) firstBar.querySelectorAll('.ads-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
-   if (range === 'custom') {
-     if (firstBar) firstBar.querySelectorAll('.ads-filter-btn').forEach(b => b.classList.remove('active'));
+   const bar = document.getElementById('ordersFilterBar');
+   if (bar) bar.querySelectorAll('[data-range]').forEach(b => b.classList.toggle('active', b === btn));
+   if (range !== 'custom') {
+     const dp = document.getElementById('orderDatePick');
+     if (dp) dp.style.display = 'none';
    }
    renderOrdersTable();
  }
  function filterOrders(filter, btn) {
    orderFilter = filter;
-   const secondBar = document.querySelectorAll('#page-orders .filter-bar')[1];
-   if (secondBar) secondBar.querySelectorAll('.ads-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+   const bar = document.getElementById('ordersFilterBar');
+   if (bar) bar.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('active', b === btn));
    renderOrdersTable();
  }
  // 加载订单管理页数据
@@ -1337,8 +1352,8 @@
  } else if (orderTimeRange === '30d') {
    dateFrom = new Date(now.getTime() - 30*24*60*60*1000);
  } else if (orderTimeRange === 'custom') {
-   const fromVal = document.getElementById('orderDateFrom')?.value;
-   const toVal = document.getElementById('orderDateTo')?.value;
+   const fromVal = document.getElementById('orderDateFrom2')?.value;
+   const toVal = document.getElementById('orderDateTo2')?.value;
    if (fromVal) dateFrom = new Date(fromVal + 'T00:00:00');
    if (toVal) dateTo = new Date(toVal + 'T23:59:59');
  }
