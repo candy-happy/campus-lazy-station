@@ -3658,6 +3658,8 @@
         const s = JSON.parse(localStorage.getItem('lazy_session') || '{}');
         if (s.role) {
           localStorage.removeItem('lazy_token');
+          localStorage.removeItem('lazy_rider_token');
+          localStorage.removeItem('lazy_admin_token');
           localStorage.removeItem('lazy_session');
           API._token = null;
           if (typeof showToast === 'function') showToast('登录已过期，请重新登录');

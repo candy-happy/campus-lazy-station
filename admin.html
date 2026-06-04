@@ -1004,7 +1004,7 @@
    try {
      const res = await fetch('/api/riders/' + freezeTargetId + '/freeze', {
        method: 'PUT',
-       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') },
+       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') },
        body: JSON.stringify({ reason })
      }).then(r => r.json());
      if (res.ok) {
@@ -1019,7 +1019,7 @@
    try {
      const res = await fetch('/api/riders/' + id + '/unfreeze', {
        method: 'PUT',
-       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') }
+       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') }
      }).then(r => r.json());
      if (res.ok) {
        riders = riders.map(r => r.id === id ? { ...r, frozen: 0, frozen_reason: null, status: 'offline' } : r);
@@ -1049,7 +1049,7 @@
    try {
      const res = await fetch('/api/riders', {
        method: 'POST',
-       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') },
+       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') },
        body: JSON.stringify({ name, student_id, phone, dormitory })
      }).then(r => r.json());
      if (res.ok) {
@@ -1089,7 +1089,7 @@
  async function removeRider(id) {
  if (confirm('确定移除该骑手？')) {
  try {
- await fetch('/api/riders/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') } }).then(r=>r.json());
+ await fetch('/api/riders/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') } }).then(r=>r.json());
  riders = riders.filter(r => r.id !== id);
  renderRidersTable();
  updateStats();
@@ -1287,7 +1287,7 @@
   try {
    const res = await fetch('/api/ads/admin/upload', {
     method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token') || '') },
+    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token') || '') },
     body: fd
    }).then(r => r.json());
    if (res.error) return showToast(res.error);
@@ -1347,7 +1347,7 @@
  const marketItemStatusMap = { active:{label:'在售',cls:'badge-green'}, sold:{label:'已售',cls:'badge-blue'}, offline:{label:'已下架',cls:'badge-gray'}, removed:{label:'已删除',cls:'badge-red'} };
 
  async function fetchMarketAPI(path) {
-   const res = await fetch('/api/market/admin/' + path, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') } });
+   const res = await fetch('/api/market/admin/' + path, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') } });
    const data = await res.json();
    if (!res.ok) { showToast(data.error || '请求失败(' + res.status + ')'); return {}; }
    return data;
@@ -1409,12 +1409,12 @@
  }
  async function offlineMarketItem(id) {
    const reason = prompt('请输入下架原因（可选）') || '';
-   const res = await fetch('/api/market/admin/items/' + id + '/offline', { method:'PUT', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_token')||''),'Content-Type':'application/json'}, body:JSON.stringify({reason}) }).then(r=>r.json());
+   const res = await fetch('/api/market/admin/items/' + id + '/offline', { method:'PUT', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||''),'Content-Type':'application/json'}, body:JSON.stringify({reason}) }).then(r=>r.json());
    if (res.ok) { showToast('已下架'); loadMarketItems(); } else showToast(res.error||'操作失败');
  }
  async function deleteMarketItem(id) {
    if (!confirm('确定删除此商品？')) return;
-   const res = await fetch('/api/market/admin/items/' + id, { method:'DELETE', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_token')||'')} }).then(r=>r.json());
+   const res = await fetch('/api/market/admin/items/' + id, { method:'DELETE', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||'')} }).then(r=>r.json());
    if (res.ok) { showToast('已删除'); loadMarketItems(); } else showToast(res.error||'操作失败');
  }
  async function batchOfflineMarketItems() {
@@ -1424,7 +1424,7 @@
    const reason = prompt('请输入下架原因（可选）') || '';
    let ok = 0;
    for (const id of ids) {
-     const res = await fetch('/api/market/admin/items/' + id + '/offline', { method:'PUT', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_token')||''),'Content-Type':'application/json'}, body:JSON.stringify({reason}) }).then(r=>r.json());
+     const res = await fetch('/api/market/admin/items/' + id + '/offline', { method:'PUT', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||''),'Content-Type':'application/json'}, body:JSON.stringify({reason}) }).then(r=>r.json());
      if (res.ok) ok++;
    }
    showToast('已下架 ' + ok + ' 个商品'); loadMarketItems();
@@ -1462,7 +1462,7 @@
    const label = action === 'complete' ? '确认完成' : '取消';
    if (!confirm('确定' + label + '此订单？')) return;
    const reason = prompt('请输入原因（可选）') || '';
-   const res = await fetch('/api/market/admin/orders/' + id + '/resolve', { method:'PUT', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_token')||''),'Content-Type':'application/json'}, body:JSON.stringify({action,reason}) }).then(r=>r.json());
+   const res = await fetch('/api/market/admin/orders/' + id + '/resolve', { method:'PUT', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||''),'Content-Type':'application/json'}, body:JSON.stringify({action,reason}) }).then(r=>r.json());
    if (res.ok) { showToast('已' + label); loadMarketOrders(); } else showToast(res.error||'操作失败');
  }
 
@@ -1499,7 +1499,7 @@
  }
  async function deleteMarketComment(id) {
    if (!confirm('确定删除此留言？')) return;
-   const res = await fetch('/api/market/admin/comments/' + id, { method:'DELETE', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_token')||'')} }).then(r=>r.json());
+   const res = await fetch('/api/market/admin/comments/' + id, { method:'DELETE', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||'')} }).then(r=>r.json());
    if (res.ok) { showToast('已删除'); loadMarketComments(); } else showToast(res.error||'操作失败');
  }
  async function batchDeleteMarketComments() {
@@ -1508,7 +1508,7 @@
    if (!confirm('确定批量删除 ' + ids.length + ' 条留言？')) return;
    let ok = 0;
    for (const id of ids) {
-     const res = await fetch('/api/market/admin/comments/' + id, { method:'DELETE', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_token')||'')} }).then(r=>r.json());
+     const res = await fetch('/api/market/admin/comments/' + id, { method:'DELETE', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||'')} }).then(r=>r.json());
      if (res.ok) ok++;
    }
    showToast('已删除 ' + ok + ' 条留言'); loadMarketComments();
@@ -1585,7 +1585,7 @@
       const action = document.getElementById('aiLogAction').value;
       try {
         // 加载统计
-        const statsRes = await fetch('/api/ai/stats', { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') } });
+        const statsRes = await fetch('/api/ai/stats', { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') } });
         const stats = await statsRes.json();
         document.getElementById('aiLogTotal').textContent = stats.total || 0;
         document.getElementById('aiLogViolations').textContent = stats.violations || 0;
@@ -1596,7 +1596,7 @@
         if (source !== 'all') params.set('source', source);
         if (level !== 'all') params.set('level', level);
         if (action !== 'all') params.set('action', action);
-        const res = await fetch('/api/ai/logs?' + params, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') } });
+        const res = await fetch('/api/ai/logs?' + params, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') } });
         const data = await res.json();
         const tbody = document.getElementById('aiLogsTable');
         tbody.innerHTML = '';
@@ -1637,7 +1637,7 @@
       try {
         const resp = await fetch('/api/ai/market/batch', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') },
           body: JSON.stringify({ status, limit })
         });
         const data = await resp.json();
@@ -1679,7 +1679,7 @@
       try {
         const resp = await fetch('/api/ai/wall/batch', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') },
           body: JSON.stringify({ limit })
         });
         const data = await resp.json();
@@ -1721,7 +1721,7 @@
       try {
         const resp = await fetch('/api/ai/wall/comments/batch', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token')||'') },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') },
           body: JSON.stringify({ limit })
         });
         const data = await resp.json();

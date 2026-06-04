@@ -9,8 +9,19 @@ const API = {
   _token: null,
   _headers() { const h = { 'Content-Type': 'application/json' }; if (this._token) h['Authorization'] = 'Bearer ' + this._token; return h; },
 
-  // 恢复token
+  // 恢复token（按角色读取各自独立的token key，避免跨端覆盖）
   _init() {
+    // 先从 lazy_session 判断角色
+    try {
+      const s = JSON.parse(localStorage.getItem('lazy_session'));
+      if (s) {
+        this._role = s.role;
+        const key = s.role === 'admin' ? 'lazy_admin_token' : s.role === 'rider' ? 'lazy_rider_token' : 'lazy_token';
+        const t = localStorage.getItem(key);
+        if (t) this._token = t;
+        return;
+      }
+    } catch (e) {}
     const t = localStorage.getItem('lazy_token');
     if (t) this._token = t;
   },
@@ -39,7 +50,7 @@ const API = {
     if (res.code === 'RIDER_FROZEN') throw { message: res.error, code: 'RIDER_FROZEN' };
     this._rider = { ...res.rider, phone_original: phone };
     this._role = 'rider';
-    if (res.token) { this._token = res.token; localStorage.setItem('lazy_token', res.token); }
+    if (res.token) { this._token = res.token; localStorage.setItem('lazy_rider_token', res.token); }
     localStorage.setItem('lazy_session', JSON.stringify({ role: 'rider', phone, uid, avatar: res.rider?.avatar || '', name: res.rider?.name || '' }));
     return this._rider;
   },
@@ -53,7 +64,7 @@ const API = {
     if (res.error) throw new Error(res.error);
     this._admin = res.admin;
     this._role = 'admin';
-    if (res.token) { this._token = res.token; localStorage.setItem('lazy_token', res.token); }
+    if (res.token) { this._token = res.token; localStorage.setItem('lazy_admin_token', res.token); }
     localStorage.setItem('lazy_session', JSON.stringify({ role: 'admin', username }));
     return this._admin;
   },
@@ -304,7 +315,7 @@ const API = {
       if (content) fd.append('content', content);
       if (parentId) fd.append('parent_id', parentId);
       fd.append('media', mediaFile);
-      return fetch('/api/market/items/' + itemId + '/comments', { method: 'POST', headers: { 'Authorization': 'Bearer ' + (JSON.parse(localStorage.getItem('lazy_session'))?.token || '') }, body: fd }).then(r => r.json());
+      return fetch('/api/market/items/' + itemId + '/comments', { method: 'POST', headers: { 'Authorization': 'Bearer ' + (this._token || '') }, body: fd }).then(r => r.json());
     }
     return fetch('/api/market/items/' + itemId + '/comments', { method: 'POST', headers: this._headers(), body: JSON.stringify({ content, parent_id: parentId || null }) }).then(r => r.json());
   },
@@ -316,7 +327,8 @@ const API = {
       const s = JSON.parse(localStorage.getItem('lazy_session'));
       if (s) {
         this._role = s.role;
-        const t = localStorage.getItem('lazy_token');
+        const key = s.role === 'admin' ? 'lazy_admin_token' : s.role === 'rider' ? 'lazy_rider_token' : 'lazy_token';
+        const t = localStorage.getItem(key);
         if (t) this._token = t;
         if (s.role === 'user') return { phone: s.phone, name: s.name, avatar: s.avatar || '' };
         if (s.role === 'rider') return { phone: s.phone, name: s.name, avatar: s.avatar || '' };
@@ -332,6 +344,8 @@ const API = {
     this._admin = null;
     this._token = null;
     localStorage.removeItem('lazy_token');
+    localStorage.removeItem('lazy_rider_token');
+    localStorage.removeItem('lazy_admin_token');
     localStorage.removeItem('lazy_session');
     localStorage.removeItem('lazyUser');
     localStorage.removeItem('lazyRider');

@@ -1614,7 +1614,7 @@ function timeAgo(ts) { if (!ts) return ''; const diff=Date.now()-new Date(ts).ge
        '<div class="settings-info-row"><span class="settings-info-label">平台</span><span class="settings-info-value">校园懒人效率站</span></div>' +
      '</div>' +
      // Logout
-     '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyRider\');location.reload()}" class="settings-logout-btn">🚪 退出登录</button>' +
+     '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyRider\');localStorage.removeItem(\'lazy_rider_token\');localStorage.removeItem(\'lazy_session\');location.reload()}" class="settings-logout-btn">🚪 退出登录</button>' +
      '<div class="settings-version">校园懒人效率站 v3.0 骑手端</div>' +
      '</div>';
    document.body.appendChild(el);
