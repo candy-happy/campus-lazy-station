@@ -2223,9 +2223,9 @@ body.dark .teacher-review-card { background:#1e1e1e }
               <div class="service-icon">📦</div>
               <div class="service-name">代取快递</div>
             </div>
-            <div class="service-item" onclick="openOrderModal('print')">
-              <div class="service-icon">🖨️</div>
-              <div class="service-name">打印复印</div>
+            <div class="service-item" onclick="openSubPage('teacherListPage_sub')">
+              <div class="service-icon">👨‍🏫</div>
+              <div class="service-name">老师评价</div>
             </div>
             <div class="service-item" onclick="openOrderModal('purchase')">
               <div class="service-icon">🛒</div>
@@ -2274,6 +2274,14 @@ body.dark .teacher-review-card { background:#1e1e1e }
                 <div class="quick-desc">闲置转卖赚零花</div>
               </div>
               <div class="quick-value" style="color:var(--primary)">+</div>
+            </div>
+            <div class="quick-card" onclick="openSubPage('teacherListPage_sub')" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB);cursor:pointer">
+              <div class="quick-icon">👨‍🏫</div>
+              <div class="quick-info">
+                <div class="quick-title">老师评价</div>
+                <div class="quick-desc">选课参考，真实评价</div>
+              </div>
+              <div class="quick-value" style="color:#1976D2">→</div>
             </div>
           </div>
         </div>
@@ -2816,6 +2824,44 @@ body.dark .teacher-review-card { background:#1e1e1e }
       </div>
       <div class="sub-page-body" style="padding:0">
         <div id="notifList"></div>
+      </div>
+    </div>
+
+    <!-- 👨\u200d🏫 教师评价列表 -->
+    <div class="sub-page" id="teacherListPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('teacherListPage_sub')">←</button>
+        <span class="sub-page-title">👨\u200d🏫 老师评价</span>
+      </div>
+      <div class="sub-page-body" style="padding:12px">
+        <!-- 搜索栏 -->
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="teacherSearchInput" type="text" placeholder="搜索教师姓名/学院/研究方向..." style="flex:1;padding:10px 14px;border-radius:12px;border:1px solid #e0e0e0;font-size:14px;outline:none" onkeydown="if(event.key==='Enter'){_teacherSearch=this.value;loadTeachers()}">
+          <button onclick="_teacherSearch=document.getElementById('teacherSearchInput').value;loadTeachers()" style="padding:10px 16px;border-radius:12px;border:none;background:#1976D2;color:#fff;font-size:14px;cursor:pointer">搜索</button>
+        </div>
+        <!-- 学院筛选 -->
+        <div id="teacherCollegeBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px"></div>
+        <!-- 教师列表 -->
+        <div id="teacherListContainer"></div>
+        <!-- 加载更多 -->
+        <button id="teacherLoadMore" onclick="_teacherPage++;loadTeachers(false)" style="display:none;width:100%;padding:12px;border-radius:12px;border:1px dashed #ccc;background:none;color:#666;font-size:14px;cursor:pointer;margin-top:12px">加载更多</button>
+      </div>
+    </div>
+
+    <!-- 👨\u200d🏫 教师详情 -->
+    <div class="sub-page" id="teacherDetailPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('teacherDetailPage_sub')">←</button>
+        <span class="sub-page-title" id="teacherDetailTitle">教师详情</span>
+      </div>
+      <div class="sub-page-body" style="padding:16px">
+        <!-- 教师信息头部 -->
+        <div id="teacherInfoHeader" style="text-align:center;padding:20px 0 16px;border-bottom:1px solid #f0f0f0;margin-bottom:12px"></div>
+        <!-- 操作区 -->
+        <div id="teacherActionArea" style="margin-bottom:16px"></div>
+        <!-- 评价列表 -->
+        <div style="font-size:15px;font-weight:600;margin-bottom:10px">💬 评价列表</div>
+        <div id="teacherReviewList"></div>
       </div>
     </div>
 
