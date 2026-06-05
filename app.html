@@ -2137,6 +2137,38 @@
     body.dark .addr-item { border-color: var(--border); }
     body.dark .addr-form-input { background: var(--bg); border-color: var(--border); }
     body.dark .banner-illustration { background: var(--bg); }
+
+/* 教师评价 */
+.teacher-college-tag { display:inline-block;padding:4px 12px;border-radius:16px;font-size:12px;background:#f0f0f0;color:#666;cursor:pointer;white-space:nowrap;transition:all .2s }
+.teacher-college-tag.active { background:#1976D2;color:#fff }
+.teacher-college-tag:hover { opacity:.85 }
+.teacher-card { display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;transition:transform .15s }
+.teacher-card:hover { transform:translateY(-1px) }
+.teacher-card:active { transform:scale(.98) }
+.teacher-avatar-lg { width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#1565C0,#42A5F5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0 }
+.teacher-info { flex:1;min-width:0 }
+.teacher-name { font-weight:700;font-size:15px;color:#333 }
+.teacher-meta { font-size:12px;color:#999;margin-top:2px }
+.teacher-stats { display:flex;gap:8px;margin-top:4px }
+.teacher-stat { font-size:11px;color:#888;display:flex;align-items:center;gap:2px }
+.teacher-rating-badge { display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:700 }
+.teacher-rating-high { background:#E8F5E9;color:#2E7D32 }
+.teacher-rating-mid { background:#FFF8E1;color:#F57F17 }
+.teacher-rating-low { background:#FFEBEE;color:#C62828 }
+.teacher-review-card { padding:12px;border-radius:10px;background:#f9f9f9;margin-bottom:8px }
+.teacher-review-header { display:flex;align-items:center;gap:8px;margin-bottom:6px }
+.teacher-review-user { font-weight:600;font-size:13px;color:#333 }
+.teacher-review-date { font-size:11px;color:#999 }
+.teacher-review-stars { color:#FFC107;font-size:13px }
+.teacher-review-content { font-size:13px;color:#555;line-height:1.5 }
+.teacher-star-select { display:flex;gap:4px;font-size:28px;cursor:pointer }
+.teacher-star-select span { transition:transform .1s }
+.teacher-star-select span:hover { transform:scale(1.2) }
+body.dark .teacher-card { background:#1e1e1e }
+body.dark .teacher-name { color:#eee }
+body.dark .teacher-meta { color:#888 }
+body.dark .teacher-review-card { background:#1e1e1e }
+
 </style>
 <script src="api.js"></script>
 </head>
@@ -5325,6 +5357,210 @@
       if (picker) picker.style.display = 'none';
     }
     function insertGif(url) { insertAnimEmoji('🎬','bounce','[GIF]'+url); }
+
+
+// ═══ 教师评价系统 ═══
+let _teacherPage = 1;
+let _teacherCollege = '全部';
+let _teacherSearch = '';
+let _selectedTeacherRating = 5;
+
+async function loadTeacherColleges() {
+  try {
+    const res = await API.getTeacherColleges();
+    if (res.colleges) {
+      const bar = document.getElementById('teacherCollegeBar');
+      bar.innerHTML = '<div class="teacher-college-tag active" onclick="filterTeacherCollege(\'全部\')">全部</div>';
+      res.colleges.forEach(c => {
+        bar.innerHTML += '<div class="teacher-college-tag" onclick="filterTeacherCollege(\'' + c.college + '\')">' + c.college + '(' + c.count + ')</div>';
+      });
+    }
+  } catch(e) { console.error('loadTeacherColleges:', e); }
+}
+
+function filterTeacherCollege(college) {
+  _teacherCollege = college;
+  _teacherPage = 1;
+  document.querySelectorAll('.teacher-college-tag').forEach(t => t.classList.toggle('active', t.textContent.startsWith(college)));
+  loadTeachers(true);
+}
+
+function searchTeachers() {
+  _teacherSearch = document.getElementById('teacherSearchInput').value.trim();
+  _teacherPage = 1;
+  loadTeachers(true);
+}
+
+async function loadTeachers(reset = true) {
+  try {
+    if (reset) _teacherPage = 1;
+    const params = { page: _teacherPage, limit: 20 };
+    if (_teacherCollege !== '全部') params.college = _teacherCollege;
+    if (_teacherSearch) params.search = _teacherSearch;
+    const res = await API.getTeachers(params);
+    const container = document.getElementById('teacherListContainer');
+    if (!container) return;
+    if (reset) container.innerHTML = '';
+    if (res.teachers && res.teachers.length > 0) {
+      res.teachers.forEach(t => {
+        const ratingClass = t.avg_rating >= 4 ? 'teacher-rating-high' : t.avg_rating >= 3 ? 'teacher-rating-mid' : 'teacher-rating-low';
+        container.innerHTML += '<div class="teacher-card" onclick="openTeacherDetail(' + t.id + ')">' +
+          '<div class="teacher-avatar-lg">' + t.name.charAt(0) + '</div>' +
+          '<div class="teacher-info">' +
+            '<div class="teacher-name">' + t.name + (t.title ? ' · ' + t.title : '') + '</div>' +
+            '<div class="teacher-meta">' + t.college + (t.research ? ' · ' + t.research : '') + '</div>' +
+            '<div class="teacher-stats">' +
+              '<span class="teacher-stat">👍 ' + (t.like_count||0) + '</span>' +
+              '<span class="teacher-stat">💬 ' + (t.review_count||0) + '</span>' +
+              '<span class="teacher-rating-badge ' + ratingClass + '">⭐ ' + (t.avg_rating||0).toFixed(1) + '</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      });
+      // 显示/隐藏加载更多
+      document.getElementById('teacherLoadMore').style.display = res.page < res.totalPages ? 'block' : 'none';
+      if (reset && res.colleges === undefined) loadTeacherColleges();
+    } else {
+      if (reset) container.innerHTML = '<div style="text-align:center;padding:40px 0;color:#999"><div style="font-size:48px;margin-bottom:12px">👨‍🏫</div>暂无教师数据</div>';
+      document.getElementById('teacherLoadMore').style.display = 'none';
+    }
+    _teacherPage++;
+  } catch(e) { console.error('loadTeachers:', e); }
+}
+
+async function openTeacherDetail(id) {
+  try {
+    const res = await API.getTeacherDetail(id);
+    const t = res.teacher;
+    if (!t) return showToast('教师不存在');
+    document.getElementById('teacherDetailTitle').textContent = t.name;
+    
+    // 教师信息头部
+    const ratingClass = t.avg_rating >= 4 ? 'teacher-rating-high' : t.avg_rating >= 3 ? 'teacher-rating-mid' : 'teacher-rating-low';
+    document.getElementById('teacherInfoHeader').innerHTML =
+      '<div class="teacher-avatar-lg" style="width:72px;height:72px;font-size:30px;margin:0 auto 12px">' + t.name.charAt(0) + '</div>' +
+      '<div style="font-size:20px;font-weight:700;color:#1565C0">' + t.name + '</div>' +
+      '<div style="font-size:14px;color:#666;margin-top:4px">' + t.college + '</div>' +
+      (t.title ? '<div style="font-size:13px;color:#888;margin-top:2px">职称：' + t.title + '</div>' : '') +
+      (t.research ? '<div style="font-size:13px;color:#888;margin-top:2px">研究方向：' + t.research + '</div>' : '') +
+      (t.bio ? '<div style="font-size:13px;color:#888;margin-top:2px">' + t.bio + '</div>' : '') +
+      '<div style="display:flex;gap:16px;justify-content:center;margin-top:12px">' +
+        '<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:#1565C0">' + (t.like_count||0) + '</div><div style="font-size:11px;color:#999">点赞</div></div>' +
+        '<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:#FF9800">' + (t.review_count||0) + '</div><div style="font-size:11px;color:#999">评价</div></div>' +
+        '<div style="text-align:center"><span class="teacher-rating-badge ' + ratingClass + '" style="font-size:18px">⭐ ' + (t.avg_rating||0).toFixed(1) + '</span><div style="font-size:11px;color:#999">平均评分</div></div>' +
+      '</div>';
+    
+    // 操作区
+    const likeDisabled = res.todayLiked ? 'opacity:.5;pointer-events:none' : '';
+    const reviewDisabled = res.todayReviewed ? 'opacity:.5;pointer-events:none' : '';
+    document.getElementById('teacherActionArea').innerHTML =
+      '<div style="display:flex;gap:12px;justify-content:center">' +
+        '<button onclick="likeTeacher(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#E3F2FD;color:#1565C0;font-size:14px;font-weight:600;cursor:pointer;' + likeDisabled + '">👍 ' + (res.todayLiked ? '已点赞' : '点赞') + '</button>' +
+        '<button onclick="showTeacherReviewForm(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#FFF8E1;color:#F57F17;font-size:14px;font-weight:600;cursor:pointer;' + reviewDisabled + '">✍️ ' + (res.todayReviewed ? '已评价' : '写评价') + '</button>' +
+      '</div>' +
+      (res.todayLiked ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">每天可给一位老师点赞</div>' : '') +
+      (res.todayReviewed ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">每天可评价每位老师一次</div>' : '');
+    
+    // 评价列表
+    const reviewList = document.getElementById('teacherReviewList');
+    if (res.reviews && res.reviews.length > 0) {
+      reviewList.innerHTML = res.reviews.map(r => {
+        const stars = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        const avatar = r.avatar ? '<img src="' + r.avatar + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover">' : '<div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999">' + (r.nickname||'匿').charAt(0) + '</div>';
+        return '<div class="teacher-review-card">' +
+          '<div class="teacher-review-header">' + avatar + '<span class="teacher-review-user">' + (r.nickname||'匿名') + '</span><span class="teacher-review-stars">' + stars + '</span><span class="teacher-review-date">' + (r.created_at||'').slice(0,10) + '</span></div>' +
+          '<div class="teacher-review-content">' + r.content + '</div>' +
+        '</div>';
+      }).join('');
+    } else {
+      reviewList.innerHTML = '<div style="text-align:center;padding:20px;color:#999;font-size:13px">暂无评价，来做第一个评价者吧！</div>';
+    }
+    
+    openSubPage('teacherDetailPage_sub');
+  } catch(e) { console.error('openTeacherDetail:', e); showToast('加载失败'); }
+}
+
+async function likeTeacher(id) {
+  try {
+    const res = await API.likeTeacher(id);
+    if (res.liked) {
+      showToast('👍 点赞成功！');
+      openTeacherDetail(id); // 刷新详情
+    } else {
+      showToast(res.error || '点赞失败');
+    }
+  } catch(e) { showToast(e.message || '点赞失败'); }
+}
+
+function showTeacherReviewForm(teacherId) {
+  _selectedTeacherRating = 5;
+  const form = document.createElement('div');
+  form.id = 'teacherReviewOverlay';
+  form.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:flex-end;justify-content:center';
+  form.innerHTML = '<div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:500px;padding:20px;max-height:70vh;overflow-y:auto">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
+      '<span style="font-weight:700;font-size:16px">✍️ 写评价</span>' +
+      '<button onclick="document.getElementById(\'teacherReviewOverlay\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>' +
+    '</div>' +
+    '<div style="margin-bottom:12px"><div style="font-size:13px;color:#666;margin-bottom:6px">评分</div>' +
+      '<div class="teacher-star-select" id="teacherStarSelect">' +
+        '<span onclick="selectTeacherRating(1)" style="color:#FFC107">★</span>' +
+        '<span onclick="selectTeacherRating(2)" style="color:#FFC107">★</span>' +
+        '<span onclick="selectTeacherRating(3)" style="color:#FFC107">★</span>' +
+        '<span onclick="selectTeacherRating(4)" style="color:#FFC107">★</span>' +
+        '<span onclick="selectTeacherRating(5)" style="color:#FFC107">★</span>' +
+      '</div>' +
+    '</div>' +
+    '<div style="margin-bottom:12px"><div style="font-size:13px;color:#666;margin-bottom:6px">评价内容（每天每位老师限一次）</div>' +
+      '<textarea id="teacherReviewContent" rows="4" maxlength="500" placeholder="分享你对这位老师的真实感受..." style="width:100%;padding:10px;border-radius:10px;border:1px solid #ddd;font-size:14px;resize:none;outline:none"></textarea>' +
+      '<div style="text-align:right;font-size:11px;color:#999"><span id="teacherReviewCharCount">0</span>/500</div>' +
+    '</div>' +
+    '<button onclick="submitTeacherReview(' + teacherId + ')" style="width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;font-size:15px;font-weight:600;cursor:pointer">提交评价</button>' +
+  '</div>';
+  document.body.appendChild(form);
+  form.addEventListener('click', e => { if (e.target === form) form.remove(); });
+  // 字数统计
+  document.getElementById('teacherReviewContent').addEventListener('input', function() {
+    document.getElementById('teacherReviewCharCount').textContent = this.value.length;
+  });
+}
+
+function selectTeacherRating(n) {
+  _selectedTeacherRating = n;
+  const stars = document.querySelectorAll('#teacherStarSelect span');
+  stars.forEach((s, i) => { s.style.color = i < n ? '#FFC107' : '#ddd'; });
+}
+
+async function submitTeacherReview(teacherId) {
+  const content = document.getElementById('teacherReviewContent').value.trim();
+  if (!content) return showToast('请输入评价内容');
+  try {
+    const res = await API.reviewTeacher(teacherId, _selectedTeacherRating, content);
+    if (res.reviewed) {
+      showToast('✅ 评价提交成功！');
+      const overlay = document.getElementById('teacherReviewOverlay');
+      if (overlay) overlay.remove();
+      openTeacherDetail(teacherId); // 刷新详情
+    } else {
+      showToast(res.error || '评价失败');
+    }
+  } catch(e) { showToast(e.message || '评价失败'); }
+}
+
+// 教师评价子页面打开时加载学院
+window._teacherCollegesLoaded = false;
+const _origOpenSubPage = window.openSubPage;
+if (!_origOpenSubPage.name || _origOpenSubPage.name !== 'teacherOpenSubPage') {
+  window.openSubPage = function(id) {
+    _origOpenSubPage(id);
+    if (id === 'teacherListPage_sub' && !window._teacherCollegesLoaded) {
+      loadTeacherColleges();
+      window._teacherCollegesLoaded = true;
+    }
+  };
+  Object.defineProperty(window.openSubPage, 'name', { value: 'teacherOpenSubPage' });
+}
+
 </script>
 
 </body>

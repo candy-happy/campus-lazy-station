@@ -338,6 +338,21 @@ const API = {
   },
   async deleteMarketComment(commentId) { return fetch('/api/market/comments/' + commentId, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
 
+  // ─── 教师评价 ───
+  async getTeacherColleges() { return fetch('/api/teachers/colleges', { headers: this._headers() }).then(r => r.json()); },
+  async getTeachers(params = {}) {
+    let url = '/api/teachers?';
+    if (params.college) url += 'college=' + encodeURIComponent(params.college) + '&';
+    if (params.search) url += 'search=' + encodeURIComponent(params.search) + '&';
+    if (params.page) url += 'page=' + params.page + '&';
+    if (params.limit) url += 'limit=' + params.limit + '&';
+    return fetch(url, { headers: this._headers() }).then(r => r.json());
+  },
+  async getTeacherDetail(id) { return fetch('/api/teachers/' + id, { headers: this._headers() }).then(r => r.json()); },
+  async likeTeacher(id) { return fetch('/api/teachers/' + id + '/like', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
+  async reviewTeacher(id, rating, content) { return fetch('/api/teachers/' + id + '/review', { method: 'POST', headers: this._headers(), body: JSON.stringify({ rating, content }) }).then(r => r.json()); },
+  async getHotTeachers() { return fetch('/api/teachers/hot', { headers: this._headers() }).then(r => r.json()); },
+
   // ─── 会话恢复 ───
   restoreSession() {
     try {

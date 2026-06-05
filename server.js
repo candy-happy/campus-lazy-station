@@ -93,6 +93,9 @@ app.use('/api/market', require('./routes/market'));
 // AI 内容审核
 app.use('/api/ai', require('./routes/ai'));
 
+// 教师评价
+app.use('/api/teachers', require('./routes/teachers'));
+
 // ─── 404 处理 ────────────────────────────────────────────
 app.use('/api', (req, res) => {
   res.status(404).json({ error: '接口不存在', code: 'SYS_004' });
