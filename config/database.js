@@ -226,6 +226,43 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now')),
     processed_at TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS teachers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    college TEXT NOT NULL,
+    title TEXT DEFAULT '',
+    research TEXT DEFAULT '',
+    avatar TEXT DEFAULT '',
+    bio TEXT DEFAULT '',
+    like_count INTEGER DEFAULT 0,
+    review_count INTEGER DEFAULT 0,
+    avg_rating REAL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    updated_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS teacher_likes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    like_date TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(teacher_id, phone, like_date)
+  );
+
+  CREATE TABLE IF NOT EXISTS teacher_reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    teacher_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    nickname TEXT DEFAULT '',
+    avatar TEXT DEFAULT '',
+    rating INTEGER NOT NULL DEFAULT 5 CHECK(rating BETWEEN 1 AND 5),
+    content TEXT NOT NULL,
+    ai_reviewed INTEGER DEFAULT 0,
+    ai_level TEXT DEFAULT 'none',
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
 `);
 
 // ─── 数据库迁移 ─────────────────────────────────────────
