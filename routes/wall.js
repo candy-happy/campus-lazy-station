@@ -55,12 +55,14 @@ function cleanupUploadedFiles(files) {
 // ─── 发帖（含AI自动审核） ────────────────────────────────
 router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res) => {
   try {
-    const { phone, nickname, avatar, content, gif_urls } = req.body;
+    const { phone, nickname, avatar, content, gif_urls, tags } = req.body;
     if (!phone || !content) return res.status(400).json({ error: '缺少手机号或内容', code: 'SYS_002' });
     const files = req.files || [];
     const imageUrls = files.filter(f => f.mimetype.startsWith('image/')).map(f => '/uploads/wall/' + f.filename);
     const videoUrls = files.filter(f => f.mimetype.startsWith('video/')).map(f => '/uploads/wall/' + f.filename);
     const images = [...imageUrls, ...videoUrls].join(',');
+    // 标签处理：支持逗号分隔字符串或数组
+    const tagsStr = Array.isArray(tags) ? tags.join(',') : (tags || '');
 
     // ── AI自动审核（同步，写入前拦截） ──────────────────
     let aiResult = { violation: false, level: 'none', category: '无', reason: '' };
@@ -84,9 +86,9 @@ router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res
       console.error('[AI审核] 校园墙帖子审核失败(放行):', e.message);
     }
 
-    const r = db.prepare(`INSERT INTO wall_posts (phone, nickname, avatar, content, images, gif_urls, like_count, comment_count, exposure_count, exposure_done, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now','localtime'), datetime('now','localtime'))`)
-      .run(phone, nickname || '匿名', avatar || '', content, images, gif_urls || '');
+    const r = db.prepare(`INSERT INTO wall_posts (phone, nickname, avatar, content, tags, images, gif_urls, like_count, comment_count, exposure_count, exposure_done, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now','localtime'), datetime('now','localtime'))`)
+      .run(phone, nickname || '匿名', avatar || '', content, tagsStr, images, gif_urls || '');
     logAiReview('wall_post', r.lastInsertRowid, phone, content, aiResult, 'pass');
     res.json({ ok: true, id: r.lastInsertRowid });
   } catch (e) {
@@ -97,12 +99,24 @@ router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res
 
 // ─── 信息流 ──────────────────────────────────────────────
 router.get('/feed', (req, res) => JSON_RES(res, () => {
-  const { tab, phone, page, limit } = req.query;
+  const { tab, phone, page, limit, tag } = req.query;
   const p = Math.max(1, parseInt(page) || 1);
   const l = Math.min(50, parseInt(limit) || 20);
   const offset = (p - 1) * l;
   let posts;
-  if (tab === 'following' && phone) {
+  // 标签筛选
+  if (tag) {
+    if (tab === 'following' && phone) {
+      posts = db.prepare(`SELECT p.* FROM wall_posts p
+        JOIN wall_follows f ON f.following_phone = p.phone AND f.follower_phone = ?
+        WHERE p.tags LIKE ?
+        ORDER BY p.created_at DESC LIMIT ? OFFSET ?`).all(phone, '%' + tag + '%', l, offset);
+    } else if (tab === 'hot') {
+      posts = db.prepare(`SELECT * FROM wall_posts WHERE exposure_done = 1 AND tags LIKE ? ORDER BY like_count DESC, created_at DESC LIMIT ? OFFSET ?`).all('%' + tag + '%', l, offset);
+    } else {
+      posts = db.prepare(`SELECT * FROM wall_posts WHERE tags LIKE ? ORDER BY exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all('%' + tag + '%', l, offset);
+    }
+  } else if (tab === 'following' && phone) {
     posts = db.prepare(`SELECT p.* FROM wall_posts p
       JOIN wall_follows f ON f.following_phone = p.phone AND f.follower_phone = ?
       ORDER BY p.created_at DESC LIMIT ? OFFSET ?`).all(phone, l, offset);
@@ -135,6 +149,7 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
     return {
       ...p,
       avatar,
+      tags: p.tags ? p.tags.split(',').filter(Boolean) : [],
       images: parseImageUrls(p.images),
       gif_urls: safeJSON(p.gif_urls),
       isFollowing: followSet.has(p.phone)
@@ -167,6 +182,7 @@ router.get('/posts/:id', (req, res) => JSON_RES(res, () => {
   return {
     ...post,
     avatar: postAvatar,
+    tags: post.tags ? post.tags.split(',').filter(Boolean) : [],
     images: parseImageUrls(post.images),
     gif_urls: safeJSON(post.gif_urls),
     comments: enrichedComments

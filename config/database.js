@@ -138,6 +138,7 @@ db.exec(`
     nickname TEXT,
     avatar TEXT,
     content TEXT,
+    tags TEXT DEFAULT '',
     images TEXT,
     gif_urls TEXT,
     like_count INTEGER DEFAULT 0,
