@@ -379,6 +379,7 @@ router.get('/stats', requireAdmin, (req, res) => {
 module.exports = router;
 module.exports.checkMarketItem = checkMarketItem;
 module.exports.checkWallPost = checkWallPost;
+module.exports.callDeepSeek = callDeepSeek;
 
 // ─── 纯文字快速审核（用于评论等短文本） ────────────────────
 async function checkTextContent(text, context = '校园平台') {

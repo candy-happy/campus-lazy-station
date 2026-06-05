@@ -61,8 +61,22 @@ router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res
     const imageUrls = files.filter(f => f.mimetype.startsWith('image/')).map(f => '/uploads/wall/' + f.filename);
     const videoUrls = files.filter(f => f.mimetype.startsWith('video/')).map(f => '/uploads/wall/' + f.filename);
     const images = [...imageUrls, ...videoUrls].join(',');
-    // 标签处理：支持逗号分隔字符串或数组
-    const tagsStr = Array.isArray(tags) ? tags.join(',') : (tags || '');
+
+    // ── 标签提取：从前端传来的tags + 从内容中自动提取 #话题# ──────
+    const userTags = Array.isArray(tags) ? tags : (tags ? tags.split(',').filter(Boolean) : []);
+    const hashTags = [];
+    const hashRegex = /#([^#\s]{1,20})#/g;
+    let m;
+    while ((m = hashRegex.exec(content)) !== null) {
+      const t = m[1].trim();
+      if (t && !hashTags.includes(t)) hashTags.push(t);
+    }
+    // 合并去重，用户选的标签 + #话题#提取
+    const allTags = [...new Set([...userTags, ...hashTags])];
+    const tagsStr = allTags.join(',');
+
+    // 清理内容中的#话题#标记（保留纯文本）
+    const cleanContent = content.replace(/#([^#\s]{1,20})#/g, '$1');
 
     // ── AI自动审核（同步，写入前拦截） ──────────────────
     let aiResult = { violation: false, level: 'none', category: '无', reason: '' };
@@ -86,11 +100,26 @@ router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res
       console.error('[AI审核] 校园墙帖子审核失败(放行):', e.message);
     }
 
-    const r = db.prepare(`INSERT INTO wall_posts (phone, nickname, avatar, content, tags, images, gif_urls, like_count, comment_count, exposure_count, exposure_done, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now','localtime'), datetime('now','localtime'))`)
-      .run(phone, nickname || '匿名', avatar || '', content, tagsStr, images, gif_urls || '');
+    const r = db.prepare(`INSERT INTO wall_posts (phone, nickname, avatar, content, tags, ai_tags, images, gif_urls, like_count, comment_count, exposure_count, exposure_done, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, '', ?, ?, 0, 0, 0, 0, datetime('now','localtime'), datetime('now','localtime'))`)
+      .run(phone, nickname || '匿名', avatar || '', cleanContent, tagsStr, images, gif_urls || '');
     logAiReview('wall_post', r.lastInsertRowid, phone, content, aiResult, 'pass');
-    res.json({ ok: true, id: r.lastInsertRowid });
+
+    // ── AI异步分类归解标签（不阻塞发布） ──────────────
+    const postId = r.lastInsertRowid;
+    setImmediate(async () => {
+      try {
+        const aiTags = await classifyTags(cleanContent, allTags);
+        if (aiTags && aiTags.length > 0) {
+          db.prepare('UPDATE wall_posts SET ai_tags = ? WHERE id = ?').run(aiTags.join(','), postId);
+          console.log(`[AI分类] 帖子${postId} 归纳标签: ${aiTags.join(',')}`);
+        }
+      } catch (e) {
+        console.error('[AI分类] 失败(不影响发布):', e.message);
+      }
+    });
+
+    res.json({ ok: true, id: postId });
   } catch (e) {
     console.error('[ERROR] 发帖失败:', e.message, e.stack);
     res.status(500).json({ error: '服务器内部错误', code: 'SYS_001' });
@@ -150,6 +179,7 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
       ...p,
       avatar,
       tags: p.tags ? p.tags.split(',').filter(Boolean) : [],
+      ai_tags: p.ai_tags ? p.ai_tags.split(',').filter(Boolean) : [],
       images: parseImageUrls(p.images),
       gif_urls: safeJSON(p.gif_urls),
       isFollowing: followSet.has(p.phone)
@@ -183,6 +213,7 @@ router.get('/posts/:id', (req, res) => JSON_RES(res, () => {
     ...post,
     avatar: postAvatar,
     tags: post.tags ? post.tags.split(',').filter(Boolean) : [],
+    ai_tags: post.ai_tags ? post.ai_tags.split(',').filter(Boolean) : [],
     images: parseImageUrls(post.images),
     gif_urls: safeJSON(post.gif_urls),
     comments: enrichedComments
@@ -330,4 +361,97 @@ router.delete('/posts/:id', requireAuth, (req, res) => JSON_RES(res, () => {
   return { ok: true };
 }));
 
+// ─── 搜索帖子 ──────────────────────────────────────────
+router.get('/search', (req, res) => JSON_RES(res, () => {
+  const { q, phone, page, limit } = req.query;
+  if (!q || !q.trim()) return makeError('缺少搜索关键词', ErrorCode.PARAM_MISSING);
+  const keyword = '%' + q.trim() + '%';
+  const p = Math.max(1, parseInt(page) || 1);
+  const l = Math.min(50, parseInt(limit) || 20);
+  const offset = (p - 1) * l;
+
+  // 搜索内容 + tags + ai_tags
+  const posts = db.prepare(
+    "SELECT * FROM wall_posts WHERE content LIKE ? OR tags LIKE ? OR ai_tags LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+  ).all(keyword, keyword, keyword, l, offset);
+
+  // 关注状态
+  const followSet = new Set();
+  if (phone) {
+    db.prepare('SELECT following_phone FROM wall_follows WHERE follower_phone = ?').all(phone).forEach(f => followSet.add(f.following_phone));
+  }
+
+  return posts.map(p => {
+    let avatar = p.avatar;
+    if (!avatar || (!avatar.startsWith('/') && !avatar.startsWith('http'))) {
+      const user = db.prepare('SELECT avatar FROM users WHERE phone = ?').get(p.phone)
+        || db.prepare('SELECT avatar FROM riders WHERE phone = ?').get(p.phone);
+      if (user && user.avatar && (user.avatar.startsWith('/') || user.avatar.startsWith('http'))) avatar = user.avatar;
+    }
+    return {
+      ...p,
+      avatar,
+      tags: p.tags ? p.tags.split(',').filter(Boolean) : [],
+      ai_tags: p.ai_tags ? p.ai_tags.split(',').filter(Boolean) : [],
+      images: parseImageUrls(p.images),
+      gif_urls: safeJSON(p.gif_urls),
+      isFollowing: followSet.has(p.phone)
+    };
+  });
+}));
+
+// ─── 热门标签 ──────────────────────────────────────────
+router.get('/tags/hot', (req, res) => JSON_RES(res, () => {
+  const { limit } = req.query;
+  const l = Math.min(50, parseInt(limit) || 20);
+  // 统计所有标签出现频次(tags + ai_tags)
+  const posts = db.prepare('SELECT tags, ai_tags FROM wall_posts ORDER BY created_at DESC LIMIT 500').all();
+  const tagCount = {};
+  posts.forEach(p => {
+    const allTagStr = [p.tags, p.ai_tags].filter(Boolean).join(',');
+    allTagStr.split(',').filter(Boolean).forEach(t => {
+      t = t.trim();
+      if (t) tagCount[t] = (tagCount[t] || 0) + 1;
+    });
+  });
+  const sorted = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, l);
+  return sorted.map(([name, count]) => ({ name, count }));
+}));
+
+// ─── AI标签分类归纳 ────────────────────────────────────
+async function classifyTags(content, userTags) {
+  const tagList = userTags.length > 0 ? userTags.join('\u3001') : '\u65E0';
+  const messages = [
+    {
+      role: 'system',
+      content: `你是一个校园社交平台的内容分类AI。根据用户发布的内容，提取并归纳最相关的分类标签。
+
+规则：
+1. 从内容中识别出关键话题、场景、情感等
+2. 将用户自带的标签做语义归化（如"期末考"→"考试"，"四六级"→"考试"，"外卖"→"美食"，"失恋"→"情感"，"实习"→"就业"，"考研"→"升学"，"快递"→"生活"）
+3. 标签应当是概括性的类别词，不是具体事件名
+4. 返回3-5个标签，按相关性排序
+5. 标签池参考（可扩展）：日常|考试|学习|情感|美食|求助|吐槽|活动|闲置|就业|升学|生活|运动|旅行|音乐|游戏|考研|实习|兼职|租房|快递|社交|兴趣
+
+严格以JSON格式回复：
+{"tags": ["标签1", "标签2", "标签3"]}
+只返回JSON。`
+    },
+    { role: 'user', content: '内容: ' + content + '\n用户标签: ' + tagList }
+  ];
+  try {
+    const result = await aiChecker.callDeepSeek(messages, 256);
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [];
+    }
+    return [];
+  } catch (e) {
+    console.error('[AI分类] 调用失败:', e.message);
+    return [];
+  }
+}
+
 module.exports = router;
+module.exports.classifyTags = classifyTags;

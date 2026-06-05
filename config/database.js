@@ -139,6 +139,7 @@ db.exec(`
     avatar TEXT,
     content TEXT,
     tags TEXT DEFAULT '',
+    ai_tags TEXT DEFAULT '',
     images TEXT,
     gif_urls TEXT,
     like_count INTEGER DEFAULT 0,

@@ -249,6 +249,8 @@ const API = {
     return fetch('/api/wall/feed' + (qs ? '?' + qs : ''), { headers: this._headers() }).then(r => r.json());
   },
   async wallPostDetail(id) { return fetch('/api/wall/posts/' + id, { headers: this._headers() }).then(r => r.json()); },
+  async wallSearch(q, phone) { return fetch('/api/wall/search?q=' + encodeURIComponent(q) + (phone ? '&phone=' + phone : ''), { headers: this._headers() }).then(r => r.json()); },
+  async wallTagsHot(limit) { return fetch('/api/wall/tags/hot' + (limit ? '?limit=' + limit : ''), { headers: this._headers() }).then(r => r.json()); },
   async wallLike(postId, phone) { return fetch('/api/wall/posts/' + postId + '/like', {
     method: 'POST', headers: this._headers(), body: JSON.stringify({ phone })
   }).then(r => r.json()); },

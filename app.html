@@ -2486,17 +2486,20 @@
         <div class="wall-tab" onclick="switchWallTab('following')">关注</div>
         <div class="wall-tab" onclick="switchWallTab('mine')">我的</div>
       </div>
-      <div id="wallTagBar" style="display:flex;gap:6px;padding:8px 16px;overflow-x:auto;background:var(--card);border-bottom:1px solid var(--border);-webkit-overflow-scrolling:touch">
-        <span class="wall-tag-pill active" onclick="filterByTag('')" data-tag="">🔥 全部</span>
-        <span class="wall-tag-pill" onclick="filterByTag('日常')" data-tag="日常">💬 日常</span>
-        <span class="wall-tag-pill" onclick="filterByTag('求助')" data-tag="求助">🙏 求助</span>
-        <span class="wall-tag-pill" onclick="filterByTag('吐槽')" data-tag="吐槽">😤 吐槽</span>
-        <span class="wall-tag-pill" onclick="filterByTag('美食')" data-tag="美食">🍜 美食</span>
-        <span class="wall-tag-pill" onclick="filterByTag('恋爱')" data-tag="恋爱">💕 恋爱</span>
-        <span class="wall-tag-pill" onclick="filterByTag('学习')" data-tag="学习">📚 学习</span>
-        <span class="wall-tag-pill" onclick="filterByTag('闲置')" data-tag="闲置">🎁 闲置</span>
-        <span class="wall-tag-pill" onclick="filterByTag('活动')" data-tag="活动">🎉 活动</span>
+      <div id="wallTagBar" style="display:flex;flex-direction:column;gap:6px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="position:relative;flex:1">
+            <input id="wallSearchInput" type="text" placeholder="搜索帖子..." style="width:100%;padding:6px 12px 6px 30px;border-radius:16px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;outline:none" onkeydown="if(event.key==='Enter')doWallSearch()" />
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;opacity:0.5">🔍</span>
+          </div>
+          <button onclick="doWallSearch()" style="padding:6px 12px;border-radius:16px;background:var(--gradient);color:white;border:none;font-size:12px;cursor:pointer">搜索</button>
+          <button id="wallSearchClear" onclick="clearWallSearch()" style="display:none;padding:6px 10px;border-radius:16px;background:var(--border);color:var(--text);border:none;font-size:12px;cursor:pointer">✕</button>
+        </div>
+        <div id="wallHotTags" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
+          <span class="wall-tag-pill active" onclick="filterByTag('')" data-tag="">🔥 全部</span>
+        </div>
       </div>
+      
       <div id="wallFeed" class="content-area" style="padding:12px 16px 80px"></div>
       <!-- FAB发帖按钮 -->
       <button id="wallFab" onclick="openWallPostModal()" style="position:fixed;bottom:80px;right:calc(50% - 210px);width:52px;height:52px;border-radius:50%;background:var(--gradient);color:white;font-size:24px;border:none;box-shadow:var(--shadow-lg);cursor:pointer;z-index:90;transition:transform 0.2s">✏️</button>
@@ -2511,20 +2514,14 @@
       <div class="sub-page-body post-page">
         <div class="post-editor">
           <!-- 话题标签 -->
-          <div class="post-topic-bar" id="postTopicBar">
-            <div class="post-topic-tag" data-topic="日常" onclick="toggleTopicTag(this)"><span class="tag-emoji">💬</span>日常</div>
-            <div class="post-topic-tag" data-topic="求助" onclick="toggleTopicTag(this)"><span class="tag-emoji">🙏</span>求助</div>
-            <div class="post-topic-tag" data-topic="吐槽" onclick="toggleTopicTag(this)"><span class="tag-emoji">😤</span>吐槽</div>
-            <div class="post-topic-tag" data-topic="美食" onclick="toggleTopicTag(this)"><span class="tag-emoji">🍜</span>美食</div>
-            <div class="post-topic-tag" data-topic="恋爱" onclick="toggleTopicTag(this)"><span class="tag-emoji">💕</span>恋爱</div>
-            <div class="post-topic-tag" data-topic="学习" onclick="toggleTopicTag(this)"><span class="tag-emoji">📚</span>学习</div>
-            <div class="post-topic-tag" data-topic="闲置" onclick="toggleTopicTag(this)"><span class="tag-emoji">🎁</span>闲置</div>
-            <div class="post-topic-tag" data-topic="活动" onclick="toggleTopicTag(this)"><span class="tag-emoji">🎉</span>活动</div>
+          <div class="post-topic-bar" id="postTopicBar" style="flex-wrap:wrap;gap:6px;padding:8px 0">
+            <div style="font-size:12px;color:var(--text-secondary);width:100%;margin-bottom:2px">💡 用 #话题# 标记关键词，AI自动分类让更多人搜到你</div>
+            <div id="hashTagPreview" style="display:flex;flex-wrap:wrap;gap:4px"></div>
           </div>
 
           <!-- 内容输入 -->
           <div class="post-textarea-wrap">
-            <textarea id="wallPostContent" placeholder="分享你的校园生活，想说就说..." oninput="onPostContentInput(this)"></textarea>
+            <textarea id="wallPostContent" placeholder="分享你的校园生活...\n\n用 #话题# 添加标签，如：#期末考# #美食推荐#" oninput="onPostContentInput(this)"></textarea>
           </div>
           <div class="post-char-count" id="postCharCount">0 / 500</div>
 
@@ -2549,7 +2546,7 @@
           <!-- 提示卡 -->
           <div class="post-tips-card">
             <div class="tips-title">💡 发帖小贴士</div>
-            <div>选择标签让更多人看到你的动态（最多3个）· 支持图片和视频 · 文明发言，共建和谐社区</div>
+            <div>用 #话题# 添加标签，AI会自动归类让更多人搜到你 · 支持图片和视频 · 文明发言</div>
           </div>
         </div>
       </div>
@@ -3855,6 +3852,7 @@
         if (t.textContent === labels[tab]) t.classList.add('active');
       });
       loadWallFeed();
+      loadHotTags();
     }
 
     // 标签筛选
@@ -3875,6 +3873,40 @@
       wallPosts = Array.isArray(data) ? data : [];
       if (wallTab === 'mine') wallPosts = wallPosts.filter(p => p.phone === currentUser.phone);
       renderWallFeed();
+    }
+
+    async function loadHotTags() {
+      try {
+        const tags = await API.wallTagsHot(15);
+        const el = document.getElementById('wallHotTags');
+        if (!el || !Array.isArray(tags)) return;
+        let pillHtml = '<span class="wall-tag-pill ' + (!wallTagFilter ? 'active' : '') + '" onclick="filterByTag(\'\')" data-tag="">🔥 全部</span>';
+        tags.forEach(t => {
+          const cfg = TAG_CONFIG[t.name];
+          pillHtml += '<span class="wall-tag-pill ' + (wallTagFilter === t.name ? 'active' : '') + '" onclick="filterByTag(\''+escHtml(t.name)+'\')" data-tag="'+escHtml(t.name)+'">' + (cfg ? cfg.emoji : '🏷️') + ' ' + escHtml(t.name) + ' <small style="opacity:0.6">' + t.count + '</small></span>';
+        });
+        el.innerHTML = pillHtml;
+      } catch(e) { console.error('热门标签加载失败:', e); }
+    }
+
+    let _wallSearchMode = false;
+    async function doWallSearch() {
+      const q = document.getElementById('wallSearchInput').value.trim();
+      if (!q) return loadWallFeed();
+      _wallSearchMode = true;
+      document.getElementById('wallSearchClear').style.display = '';
+      try {
+        const data = await API.wallSearch(q, currentUser.phone);
+        wallPosts = Array.isArray(data) ? data : [];
+      } catch(e) { wallPosts = []; }
+      renderWallFeed();
+    }
+
+    function clearWallSearch() {
+      document.getElementById('wallSearchInput').value = '';
+      document.getElementById('wallSearchClear').style.display = 'none';
+      _wallSearchMode = false;
+      loadWallFeed();
     }
 
     function renderWallFeed() {
@@ -3907,6 +3939,7 @@
             const cfg = TAG_CONFIG[t] || { emoji: '🏷️', color: '#95A5A6' };
             return '<span onclick="event.stopPropagation();filterByTag(\''+t+'\')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:11px;background:'+cfg.color+'18;color:'+cfg.color+';cursor:pointer;transition:all 0.2s" onmouseover="this.style.background=\''+cfg.color+'30\'" onmouseout="this.style.background=\''+cfg.color+'18\'">'+cfg.emoji+' '+t+'</span>';
           }).join('') + '</div>' : ''}
+          ${(p.ai_tags && p.ai_tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">' + p.ai_tags.map(at => '<span onclick="event.stopPropagation();filterByTag(\''+at+'\')" style="display:inline-flex;align-items:center;gap:2px;padding:1px 7px;border-radius:9px;font-size:10px;background:#8E44AD12;color:#8E44AD;cursor:pointer">🤖 '+escHtml(at)+'</span>').join('') + '</div>' : ''}
           ${p.images && p.images.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + (Array.isArray(p.images) ? p.images : p.images.split(',').filter(Boolean)).map(img => {
             const url = typeof img === 'object' ? img.url : img;
             const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
@@ -3926,16 +3959,35 @@
     let _selectedTags = [];
 
     // 标签配置：emoji + 名称 + 颜色
-    const TAG_CONFIG = {
+        const TAG_CONFIG = {
       '日常': { emoji: '💬', color: '#3498DB' },
       '求助': { emoji: '🙏', color: '#E67E22' },
       '吐槽': { emoji: '😤', color: '#E74C3C' },
       '美食': { emoji: '🍜', color: '#F39C12' },
-      '恋爱': { emoji: '💕', color: '#E91E63' },
+      '情感': { emoji: '💕', color: '#E91E63' },
       '学习': { emoji: '📚', color: '#9B59B6' },
+      '考试': { emoji: '📝', color: '#C0392B' },
       '闲置': { emoji: '🎁', color: '#1ABC9C' },
-      '活动': { emoji: '🎉', color: '#27AE60' }
+      '活动': { emoji: '🎉', color: '#27AE60' },
+      '就业': { emoji: '💼', color: '#2C3E50' },
+      '升学': { emoji: '🎓', color: '#8E44AD' },
+      '生活': { emoji: '🏠', color: '#16A085' },
+      '运动': { emoji: '⚽', color: '#27AE60' },
+      '旅行': { emoji: '✈️', color: '#2980B9' },
+      '音乐': { emoji: '🎵', color: '#9B59B6' },
+      '游戏': { emoji: '🎮', color: '#E74C3C' },
+      '兼职': { emoji: '💰', color: '#F39C12' },
+      '租房': { emoji: '🏠', color: '#1ABC9C' },
+      '快递': { emoji: '📦', color: '#E67E22' },
+      '社交': { emoji: '🤝', color: '#3498DB' },
+      '兴趣': { emoji: '🎯', color: '#E91E63' }
     };
+
+    function extractHashTags(text) {
+      const matches = text.match(/#([^#\s]+)#/g);
+      if (!matches) return [];
+      return [...new Set(matches.map(m => m.slice(1, -1)))];
+    }
 
     function toggleTopicTag(el) {
       const topic = el.dataset.topic;
@@ -3960,6 +4012,12 @@
       if (len > 500) counter.classList.add('danger');
       // 截断超长内容
       if (len > 500) textarea.value = textarea.value.slice(0, 500);
+      // 提取 #话题# 实时预览
+      const hashTags = extractHashTags(textarea.value);
+      const preview = document.getElementById('hashTagPreview');
+      if (preview) {
+        preview.innerHTML = hashTags.map(t => '<span style="display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:10px;font-size:11px;background:#3498DB18;color:#3498DB">#' + escHtml(t) + '</span>').join('');
+      }
     }
 
     function previewWallFiles(input) {
@@ -4022,7 +4080,9 @@
       const content = document.getElementById('wallPostContent').value.trim();
       if (!content) return showToast('请输入内容');
       if (content.length > 500) return showToast('内容不能超过500字');
-      const res = await API.wallPost({ phone: currentUser.phone, nickname: currentUser.name, avatar: currentUser.avatar || '', content: content, tags: _selectedTags.join(',') });
+      // 从内容提取 #话题# 标签
+      const hashTags = extractHashTags(content);
+      const res = await API.wallPost({ phone: currentUser.phone, nickname: currentUser.name, avatar: currentUser.avatar || '', content: content, tags: hashTags.join(',') });
       if (res.error) return showToast(res.error);
       closeSubPage('wallPostPage_sub');
       showToast('发布成功！🎉');
@@ -4062,6 +4122,7 @@
             const cfg = TAG_CONFIG[t] || { emoji: '🏷️', color: '#95A5A6' };
             return '<span onclick="filterByTag(\''+t+'\');closeSubPage(\'wallDetailPage_sub\')" style="display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:12px;font-size:12px;background:'+cfg.color+'18;color:'+cfg.color+';cursor:pointer">'+cfg.emoji+' '+t+'</span>';
           }).join('') + '</div>' : ''}
+        ${(data.ai_tags && data.ai_tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' + data.ai_tags.map(at => '<span onclick="filterByTag(\''+at+'\');closeSubPage(\'wallDetailPage_sub\')" style="display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:10px;font-size:11px;background:#8E44AD12;color:#8E44AD;cursor:pointer">🤖 '+escHtml(at)+'</span>').join('') + '</div>' : ''}
         ${data.images && data.images.length ? '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">' + (Array.isArray(data.images) ? data.images : data.images.split(',').filter(Boolean)).map(img => {
           const url = typeof img === 'object' ? img.url : img;
           const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
