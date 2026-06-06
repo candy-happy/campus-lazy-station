@@ -2,28 +2,31 @@
  * routes/doubao.js - 豆包文生图代理路由
  * 
  * POST /api/ai/image/generate
- * Body: { prompt, size='512x512', n=1 }
+ * Body: { prompt, size='1920x1920', n=1 }
  * Response: { urls: [...] }
  *
  * 环境变量: DOUBAO_API_KEY
+ * 模型: doubao-seedream-5-0-260128 (端点ID: 260128)
+ * 域名: ark.cn-beijing.volces.com
  */
 
 const express = require('express');
 const router = express.Router();
 
 const API_KEY = process.env.DOUBAO_API_KEY || '';
-const MODEL = 'doubao-image-generation';
+const MODEL = 'doubao-seedream-5-0-260128';
 
 router.post('/generate', async (req, res) => {
   if (!API_KEY) {
     return res.status(500).json({ error: 'DOUBAO_API_KEY 未配置', code: 'AI_001' });
   }
 
-  const { prompt, size = '512x512', n = 1 } = req.body;
+  const { prompt, size = '1920x1920', n = 1 } = req.body;
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: 'prompt 不能为空', code: 'AI_002' });
   }
 
+  // 豆包要求图片至少 3686400 像素 (约 1920x1920)
   const payload = JSON.stringify({ model: MODEL, prompt, size, n, response_format: 'url' });
 
   try {
@@ -44,7 +47,9 @@ router.post('/generate', async (req, res) => {
         res.on('end', () => {
           try {
             const json = JSON.parse(data);
-            if (json.data && Array.isArray(json.data)) {
+            if (json.error) {
+              reject(new Error(json.error.message || JSON.stringify(json.error)));
+            } else if (json.data && Array.isArray(json.data)) {
               resolve(json.data.map(d => d.url).filter(Boolean));
             } else {
               reject(new Error('API返回格式异常: ' + data.substring(0, 200)));
