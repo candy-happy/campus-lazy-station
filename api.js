@@ -350,7 +350,7 @@ const API = {
   },
   async getTeacherDetail(id) { return fetch('/api/teachers/' + id, { headers: this._headers() }).then(r => r.json()); },
   async likeTeacher(id) { return fetch('/api/teachers/' + id + '/like', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
-  async reviewTeacher(id, rating, content) { return fetch('/api/teachers/' + id + '/review', { method: 'POST', headers: this._headers(), body: JSON.stringify({ rating, content }) }).then(r => r.json()); },
+  async reviewTeacher(id, rating, content, isAnonymous, mediaUrl) { return fetch('/api/teachers/' + id + '/review', { method: 'POST', headers: this._headers(), body: JSON.stringify({ rating, content, is_anonymous: isAnonymous || 0, media_url: mediaUrl || '' }) }).then(r => r.json()); },
   async getHotTeachers() { return fetch('/api/teachers/hot', { headers: this._headers() }).then(r => r.json()); },
 
   // ─── 会话恢复 ───

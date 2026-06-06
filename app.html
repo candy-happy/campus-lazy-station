@@ -5506,10 +5506,36 @@ async function openTeacherDetail(id) {
     if (res.reviews && res.reviews.length > 0) {
       reviewList.innerHTML = res.reviews.map(r => {
         const stars = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
-        const avatar = r.avatar ? '<img src="' + r.avatar + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover">' : '<div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999">' + (r.nickname||'匿').charAt(0) + '</div>';
+        const displayName = r.is_anonymous ? '匿名' : (r.nickname || '匿名');
+        const avatarHtml = r.is_anonymous
+          ? '<div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999">🕵</div>'
+          : (r.avatar ? '<img src="' + r.avatar + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover;cursor:pointer" onclick="showWallUser(\'' + r.phone + '\')">' : '<div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999;cursor:pointer" onclick="showWallUser(\'' + r.phone + '\')">' + (r.nickname||'匿').charAt(0) + '</div>');
+        // 媒体展示
+        let mediaHtml = '';
+        if (r.media_url) {
+          try {
+            const media = JSON.parse(r.media_url);
+            if (Array.isArray(media) && media.length > 0) {
+              mediaHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' +
+                media.map(m => {
+                  const isVideo = /\.mp4|\.mov|\.webm/i.test(m);
+                  return isVideo
+                    ? '<video src="' + m + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px" muted preload="metadata" onclick="this.paused?this.play():this.pause()"></video>'
+                    : '<img src="' + m + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer" onclick="previewImage(this.src)">';
+                }).join('') + '</div>';
+            }
+          } catch(e) {
+            // 单个URL
+            const isVideo = /\.mp4|\.mov|\.webm/i.test(r.media_url);
+            mediaHtml = isVideo
+              ? '<div style="margin-top:8px"><video src="' + r.media_url + '" style="max-width:200px;border-radius:8px" muted controls></video></div>'
+              : '<div style="margin-top:8px"><img src="' + r.media_url + '" style="max-width:200px;border-radius:8px;cursor:pointer" onclick="previewImage(this.src)"></div>';
+          }
+        }
         return '<div class="teacher-review-card">' +
-          '<div class="teacher-review-header">' + avatar + '<span class="teacher-review-user">' + (r.nickname||'匿名') + '</span><span class="teacher-review-stars">' + stars + '</span><span class="teacher-review-date">' + (r.created_at||'').slice(0,10) + '</span></div>' +
+          '<div class="teacher-review-header">' + avatarHtml + '<span class="teacher-review-user">' + displayName + '</span><span class="teacher-review-stars">' + stars + '</span><span class="teacher-review-date">' + (r.created_at||'').slice(0,10) + '</span></div>' +
           '<div class="teacher-review-content">' + r.content + '</div>' +
+          mediaHtml +
         '</div>';
       }).join('');
     } else {
@@ -5535,10 +5561,15 @@ async function likeTeacher(id) {
 
 function showTeacherReviewForm(teacherId) {
   _selectedTeacherRating = 5;
+  _reviewAnonymous = false;
+  _reviewMediaUrls = [];
   const form = document.createElement('div');
   form.id = 'teacherReviewOverlay';
   form.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:flex-end;justify-content:center';
-  form.innerHTML = '<div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:500px;padding:20px;max-height:70vh;overflow-y:auto">' +
+  // emoji面板
+  const emojis = ['😊','😂','🤣','😍','🥰','😘','😜','🤔','😮','😢','😡','👍','👎','❤️','🔥','💯','✨','🎉','👏','🙏','💪','😎','🥳','😴','🤯','🤩','💕','👋','✅','⭐'];
+  const emojiGrid = emojis.map(e => '<span style="font-size:22px;padding:4px;cursor:pointer" onclick="insertReviewEmoji(\''+e+'\')">'+e+'</span>').join('');
+  form.innerHTML = '<div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:500px;padding:20px;max-height:75vh;overflow-y:auto">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
       '<span style="font-weight:700;font-size:16px">✍️ 写评价</span>' +
       '<button onclick="document.getElementById(\'teacherReviewOverlay\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>' +
@@ -5552,18 +5583,40 @@ function showTeacherReviewForm(teacherId) {
         '<span onclick="selectTeacherRating(5)" style="color:#FFC107">★</span>' +
       '</div>' +
     '</div>' +
-    '<div style="margin-bottom:12px"><div style="font-size:13px;color:#666;margin-bottom:6px">评价内容（每天每位老师限一次）</div>' +
+    // 匿名/公开切换
+    '<div style="margin-bottom:12px;display:flex;align-items:center;gap:12px">' +
+      '<span style="font-size:13px;color:#666">显示方式：</span>' +
+      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px"><input type="radio" name="reviewAnon" value="0" checked onchange="_reviewAnonymous=false;document.getElementById(\'anonHint\').style.display=\'none\'"> 公开</label>' +
+      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px"><input type="radio" name="reviewAnon" value="1" onchange="_reviewAnonymous=true;document.getElementById(\'anonHint\').style.display=\'block\'"> 🕵 匿名</label>' +
+      '<span id="anonHint" style="font-size:11px;color:#F57F17;display:none;margin-left:4px">匿名后他人无法查看你的主页</span>' +
+    '</div>' +
+    '<div style="margin-bottom:8px"><div style="font-size:13px;color:#666;margin-bottom:6px">评价内容</div>' +
       '<textarea id="teacherReviewContent" rows="4" maxlength="500" placeholder="分享你对这位老师的真实感受..." style="width:100%;padding:10px;border-radius:10px;border:1px solid #ddd;font-size:14px;resize:none;outline:none"></textarea>' +
       '<div style="text-align:right;font-size:11px;color:#999"><span id="teacherReviewCharCount">0</span>/500</div>' +
+    '</div>' +
+    // Emoji面板
+    '<div style="margin-bottom:10px">' +
+      '<button onclick="document.getElementById(\'reviewEmojiPanel\').style.display=document.getElementById(\'reviewEmojiPanel\').style.display===\'none\'?\'block\':\'none\'" style="background:none;border:1px solid #ddd;border-radius:8px;padding:4px 10px;font-size:13px;cursor:pointer">😊 表情</button>' +
+      '<div id="reviewEmojiPanel" style="display:none;margin-top:8px;padding:8px;background:#f9f9f9;border-radius:10px;display:none;flex-wrap:wrap;gap:2px">' + emojiGrid + '</div>' +
+    '</div>' +
+    // 媒体上传
+    '<div style="margin-bottom:12px">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+        '<label style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;border:1px solid #ddd;cursor:pointer;font-size:13px;color:#666">' +
+          '<input type="file" id="reviewMediaInput" accept="image/*,video/*" multiple style="display:none" onchange="handleReviewMedia(this)"> 📷 添加图片/视频</label>' +
+        '<span id="reviewMediaCount" style="font-size:11px;color:#999"></span>' +
+      '</div>' +
+      '<div id="reviewMediaPreview" style="display:flex;flex-wrap:wrap;gap:6px"></div>' +
     '</div>' +
     '<button onclick="submitTeacherReview(' + teacherId + ')" style="width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;font-size:15px;font-weight:600;cursor:pointer">提交评价</button>' +
   '</div>';
   document.body.appendChild(form);
   form.addEventListener('click', e => { if (e.target === form) form.remove(); });
-  // 字数统计
   document.getElementById('teacherReviewContent').addEventListener('input', function() {
     document.getElementById('teacherReviewCharCount').textContent = this.value.length;
   });
+  // 修复emoji面板display
+  document.getElementById('reviewEmojiPanel').style.display = 'none';
 }
 
 function selectTeacherRating(n) {
@@ -5572,12 +5625,63 @@ function selectTeacherRating(n) {
   stars.forEach((s, i) => { s.style.color = i < n ? '#FFC107' : '#ddd'; });
 }
 
+// 插入emoji到评价输入框
+function insertReviewEmoji(emoji) {
+  const ta = document.getElementById('teacherReviewContent');
+  if (!ta) return;
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  ta.value = ta.value.substring(0, start) + emoji + ta.value.substring(end);
+  ta.selectionStart = ta.selectionEnd = start + emoji.length;
+  ta.focus();
+  document.getElementById('teacherReviewCharCount').textContent = ta.value.length;
+}
+
+// 处理评价媒体文件
+async function handleReviewMedia(input) {
+  const files = Array.from(input.files).slice(0, 6 - _reviewMediaUrls.length);
+  if (files.length === 0) return;
+  const preview = document.getElementById('reviewMediaPreview');
+  const countEl = document.getElementById('reviewMediaCount');
+  
+  for (const file of files) {
+    const fd = new FormData();
+    fd.append('files', file);
+    try {
+      const res = await fetch('/api/teachers/upload-media', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.urls && data.urls.length > 0) {
+        data.urls.forEach(url => {
+          _reviewMediaUrls.push(url);
+          const isVideo = /\.mp4|\.mov|\.webm/i.test(url);
+          const div = document.createElement('div');
+          div.style.cssText = 'position:relative;width:72px;height:72px';
+          div.innerHTML = (isVideo
+            ? '<video src="' + url + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px" muted></video>'
+            : '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px">') +
+            '<span onclick="removeReviewMedia(' + (_reviewMediaUrls.length-1) + ',this)" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#f44336;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer">✕</span>';
+          preview.appendChild(div);
+        });
+      }
+    } catch(e) { showToast('上传失败: ' + e.message); }
+  }
+  countEl.textContent = _reviewMediaUrls.length + '/6';
+  input.value = '';
+}
+
+function removeReviewMedia(index, el) {
+  _reviewMediaUrls.splice(index, 1);
+  el.parentElement.remove();
+  document.getElementById('reviewMediaCount').textContent = _reviewMediaUrls.length + '/6';
+}
+
 async function submitTeacherReview(teacherId) {
   if (!API._token) return showToast('请先登录');
   const content = document.getElementById('teacherReviewContent').value.trim();
   if (!content) return showToast('请输入评价内容');
+  const mediaUrl = _reviewMediaUrls.length > 0 ? JSON.stringify(_reviewMediaUrls) : '';
   try {
-    const res = await API.reviewTeacher(teacherId, _selectedTeacherRating, content);
+    const res = await API.reviewTeacher(teacherId, _selectedTeacherRating, content, _reviewAnonymous ? 1 : 0, mediaUrl);
     if (res.reviewed) {
       showToast('✅ 评价提交成功！');
       const overlay = document.getElementById('teacherReviewOverlay');
@@ -5587,6 +5691,15 @@ async function submitTeacherReview(teacherId) {
       showToast(res.error || '评价失败');
     }
   } catch(e) { showToast(e.message || '评价失败'); }
+}
+
+// 图片预览弹窗
+function previewImage(src) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:99999;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML = '<img src="' + src + '" style="max-width:95%;max-height:90vh;object-fit:contain;border-radius:8px">';
+  overlay.addEventListener('click', () => overlay.remove());
+  document.body.appendChild(overlay);
 }
 
 // 教师评价子页面打开时加载学院

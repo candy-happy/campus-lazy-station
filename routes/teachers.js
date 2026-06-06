@@ -3,6 +3,28 @@ const { Router } = require('express');
 const { JSON_RES } = require('../utils/response');
 const db = require('../config/database');
 const aiChecker = require('./ai');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// 教师评价媒体上传
+const REVIEW_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'teacher_reviews');
+if (!fs.existsSync(REVIEW_UPLOAD_DIR)) fs.mkdirSync(REVIEW_UPLOAD_DIR, { recursive: true });
+const reviewStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, REVIEW_UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || (file.mimetype === 'video/mp4' ? '.mp4' : '.jpg');
+    cb(null, 'review_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + ext);
+  }
+});
+const reviewUpload = multer({
+  storage: reviewStorage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ok = /^image\/|video\//.test(file.mimetype);
+    cb(null, ok);
+  }
+});
 
 const router = Router();
 
@@ -49,9 +71,9 @@ router.get('/:id', (req, res) => JSON_RES(res, () => {
   const teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
   if (!teacher) return { error: '教师不存在', code: 'TEACHER_001', status: 404 };
   
-  // 获取最新评价
+  // 获取最新评价（匿名评价隐藏nickname/avatar/phone）
   const reviews = db.prepare(
-    `SELECT r.id, r.phone, r.nickname, r.avatar, r.rating, r.content, r.created_at 
+    `SELECT r.id, CASE WHEN r.is_anonymous = 1 THEN '' ELSE r.phone END as phone, CASE WHEN r.is_anonymous = 1 THEN '匿名' ELSE r.nickname END as nickname, CASE WHEN r.is_anonymous = 1 THEN '' ELSE r.avatar END as avatar, r.rating, r.content, r.created_at, r.is_anonymous, r.media_url 
      FROM teacher_reviews r WHERE r.teacher_id = ? ORDER BY r.created_at DESC LIMIT 20`
   ).all(req.params.id);
   
@@ -100,7 +122,7 @@ router.post('/:id/review', (req, res) => JSON_RES(res, () => {
   const teacher = db.prepare('SELECT id, name FROM teachers WHERE id = ?').get(req.params.id);
   if (!teacher) return { error: '教师不存在', code: 'TEACHER_001', status: 404 };
   
-  const { rating = 5, content = '' } = req.body;
+  const { rating = 5, content = '', is_anonymous = 0, media_url = '' } = req.body;
   if (!content || content.trim().length === 0) return { error: '请输入评价内容', code: 'REVIEW_001' };
   if (content.length > 500) return { error: '评价内容不能超过500字', code: 'REVIEW_002' };
   if (rating < 1 || rating > 5) return { error: '评分必须在1-5之间', code: 'REVIEW_003' };
@@ -127,16 +149,17 @@ router.post('/:id/review', (req, res) => JSON_RES(res, () => {
   // 插入评论 + 更新教师评分 (事务)
   const nickname = req.user.nickname || req.user.name || '匿名';
   const avatar = req.user.avatar || '';
-  const insertReview = db.prepare('INSERT INTO teacher_reviews (teacher_id, phone, nickname, avatar, rating, content, ai_reviewed, ai_level) VALUES (?, ?, ?, ?, ?, ?, 1, ?)');
+  const isAnonymous = is_anonymous ? 1 : 0;
+  const insertReview = db.prepare('INSERT INTO teacher_reviews (teacher_id, phone, nickname, avatar, rating, content, ai_reviewed, ai_level, is_anonymous, media_url) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)');
   const updateTeacherStats = db.prepare(`UPDATE teachers SET review_count = ?, avg_rating = ?, updated_at = datetime('now','localtime') WHERE id = ?`);
-  const reviewTransaction = db.transaction((teacherId, phone, nickname, avatar, rating, content, aiLevel) => {
-    insertReview.run(teacherId, phone, nickname, avatar, rating, content, aiLevel);
+  const reviewTransaction = db.transaction((teacherId, phone, nickname, avatar, rating, content, aiLevel, isAnon, mediaUrl) => {
+    insertReview.run(teacherId, phone, nickname, avatar, rating, content, aiLevel, isAnon, mediaUrl);
     const stats = db.prepare('SELECT COUNT(*) as cnt, AVG(rating) as avg FROM teacher_reviews WHERE teacher_id = ?').get(teacherId);
     const avgRating = stats.cnt > 0 ? Math.round(stats.avg * 10) / 10 : 0;
     updateTeacherStats.run(stats.cnt, avgRating, teacherId);
     return { review_count: stats.cnt, avg_rating: avgRating };
   });
-  const result = reviewTransaction(req.params.id, phone, nickname, avatar, rating, content.trim(), aiResult.level || 'none');
+  const result = reviewTransaction(req.params.id, phone, nickname, avatar, rating, content.trim(), aiResult.level || 'none', isAnonymous, media_url);
   
   return { reviewed: true, ...result };
 }));
@@ -176,5 +199,12 @@ router.delete('/admin/reviews/:id', (req, res) => JSON_RES(res, () => {
   
   return { deleted: true };
 }));
+
+// ── 评价媒体上传 ──────────────────────────────────
+router.post('/upload-media', reviewUpload.array('files', 6), (req, res) => {
+  if (!req.files || req.files.length === 0) return res.status(400).json({ error: '请选择文件' });
+  const urls = req.files.map(f => '/uploads/teacher_reviews/' + f.filename);
+  res.json({ urls });
+});
 
 module.exports = router;
