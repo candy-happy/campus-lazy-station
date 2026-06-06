@@ -5446,9 +5446,9 @@ async function loadTeacherColleges() {
     const res = await API.getTeacherColleges();
     if (res.colleges) {
       const bar = document.getElementById('teacherCollegeBar');
-      bar.innerHTML = '<div class="teacher-college-tag active" onclick="filterTeacherCollege(\'全部\')">全部</div>';
+      bar.innerHTML = '<div class="teacher-college-tag active" data-college="全部" onclick="filterTeacherCollege(\'全部\')">全部</div>';
       res.colleges.forEach(c => {
-        bar.innerHTML += '<div class="teacher-college-tag" onclick="filterTeacherCollege(\'' + c.college + '\')">' + c.college + '(' + c.count + ')</div>';
+        bar.innerHTML += '<div class="teacher-college-tag" data-college="' + c.college + '" onclick="filterTeacherCollege(\'' + c.college + '\')">' + c.college + '(' + c.count + ')</div>';
       });
     }
   } catch(e) { console.error('loadTeacherColleges:', e); }
@@ -5457,7 +5457,7 @@ async function loadTeacherColleges() {
 function filterTeacherCollege(college) {
   _teacherCollege = college;
   _teacherPage = 1;
-  document.querySelectorAll('.teacher-college-tag').forEach(t => t.classList.toggle('active', t.textContent.startsWith(college)));
+  document.querySelectorAll('.teacher-college-tag').forEach(t => t.classList.toggle('active', t.dataset.college === college));
   loadTeachers(true);
 }
 
