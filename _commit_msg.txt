@@ -1,6 +1,0 @@
-修复教师点赞/评价500错误：datetime双引号改模板字符串+单引号
-
-SQLite中datetime('now','localtime')必须用单引号，
-JS字符串中双引号"now"被SQLite当标识符导致报错
-'no such column: now'
-影响：点赞、提交评价、删除评价3处UPDATE语句
