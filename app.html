@@ -5529,14 +5529,15 @@ async function openTeacherDetail(id) {
         '</div>' +
       '</div>';
     
-    // ── 结构化信息区块 ──
+        // ── 结构化信息区块 ──
     const infoParts = [];
-    // 学历背景
+    // 毕业院校与学位
     const eduParts = [];
-    if (t.undergraduate) eduParts.push('🎓 本科：' + t.undergraduate);
-    if (t.graduate) eduParts.push('🎓 研究生：' + t.graduate);
+    if (t.education) eduParts.push('🏫 ' + t.education);
+    if (t.undergraduate && !t.education) eduParts.push('🎓 本科：' + t.undergraduate);
+    if (t.graduate && !t.education) eduParts.push('🎓 研究生：' + t.graduate);
     if (eduParts.length > 0) {
-      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📚 学历背景</div>' +
+      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🎓 毕业院校</div>' +
         eduParts.map(e => '<div class="teacher-info-item">' + e + '</div>').join('') + '</div>');
     }
     // 研究方向
@@ -5552,6 +5553,27 @@ async function openTeacherDetail(id) {
           courseList.map(c => '<span class="teacher-course-tag">' + c + '</span>').join('') +
         '</div></div>');
     }
+    // 学术论文
+    if (t.papers) {
+      const paperLines = t.papers.split(/[；;]/).filter(l => l.trim());
+      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📄 学术论文</div>' +
+        paperLines.map(p => '<div class="teacher-info-item">• ' + p.trim() + '</div>').join('') +
+      '</div>');
+    }
+    // 科研项目
+    if (t.projects) {
+      const projLines = t.projects.split(/[；;]/).filter(l => l.trim());
+      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🔬 科研项目</div>' +
+        projLines.map(p => '<div class="teacher-info-item">• ' + p.trim() + '</div>').join('') +
+      '</div>');
+    }
+    // 社会兼职
+    if (t.social_roles) {
+      const roleLines = t.social_roles.split(/[；;]/).filter(l => l.trim());
+      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🌐 社会兼职</div>' +
+        roleLines.map(r => '<div class="teacher-info-item">• ' + r.trim() + '</div>').join('') +
+      '</div>');
+    }
     // 主要成果
     if (t.achievements) {
       const achLines = t.achievements.split('\n').filter(l => l.trim());
@@ -5559,7 +5581,7 @@ async function openTeacherDetail(id) {
         achLines.map(a => '<div class="teacher-info-item">• ' + a + '</div>').join('') +
       '</div>');
     }
-    // 个人简介（bio中非结构化内容）
+// 个人简介（bio中非结构化内容）
     if (t.bio) {
       // 移除已展示的字段内容，避免重复
       let cleanBio = t.bio;
