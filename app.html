@@ -76,12 +76,8 @@
     .logo-icon {
       width: 36px;
       height: 36px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
+      border-radius: 10px;
+      object-fit: cover;
     }
     .logo-text {
       font-size: 18px;
@@ -2204,9 +2200,9 @@
       <div class="header">
         <div class="header-top">
           <div class="logo">
-            <div class="logo-icon">🦥</div>
-            <span class="logo-text">懒人效率站</span>
-            <span class="logo-badge">校园版</span>
+            <img class="logo-icon" src="/images/xy-colorful.png" alt="logo">
+            <span class="logo-text" data-i18n="appName">懒人效率站</span>
+            <span class="logo-badge" data-i18n="campusEdition">校园版</span>
           </div>
           <div class="header-actions">
             <button class="header-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
@@ -2218,7 +2214,7 @@
         </div>
         <div class="search-bar">
           <span class="search-icon">🔍</span>
-          <input type="text" placeholder="搜索服务、订单..." id="searchInput" />
+          <input type="text" placeholder="搜索服务、订单..." data-i18n-placeholder="searchPlaceholder" id="searchInput" />
         </div>
       </div>
 
@@ -2239,35 +2235,35 @@
           <div class="service-grid">
             <div class="service-item" onclick="openOrderModal('delivery')">
               <div class="service-icon">🍱</div>
-              <div class="service-name">代取外卖</div>
+              <div class="service-name" data-i18n="serviceDelivery">代取外卖</div><!-- data-i18n:serviceDelivery -->
             </div>
             <div class="service-item" onclick="openOrderModal('express')">
               <div class="service-icon">📦</div>
-              <div class="service-name">代取快递</div>
+              <div class="service-name" data-i18n="serviceExpress">代取快递</div><!-- data-i18n:serviceExpress -->
             </div>
             <div class="service-item" onclick="openSubPage('teacherListPage_sub')">
               <div class="service-icon">👨‍🏫</div>
-              <div class="service-name">师说</div>
+              <div class="service-name" data-i18n="serviceTeacher">师说</div><!-- data-i18n:serviceTeacher -->
             </div>
             <div class="service-item" onclick="openOrderModal('purchase')">
               <div class="service-icon">🛒</div>
-              <div class="service-name">代买东西</div>
+              <div class="service-name" data-i18n="servicePurchase">代买东西</div><!-- data-i18n:servicePurchase -->
             </div>
             <div class="service-item" onclick="openOrderModal('laundry')">
               <div class="service-icon">👕</div>
-              <div class="service-name">代取洗衣</div>
+              <div class="service-name" data-i18n="serviceLaundry">代取洗衣</div><!-- data-i18n:serviceLaundry -->
             </div>
             <div class="service-item" onclick="openOrderModal('errand')">
               <div class="service-icon">🏃</div>
-              <div class="service-name">跑腿办事</div>
+              <div class="service-name" data-i18n="serviceErrand">跑腿办事</div><!-- data-i18n:serviceErrand -->
             </div>
             <div class="service-item" onclick="openOrderModal('other')">
               <div class="service-icon">💡</div>
-              <div class="service-name">其他服务</div>
+              <div class="service-name" data-i18n="serviceOther">其他服务</div><!-- data-i18n:serviceOther -->
             </div>
-            <div class="service-item" onclick="showToast('更多服务开发中...')">
+            <div class="service-item" onclick="showToast(t('moreServiceSoon'))">
               <div class="service-icon">➕</div>
-              <div class="service-name">更多服务</div>
+              <div class="service-name" data-i18n="serviceMore">更多服务</div><!-- data-i18n:serviceMore -->
             </div>
           </div>
 
@@ -2276,16 +2272,16 @@
             <div class="quick-card discount" onclick="showCoupons()">
               <div class="quick-icon">🎫</div>
               <div class="quick-info">
-                <div class="quick-title">优惠券</div>
-                <div class="quick-desc">查看可用优惠</div>
+                <div class="quick-title" data-i18n="coupons">优惠券</div>
+                <div class="quick-desc" data-i18n="viewCoupons">查看可用优惠</div>
               </div>
               <div class="quick-value" id="couponCount">2</div>
             </div>
             <div class="quick-card points" onclick="showPoints()">
               <div class="quick-icon">⭐</div>
               <div class="quick-info">
-                <div class="quick-title">我的积分</div>
-                <div class="quick-desc">积分可抵现金</div>
+                <div class="quick-title" data-i18n="myPoints">我的积分</div>
+                <div class="quick-desc" data-i18n="pointsDesc">积分可抵现金</div>
               </div>
               <div class="quick-value" id="pointsCount">168</div>
             </div>
@@ -2340,33 +2336,33 @@
     <div class="page" id="orderPage">
       <div class="header">
         <div class="header-top">
-          <div class="logo"><span class="logo-text">我的订单</span></div>
+          <div class="logo"><span class="logo-text" data-i18n="orderPageTitle">我的订单</span></div>
         </div>
       </div>
       <div class="content-area" style="padding:12px 16px">
         <!-- 状态分类标签 -->
         <div class="order-section" style="margin-bottom:12px">
           <div class="order-tabs" style="margin:-16px -16px 0;padding:0 8px">
-            <div class="order-tab active" onclick="switchOrderFilter('all')">全部</div>
-            <div class="order-tab" onclick="switchOrderFilter('pending')">待接单</div>
-            <div class="order-tab" onclick="switchOrderFilter('running')">进行中</div>
-            <div class="order-tab" onclick="switchOrderFilter('completed')">已完成</div>
-            <div class="order-tab" onclick="switchOrderFilter('cancelled')">已取消</div>
+            <div class="order-tab active" onclick="switchOrderFilter('all')" data-i18n="orderTabAll">全部</div>
+            <div class="order-tab" onclick="switchOrderFilter('pending')" data-i18n="orderTabPending">待接单</div>
+            <div class="order-tab" onclick="switchOrderFilter('running')" data-i18n="orderTabRunning">进行中</div>
+            <div class="order-tab" onclick="switchOrderFilter('completed')" data-i18n="orderTabCompleted">已完成</div>
+            <div class="order-tab" onclick="switchOrderFilter('cancelled')" data-i18n="orderTabCancelled">已取消</div>
           </div>
         </div>
         <!-- 时间筛选 -->
         <div class="order-section" style="margin-bottom:12px;padding:10px 12px">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <span style="font-size:13px;color:var(--text-secondary);margin-right:4px">🕐</span>
-            <div class="time-filter-chip active" onclick="switchTimeFilter('all')">全部时间</div>
-            <div class="time-filter-chip" onclick="switchTimeFilter('today')">今天</div>
-            <div class="time-filter-chip" onclick="switchTimeFilter('week')">近7天</div>
-            <div class="time-filter-chip" onclick="switchTimeFilter('month')">近30天</div>
-            <div class="time-filter-chip" onclick="switchTimeFilter('custom')" id="customTimeBtn">📅 自定义</div>
+            <div class="time-filter-chip active" onclick="switchTimeFilter('all')" data-i18n="timeAll">全部时间</div>
+            <div class="time-filter-chip" onclick="switchTimeFilter('today')" data-i18n="timeToday">今天</div>
+            <div class="time-filter-chip" onclick="switchTimeFilter('week')" data-i18n="timeWeek">近7天</div>
+            <div class="time-filter-chip" onclick="switchTimeFilter('month')" data-i18n="timeMonth">近30天</div>
+            <div class="time-filter-chip" onclick="switchTimeFilter('custom')" id="customTimeBtn" data-i18n="timeCustom">📅 自定义</div>
           </div>
           <div id="customTimeRange" style="display:none;margin-top:10px;gap:8px;align-items:center;flex-wrap:wrap">
             <input type="date" id="orderDateFrom" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)" onchange="applyCustomTime()" />
-            <span style="color:var(--text-secondary)">至</span>
+            <span style="color:var(--text-secondary)" data-i18n="timeTo">至</span>
             <input type="date" id="orderDateTo" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)" onchange="applyCustomTime()" />
           </div>
         </div>
@@ -2413,45 +2409,45 @@
           </div>
           <div class="me-stat-item" onclick="showCoupons()">
             <div class="me-stat-num secondary" id="totalCoupons">2</div>
-            <div class="me-stat-label">优惠券</div>
+            <div class="me-stat-label" data-i18n="coupons">优惠券</div>
           </div>
         </div>
 
         <div class="me-menu-card">
           <div class="me-menu-item" onclick="openMyTrades()">
             <span class="me-menu-icon">🛒</span>
-            <span class="me-menu-text">我的交易</span>
+            <span class="me-menu-text" data-i18n="menuTrades">我的交易</span>
             <span class="me-menu-arrow">›</span>
           </div>
           <div class="me-menu-item" onclick="openMyListings()">
             <span class="me-menu-icon">📦</span>
-            <span class="me-menu-text">我的在售</span>
+            <span class="me-menu-text" data-i18n="menuListings">我的在售</span>
             <span class="me-menu-arrow">›</span>
           </div>
           <div class="me-menu-item" onclick="openChatList()">
             <span class="me-menu-icon">💬</span>
-            <span class="me-menu-text">我的消息</span>
+            <span class="me-menu-text" data-i18n="menuMessages">我的消息</span>
             <span class="me-menu-badge" id="meMsgBadge" style="display:none">0</span>
             <span class="me-menu-arrow">›</span>
           </div>
           <div class="me-menu-item" onclick="showAddresses()">
             <span class="me-menu-icon">📍</span>
-            <span class="me-menu-text">常用地址</span>
+            <span class="me-menu-text" data-i18n="menuAddresses">常用地址</span>
             <span class="me-menu-arrow">›</span>
           </div>
           <div class="me-menu-item" onclick="showCoupons()">
             <span class="me-menu-icon">🎫</span>
-            <span class="me-menu-text">我的优惠券</span>
+            <span class="me-menu-text" data-i18n="menuMyCoupons">我的优惠券</span>
             <span class="me-menu-arrow">›</span>
           </div>
           <div class="me-menu-item" onclick="showPoints()">
             <span class="me-menu-icon">⭐</span>
-            <span class="me-menu-text">积分明细</span>
+            <span class="me-menu-text" data-i18n="menuPointsDetail">积分明细</span>
             <span class="me-menu-arrow">›</span>
           </div>
           <div class="me-menu-item" onclick="showSettings()">
             <span class="me-menu-icon">⚙️</span>
-            <span class="me-menu-text">设置</span>
+            <span class="me-menu-text" data-i18n="menuSettings">设置</span>
             <span class="me-menu-arrow">›</span>
           </div>
         </div>
@@ -2475,24 +2471,24 @@
         <form id="orderForm">
           <input type="hidden" id="tipInput" value="0" />
           <div class="form-group">
-            <label class="form-label">📦 取货地点 <span>*</span></label>
+            <label class="form-label" data-i18n="pickupLocation">📦 取货地点 <span>*</span></label>
             <input type="text" class="form-input" id="pickupLocation" placeholder="例如：西门外卖柜" required />
           </div>
           <div class="form-group">
-            <label class="form-label">🏠 送达地点 <span>*</span></label>
+            <label class="form-label" data-i18n="deliveryLocation">🏠 送达地点 <span>*</span></label>
             <input type="text" class="form-input" id="deliveryLocation" placeholder="例如：3号宿舍楼301室" required />
             <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;cursor:pointer;display:none" id="addrHint" onclick="closeSubPage('orderPage_sub');showAddresses()">💡 点击选择常用地址</div>
           </div>
           <div class="form-group">
-            <label class="form-label">📝 详细说明 <span>*</span></label>
+            <label class="form-label" data-i18n="orderDetails">📝 详细说明 <span>*</span></label>
             <textarea class="form-textarea" id="orderDetails" placeholder="请描述物品信息、取件码、备注等..." required></textarea>
           </div>
           <div class="form-group">
-            <label class="form-label">📱 联系电话 <span>*</span></label>
+            <label class="form-label" data-i18n="contactPhone">📱 联系电话 <span>*</span></label>
             <input type="tel" class="form-input" id="phone" placeholder="您的手机号" required />
           </div>
           <div class="form-group" id="tipSection" style="display:none">
-            <label class="form-label">🪙 加小费（骑手优先接单）</label>
+            <label class="form-label" data-i18n="tipLabel">🪙 加小费（骑手优先接单）</label>
             <div style="display:flex;gap:8px;margin-top:8px">
               <button type="button" class="tip-btn active" onclick="setTip(0)">无小费</button>
               <button type="button" class="tip-btn" onclick="setTip(2)">+2元</button>
@@ -2505,10 +2501,10 @@
             </style>
           </div>
           <div class="price-display">
-            <div class="price-label">预估费用</div>
+            <div class="price-label" data-i18n="estimatedFee">预估费用</div>
             <div class="price-value" id="priceValue">¥2.00</div>
           </div>
-          <button type="submit" class="submit-btn">🚀 提交订单</button>
+          <button type="submit" class="submit-btn" data-i18n="submitOrder">🚀 提交订单</button>
         </form>
       </div>
     </div>
@@ -2520,7 +2516,7 @@
     <div class="sub-page" id="detailPage_sub">
       <div class="sub-page-header">
         <button class="sub-page-back" onclick="closeSubPage('detailPage_sub')">←</button>
-        <span class="sub-page-title">📋 订单详情</span>
+        <span class="sub-page-title" data-i18n="orderDetail">📋 订单详情</span>
       </div>
       <div class="sub-page-body" id="detailContent"></div>
     </div>
@@ -2547,7 +2543,7 @@
             <input id="wallSearchInput" type="text" placeholder="搜索帖子..." style="width:100%;padding:6px 12px 6px 30px;border-radius:16px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;outline:none" onkeydown="if(event.key==='Enter')doWallSearch()" />
             <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;opacity:0.5">🔍</span>
           </div>
-          <button onclick="doWallSearch()" style="padding:6px 12px;border-radius:16px;background:var(--gradient);color:white;border:none;font-size:12px;cursor:pointer">搜索</button>
+          <button onclick="doWallSearch()" style="padding:6px 12px;border-radius:16px;background:var(--gradient);color:white;border:none;font-size:12px;cursor:pointer" data-i18n="teacherSearchBtn">搜索</button>
           <button id="wallSearchClear" onclick="clearWallSearch()" style="display:none;padding:6px 10px;border-radius:16px;background:var(--border);color:var(--text);border:none;font-size:12px;cursor:pointer">✕</button>
         </div>
         <div id="wallHotTags" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
@@ -2669,7 +2665,7 @@
     <div class="sub-page" id="ratePage_sub">
       <div class="sub-page-header">
         <button class="sub-page-back" onclick="closeSubPage('ratePage_sub')">←</button>
-        <span class="sub-page-title">⭐ 评价订单</span>
+        <span class="sub-page-title">' + t('rateOrder') + '</span>
       </div>
       <div class="sub-page-body">
         <div class="rate-hero">
@@ -2695,7 +2691,7 @@
         </div>
         <textarea id="rateComment" class="rate-textarea" placeholder="还想说点什么..." oninput="onRateInput()"></textarea>
         <div class="rate-char-count" id="rateCharCount">0 / 200</div>
-        <button onclick="submitRating()" class="od-btn od-btn-primary" style="margin-top:16px">提交评价</button>
+        <button onclick="submitRating()" class="od-btn od-btn-primary" style="margin-top:16px">' + t('teacherReviewSubmit') + '</button>
       </div>
     </div>
 
@@ -2846,19 +2842,19 @@
     <div class="sub-page" id="teacherListPage_sub">
       <div class="sub-page-header" style="background:linear-gradient(135deg,#1565C0,#42A5F5)">
         <button class="sub-page-back" onclick="closeSubPage('teacherListPage_sub')" style="color:#fff">←</button>
-        <span class="sub-page-title" style="color:#fff">📖 师说</span>
+        <span class="sub-page-title" style="color:#fff" data-i18n="teacherPageTitle">📖 师说</span>
       </div>
       <div class="sub-page-body" style="padding:0">
         <!-- 顶部氛围区 -->
         <div class="teacher-hero-banner">
-          <div class="teacher-hero-text">师者，传道授业解惑</div>
-          <div class="teacher-hero-sub">1062位教师 · 11个学院 · 真实评价</div>
+          <div class="teacher-hero-text" data-i18n="teacherHeroText">师者，传道授业解惑</div>
+          <div class="teacher-hero-sub" data-i18n="teacherHeroSub">1062位教师 · 11个学院 · 真实评价</div>
         </div>
         <!-- 搜索栏 -->
         <div style="padding:12px 16px 0">
           <div class="teacher-search-box">
             <span class="teacher-search-icon">🔍</span>
-            <input id="teacherSearchInput" type="text" placeholder="搜索教师姓名、学院、研究方向..." onkeydown="if(event.key==='Enter'){_teacherSearch=this.value;loadTeachers()}">
+            <input id="teacherSearchInput" type="text" placeholder="搜索教师姓名、学院、研究方向..." data-i18n-placeholder="teacherSearchPlaceholder" onkeydown="if(event.key==='Enter'){_teacherSearch=this.value;loadTeachers()}">
             <button class="teacher-search-btn" onclick="_teacherSearch=document.getElementById('teacherSearchInput').value;loadTeachers()">搜索</button>
           </div>
         </div>
@@ -2870,7 +2866,7 @@
         <div id="teacherListContainer" style="padding:8px 16px 16px"></div>
         <!-- 加载更多 -->
         <div style="padding:0 16px 16px">
-          <button id="teacherLoadMore" onclick="_teacherPage++;loadTeachers(false)" style="display:none;width:100%;padding:12px;border-radius:12px;border:1px dashed #90CAF9;background:none;color:#1976D2;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px">📄 加载更多</button>
+          <button id="teacherLoadMore" onclick="_teacherPage++;loadTeachers(false)" style="display:none;width:100%;padding:12px;border-radius:12px;border:1px dashed #90CAF9;background:none;color:#1976D2;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px" data-i18n="teacherLoadMore">📄 加载更多</button>
         </div>
       </div>
     </div>
@@ -2878,7 +2874,7 @@
     <div class="sub-page" id="teacherDetailPage_sub">
       <div class="sub-page-header">
         <button class="sub-page-back" onclick="closeSubPage('teacherDetailPage_sub')">←</button>
-        <span class="sub-page-title" id="teacherDetailTitle">教师详情</span>
+        <span class="sub-page-title" id="teacherDetailTitle" data-i18n="teacherDetail">教师详情</span>
       </div>
       <div class="sub-page-body" style="padding:0">
         <!-- 教师信息头部卡片 -->
@@ -2900,19 +2896,19 @@
     <div class="bottom-nav">
       <div class="nav-item active" onclick="switchPage('home')">
         <span class="nav-icon">🏠</span>
-        <span class="nav-text">首页</span>
+        <span class="nav-text" data-i18n="navHome">首页</span>
       </div>
       <div class="nav-item" onclick="switchPage('wall')">
         <span class="nav-icon">📱</span>
-        <span class="nav-text">校园墙</span>
+        <span class="nav-text" data-i18n="navWall">校园墙</span>
       </div>
       <div class="nav-item" onclick="switchPage('order')">
         <span class="nav-icon">📋</span>
-        <span class="nav-text">订单</span>
+        <span class="nav-text" data-i18n="navOrders">订单</span>
       </div>
       <div class="nav-item" onclick="switchPage('me')">
         <span class="nav-icon">👤</span>
-        <span class="nav-text">我的</span>
+        <span class="nav-text" data-i18n="navMe">我的</span>
       </div>
     </div>
 
@@ -2921,6 +2917,420 @@
   </div>
 
   <script>
+
+    // ═══════════════════════════════════════════════════════
+    // 🌐 国际化 i18n
+    // ═══════════════════════════════════════════════════════
+    const I18N = {
+      zh: {
+        appName: '懒人效率站',
+        campusEdition: '校园版',
+        searchPlaceholder: '搜索服务、订单...',
+        serviceDelivery: '代取外卖',
+        serviceExpress: '代取快递',
+        serviceTeacher: '师说',
+        servicePurchase: '代买东西',
+        serviceLaundry: '代取洗衣',
+        serviceErrand: '跑腿办事',
+        serviceOther: '其他服务',
+        serviceMore: '更多服务',
+        coupons: '优惠券',
+        viewCoupons: '查看可用优惠',
+        myPoints: '我的积分',
+        pointsDesc: '积分可抵现金',
+        navHome: '首页',
+        navWall: '校园墙',
+        navOrders: '订单',
+        navMe: '我的',
+        menuTrades: '我的交易',
+        menuListings: '我的在售',
+        menuMessages: '我的消息',
+        menuAddresses: '常用地址',
+        menuMyCoupons: '我的优惠券',
+        menuPointsDetail: '积分明细',
+        menuSettings: '设置',
+        settingsTitle: '⚙️ 设置',
+        settingsAppearance: '外观',
+        darkMode: '🌙 深色模式',
+        settingsAccount: '账户',
+        phoneLabel: '📱 手机号',
+        languageLabel: '🌐 语言',
+        langZh: '中文',
+        langEn: 'English',
+        logoutBtn: '退出登录',
+        logoutConfirm: '确定退出登录？',
+        versionText: '校园懒人效率站 v3.0',
+        moreServiceSoon: '更多服务开发中...',
+        loginFirst: '请先登录',
+        // ─── 订单页 ───
+        orderPageTitle: '我的订单',
+        orderTabAll: '全部',
+        orderTabPending: '待接单',
+        orderTabRunning: '进行中',
+        orderTabCompleted: '已完成',
+        orderTabCancelled: '已取消',
+        timeAll: '全部时间',
+        timeToday: '今天',
+        timeWeek: '近7天',
+        timeMonth: '近30天',
+        timeCustom: '📅 自定义',
+        timeTo: '至',
+        orderStatusPending: '待接单',
+        orderStatusAccepted: '已接单',
+        orderStatusRunning: '配送中',
+        orderStatusCompleted: '已完成',
+        orderStatusCancelled: '已取消',
+        orderTypeDelivery: '代取外卖',
+        orderTypeExpress: '代取快递',
+        orderTypePurchase: '代买东西',
+        orderTypeLaundry: '代取洗衣',
+        orderTypeErrand: '跑腿办事',
+        orderTypeOther: '其他服务',
+        orderFee: '订单费用',
+        orderDeliveryInfo: '📍 配送信息',
+        orderPickup: '取件',
+        orderDeliverTo: '送达',
+        orderNote: '📝 订单备注',
+        orderNoNote: '' + t('orderNoNote') + '',
+        orderRiderInfo: '🚴 骑手信息',
+        orderTimeInfo: '🕐 时间信息',
+        orderTimeCreated: '下单时间',
+        orderTimeAccepted: '接单时间',
+        orderTimeCompleted: '完成时间',
+        orderRating: '⭐ 订单评价',
+        orderNotFilled: '' + t('orderNotFilled') + '',
+        orderDetail: '📋 订单详情',
+        tipLabel: '🪙 加小费（骑手优先接单）',
+        tipNone: '无小费',
+        contactRider: '' + t('contactRider') + '',
+        rateOrder: '⭐ 评价订单',
+        cancelOrder: '' + t('cancelOrder') + '',
+        requestCancel: '' + t('requestCancel') + '',
+        cancelPending: '' + t('cancelPending') + '',
+        cancelRejected: '' + t('cancelRejected') + '',
+        reapply: '' + t('reapply') + '',
+        requestRefund: '' + t('requestRefund') + '',
+        refundPending: '' + t('refundPending') + '',
+        refundFull: '✅ ' + t('refundFull') + ' ¥',
+        refundPartial: '✅ ' + t('refundPartial') + ' ¥',
+        refundRejected: '' + t('refundRejected') + '',
+        cancelConfirm: t('cancelConfirm'),
+        orderCancelled: t('orderCancelled'),
+        cancelApplied: t('cancelApplied'),
+        cancelReasonPrompt: t('cancelReasonPrompt'),
+        cancelAppliedWaiting: t('cancelAppliedWaiting'),
+        refundReasonPrompt: t('refundReasonPrompt'),
+        refundApplied: t('refundApplied'),
+        cancelFailed: t('cancelFailed'),
+        applyFailed: t('applyFailed'),
+        // ─── 下单子页面 ───
+        serviceDescDelivery: '骑手代取，送达宿舍',
+        serviceDescExpress: '快递代取，送货上门',
+        serviceDescPurchase: '代购生活用品、药品等',
+        serviceDescLaundry: '取送洗衣，方便省心',
+        serviceDescErrand: '万能跑腿，随叫随到',
+        serviceDescOther: '其他个性化需求',
+        pickupLocation: '📦 取货地点',
+        deliveryLocation: '🏠 送达地点',
+        orderDetails: '📝 详细说明',
+        contactPhone: '📱 联系电话',
+        yourPhone: '您的手机号',
+        estimatedFee: '预估费用',
+        submitOrder: '🚀 提交订单',
+        selectAddress: '💡 点击选择常用地址',
+        noTip: '无小费',
+        // ─── 评价弹窗 ───
+        rateVeryBad: '很差',
+        rateBad: '不太好',
+        rateOk: '一般',
+        rateGood: '满意',
+        rateExcellent: '非常满意',
+        rateFast: '配送很快',
+        rateFriendly: '态度友好',
+        rateIntact: '物品完好',
+        rateOnTime: '准时送达',
+        rateSmooth: '沟通顺畅',
+        rateCareful: '包装用心',
+        submitReview: '提交评价',
+        reviewSuccess: '✅ 评价提交成功！',
+        reviewFailed: '评价失败',
+        reviewContentRequired: '请输入评价内容',
+        reviewStarRequired: '请给1-5星评分',
+        // ─── 师说页 ───
+        teacherPageTitle: '📖 师说',
+        teacherHeroText: '师者，传道授业解惑',
+        teacherHeroSub: '1062位教师 · 11个学院 · 真实评价',
+        teacherSearchPlaceholder: '搜索教师姓名、学院、研究方向...',
+        teacherSearchBtn: '搜索',
+        teacherLoadMore: '📄 加载更多',
+        teacherNoData: '👨‍🏫</div>' + t('teacherNoData') + '',
+        teacherDetail: '教师详情',
+        teacherLikes: '点赞',
+        teacherReviews: '评价',
+        teacherRating: t('teacherReviewRating'),
+        teacherEdu: t('teacherEdu'),
+        teacherUndergrad: t('teacherUndergrad'),
+        teacherGrad: t('teacherGrad'),
+        teacherResearch: t('teacherResearch'),
+        teacherCourses: t('teacherCourses'),
+        teacherPapers: t('teacherPapers'),
+        teacherProjects: t('teacherProjects'),
+        teacherSocialRoles: t('teacherSocialRoles'),
+        teacherAchievements: t('teacherAchievements'),
+        teacherBio: t('teacherBio'),
+        teacherNoDetail: '' + t('teacherNoDetail') + '',
+        teacherLike: '点赞',
+        teacherLiked: '已点赞',
+        teacherWriteReview: '写评价',
+        teacherReviewed: '已评价',
+        teacherLikeToday: '' + t('teacherLikeToday') + '',
+        teacherLikeTip: '' + t('teacherLikeTip') + '',
+        teacherReviewToday: '' + t('teacherReviewToday') + '',
+        teacherReviewList: '💬 评价列表',
+        teacherNoReview: '' + t('teacherNoReview') + '',
+        teacherReviewRating: '评分',
+        teacherReviewAnonymous: '🕵 匿名',
+        teacherReviewPublic: '公开',
+        teacherReviewDisplayMethod: t('teacherReviewDisplayMethod'),
+        teacherReviewAnonHint: '' + t('teacherReviewAnonHint') + '',
+        teacherReviewContent: t('teacherReviewContent'),
+        teacherReviewPlaceholder: '' + t('teacherReviewPlaceholder') + '',
+        teacherReviewEmoji: '😊 表情',
+        teacherReviewMedia: '📷 添加图片/视频',
+        teacherReviewSubmit: '提交评价',
+        teacherReviewSuccess: t('teacherReviewSuccess'),
+        teacherLikeFailed: t('teacherLikeFailed'),
+        teacherNotFound: t('teacherNotFound'),
+        teacherLoadFailed: '加载失败',
+        teacherDr: '博士',
+        teacherMs: '硕士',
+        loadFailed: '加载失败',
+        noOrders: '暂无订单',
+      },
+      en: {
+        appName: 'Lazy Station',
+        campusEdition: 'Campus',
+        searchPlaceholder: 'Search services, orders...',
+        serviceDelivery: 'Food Pickup',
+        serviceExpress: 'Parcel Pickup',
+        serviceTeacher: 'Teachers',
+        servicePurchase: 'Shopping',
+        serviceLaundry: 'Laundry',
+        serviceErrand: 'Errands',
+        serviceOther: 'Other',
+        serviceMore: 'More',
+        coupons: 'Coupons',
+        viewCoupons: 'View available',
+        myPoints: 'My Points',
+        pointsDesc: 'Points as cash',
+        navHome: 'Home',
+        navWall: 'Wall',
+        navOrders: 'Orders',
+        navMe: 'Me',
+        menuTrades: 'My Trades',
+        menuListings: 'My Listings',
+        menuMessages: 'Messages',
+        menuAddresses: 'Addresses',
+        menuMyCoupons: 'My Coupons',
+        menuPointsDetail: 'Points',
+        menuSettings: 'Settings',
+        settingsTitle: '⚙️ Settings',
+        settingsAppearance: 'Appearance',
+        darkMode: '🌙 Dark Mode',
+        settingsAccount: 'Account',
+        phoneLabel: '📱 Phone',
+        languageLabel: '🌐 Language',
+        langZh: '中文',
+        langEn: 'English',
+        logoutBtn: 'Log Out',
+        logoutConfirm: 'Are you sure you want to log out?',
+        versionText: 'Campus Lazy Station v3.0',
+        moreServiceSoon: 'More services coming soon...',
+        loginFirst: 'Please log in first',
+        // ─── Order Page ───
+        orderPageTitle: 'My Orders',
+        orderTabAll: 'All',
+        orderTabPending: 'Pending',
+        orderTabRunning: 'In Progress',
+        orderTabCompleted: 'Completed',
+        orderTabCancelled: 'Cancelled',
+        timeAll: 'All Time',
+        timeToday: 'Today',
+        timeWeek: 'Last 7 Days',
+        timeMonth: 'Last 30 Days',
+        timeCustom: '📅 Custom',
+        timeTo: 'to',
+        orderStatusPending: 'Pending',
+        orderStatusAccepted: 'Accepted',
+        orderStatusRunning: 'Delivering',
+        orderStatusCompleted: 'Completed',
+        orderStatusCancelled: 'Cancelled',
+        orderTypeDelivery: 'Food Pickup',
+        orderTypeExpress: 'Parcel Pickup',
+        orderTypePurchase: 'Shopping',
+        orderTypeLaundry: 'Laundry',
+        orderTypeErrand: 'Errands',
+        orderTypeOther: 'Other',
+        orderFee: 'Order Fee',
+        orderDeliveryInfo: '📍 Delivery Info',
+        orderPickup: 'Pickup',
+        orderDeliverTo: 'Deliver to',
+        orderNote: '📝 Order Note',
+        orderNoNote: 'No notes',
+        orderRiderInfo: '🚴 Rider Info',
+        orderTimeInfo: '🕐 Time Info',
+        orderTimeCreated: 'Created',
+        orderTimeAccepted: 'Accepted',
+        orderTimeCompleted: 'Completed',
+        orderRating: '⭐ Order Review',
+        orderNotFilled: 'Not filled',
+        orderDetail: '📋 Order Details',
+        tipLabel: '🪙 Add Tip (Priority Pickup)',
+        tipNone: 'No Tip',
+        contactRider: '💬 Contact Rider',
+        rateOrder: '⭐ Rate Order',
+        cancelOrder: '❌ Cancel Order',
+        requestCancel: '🚫 Request Cancel',
+        cancelPending: '⏳ Cancel request under review...',
+        cancelRejected: '❌ Cancel request rejected',
+        reapply: '🔄 Reapply',
+        requestRefund: '💰 Request Refund',
+        refundPending: '⏳ Refund request under review...',
+        refundFull: '✅ Full refund ¥',
+        refundPartial: '✅ Partial refund ¥',
+        refundRejected: '❌ Refund request rejected',
+        cancelConfirm: 'Are you sure to cancel this order?',
+        orderCancelled: 'Order cancelled',
+        cancelApplied: 'Cancel request submitted',
+        cancelReasonPrompt: 'Please enter cancel reason:',
+        cancelAppliedWaiting: 'Cancel request submitted, waiting for review',
+        refundReasonPrompt: 'Please enter refund reason:',
+        refundApplied: 'Refund request submitted, waiting for admin review',
+        cancelFailed: 'Cancel failed',
+        applyFailed: 'Request failed',
+        // ─── Order Form ───
+        serviceDescDelivery: 'Rider pickup, dorm delivery',
+        serviceDescExpress: 'Parcel pickup, door delivery',
+        serviceDescPurchase: 'Buy daily supplies, medicine, etc.',
+        serviceDescLaundry: 'Laundry pickup & delivery',
+        serviceDescErrand: 'Any errand, anytime',
+        serviceDescOther: 'Other personalized needs',
+        pickupLocation: '📦 Pickup Location',
+        deliveryLocation: '🏠 Delivery Location',
+        orderDetails: '📝 Details',
+        contactPhone: '📱 Contact Phone',
+        yourPhone: 'Your phone number',
+        estimatedFee: 'Estimated Fee',
+        submitOrder: '🚀 Submit Order',
+        selectAddress: '💡 Tap to select saved address',
+        noTip: 'No Tip',
+        // ─── Rating Modal ───
+        rateVeryBad: 'Terrible',
+        rateBad: 'Bad',
+        rateOk: 'OK',
+        rateGood: 'Good',
+        rateExcellent: 'Excellent',
+        rateFast: 'Fast delivery',
+        rateFriendly: 'Friendly',
+        rateIntact: 'Item intact',
+        rateOnTime: 'On time',
+        rateSmooth: 'Smooth communication',
+        rateCareful: 'Careful packaging',
+        submitReview: 'Submit Review',
+        reviewSuccess: '✅ Review submitted!',
+        reviewFailed: 'Review failed',
+        reviewContentRequired: 'Please enter review content',
+        reviewStarRequired: 'Please rate 1-5 stars',
+        // ─── Teachers Page ───
+        teacherPageTitle: '📖 Teachers',
+        teacherHeroText: 'Teachers guide and inspire',
+        teacherHeroSub: '1062 Teachers · 11 Colleges · Real Reviews',
+        teacherSearchPlaceholder: 'Search name, college, research...',
+        teacherSearchBtn: 'Search',
+        teacherLoadMore: '📄 Load More',
+        teacherNoData: '👨‍🏫</div>No teacher data',
+        teacherDetail: 'Teacher Detail',
+        teacherLikes: 'Likes',
+        teacherReviews: 'Reviews',
+        teacherRating: 'Rating',
+        teacherEdu: '🎓 Education',
+        teacherUndergrad: '🎓 Undergrad: ',
+        teacherGrad: '🎓 Graduate: ',
+        teacherResearch: '🔬 Research',
+        teacherCourses: '📖 Courses',
+        teacherPapers: '📄 Papers',
+        teacherProjects: '🔬 Projects',
+        teacherSocialRoles: '🌐 Social Roles',
+        teacherAchievements: '🏆 Achievements',
+        teacherBio: '📝 Bio',
+        teacherNoDetail: 'No detailed info',
+        teacherLike: 'Like',
+        teacherLiked: 'Liked',
+        teacherWriteReview: 'Review',
+        teacherReviewed: 'Reviewed',
+        teacherLikeToday: '✅ Already liked today',
+        teacherLikeTip: '💡 You can like each teacher once per day',
+        teacherReviewToday: '✅ Already reviewed today',
+        teacherReviewList: '💬 Reviews',
+        teacherNoReview: 'No reviews yet. Be the first!',
+        teacherReviewRating: 'Rating',
+        teacherReviewAnonymous: '🕵 Anonymous',
+        teacherReviewPublic: 'Public',
+        teacherReviewDisplayMethod: 'Display as:',
+        teacherReviewAnonHint: 'Anonymous hides your profile',
+        teacherReviewContent: 'Review Content',
+        teacherReviewPlaceholder: 'Share your experience with this teacher...',
+        teacherReviewEmoji: '😊 Emoji',
+        teacherReviewMedia: '📷 Add Photo/Video',
+        teacherReviewSubmit: 'Submit Review',
+        teacherReviewSuccess: '👍 Liked!',
+        teacherLikeFailed: 'Like failed',
+        teacherNotFound: 'Teacher not found',
+        teacherLoadFailed: 'Load failed',
+        teacherDr: 'Ph.D',
+        teacherMs: 'Master',
+        loadFailed: 'Load failed',
+        noOrders: 'No orders',
+      }
+    };
+
+    let _lang = localStorage.getItem('lazyLang') || 'zh';
+    function t(key) { return (I18N[_lang] && I18N[_lang][key]) || (I18N.zh[key]) || key; }
+    function setLang(lang) {
+      _lang = lang;
+      localStorage.setItem('lazyLang', lang);
+      applyLanguage();
+    }
+    function applyLanguage() {
+      document.documentElement.lang = _lang === 'en' ? 'en' : 'zh-CN';
+      // Update all data-i18n elements
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[_lang] && I18N[_lang][key] !== undefined) {
+          el.textContent = I18N[_lang][key];
+        }
+      });
+      // Update placeholders
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (I18N[_lang] && I18N[_lang][key] !== undefined) {
+          el.placeholder = I18N[_lang][key];
+        }
+      });
+      // Update page title
+      document.title = t('appName');
+      // Re-render settings if open
+      const settingsEl = document.getElementById('settingsPage_sub');
+      if (settingsEl && settingsEl.classList.contains('active')) {
+        closeSubPage('settingsPage_sub');
+        setTimeout(() => showSettings(), 200);
+      }
+    }
+    // Apply saved language on load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (_lang !== 'zh') applyLanguage();
+    });
+
     // 全局错误捕获 - 页面右上角显示JS错误
     window.onerror = function(msg, src, line, col, err) {
       console.error('JS Error:', msg, src, line);
@@ -3240,7 +3650,7 @@
         if (item.error) { showToast(item.error); return; }
         renderItemDetail(item);
         openSubPage('itemDetailPage_sub');
-      } catch(e) { showToast('加载失败'); }
+      } catch(e) { showToast(t('teacherLoadFailed')); }
     }
 
     function renderItemDetail(item) {
@@ -4041,7 +4451,7 @@
           <div class="wall-card-header">
             ${avatarHtml}
             <div style="flex:1;min-width:0">
-              <div class="wall-nickname" onclick="showWallUser('${p.phone}')" style="cursor:pointer">${escHtml(p.nickname||'匿名')}</div>
+              <div class="wall-nickname" onclick="showWallUser('${p.phone}')" style="cursor:pointer">${escHtml(p.nickname||t('teacherReviewAnonymous'))}</div>
               <div class="wall-time">${timeAgo(p.created_at)}</div>
             </div>
             ${p.phone !== (currentUser && currentUser.phone) ? '<button onclick="event.stopPropagation();doWallFollowFeed('+p.id+',\''+p.phone+'\',this)" class="wall-follow-btn ' + (p.isFollowing?'followed':'') + '">' + (p.isFollowing?'已关注':'+ 关注') + '</button>' : ''}
@@ -4653,13 +5063,13 @@
       currentService = type;
       currentTip = 0;
       const svc = {
-        delivery:{icon:'🍔',name:'代取外卖',desc:'骑手代取外卖，送达宿舍',price:2,color:'#FFF0EB'},
-        express:{icon:'📦',name:'代取快递',desc:'快递代取，送货上门',price:2,color:'#E3F2FD'},
-        print:{icon:'🖨️',name:'打印复印',desc:'文档打印，快速送达',price:1,color:'#E8F5E9'},
-        purchase:{icon:'🛒',name:'代买物品',desc:'代购生活用品、药品等',price:3,color:'#F3E5F5'},
-        laundry:{icon:'👕',name:'代洗衣物',desc:'取送洗衣，方便省心',price:2,color:'#FFF3E0'},
-        errand:{icon:'🏃',name:'跑腿服务',desc:'万能跑腿，随叫随到',price:5,color:'#E0F7FA'},
-        other:{icon:'✨',name:'其他服务',desc:'其他个性化需求',price:3,color:'#FCE4EC'}
+        delivery:{icon:'🍔',name:t('serviceDelivery'),desc:t('serviceDescDelivery'),price:2,color:'#FFF0EB'},
+        express:{icon:'📦',name:t('serviceExpress'),desc:t('serviceDescExpress'),price:2,color:'#E3F2FD'},
+        print:{icon:'🖨️',name:t('serviceMore'),desc:t('serviceDescOther'),price:1,color:'#E8F5E9'},
+        purchase:{icon:'🛒',name:t('servicePurchase'),desc:t('serviceDescPurchase'),price:3,color:'#F3E5F5'},
+        laundry:{icon:'👕',name:t('serviceLaundry'),desc:t('serviceDescLaundry'),price:2,color:'#FFF3E0'},
+        errand:{icon:'🏃',name:t('serviceErrand'),desc:t('serviceDescErrand'),price:5,color:'#E0F7FA'},
+        other:{icon:'✨',name:t('serviceOther'),desc:t('serviceDescOther'),price:3,color:'#FCE4EC'}
       };
       const s = svc[type] || svc.other;
       document.getElementById('modalTitle').textContent = s.icon + ' ' + s.name;
@@ -4722,10 +5132,10 @@
       const statsEl = document.getElementById('orderStats');
       if (!currentUser) return;
 
-      const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
+      const statusLabel = { pending:t('orderStatusPending'), accepted:t('orderStatusAccepted'), running:t('orderStatusRunning'), completed:t('orderStatusCompleted'), cancelled:t('orderStatusCancelled') };
       const statusColor = { pending:'#F39C12', accepted:'#3498DB', running:'#2ECC71', completed:'#95A5A6', cancelled:'#E74C3C' };
       const typeIcon = { delivery:'🍱', express:'📦', purchase:'🛒', laundry:'👕', errand:'🏃', other:'💡' };
-      const typeLabel = { delivery:'代取外卖', express:'代取快递', purchase:'代买东西', laundry:'代取洗衣', errand:'跑腿办事', other:'其他服务' };
+      const typeLabel = { delivery:t('orderTypeDelivery'), express:t('orderTypeExpress'), purchase:t('orderTypePurchase'), laundry:t('orderTypeLaundry'), errand:t('orderTypeErrand'), other:t('orderTypeOther') };
 
       // 1. 先按状态筛选
       let filtered = orders;
@@ -4746,25 +5156,27 @@
         const running = filtered.filter(o => o.status === 'accepted' || o.status === 'running').length;
         const done = filtered.filter(o => o.status === 'completed').length;
         statsEl.innerHTML = `
-          <div class="order-stat-pill"><div class="stat-num" style="color:var(--primary)">${total}</div><div class="stat-label">总计</div></div>
-          <div class="order-stat-pill"><div class="stat-num" style="color:#F39C12">${pending}</div><div class="stat-label">待接单</div></div>
-          <div class="order-stat-pill"><div class="stat-num" style="color:#2ECC71">${running}</div><div class="stat-label">进行中</div></div>
-          <div class="order-stat-pill"><div class="stat-num" style="color:#95A5A6">${done}</div><div class="stat-label">已完成</div></div>
-          <div class="order-stat-pill"><div class="stat-num" style="color:var(--primary)">¥${totalAmount.toFixed(1)}</div><div class="stat-label">总金额</div></div>
+          <div class="order-stat-pill"><div class="stat-num" style="color:var(--primary)">${total}</div><div class="stat-label">${t('orderTabAll')}</div></div>
+          <div class="order-stat-pill"><div class="stat-num" style="color:#F39C12">${pending}</div><div class="stat-label">${t('orderTabPending')}</div></div>
+          <div class="order-stat-pill"><div class="stat-num" style="color:#2ECC71">${running}</div><div class="stat-label">${t('orderTabRunning')}</div></div>
+          <div class="order-stat-pill"><div class="stat-num" style="color:#95A5A6">${done}</div><div class="stat-label">${t('orderTabCompleted')}</div></div>
+          <div class="order-stat-pill"><div class="stat-num" style="color:var(--primary)">¥${totalAmount.toFixed(1)}</div><div class="stat-label">💰</div></div>
         `;
       }
 
       // 4. 渲染列表
+      const sLabel = { pending:t('orderStatusPending'), accepted:t('orderStatusAccepted'), running:t('orderStatusRunning'), completed:t('orderStatusCompleted'), cancelled:t('orderStatusCancelled') };
+      const tLabel = { delivery:t('orderTypeDelivery'), express:t('orderTypeExpress'), purchase:t('orderTypePurchase'), laundry:t('orderTypeLaundry'), errand:t('orderTypeErrand'), other:t('orderTypeOther') };
       const html = filtered.length ? filtered.map(o => `
         <div class="order-card" onclick="showOrderDetail('${o.order_no||o.id}')" style="padding:12px;border-bottom:1px solid var(--border);cursor:pointer">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <b>${typeIcon[o.type]||'📦'} ${typeLabel[o.type]||o.type}</b>
-            <span style="font-size:12px;padding:4px 8px;border-radius:8px;background:${statusColor[o.status]||'#ddd'};color:white">${statusLabel[o.status]||o.status}</span>
+            <b>${typeIcon[o.type]||'📦'} ${tLabel[o.type]||o.type}</b>
+            <span style="font-size:12px;padding:4px 8px;border-radius:8px;background:${statusColor[o.status]||'#ddd'};color:white">${sLabel[o.status]||o.status}</span>
           </div>
           <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">📍 ${escHtml(o.pickup_location||'')} → 📍 ${escHtml(o.delivery_location||'')}</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${fmtTime(o.created_at)} · ¥${(o.price||0).toFixed(2)}</div>
         </div>
-      `).join('') : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">暂无订单</div></div>`;
+      `).join('') : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">${t('noOrders')}</div></div>`;
 
       if (homeList) homeList.innerHTML = html;
       if (allList) allList.innerHTML = html;
@@ -4776,10 +5188,10 @@
       let o = orders.find(x => (x.order_no || x.id) == id);
       if (!o) { o = await API.getOrder(id); }
       if (!o) return;
-      const statusLabel = { pending:'待接单', accepted:'已接单', running:'配送中', completed:'已完成', cancelled:'已取消' };
+      const statusLabel = { pending:t('orderStatusPending'), accepted:t('orderStatusAccepted'), running:t('orderStatusRunning'), completed:t('orderStatusCompleted'), cancelled:t('orderStatusCancelled') };
       const statusColor = { pending:'#F39C12', accepted:'#3498DB', running:'#2ECC71', completed:'#95A5A6', cancelled:'#E74C3C' };
       const statusIcon = { pending:'⏳', accepted:'👍', running:'🚴', completed:'✅', cancelled:'❌' };
-      const typeLabel = { delivery:'代取外卖', express:'代取快递', purchase:'代买东西', laundry:'代取洗衣', errand:'跑腿办事', other:'其他服务' };
+      const typeLabel = { delivery:t('orderTypeDelivery'), express:t('orderTypeExpress'), purchase:t('orderTypePurchase'), laundry:t('orderTypeLaundry'), errand:t('orderTypeErrand'), other:t('orderTypeOther') };
       const typeIcon = { delivery:'🍱', express:'📦', purchase:'🛒', laundry:'👔', errand:'🏃', other:'📋' };
       const canChat = o.rider_phone && ['accepted','running'].includes(o.status);
       const canCancelDirect = o.status === 'pending'; // 未接单可直接取消
@@ -4799,27 +5211,27 @@
         </div>
         <!-- 费用 -->
         <div class="od-fee-row">
-          <span class="od-fee-label">订单费用</span>
+          <span class="od-fee-label">' + t('orderFee') + '</span>
           <span class="od-fee-amount">¥${(o.price||0).toFixed(2)}${o.tip?' <small style="color:var(--primary)">+小费¥'+o.tip+'</small>':''}</span>
         </div>
         <!-- 地址卡片 -->
         <div class="sp-card">
-          <div class="sp-card-title">📍 配送信息</div>
+          <div class="sp-card-title">' + t('orderDeliveryInfo') + '</div>
           <div class="sp-card-body">
             <div class="od-addr-row">
               <div class="od-addr-dot" style="background:#2ECC71"></div>
-              <div class="od-addr-info"><span class="od-addr-tag">取件</span>${escHtml(o.pickup_location||'未填写')}</div>
+              <div class="od-addr-info">' + t('orderPickup') + '</span>${escHtml(o.pickup_location||'未填写')}</div>
             </div>
             <div class="od-addr-line"></div>
             <div class="od-addr-row">
               <div class="od-addr-dot" style="background:var(--primary)"></div>
-              <div class="od-addr-info"><span class="od-addr-tag">送达</span>${escHtml(o.delivery_location||'未填写')}</div>
+              <div class="od-addr-info">' + t('orderDeliverTo') + '</span>${escHtml(o.delivery_location||'未填写')}</div>
             </div>
           </div>
         </div>
         <!-- 备注 -->
         <div class="sp-card">
-          <div class="sp-card-title">📝 订单备注</div>
+          <div class="sp-card-title">' + t('orderNote') + '</div>
           <div class="sp-card-body">
             <div class="od-note">${escHtml(o.note||'无备注')}</div>
           </div>
@@ -4827,7 +5239,7 @@
         <!-- 骑手信息 -->
         ${o.rider_name ? `
         <div class="sp-card">
-          <div class="sp-card-title">🚴 骑手信息</div>
+          <div class="sp-card-title">' + t('orderRiderInfo') + '</div>
           <div class="sp-card-body">
             <div class="od-rider-row">
               <div class="od-rider-avatar">${o.rider_name.charAt(0)}</div>
@@ -4840,19 +5252,19 @@
         </div>` : ''}
         <!-- 时间线 -->
         <div class="sp-card">
-          <div class="sp-card-title">🕐 时间信息</div>
+          <div class="sp-card-title">' + t('orderTimeInfo') + '</div>
           <div class="sp-card-body">
             <div class="od-timeline">
-              <div class="od-tl-item"><span class="od-tl-dot active"></span><span>下单时间</span><span class="od-tl-time">${o.created_at||'--'}</span></div>
-              ${o.accepted_at ? '<div class="od-tl-item"><span class="od-tl-dot active"></span><span>接单时间</span><span class="od-tl-time">'+o.accepted_at+'</span></div>' : ''}
-              ${o.completed_at ? '<div class="od-tl-item"><span class="od-tl-dot active"></span><span>完成时间</span><span class="od-tl-time">'+o.completed_at+'</span></div>' : ''}
+              <div class="od-tl-item"><span class="od-tl-dot active"></span><span>' + t('orderTimeCreated') + '</span><span class="od-tl-time">${o.created_at||'--'}</span></div>
+              ${o.accepted_at ? '<div class="od-tl-item"><span class="od-tl-dot active"></span><span>' + t('orderTimeAccepted') + '</span><span class="od-tl-time">'+o.accepted_at+'</span></div>' : ''}
+              ${o.completed_at ? '<div class="od-tl-item"><span class="od-tl-dot active"></span><span>' + t('orderTimeCompleted') + '</span><span class="od-tl-time">'+o.completed_at+'</span></div>' : ''}
             </div>
           </div>
         </div>
         <!-- 评分 -->
         ${o.rating_stars ? `
         <div class="sp-card">
-          <div class="sp-card-title">⭐ 订单评价</div>
+          <div class="sp-card-title">' + t('orderRating') + '</div>
           <div class="sp-card-body">
             <div class="od-rating-stars">${'★'.repeat(o.rating_stars)+'☆'.repeat(5-o.rating_stars)}</div>
             ${o.rating_comment ? '<div class="od-note">'+escHtml(o.rating_comment)+'</div>' : ''}
@@ -4929,7 +5341,7 @@
       document.querySelectorAll('.rate-star').forEach((s,i) => s.classList.toggle('active', i < n));
       document.getElementById('starCount').value = n;
       const emoji = ['😡','😟','😐','🙂','😊'][n-1] || '😊';
-      const label = ['很差','不太好','一般','满意','非常满意'][n-1] || '非常满意';
+      const label = [t('rateVeryBad'),t('rateBad'),t('rateOk'),t('rateGood'),t('rateExcellent')][n-1] || t('rateExcellent');
       const emojiEl = document.getElementById('rateEmoji');
       const labelEl = document.getElementById('rateLabel');
       if (emojiEl) { emojiEl.textContent = emoji; emojiEl.classList.remove('bounce'); void emojiEl.offsetWidth; emojiEl.classList.add('bounce'); }
@@ -5120,7 +5532,7 @@
         h += '</div></div>';
         el.querySelector('.sub-page-body').innerHTML = h;
         openSubPage('couponPage_sub');
-      } catch(e) { showToast('加载失败'); }
+      } catch(e) { showToast(t('loadFailed')); }
     }
     async function claimCoupon(id) {
       if (!currentUser) return showToast('请先登录');
@@ -5153,7 +5565,7 @@
         h += '</div></div>';
         el.querySelector('.sub-page-body').innerHTML = h;
         openSubPage('pointsPage_sub');
-      } catch(e) { showToast('加载失败'); }
+      } catch(e) { showToast(t('loadFailed')); }
     }
     async function showAddresses() {
       if (!currentUser) return showToast('请先登录');
@@ -5185,7 +5597,7 @@
         });
         el.querySelector('.sub-page-body').innerHTML = h;
         openSubPage('addrPage_sub');
-      } catch(e) { showToast('加载失败'); }
+      } catch(e) { showToast(t('loadFailed')); }
     }
     async function editAddress(id) {
       let addr = {};
@@ -5233,32 +5645,39 @@
     // ⚙️ 设置
     // ═══════════════════════════════════════════════════════
     function showSettings() {
-      if (!currentUser) return showToast('请先登录');
+      if (!currentUser) return showToast(t('loginFirst'));
       const isDark = document.body.classList.contains('dark');
       let el = document.getElementById('settingsPage_sub');
       if (!el) {
         el = document.createElement('div');
         el.id = 'settingsPage_sub';
         el.className = 'sub-page';
-        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'settingsPage_sub\')">←</button><span class="sub-page-title">⚙️ 设置</span></div><div class="sub-page-body"></div>';
+        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'settingsPage_sub\')">←</button><span class="sub-page-title">' + t('settingsTitle') + '</span></div><div class="sub-page-body"></div>';
         document.body.appendChild(el);
       }
       el.querySelector('.sub-page-body').innerHTML =
         '<div class="settings-section">' +
-        '<div class="settings-section-title">外观</div>' +
+        '<div class="settings-section-title">' + t('settingsAppearance') + '</div>' +
         '<div class="settings-item">' +
-        '<div class="settings-item-left">🌙 深色模式</div>' +
+        '<div class="settings-item-left">' + t('darkMode') + '</div>' +
         '<label class="toggle-switch"><input type="checkbox" id="darkToggle" ' + (isDark ? 'checked' : '') + ' onchange="toggleDark(this.checked)"><span class="toggle-track ' + (isDark?'on':'off') + '"></span><span class="toggle-thumb ' + (isDark?'on':'off') + '"></span></label>' +
+        '</div>' +
+        '<div class="settings-item" style="cursor:pointer" onclick="toggleLanguage()">' +
+        '<div class="settings-item-left">' + t('languageLabel') + '</div>' +
+        '<div class="settings-item-right" style="font-weight:600;color:var(--primary)">' + (_lang === 'zh' ? '中文' : 'English') + ' ›</div>' +
         '</div></div>' +
         '<div class="settings-section">' +
-        '<div class="settings-section-title">账户</div>' +
+        '<div class="settings-section-title">' + t('settingsAccount') + '</div>' +
         '<div class="settings-item">' +
-        '<div class="settings-item-left">📱 手机号</div>' +
+        '<div class="settings-item-left">' + t('phoneLabel') + '</div>' +
         '<div class="settings-item-right">' + escHtml(currentUser.phone) + '</div>' +
         '</div></div>' +
-        '<button class="settings-logout-btn" onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyUser\');location.reload()}">退出登录</button>' +
-        '<div class="settings-version">校园懒人效率站 v3.0</div>';
+        '<button class="settings-logout-btn" onclick="if(confirm(t(\'logoutConfirm\'))){localStorage.removeItem(\'lazyUser\');location.reload()}">' + t('logoutBtn') + '</button>' +
+        '<div class="settings-version">' + t('versionText') + '</div>';
       openSubPage('settingsPage_sub');
+    }
+    function toggleLanguage() {
+      setLang(_lang === 'zh' ? 'en' : 'zh');
     }
     function toggleDark(on) {
       if (on) { document.body.classList.add('dark'); } else { document.body.classList.remove('dark'); }
@@ -5275,7 +5694,7 @@
     async function showUserProfile() {
       if (!currentUser) return showToast('请先登录');
       const u = await API.getUser(currentUser.phone);
-      if (!u) return showToast('加载失败');
+      if (!u) return showToast(t('loadFailed'));
       const avatars = ['\u{1F9A5}','\u{1F431}','\u{1F436}','\u{1F98A}','\u{1F43C}','\u{1F428}','\u{1F984}','\u{1F438}','\u{1F427}','\u{1F98B}','\u{1F338}','\u2B50','\u{1F525}','\u{1F48E}','\u{1F3AD}'];
       const curAvatar = u.avatar || '\u{1F9A5}';
       const isUrl = curAvatar.startsWith('/') || curAvatar.startsWith('http');
@@ -5485,7 +5904,7 @@ async function loadTeachers(reset = true) {
       res.teachers.forEach(t => {
         const ratingClass = t.avg_rating >= 4 ? 'teacher-rating-high' : t.avg_rating >= 3 ? 'teacher-rating-mid' : 'teacher-rating-low';
         const titleTag = t.title ? '<span style="font-size:11px;color:#1976D2;background:#E3F2FD;padding:1px 6px;border-radius:4px;margin-left:6px">' + t.title + '</span>' : '';
-        const gradTag = t.graduate ? '<span style="font-size:10px;color:#7B1FA2;background:#F3E5F5;padding:1px 6px;border-radius:4px;margin-left:4px">' + (t.graduate.includes('博士') ? '博士' : '硕士') + '</span>' : '';
+        const gradTag = t.graduate ? '<span style="font-size:10px;color:#7B1FA2;background:#F3E5F5;padding:1px 6px;border-radius:4px;margin-left:4px">' + (t.graduate.includes('博士') ? t('teacherDr') : t('teacherMs')) + '</span>' : '';
         container.innerHTML += '<div class="teacher-card" onclick="openTeacherDetail(' + t.id + ')">' +
           '<div class="teacher-avatar-lg">' + t.name.charAt(0) + '</div>' +
           '<div class="teacher-info">' +
@@ -5614,12 +6033,12 @@ async function openTeacherDetail(id) {
     
     // 操作区
     const likeDisabled = res.todayLiked ? 'opacity:.5;pointer-events:none' : '';
-    const likeText = res.todayLiked ? '已点赞' : '点赞';
+    const likeText = res.todayLiked ? t('teacherLiked') : t('teacherLike');
     const reviewDisabled = res.todayReviewed ? 'opacity:.5;pointer-events:none' : '';
     document.getElementById('teacherActionArea').innerHTML =
       '<div style="display:flex;gap:12px;justify-content:center">' +
         '<button onclick="likeTeacher(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#E3F2FD;color:#1565C0;font-size:14px;font-weight:600;cursor:pointer;' + likeDisabled + '">👍 ' + likeText + '</button>' +
-        '<button onclick="showTeacherReviewForm(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#FFF8E1;color:#F57F17;font-size:14px;font-weight:600;cursor:pointer;' + reviewDisabled + '">✍️ ' + (res.todayReviewed ? '已评价' : '写评价') + '</button>' +
+        '<button onclick="showTeacherReviewForm(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#FFF8E1;color:#F57F17;font-size:14px;font-weight:600;cursor:pointer;' + reviewDisabled + '">✍️ ' + (res.todayReviewed ? t('teacherReviewed') : t('teacherWriteReview')) + '</button>' +
       '</div>' +
       (res.todayLiked ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">✅ 今天已给这位老师点赞</div>' : '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">💡 每位老师每天可点赞一次</div>') +
       (res.todayReviewed ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">✅ 今天已评价这位老师</div>' : '');
@@ -5666,7 +6085,7 @@ async function openTeacherDetail(id) {
     }
     
     openSubPage('teacherDetailPage_sub');
-  } catch(e) { console.error('openTeacherDetail:', e); showToast('加载失败'); }
+  } catch(e) { console.error('openTeacherDetail:', e); showToast(t('loadFailed')); }
 }
 
 async function likeTeacher(id) {
@@ -5694,7 +6113,7 @@ function showTeacherReviewForm(teacherId) {
   const emojiGrid = emojis.map(e => '<span style="font-size:22px;padding:4px;cursor:pointer" onclick="insertReviewEmoji(\''+e+'\')">'+e+'</span>').join('');
   form.innerHTML = '<div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:500px;padding:20px;max-height:75vh;overflow-y:auto">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
-      '<span style="font-weight:700;font-size:16px">✍️ 写评价</span>' +
+      '<span style="font-weight:700;font-size:16px">' + t('teacherWriteReview') + '</span>' +
       '<button onclick="document.getElementById(\'teacherReviewOverlay\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>' +
     '</div>' +
     '<div style="margin-bottom:12px"><div style="font-size:13px;color:#666;margin-bottom:6px">评分</div>' +
@@ -5709,8 +6128,8 @@ function showTeacherReviewForm(teacherId) {
     // 匿名/公开切换
     '<div style="margin-bottom:12px;display:flex;align-items:center;gap:12px">' +
       '<span style="font-size:13px;color:#666">显示方式：</span>' +
-      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px"><input type="radio" name="reviewAnon" value="0" checked onchange="_reviewAnonymous=false;document.getElementById(\'anonHint\').style.display=\'none\'"> 公开</label>' +
-      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px"><input type="radio" name="reviewAnon" value="1" onchange="_reviewAnonymous=true;document.getElementById(\'anonHint\').style.display=\'block\'"> 🕵 匿名</label>' +
+      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px"><input type="radio" name="reviewAnon" value="0" checked onchange="_reviewAnonymous=false;document.getElementById(\'anonHint\').style.display=\'none\'"> ' + t('teacherReviewPublic') + '</label>' +
+      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px"><input type="radio" name="reviewAnon" value="1" onchange="_reviewAnonymous=true;document.getElementById(\'anonHint\').style.display=\'block\'"> 🕵 ' + t('teacherReviewAnonymous') + '</label>' +
       '<span id="anonHint" style="font-size:11px;color:#F57F17;display:none;margin-left:4px">匿名后他人无法查看你的主页</span>' +
     '</div>' +
     '<div style="margin-bottom:8px"><div style="font-size:13px;color:#666;margin-bottom:6px">评价内容</div>' +
@@ -5719,14 +6138,14 @@ function showTeacherReviewForm(teacherId) {
     '</div>' +
     // Emoji面板
     '<div style="margin-bottom:10px">' +
-      '<button onclick="document.getElementById(\'reviewEmojiPanel\').style.display=document.getElementById(\'reviewEmojiPanel\').style.display===\'none\'?\'block\':\'none\'" style="background:none;border:1px solid #ddd;border-radius:8px;padding:4px 10px;font-size:13px;cursor:pointer">😊 表情</button>' +
+      '<button onclick="document.getElementById(\'reviewEmojiPanel\').style.display=document.getElementById(\'reviewEmojiPanel\').style.display===\'none\'?\'block\':\'none\'" style="background:none;border:1px solid #ddd;border-radius:8px;padding:4px 10px;font-size:13px;cursor:pointer">' + t('teacherReviewEmoji') + '</button>' +
       '<div id="reviewEmojiPanel" style="display:none;margin-top:8px;padding:8px;background:#f9f9f9;border-radius:10px;display:none;flex-wrap:wrap;gap:2px">' + emojiGrid + '</div>' +
     '</div>' +
     // 媒体上传
     '<div style="margin-bottom:12px">' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
         '<label style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;border:1px solid #ddd;cursor:pointer;font-size:13px;color:#666">' +
-          '<input type="file" id="reviewMediaInput" accept="image/*,video/*" multiple style="display:none" onchange="handleReviewMedia(this)"> 📷 添加图片/视频</label>' +
+          '<input type="file" id="reviewMediaInput" accept="image/*,video/*" multiple style="display:none" onchange="handleReviewMedia(this)"> ' + t('teacherReviewMedia') + '</label>' +
         '<span id="reviewMediaCount" style="font-size:11px;color:#999"></span>' +
       '</div>' +
       '<div id="reviewMediaPreview" style="display:flex;flex-wrap:wrap;gap:6px"></div>' +
