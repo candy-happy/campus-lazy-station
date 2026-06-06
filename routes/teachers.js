@@ -147,8 +147,10 @@ router.post('/:id/review', (req, res) => JSON_RES(res, () => {
   }
   
   // 插入评论 + 更新教师评分 (事务)
-  const nickname = req.user.nickname || req.user.name || '匿名';
-  const avatar = req.user.avatar || '';
+  // JWT只有phone，需从数据库获取用户昵称和头像
+  const userInfo = db.prepare('SELECT nickname, name, avatar FROM users WHERE phone = ?').get(phone);
+  const nickname = (userInfo && (userInfo.nickname || userInfo.name)) || '匿名';
+  const avatar = (userInfo && userInfo.avatar) || '';
   const isAnonymous = is_anonymous ? 1 : 0;
   const insertReview = db.prepare('INSERT INTO teacher_reviews (teacher_id, phone, nickname, avatar, rating, content, ai_reviewed, ai_level, is_anonymous, media_url) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)');
   const updateTeacherStats = db.prepare(`UPDATE teachers SET review_count = ?, avg_rating = ?, updated_at = datetime('now','localtime') WHERE id = ?`);
