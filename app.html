@@ -5491,14 +5491,15 @@ async function openTeacherDetail(id) {
     
     // 操作区
     const likeDisabled = res.todayLiked ? 'opacity:.5;pointer-events:none' : '';
+    const likeText = res.todayLiked ? '已点赞' : '点赞';
     const reviewDisabled = res.todayReviewed ? 'opacity:.5;pointer-events:none' : '';
     document.getElementById('teacherActionArea').innerHTML =
       '<div style="display:flex;gap:12px;justify-content:center">' +
-        '<button onclick="likeTeacher(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#E3F2FD;color:#1565C0;font-size:14px;font-weight:600;cursor:pointer;' + likeDisabled + '">👍 ' + (res.todayLiked ? '已点赞' : '点赞') + '</button>' +
+        '<button onclick="likeTeacher(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#E3F2FD;color:#1565C0;font-size:14px;font-weight:600;cursor:pointer;' + likeDisabled + '">👍 ' + likeText + '</button>' +
         '<button onclick="showTeacherReviewForm(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#FFF8E1;color:#F57F17;font-size:14px;font-weight:600;cursor:pointer;' + reviewDisabled + '">✍️ ' + (res.todayReviewed ? '已评价' : '写评价') + '</button>' +
       '</div>' +
-      (res.todayLiked ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">每天可给一位老师点赞</div>' : '') +
-      (res.todayReviewed ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">每天可评价每位老师一次</div>' : '');
+      (res.todayLiked ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">✅ 今天已给这位老师点赞</div>' : '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">💡 每位老师每天可点赞一次</div>') +
+      (res.todayReviewed ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">✅ 今天已评价这位老师</div>' : '');
     
     // 评价列表
     const reviewList = document.getElementById('teacherReviewList');
@@ -5520,6 +5521,7 @@ async function openTeacherDetail(id) {
 }
 
 async function likeTeacher(id) {
+  if (!API._token) return showToast('请先登录');
   try {
     const res = await API.likeTeacher(id);
     if (res.liked) {
@@ -5571,6 +5573,7 @@ function selectTeacherRating(n) {
 }
 
 async function submitTeacherReview(teacherId) {
+  if (!API._token) return showToast('请先登录');
   const content = document.getElementById('teacherReviewContent').value.trim();
   if (!content) return showToast('请输入评价内容');
   try {

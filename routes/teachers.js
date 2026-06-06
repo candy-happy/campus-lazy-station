@@ -78,13 +78,9 @@ router.post('/:id/like', (req, res) => JSON_RES(res, () => {
   const phone = req.user.phone;
   const today = new Date().toISOString().slice(0, 10);
   
-  // 检查今日是否已点赞此教师
+  // 检查今日是否已点赞此教师（每位老师每天限一次）
   const existing = db.prepare('SELECT id FROM teacher_likes WHERE teacher_id = ? AND phone = ? AND like_date = ?').get(req.params.id, phone, today);
   if (existing) return { error: '今天已经给这位老师点过赞了', code: 'LIKE_001' };
-  
-  // 检查今日点赞总数（每位学生每天只能点一个赞）
-  const todayLikeCount = db.prepare('SELECT COUNT(*) as c FROM teacher_likes WHERE phone = ? AND like_date = ?').get(phone, today).c;
-  if (todayLikeCount >= 1) return { error: '每天只能给一位老师点赞哦', code: 'LIKE_002' };
   
   const insertLike = db.prepare('INSERT INTO teacher_likes (teacher_id, phone, like_date) VALUES (?, ?, ?)');
   const updateLikeCount = db.prepare(`UPDATE teachers SET like_count = like_count + 1, updated_at = datetime('now','localtime') WHERE id = ?`);
