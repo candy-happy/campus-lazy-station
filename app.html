@@ -5805,9 +5805,12 @@ const _origOpenSubPage = window.openSubPage;
 if (!_origOpenSubPage.name || _origOpenSubPage.name !== 'teacherOpenSubPage') {
   window.openSubPage = function(id) {
     _origOpenSubPage(id);
-    if (id === 'teacherListPage_sub' && !window._teacherCollegesLoaded) {
-      loadTeacherColleges();
-      window._teacherCollegesLoaded = true;
+    if (id === 'teacherListPage_sub') {
+      if (!window._teacherCollegesLoaded) {
+        loadTeacherColleges();
+        window._teacherCollegesLoaded = true;
+      }
+      loadTeachers(true);
     }
   };
   Object.defineProperty(window.openSubPage, 'name', { value: 'teacherOpenSubPage' });
