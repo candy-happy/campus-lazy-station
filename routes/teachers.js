@@ -87,7 +87,7 @@ router.post('/:id/like', (req, res) => JSON_RES(res, () => {
   if (todayLikeCount >= 1) return { error: '每天只能给一位老师点赞哦', code: 'LIKE_002' };
   
   db.prepare('INSERT INTO teacher_likes (teacher_id, phone, like_date) VALUES (?, ?, ?)').run(req.params.id, phone, today);
-  db.prepare('UPDATE teachers SET like_count = like_count + 1, updated_at = datetime("now","localtime") WHERE id = ?').run(req.params.id);
+  db.prepare(`UPDATE teachers SET like_count = like_count + 1, updated_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
   
   const updated = db.prepare('SELECT like_count FROM teachers WHERE id = ?').get(req.params.id);
   return { liked: true, like_count: updated.like_count };
@@ -133,7 +133,7 @@ router.post('/:id/review', (req, res) => JSON_RES(res, () => {
   
   // 更新教师评分
   const stats = db.prepare('SELECT COUNT(*) as cnt, AVG(rating) as avg FROM teacher_reviews WHERE teacher_id = ?').get(req.params.id);
-  db.prepare('UPDATE teachers SET review_count = ?, avg_rating = ?, updated_at = datetime("now","localtime") WHERE id = ?').run(
+  db.prepare(`UPDATE teachers SET review_count = ?, avg_rating = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(
     stats.cnt, Math.round(stats.avg * 10) / 10, req.params.id
   );
   
@@ -166,7 +166,7 @@ router.delete('/admin/reviews/:id', (req, res) => JSON_RES(res, () => {
   
   // 重新计算教师评分
   const stats = db.prepare('SELECT COUNT(*) as cnt, AVG(rating) as avg FROM teacher_reviews WHERE teacher_id = ?').get(review.teacher_id);
-  db.prepare('UPDATE teachers SET review_count = ?, avg_rating = ?, updated_at = datetime("now","localtime") WHERE id = ?').run(
+  db.prepare(`UPDATE teachers SET review_count = ?, avg_rating = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(
     stats.cnt, stats.cnt > 0 ? Math.round(stats.avg * 10) / 10 : 0, review.teacher_id
   );
   
