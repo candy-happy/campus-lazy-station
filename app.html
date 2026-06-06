@@ -5498,7 +5498,7 @@ async function loadTeachers(reset = true) {
       });
       // 显示/隐藏加载更多
       document.getElementById('teacherLoadMore').style.display = res.page < res.totalPages ? 'block' : 'none';
-      if (reset && res.colleges === undefined) loadTeacherColleges();
+      // 不再在此处重新加载学院标签，避免覆盖用户选中的学院
     } else {
       if (reset) container.innerHTML = '<div style="text-align:center;padding:40px 0;color:#999"><div style="font-size:48px;margin-bottom:12px">👨‍🏫</div>暂无教师数据</div>';
       document.getElementById('teacherLoadMore').style.display = 'none';
