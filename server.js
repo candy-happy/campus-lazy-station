@@ -93,6 +93,9 @@ app.use('/api/market', require('./routes/market'));
 // AI 内容审核
 app.use('/api/ai', require('./routes/ai'));
 
+// 豆包文生图
+app.use('/api/ai/image', require('./routes/doubao'));
+
 // 教师评价
 app.use('/api/teachers', require('./routes/teachers'));
 
