@@ -86,11 +86,15 @@ router.post('/:id/like', (req, res) => JSON_RES(res, () => {
   const todayLikeCount = db.prepare('SELECT COUNT(*) as c FROM teacher_likes WHERE phone = ? AND like_date = ?').get(phone, today).c;
   if (todayLikeCount >= 1) return { error: '每天只能给一位老师点赞哦', code: 'LIKE_002' };
   
-  db.prepare('INSERT INTO teacher_likes (teacher_id, phone, like_date) VALUES (?, ?, ?)').run(req.params.id, phone, today);
-  db.prepare(`UPDATE teachers SET like_count = like_count + 1, updated_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
-  
-  const updated = db.prepare('SELECT like_count FROM teachers WHERE id = ?').get(req.params.id);
-  return { liked: true, like_count: updated.like_count };
+  const insertLike = db.prepare('INSERT INTO teacher_likes (teacher_id, phone, like_date) VALUES (?, ?, ?)');
+  const updateLikeCount = db.prepare(`UPDATE teachers SET like_count = like_count + 1, updated_at = datetime('now','localtime') WHERE id = ?`);
+  const transaction = db.transaction((id, phone, today) => {
+    insertLike.run(id, phone, today);
+    updateLikeCount.run(id);
+    return db.prepare('SELECT like_count FROM teachers WHERE id = ?').get(id).like_count;
+  });
+  const likeCount = transaction(req.params.id, phone, today);
+  return { liked: true, like_count: likeCount };
 }));
 
 // ── 评论教师（每天每位教师限一次，需AI审核） ──────
@@ -124,20 +128,21 @@ router.post('/:id/review', (req, res) => JSON_RES(res, () => {
     console.error('[AI审核] 教师评价审核失败(放行):', e.message);
   }
   
-  // 插入评论
+  // 插入评论 + 更新教师评分 (事务)
   const nickname = req.user.nickname || req.user.name || '匿名';
   const avatar = req.user.avatar || '';
-  db.prepare('INSERT INTO teacher_reviews (teacher_id, phone, nickname, avatar, rating, content, ai_reviewed, ai_level) VALUES (?, ?, ?, ?, ?, ?, 1, ?)').run(
-    req.params.id, phone, nickname, avatar, rating, content.trim(), aiResult.level || 'none'
-  );
+  const insertReview = db.prepare('INSERT INTO teacher_reviews (teacher_id, phone, nickname, avatar, rating, content, ai_reviewed, ai_level) VALUES (?, ?, ?, ?, ?, ?, 1, ?)');
+  const updateTeacherStats = db.prepare(`UPDATE teachers SET review_count = ?, avg_rating = ?, updated_at = datetime('now','localtime') WHERE id = ?`);
+  const reviewTransaction = db.transaction((teacherId, phone, nickname, avatar, rating, content, aiLevel) => {
+    insertReview.run(teacherId, phone, nickname, avatar, rating, content, aiLevel);
+    const stats = db.prepare('SELECT COUNT(*) as cnt, AVG(rating) as avg FROM teacher_reviews WHERE teacher_id = ?').get(teacherId);
+    const avgRating = stats.cnt > 0 ? Math.round(stats.avg * 10) / 10 : 0;
+    updateTeacherStats.run(stats.cnt, avgRating, teacherId);
+    return { review_count: stats.cnt, avg_rating: avgRating };
+  });
+  const result = reviewTransaction(req.params.id, phone, nickname, avatar, rating, content.trim(), aiResult.level || 'none');
   
-  // 更新教师评分
-  const stats = db.prepare('SELECT COUNT(*) as cnt, AVG(rating) as avg FROM teacher_reviews WHERE teacher_id = ?').get(req.params.id);
-  db.prepare(`UPDATE teachers SET review_count = ?, avg_rating = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(
-    stats.cnt, Math.round(stats.avg * 10) / 10, req.params.id
-  );
-  
-  return { reviewed: true, review_count: stats.cnt, avg_rating: Math.round(stats.avg * 10) / 10 };
+  return { reviewed: true, ...result };
 }));
 
 // ── 管理端：获取评价列表 ──────────────────────────────
@@ -162,13 +167,16 @@ router.delete('/admin/reviews/:id', (req, res) => JSON_RES(res, () => {
   const review = db.prepare('SELECT * FROM teacher_reviews WHERE id = ?').get(req.params.id);
   if (!review) return { error: '评价不存在', code: 'REVIEW_005', status: 404 };
   
-  db.prepare('DELETE FROM teacher_reviews WHERE id = ?').run(req.params.id);
-  
-  // 重新计算教师评分
-  const stats = db.prepare('SELECT COUNT(*) as cnt, AVG(rating) as avg FROM teacher_reviews WHERE teacher_id = ?').get(review.teacher_id);
-  db.prepare(`UPDATE teachers SET review_count = ?, avg_rating = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(
-    stats.cnt, stats.cnt > 0 ? Math.round(stats.avg * 10) / 10 : 0, review.teacher_id
-  );
+  // 删除评价 + 重新计算教师评分 (事务)
+  const deleteReview = db.prepare('DELETE FROM teacher_reviews WHERE id = ?');
+  const recalcStats = db.prepare(`UPDATE teachers SET review_count = ?, avg_rating = ?, updated_at = datetime('now','localtime') WHERE id = ?`);
+  const deleteTransaction = db.transaction((reviewId, teacherId) => {
+    deleteReview.run(reviewId);
+    const stats = db.prepare('SELECT COUNT(*) as cnt, AVG(rating) as avg FROM teacher_reviews WHERE teacher_id = ?').get(teacherId);
+    const avgRating = stats.cnt > 0 ? Math.round(stats.avg * 10) / 10 : 0;
+    recalcStats.run(stats.cnt, avgRating, teacherId);
+  });
+  deleteTransaction(req.params.id, review.teacher_id);
   
   return { deleted: true };
 }));
