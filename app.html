@@ -2168,6 +2168,16 @@ body.dark .teacher-card { background:#1e1e1e }
 body.dark .teacher-name { color:#eee }
 body.dark .teacher-meta { color:#888 }
 body.dark .teacher-review-card { background:#1e1e1e }
+body.dark .teacher-info-section { background:#1e1e1e }
+body.dark .teacher-info-title { color:#90CAF9 }
+body.dark .teacher-info-item { color:#ccc }
+body.dark .teacher-course-tag { background:#1a237e;color:#90CAF9 }
+
+/* 教师详情结构化信息 */
+.teacher-info-section { background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06) }
+.teacher-info-title { font-size:14px;font-weight:700;color:#1565C0;margin-bottom:8px;display:flex;align-items:center;gap:6px }
+.teacher-info-item { font-size:13px;color:#444;line-height:1.5;padding:2px 0 }
+.teacher-course-tag { display:inline-block;padding:4px 10px;border-radius:8px;background:#E3F2FD;color:#1565C0;font-size:12px;font-weight:500 }
 
 </style>
 <script src="api.js"></script>
@@ -2847,14 +2857,18 @@ body.dark .teacher-review-card { background:#1e1e1e }
         <button class="sub-page-back" onclick="closeSubPage('teacherDetailPage_sub')">←</button>
         <span class="sub-page-title" id="teacherDetailTitle">教师详情</span>
       </div>
-      <div class="sub-page-body" style="padding:16px">
-        <!-- 教师信息头部 -->
-        <div id="teacherInfoHeader" style="text-align:center;padding:20px 0 16px;border-bottom:1px solid #f0f0f0;margin-bottom:12px"></div>
+      <div class="sub-page-body" style="padding:0">
+        <!-- 教师信息头部卡片 -->
+        <div id="teacherInfoHeader"></div>
+        <!-- 详细信息区块 -->
+        <div id="teacherDetailInfo" style="padding:0 16px"></div>
         <!-- 操作区 -->
-        <div id="teacherActionArea" style="margin-bottom:16px"></div>
+        <div id="teacherActionArea" style="padding:0 16px;margin-bottom:16px"></div>
         <!-- 评价列表 -->
-        <div style="font-size:15px;font-weight:600;margin-bottom:10px">💬 评价列表</div>
-        <div id="teacherReviewList"></div>
+        <div style="padding:0 16px">
+          <div style="font-size:15px;font-weight:600;margin-bottom:10px">💬 评价列表</div>
+          <div id="teacherReviewList"></div>
+        </div>
       </div>
     </div>
 
@@ -5447,7 +5461,8 @@ async function loadTeachers(reset = true) {
           '<div class="teacher-avatar-lg">' + t.name.charAt(0) + '</div>' +
           '<div class="teacher-info">' +
             '<div class="teacher-name">' + t.name + (t.title ? ' · ' + t.title : '') + '</div>' +
-            '<div class="teacher-meta">' + t.college + (t.research ? ' · ' + t.research : '') + '</div>' +
+            '<div class="teacher-meta">' + t.college + '</div>' +
+            (t.research ? '<div class="teacher-meta" style="font-size:11px;color:#888">🔬 ' + t.research.substring(0, 30) + (t.research.length > 30 ? '...' : '') + '</div>' : '') +
             '<div class="teacher-stats">' +
               '<span class="teacher-stat">👍 ' + (t.like_count||0) + '</span>' +
               '<span class="teacher-stat">💬 ' + (t.review_count||0) + '</span>' +
@@ -5474,20 +5489,77 @@ async function openTeacherDetail(id) {
     if (!t) return showToast('教师不存在');
     document.getElementById('teacherDetailTitle').textContent = t.name;
     
-    // 教师信息头部
     const ratingClass = t.avg_rating >= 4 ? 'teacher-rating-high' : t.avg_rating >= 3 ? 'teacher-rating-mid' : 'teacher-rating-low';
+    
+    // ── 教师信息头部卡片（渐变背景） ──
     document.getElementById('teacherInfoHeader').innerHTML =
-      '<div class="teacher-avatar-lg" style="width:72px;height:72px;font-size:30px;margin:0 auto 12px">' + t.name.charAt(0) + '</div>' +
-      '<div style="font-size:20px;font-weight:700;color:#1565C0">' + t.name + '</div>' +
-      '<div style="font-size:14px;color:#666;margin-top:4px">' + t.college + '</div>' +
-      (t.title ? '<div style="font-size:13px;color:#888;margin-top:2px">职称：' + t.title + '</div>' : '') +
-      (t.research ? '<div style="font-size:13px;color:#888;margin-top:2px">研究方向：' + t.research + '</div>' : '') +
-      (t.bio ? '<div style="font-size:13px;color:#888;margin-top:2px">' + t.bio + '</div>' : '') +
-      '<div style="display:flex;gap:16px;justify-content:center;margin-top:12px">' +
-        '<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:#1565C0">' + (t.like_count||0) + '</div><div style="font-size:11px;color:#999">点赞</div></div>' +
-        '<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:#FF9800">' + (t.review_count||0) + '</div><div style="font-size:11px;color:#999">评价</div></div>' +
-        '<div style="text-align:center"><span class="teacher-rating-badge ' + ratingClass + '" style="font-size:18px">⭐ ' + (t.avg_rating||0).toFixed(1) + '</span><div style="font-size:11px;color:#999">平均评分</div></div>' +
+      '<div style="background:linear-gradient(135deg,#1565C0,#42A5F5);padding:24px 16px 20px;color:#fff;text-align:center">' +
+        '<div class="teacher-avatar-lg" style="width:72px;height:72px;font-size:30px;margin:0 auto 10px;background:rgba(255,255,255,.2);color:#fff;border:2px solid rgba(255,255,255,.4)">' + t.name.charAt(0) + '</div>' +
+        '<div style="font-size:20px;font-weight:700">' + t.name + '</div>' +
+        '<div style="font-size:13px;opacity:.85;margin-top:4px">' + t.college + (t.title ? ' · ' + t.title : '') + '</div>' +
+        '<div style="display:flex;gap:20px;justify-content:center;margin-top:14px">' +
+          '<div style="text-align:center"><div style="font-size:20px;font-weight:700">' + (t.like_count||0) + '</div><div style="font-size:10px;opacity:.7">点赞</div></div>' +
+          '<div style="text-align:center"><div style="font-size:20px;font-weight:700">' + (t.review_count||0) + '</div><div style="font-size:10px;opacity:.7">评价</div></div>' +
+          '<div style="text-align:center"><div style="font-size:20px;font-weight:700">⭐ ' + (t.avg_rating||0).toFixed(1) + '</div><div style="font-size:10px;opacity:.7">评分</div></div>' +
+        '</div>' +
       '</div>';
+    
+    // ── 结构化信息区块 ──
+    const infoParts = [];
+    // 学历背景
+    const eduParts = [];
+    if (t.undergraduate) eduParts.push('🎓 本科：' + t.undergraduate);
+    if (t.graduate) eduParts.push('🎓 研究生：' + t.graduate);
+    if (eduParts.length > 0) {
+      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📚 学历背景</div>' +
+        eduParts.map(e => '<div class="teacher-info-item">' + e + '</div>').join('') + '</div>');
+    }
+    // 研究方向
+    if (t.research) {
+      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🔬 研究方向</div>' +
+        '<div class="teacher-info-item">' + t.research + '</div></div>');
+    }
+    // 主讲课程
+    if (t.courses) {
+      const courseList = t.courses.split(/[，,、；;]/).filter(c => c.trim()).map(c => c.replace(/《/g,'').replace(/》/g,'').trim());
+      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📖 主讲课程</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
+          courseList.map(c => '<span class="teacher-course-tag">' + c + '</span>').join('') +
+        '</div></div>');
+    }
+    // 主要成果
+    if (t.achievements) {
+      const achLines = t.achievements.split('\n').filter(l => l.trim());
+      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🏆 主要成果</div>' +
+        achLines.map(a => '<div class="teacher-info-item">• ' + a + '</div>').join('') +
+      '</div>');
+    }
+    // 个人简介（bio中非结构化内容）
+    if (t.bio) {
+      // 移除已展示的字段内容，避免重复
+      let cleanBio = t.bio;
+      // 去掉职称（已在标题展示）
+      cleanBio = cleanBio.replace(/^(教授|副教授|讲师|助教|高级工程师)[。，;]/, '');
+      // 去掉研究方向（已单独展示）
+      cleanBio = cleanBio.replace(/研究方向[：:][^。]+。?/, '');
+      // 去掉主讲课程（已单独展示）
+      cleanBio = cleanBio.replace(/主讲课程[：:][^]+$/, '');
+      // 去掉学历信息
+      cleanBio = cleanBio.replace(/(\d{4}年|年)(博士|硕士)毕业于[^。]+。?/g, '');
+      cleanBio = cleanBio.replace(/(本科|硕士|博士|硕士研究生|博士研究生|大学本科)[。，;]*/g, '');
+      // 去掉邮箱
+      cleanBio = cleanBio.replace(/邮箱[：:]?\s*[^\s，。;]+/g, '');
+      cleanBio = cleanBio.replace(/\S+@\S+\.\S+/g, '');
+      cleanBio = cleanBio.trim();
+      if (cleanBio.length > 5) {
+        infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📝 个人简介</div>' +
+          '<div class="teacher-info-item" style="color:#555;line-height:1.6">' + cleanBio + '</div></div>');
+      }
+    }
+    
+    document.getElementById('teacherDetailInfo').innerHTML = infoParts.length > 0
+      ? infoParts.join('')
+      : '<div style="text-align:center;padding:12px;color:#999;font-size:13px">暂无详细信息</div>';
     
     // 操作区
     const likeDisabled = res.todayLiked ? 'opacity:.5;pointer-events:none' : '';
