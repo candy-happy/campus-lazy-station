@@ -2453,7 +2453,7 @@
 .teacher-course-tag { display:inline-block;padding:4px 10px;border-radius:8px;background:#E3F2FD;color:#1565C0;font-size:12px;font-weight:500 }
 
 </style>
-<script src="api.js?v=3.0.1"></script>
+<script src="api.js?v=3.0.2"></script>
 </head>
 <body>
   <div class="app">
@@ -7003,7 +7003,7 @@ async function showPetDetail(id) {
   // 点赞按钮 + 目击打卡
   infoHtml += '<div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">' +
     '<button id="petLikeBtn" onclick="doPetLike(' + id + ')" style="background:linear-gradient(135deg,#ff9a56,#ff6a88);color:#fff;border:none;border-radius:20px;padding:8px 24px;font-size:14px;font-weight:600;cursor:pointer">❤️ 点赞</button>' +
-    '<button onclick="openSightPage(' + id + ')" style="background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;border:none;border-radius:20px;padding:8px 24px;font-size:14px;font-weight:600;cursor:pointer">📍 我看到了</button>' +
+    '<button id="sightBtn" onclick="openSightPage(' + id + ')" style="background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;border:none;border-radius:20px;padding:8px 24px;font-size:14px;font-weight:600;cursor:pointer;transition:transform 0.15s" ontouchstart="this.style.transform=\'scale(0.95)\'" ontouchend="this.style.transform=\'scale(1)\'">📍 我看到了</button>' +
   '</div>';
 
   document.getElementById('petProfileCard').innerHTML = infoHtml;
@@ -7084,17 +7084,24 @@ function renderPetComments(comments) {
 
 function _phone(){try{const s=JSON.parse(localStorage.getItem('lazy_session')||'{}');return s.phone||''}catch(e){return''}}
 async function doPetLike(id) {
-  if (!API._token) return showToast('请先登录');
+  if (!API._token) { showToast('⚠️ 请先登录'); return; }
   const phone = _phone();
+  if (!phone) { showToast('⚠️ 请重新登录'); return; }
+  const btn = document.getElementById('petLikeBtn');
+  btn.textContent = '⏳...';
   const data = await API.likePet(id, phone);
   if (data.error) return showToast(data.error);
-  const btn = document.getElementById('petLikeBtn');
   btn.textContent = data.liked ? '❤️ 已赞 (' + data.like_count + ')' : '🤍 点赞 (' + data.like_count + ')';
   btn.style.background = data.liked ? 'linear-gradient(135deg,#ff6a88,#ff4466)' : 'linear-gradient(135deg,#ff9a56,#ff6a88)';
 }
 
 async function openSightPage(id) {
-  if (!API._token) return showToast('请先登录');
+  console.log('[DEBUG] openSightPage called, id=', id, 'token=', !!API._token, '_currentPet=', !!window._currentPet);
+  // 清理旧的打卡子页面（防止重复创建）
+  const oldPage = document.getElementById('sightPage_sub');
+  if (oldPage) oldPage.remove();
+  if (!API._token) { showToast('⚠️ 请先登录'); return; }
+  showToast('📍 正在打开打卡页面...');
   const pet = window._currentPet || {};
   const html = `<div class="sub-page" id="sightPage_sub" style="position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f5f5;z-index:2000;overflow-y:auto">
     <div style="position:sticky;top:0;background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;padding:16px;display:flex;align-items:center;gap:12px;z-index:1">
@@ -7138,6 +7145,7 @@ async function openSightPage(id) {
     </div>
   </div>`;
   document.body.insertAdjacentHTML('beforeend', html);
+  console.log('[DEBUG] sightPage_sub inserted, element exists:', !!document.getElementById('sightPage_sub'));
 }
 
 function closeSightPage() {
