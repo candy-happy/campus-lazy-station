@@ -164,6 +164,20 @@ router.get('/detail/:id', (req, res) => JSON_RES(res, () => {
     }
   }
 
+  // 检查当前用户是否已点赞
+  let userLiked = false;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const { verifyToken } = require('../utils/jwt');
+      const decoded = verifyToken(authHeader.slice(7));
+      if (decoded && decoded.phone) {
+        const likeRow = db.prepare('SELECT id FROM pet_likes WHERE pet_id = ? AND phone = ?').get(req.params.id, decoded.phone);
+        userLiked = !!likeRow;
+      }
+    } catch (e) { /* token无效忽略 */ }
+  }
+
   return {
     ...pet,
     tags: pet.tags ? pet.tags.split(',').filter(Boolean) : [],
@@ -171,6 +185,7 @@ router.get('/detail/:id', (req, res) => JSON_RES(res, () => {
     avatar: pet.avatar || (pet.species === 'cat' ? '🐱' : '🐶'),
     daysSinceSeen: pet.last_seen_at ? Math.floor((Date.now() - new Date(pet.last_seen_at).getTime()) / (1000*60*60*24)) : null,
     alert_level: pet.alert_level || 'none',
+    userLiked,
     comments: enrichedComments,
     relatedPosts
   };
