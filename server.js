@@ -99,6 +99,9 @@ app.use('/api/ai/image', require('./routes/doubao'));
 // 教师评价
 app.use('/api/teachers', require('./routes/teachers'));
 
+// 猫狗日记
+app.use('/api/pets', require('./routes/pets'));
+
 // ─── 404 处理 ────────────────────────────────────────────
 app.use('/api', (req, res) => {
   res.status(404).json({ error: '接口不存在', code: 'SYS_004' });

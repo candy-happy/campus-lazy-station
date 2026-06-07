@@ -368,6 +368,13 @@ const API = {
   async reviewTeacher(id, rating, content, isAnonymous, mediaUrl) { return fetch('/api/teachers/' + id + '/review', { method: 'POST', headers: this._headers(), body: JSON.stringify({ rating, content, is_anonymous: isAnonymous || 0, media_url: mediaUrl || '' }) }).then(r => r.json()); },
   async getHotTeachers() { return fetch('/api/teachers/hot', { headers: this._headers() }).then(r => r.json()); },
 
+  // ─── 猫狗日记 ───
+  async getPets(species = '') { return fetch('/api/pets/list' + (species ? '?species=' + species : ''), { headers: this._headers() }).then(r => r.json()); },
+  async getPetDetail(id) { return fetch('/api/pets/detail/' + id, { headers: this._headers() }).then(r => r.json()); },
+  async likePet(id, phone) { return fetch('/api/pets/like/' + id, { method: 'POST', headers: { ...this._headers(), 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) }).then(r => r.json()); },
+  async commentPet(id, data) { return fetch('/api/pets/comment/' + id, { method: 'POST', body: data }).then(r => r.json()); },
+  async deletePetComment(commentId, phone) { return fetch('/api/pets/comment/' + commentId, { method: 'DELETE', headers: { ...this._headers(), 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) }).then(r => r.json()); },
+
   // ─── 会话恢复 ───
   restoreSession() {
     try {
