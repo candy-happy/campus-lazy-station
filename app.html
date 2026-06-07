@@ -2453,7 +2453,7 @@
 .teacher-course-tag { display:inline-block;padding:4px 10px;border-radius:8px;background:#E3F2FD;color:#1565C0;font-size:12px;font-weight:500 }
 
 </style>
-<script src="api.js?v=3.0.6"></script>
+<script src="api.js?v=3.0.7"></script>
 </head>
 <body>
   <div class="app">
@@ -7187,6 +7187,7 @@ async function openSightPage(id) {
   wrap.appendChild(body);
   document.body.appendChild(wrap);
   console.log('[DEBUG] sightPage_sub created, childCount:', wrap.childNodes.length, 'body childCount:', wrap.lastChild.childNodes.length);
+  alert('[DEBUG] 页面已创建! 子元素数=' + wrap.childNodes.length + ', body子元素=' + wrap.lastChild.childNodes.length);
 }
 
 function makeCard(html) {
