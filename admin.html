@@ -2565,9 +2565,10 @@
         var nickname = esc(s.user_nickname || s.nickname || s.phone);
         var loc = s.location ? ' <span style="color:#999;font-size:0.8rem">\u{1F4CD} ' + esc(s.location) + '</span>' : '';
         var note = s.note ? '<div style="margin-top:4px;color:#555;font-size:0.85rem">' + esc(s.note) + '</div>' : '';
+        var photoHtml = s.photo ? '<div style="margin-top:8px"><img src="' + esc(s.photo) + '" style="max-width:120px;max-height:90px;border-radius:8px;object-fit:cover;cursor:pointer" onclick="window.open(this.src)"></div>' : '';
         return '<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0">' +
           '<div>' + avatarHtml + '</div>' +
-          '<div style="flex:1"><div><strong>' + nickname + '</strong>' + loc + '</div>' + note +
+          '<div style="flex:1"><div><strong>' + nickname + '</strong>' + loc + '</div>' + note + photoHtml +
           '<div style="margin-top:4px;font-size:0.75rem;color:#aaa">' + timeAgoAdmin(s.created_at) + '</div></div></div>';
       }).join('');
       document.getElementById('sightingsContent').innerHTML = html;

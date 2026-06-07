@@ -330,21 +330,33 @@ router.get('/sightings/:id', (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 目击打卡：用户看到猫狗时记录 ──────────────────────
-router.post('/sight/:id', requireAuth, (req, res) => JSON_RES(res, () => {
+router.post('/sight/:id', requireAuth, upload.single('photo'), (req, res) => JSON_RES(res, () => {
   const { phone, location, note } = req.body;
   if (!phone) return makeError('请先登录', ErrorCode.AUTH_001, 401);
+  if (!location || !location.trim()) return makeError('请填写目击地点', ErrorCode.PARAM_INVALID, 400);
   const pet = db.prepare('SELECT * FROM pets WHERE id = ?').get(req.params.id);
   if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
 
+  // 照片是必须的
+  let photo = '';
+  if (req.file) {
+    photo = '/uploads/pets/' + req.file.filename;
+  } else {
+    return makeError('请上传目击照片', ErrorCode.PARAM_INVALID, 400);
+  }
+
   // 获取用户昵称
   let nickname = '';
-  const user = db.prepare('SELECT nickname FROM users WHERE phone = ?').get(phone)
-    || db.prepare('SELECT nickname FROM riders WHERE phone = ?').get(phone);
+  const user = db.prepare('SELECT nickname FROM users WHERE phone = ?').get(phone);
   if (user && user.nickname) nickname = user.nickname;
+  else {
+    const rider = db.prepare('SELECT name FROM riders WHERE phone = ?').get(phone);
+    if (rider && rider.name) nickname = rider.name;
+  }
 
   // 写入目击记录（待审核），不立即更新last_seen_at
-  const result = db.prepare(`INSERT INTO pet_sightings (pet_id, phone, nickname, location, note, status) VALUES (?, ?, ?, ?, ?, 'pending')`)
-    .run(req.params.id, phone, nickname, location || '', note || '');
+  const result = db.prepare(`INSERT INTO pet_sightings (pet_id, phone, nickname, location, note, photo, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')`)
+    .run(req.params.id, phone, nickname, location.trim(), note || '', photo);
 
   return { message: '打卡成功，等待管理端审核确认', sighting_id: result.lastInsertRowid };
 }));
