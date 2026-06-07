@@ -1132,6 +1132,101 @@
     .sub-empty-text { font-size: 14px; }
 
     /* ═══════════════════════════════════════════════════════
+       👥 关注/粉丝列表美化
+    ═══════════════════════════════════════════════════════ */
+    .follow-list-hero {
+      text-align: center;
+      padding: 32px 20px 20px;
+      background: linear-gradient(135deg, var(--primary), #FF8E53);
+      color: #fff;
+    }
+    .follow-list-hero-icon { font-size: 36px; display: block; margin-bottom: 8px; }
+    .follow-list-hero-title { font-size: 18px; font-weight: 800; }
+    .follow-list-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      background: var(--card);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      animation: followListSlideIn 0.3s ease both;
+    }
+    .follow-list-item:active { transform: scale(0.98); }
+    @keyframes followListSlideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .follow-list-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-right: 14px;
+      flex-shrink: 0;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .follow-list-info { flex: 1; min-width: 0; }
+    .follow-list-name {
+      font-weight: 700; font-size: 15px;
+      color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .follow-list-mutual {
+      display: inline-block;
+      font-size: 11px; font-weight: 600;
+      color: var(--primary);
+      background: rgba(255,107,53,0.1);
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 4px;
+    }
+    .follow-list-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .follow-list-btn-follow {
+      border: none;
+      background: linear-gradient(135deg, var(--primary), #FF8E53);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+    }
+    .follow-list-btn-followed {
+      border: 1px solid var(--border,#ddd);
+      background: transparent;
+      color: var(--text-secondary);
+    }
+    .follow-list-badge {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .follow-list-badge-self {
+      background: rgba(0,0,0,0.05);
+      color: var(--text-secondary);
+    }
+    .follow-list-spinner {
+      width: 24px; height: 24px;
+      border: 3px solid rgba(255,107,53,0.2);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    body.dark .follow-list-hero { background: linear-gradient(135deg, #FF8E53, #c0392b); }
+    body.dark .follow-list-mutual { background: rgba(255,165,0,0.15); }
+    body.dark .follow-list-badge-self { background: rgba(255,255,255,0.08); }
+
+    /* ═══════════════════════════════════════════════════════
        📋 订单详情美化
     ═══════════════════════════════════════════════════════ */
     .od-status-hero {
@@ -1683,6 +1778,7 @@
     .me-stat-num.primary { color: var(--primary); }
     .me-stat-num.warning { color: var(--warning); }
     .me-stat-num.secondary { color: var(--secondary); }
+    .me-stat-num.danger { color: #E74C3C; }
     .me-stat-label {
       font-size: 12px;
       color: var(--text-secondary);
@@ -2508,17 +2604,21 @@
         </div>
         
         <div class="me-stats-bar">
-          <div class="me-stat-item" onclick="switchPage('order')">
-            <div class="me-stat-num primary" id="totalOrders">0</div>
-            <div class="me-stat-label">总订单</div>
+          <div class="me-stat-item" onclick="showFollowList(currentUser.phone,'followers')">
+            <div class="me-stat-num primary" id="meFollowers">0</div>
+            <div class="me-stat-label" data-i18n="meFollowers">粉丝</div>
           </div>
-          <div class="me-stat-item" onclick="showPoints()">
-            <div class="me-stat-num warning" id="totalPoints">168</div>
-            <div class="me-stat-label">积分</div>
+          <div class="me-stat-item" onclick="showFollowList(currentUser.phone,'following')">
+            <div class="me-stat-num warning" id="meFollowing">0</div>
+            <div class="me-stat-label" data-i18n="meFollowing">关注</div>
           </div>
-          <div class="me-stat-item" onclick="showCoupons()">
-            <div class="me-stat-num secondary" id="totalCoupons">2</div>
-            <div class="me-stat-label" data-i18n="coupons">优惠券</div>
+          <div class="me-stat-item" onclick="showMyWallLikes()">
+            <div class="me-stat-num secondary" id="meWallLikes">0</div>
+            <div class="me-stat-label" data-i18n="meWallLikes">获赞</div>
+          </div>
+          <div class="me-stat-item" onclick="showMyViewers()">
+            <div class="me-stat-num danger" id="meViews">0</div>
+            <div class="me-stat-label" data-i18n="meViews">浏览</div>
           </div>
         </div>
 
@@ -2542,16 +2642,6 @@
           <div class="me-menu-item" onclick="showAddresses()">
             <span class="me-menu-icon">📍</span>
             <span class="me-menu-text" data-i18n="menuAddresses">常用地址</span>
-            <span class="me-menu-arrow">›</span>
-          </div>
-          <div class="me-menu-item" onclick="showCoupons()">
-            <span class="me-menu-icon">🎫</span>
-            <span class="me-menu-text" data-i18n="menuMyCoupons">我的优惠券</span>
-            <span class="me-menu-arrow">›</span>
-          </div>
-          <div class="me-menu-item" onclick="showPoints()">
-            <span class="me-menu-icon">⭐</span>
-            <span class="me-menu-text" data-i18n="menuPointsDetail">积分明细</span>
             <span class="me-menu-arrow">›</span>
           </div>
           <div class="me-menu-item" onclick="showSettings()">
@@ -3058,6 +3148,14 @@
         menuMyCoupons: '我的优惠券',
         menuPointsDetail: '积分明细',
         menuSettings: '设置',
+        meFollowers: '粉丝',
+        meFollowing: '关注',
+        meWallLikes: '获赞',
+        meViews: '浏览',
+        myViewers: '浏览者',
+        myLikes: '获赞详情',
+        noViewers: '暂无浏览者',
+        noPosts: '暂无帖子',
         settingsTitle: '⚙️ 设置',
         settingsAppearance: '外观',
         darkMode: '🌙 深色模式',
@@ -3243,6 +3341,14 @@
         menuMyCoupons: 'My Coupons',
         menuPointsDetail: 'Points',
         menuSettings: 'Settings',
+        meFollowers: 'Followers',
+        meFollowing: 'Following',
+        meWallLikes: 'Likes',
+        meViews: 'Views',
+        myViewers: 'Viewers',
+        myLikes: 'Likes Detail',
+        noViewers: 'No viewers yet',
+        noPosts: 'No posts yet',
         settingsTitle: '⚙️ Settings',
         settingsAppearance: 'Appearance',
         darkMode: '🌙 Dark Mode',
@@ -4977,6 +5083,7 @@
     async function showFollowList(phone, type) {
       const isMe = phone === currentUser.phone;
       const title = type === 'followers' ? (isMe ? '我的粉丝' : 'TA的粉丝') : (isMe ? '我的关注' : 'TA的关注');
+      const heroIcon = type === 'followers' ? '👥' : '👁';
       let el = document.getElementById('followListPage_sub');
       if (!el) {
         el = document.createElement('div');
@@ -4984,35 +5091,44 @@
         el.className = 'sub-page';
         document.body.appendChild(el);
       }
-      el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'followListPage_sub\')">←</button><span class="sub-page-title">' + title + '</span></div><div class="sub-page-body" style="padding:12px"><div style="text-align:center;padding:20px;color:var(--text-secondary)">加载中...</div></div>';
+      el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'followListPage_sub\')">←</button><span class="sub-page-title">' + title + '</span></div>' +
+        '<div class="sub-page-body" style="padding:0">' +
+        '<div class="follow-list-hero"><span class="follow-list-hero-icon">' + heroIcon + '</span><div class="follow-list-hero-title">' + title + '</div></div>' +
+        '<div id="followListContent" style="padding:8px 12px"><div style="text-align:center;padding:24px;color:var(--text-secondary)"><div class="follow-list-spinner"></div><div style="margin-top:8px;font-size:13px">加载中...</div></div></div></div>';
       openSubPage('followListPage_sub');
 
       const list = type === 'followers' ? await API.wallFollowers(phone) : await API.wallFollowing(phone);
+      const container = document.getElementById('followListContent');
       if (list.error) {
-        el.querySelector('.sub-page-body').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary)">' + escHtml(list.error) + '</div>';
+        container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">😕</div><div class="sub-empty-text">' + escHtml(list.error) + '</div></div>';
         return;
       }
       if (!list.length) {
-        el.querySelector('.sub-page-body').innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:48px;margin-bottom:12px">📭</div><div style="color:var(--text-secondary)">暂无' + (type === 'followers' ? '粉丝' : '关注') + '</div></div>';
+        container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">📭</div><div class="sub-empty-text">暂无' + (type === 'followers' ? '粉丝' : '关注') + '</div></div>';
         return;
       }
-      el.querySelector('.sub-page-body').innerHTML = list.map(u => {
+      container.innerHTML = list.map((u, i) => {
         const avatarHtml = u.avatar && (u.avatar.startsWith('/') || u.avatar.startsWith('http'))
           ? '<img src="'+escHtml(u.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />'
-          : '<span style="font-size:18px">'+((u.nickname||'匿')[0])+'</span>';
+          : '<span style="font-size:16px;color:#fff">'+((u.nickname||'匿')[0])+'</span>';
         const isSelf = u.phone === currentUser.phone;
-        const iFollowThem = type === 'followers' ? u.isFollowing : true; // following列表里都是我关注的人
-        const followBtn = isSelf ? '' : (iFollowThem
-          ? '<button onclick="toggleFollowFromList(\''+u.phone+'\',this)" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border,#ddd);background:transparent;font-size:12px;color:var(--text-secondary)">已关注</button>'
-          : '<button onclick="toggleFollowFromList(\''+u.phone+'\',this)" style="padding:5px 12px;border-radius:6px;border:none;background:var(--primary);color:#fff;font-size:12px">+ 关注</button>'
+        const iFollowThem = type === 'followers' ? u.isFollowing : true;
+        const followBtn = isSelf ? '<span class="follow-list-badge follow-list-badge-self">自己</span>' : (iFollowThem
+          ? '<button onclick="toggleFollowFromList(\''+u.phone+'\',this)" class="follow-list-btn follow-list-btn-followed">已关注</button>'
+          : '<button onclick="toggleFollowFromList(\''+u.phone+'\',this)" class="follow-list-btn follow-list-btn-follow">+ 关注</button>'
         );
-        return '<div style="display:flex;align-items:center;padding:12px;border-bottom:1px solid var(--border,#eee)">' +
-          '<div style="width:40px;height:40px;border-radius:50%;background:var(--card-alt,#f0f0f0);display:flex;align-items:center;justify-content:center;cursor:pointer;margin-right:12px;overflow:hidden" onclick="closeSubPage(\'followListPage_sub\');closeSubPage(\'wallDetailPage_sub\');setTimeout(()=>showWallUser(\''+u.phone+'\'),100)">' + avatarHtml + '</div>' +
-          '<div style="flex:1;cursor:pointer" onclick="closeSubPage(\'followListPage_sub\');closeSubPage(\'wallDetailPage_sub\');setTimeout(()=>showWallUser(\''+u.phone+'\'),100)">' +
-          '<div style="font-weight:600;font-size:14px">' + escHtml(u.nickname) + '</div>' +
+        return '<div class="follow-list-item" style="animation-delay:' + (i*0.04) + 's" onclick="closeSubPage(\'followListPage_sub\');closeSubPage(\'wallDetailPage_sub\');setTimeout(()=>showWallUser(\''+u.phone+'\'),100)">' +
+          '<div class="follow-list-avatar" style="background:linear-gradient(135deg,' + _avatarColor(i) + ')">' + avatarHtml + '</div>' +
+          '<div class="follow-list-info"><div class="follow-list-name">' + escHtml(u.nickname) + '</div>' +
+          (type === 'followers' && u.isFollowing ? '<span class="follow-list-mutual">互相关注</span>' : '') +
           '</div>' + followBtn +
           '</div>';
       }).join('');
+    }
+
+    function _avatarColor(i) {
+      const colors = ['#FF6B6B,#FF8E8E','#4ECDC4,#6EE7DE','#45B7D1,#6DD5ED','#F7DC6F,#F9E894','#BB8FCE,#D2B4E0','#E59866,#F0B27A','#58D68D,#82E0AA','#5DADE2,#85C1E9'];
+      return colors[i % colors.length];
     }
 
     // 从粉丝列表关注/取消关注
@@ -5020,11 +5136,108 @@
       if (!currentUser) return showLoginPage();
       const res = await API.wallFollow(currentUser.phone, phone);
       if (res.error) return showToast(res.error);
-      btn.textContent = res.following ? '已关注' : '+ 关注';
-      btn.style.background = res.following ? 'transparent' : 'var(--primary)';
-      btn.style.color = res.following ? 'var(--text-secondary)' : '#fff';
-      btn.style.border = res.following ? '1px solid var(--border,#ddd)' : 'none';
+      if (res.following) {
+        btn.textContent = '已关注';
+        btn.className = 'follow-list-btn follow-list-btn-followed';
+      } else {
+        btn.textContent = '+ 关注';
+        btn.className = 'follow-list-btn follow-list-btn-follow';
+      }
       showToast(res.following ? '已关注' : '已取消关注');
+    }
+
+    // ─── 我的浏览者列表 ────
+    async function showMyViewers() {
+      if (!currentUser) return showLoginPage();
+      let el = document.getElementById('viewerListPage_sub');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'viewerListPage_sub';
+        el.className = 'sub-page';
+        document.body.appendChild(el);
+      }
+      el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'viewerListPage_sub\')">←</button><span class="sub-page-title" data-i18n="myViewers">浏览者</span></div>' +
+        '<div class="sub-page-body" style="padding:0">' +
+        '<div class="follow-list-hero"><span class="follow-list-hero-icon">👁</span><div class="follow-list-hero-title" data-i18n="myViewers">浏览者</div></div>' +
+        '<div id="viewerListContent" style="padding:8px 12px"><div style="text-align:center;padding:24px;color:var(--text-secondary)"><div class="follow-list-spinner"></div><div style="margin-top:8px;font-size:13px">加载中...</div></div></div></div>';
+      openSubPage('viewerListPage_sub');
+      try {
+        const list = await API.wallMyViewers(currentUser.phone);
+        const container = document.getElementById('viewerListContent');
+        if (list.error) {
+          container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">😕</div><div class="sub-empty-text">' + escHtml(list.error) + '</div></div>';
+          return;
+        }
+        if (!list.length) {
+          container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">📭</div><div class="sub-empty-text" data-i18n="noViewers">暂无浏览者</div></div>';
+          return;
+        }
+        container.innerHTML = list.map((u, i) => {
+          const avatarHtml = u.avatar && (u.avatar.startsWith('/') || u.avatar.startsWith('http'))
+            ? '<img src="'+escHtml(u.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />'
+            : '<span style="font-size:16px;color:#fff">'+((u.nickname||'匿')[0])+'</span>';
+          const isSelf = u.phone === currentUser.phone;
+          const followBtn = isSelf ? '<span class="follow-list-badge follow-list-badge-self">自己</span>' : (u.isFollowing
+            ? '<button onclick="event.stopPropagation();toggleFollowFromList(\''+u.phone+'\',this)" class="follow-list-btn follow-list-btn-followed">已关注</button>'
+            : '<button onclick="event.stopPropagation();toggleFollowFromList(\''+u.phone+'\',this)" class="follow-list-btn follow-list-btn-follow">+ 关注</button>'
+          );
+          const viewTag = '<span style="font-size:11px;color:var(--text-secondary);background:var(--bg);padding:2px 6px;border-radius:10px">浏览' + u.viewCount + '篇</span>';
+          return '<div class="follow-list-item" style="animation-delay:' + (i*0.04) + 's" onclick="closeSubPage(\'viewerListPage_sub\');setTimeout(()=>showWallUser(\''+u.phone+'\'),100)">' +
+            '<div class="follow-list-avatar" style="background:linear-gradient(135deg,' + _avatarColor(i) + ')">' + avatarHtml + '</div>' +
+            '<div class="follow-list-info"><div class="follow-list-name">' + escHtml(u.nickname) + '</div>' + viewTag + '</div>' + followBtn +
+            '</div>';
+        }).join('');
+      } catch(e) {
+        const container = document.getElementById('viewerListContent');
+        if (container) container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">😕</div><div class="sub-empty-text">加载失败</div></div>';
+      }
+    }
+
+    // ─── 我的获赞详情 ────
+    async function showMyWallLikes() {
+      if (!currentUser) return showLoginPage();
+      let el = document.getElementById('myLikesPage_sub');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'myLikesPage_sub';
+        el.className = 'sub-page';
+        document.body.appendChild(el);
+      }
+      el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'myLikesPage_sub\')">←</button><span class="sub-page-title" data-i18n="myLikes">获赞详情</span></div>' +
+        '<div class="sub-page-body" style="padding:0">' +
+        '<div class="follow-list-hero"><span class="follow-list-hero-icon">❤️</span><div class="follow-list-hero-title" data-i18n="myLikes">获赞详情</div></div>' +
+        '<div id="myLikesContent" style="padding:8px 12px"><div style="text-align:center;padding:24px;color:var(--text-secondary)"><div class="follow-list-spinner"></div><div style="margin-top:8px;font-size:13px">加载中...</div></div></div></div>';
+      openSubPage('myLikesPage_sub');
+      try {
+        // 获取我的帖子和每篇的赞数
+        const res = await fetch('/api/wall/user/' + currentUser.phone, { headers: API._headers() }).then(r => r.json());
+        const posts = res.posts || [];
+        const container = document.getElementById('myLikesContent');
+        if (!posts.length) {
+          container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">📝</div><div class="sub-empty-text" data-i18n="noPosts">暂无帖子</div></div>';
+          return;
+        }
+        // 按点赞数排序
+        posts.sort((a, b) => (b.like_count || 0) - (a.like_count || 0));
+        container.innerHTML = posts.map((p, i) => {
+          const preview = (p.content || '').slice(0, 40);
+          const imgHtml = p.images && p.images.length ? '<img src="' + escHtml(p.images[0]) + '" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0" />' : '';
+          const likeNum = p.like_count || 0;
+          const commentNum = p.comment_count || 0;
+          return '<div class="follow-list-item" style="animation-delay:' + (i*0.04) + 's;align-items:flex-start;gap:10px" onclick="closeSubPage(\'myLikesPage_sub\');setTimeout(()=>showWallDetail(\''+p.id+'\'),100)">' +
+            (imgHtml || '<div style="width:44px;height:44px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">📄</div>') +
+            '<div style="flex:1;min-width:0">' +
+            '<div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(preview || '(无内容)') + '</div>' +
+            '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px;display:flex;gap:12px">' +
+            '<span>❤️ ' + likeNum + '</span><span>💬 ' + commentNum + '</span><span>' + fmtTime(p.created_at) + '</span>' +
+            '</div></div>' +
+            (likeNum > 0 ? '<div style="font-size:18px;font-weight:900;color:var(--primary)">' + likeNum + '</div>' : '') +
+            '</div>';
+        }).join('');
+      } catch(e) {
+        const container = document.getElementById('myLikesContent');
+        if (container) container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">😕</div><div class="sub-empty-text">加载失败</div></div>';
+      }
     }
 
     
@@ -5640,18 +5853,21 @@
     async function updateMePage() {
       if (!currentUser) return;
       try {
-        const [pts, pdata] = await Promise.all([
-          API.getPoints(currentUser.phone),
-          fetch('/api/users/' + currentUser.phone, { headers: API._headers() }).then(r => r.json()).catch(() => null)
+        const [pdata, wallStats] = await Promise.all([
+          fetch('/api/users/' + currentUser.phone, { headers: API._headers() }).then(r => r.json()).catch(() => null),
+          API.wallMyStats(currentUser.phone).catch(() => null)
         ]);
-        userPoints = pts || { total: 0, history: [] };
-        const totalOrders = pdata?.total_orders || orders.length;
-        const el = document.getElementById('totalOrders');
-        if (el) el.textContent = totalOrders;
-        const el2 = document.getElementById('totalPoints');
-        if (el2) el2.textContent = userPoints.total;
-        const el3 = document.getElementById('totalCoupons');
-        if (el3) el3.textContent = coupons.filter(c => !c.used).length;
+        // 更新校园墙统计
+        if (wallStats && !wallStats.error) {
+          const ef = document.getElementById('meFollowers');
+          if (ef) ef.textContent = wallStats.followers || 0;
+          const efg = document.getElementById('meFollowing');
+          if (efg) efg.textContent = wallStats.following || 0;
+          const el = document.getElementById('meWallLikes');
+          if (el) el.textContent = wallStats.totalLikes || 0;
+          const ev = document.getElementById('meViews');
+          if (ev) ev.textContent = wallStats.totalViews || 0;
+        }
         // 更新资料卡
         const avatars = ['🦥','🐱','🐶','🦊','🐼','🐨','🦄','🐸','🐧','🦋','🌸','⭐','🔥','💎','🎭'];
         const nameEl = document.getElementById('meName');

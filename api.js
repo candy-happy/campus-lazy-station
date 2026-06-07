@@ -267,6 +267,8 @@ const API = {
   async wallDeletePost(id) { return fetch('/api/wall/posts/' + id, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
   async wallFollowing(phone) { return fetch('/api/wall/following/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async wallFollowers(phone) { return fetch('/api/wall/followers/' + phone, { headers: this._headers() }).then(r => r.json()); },
+  async wallMyStats(phone) { return fetch('/api/wall/my-stats/' + phone, { headers: this._headers() }).then(r => r.json()); },
+  async wallMyViewers(phone) { return fetch('/api/wall/my-viewers/' + phone, { headers: this._headers() }).then(r => r.json()); },
 
   // ─── 聊天 ───
   async chatGetOrCreateConversation(data) { return fetch('/api/chat/conversation', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },

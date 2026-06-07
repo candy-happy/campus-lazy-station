@@ -491,5 +491,52 @@ async function classifyTags(content, userTags) {
   }
 }
 
+// ─── 我的校园墙统计 ──────────────────────────────────
+router.get('/my-stats/:phone', (req, res) => JSON_RES(res, () => {
+  const phone = req.params.phone;
+  const followers = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE following_phone = ?').get(phone).n;
+  const following = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE follower_phone = ?').get(phone).n;
+  // 获赞总数：我的帖子被点赞的总数
+  const totalLikes = db.prepare(`
+    SELECT COALESCE(SUM(wp.like_count), 0) as n FROM wall_posts wp WHERE wp.phone = ?
+  `).get(phone).n;
+  // 浏览量：我的帖子的曝光总数
+  const totalViews = db.prepare(`
+    SELECT COALESCE(SUM(wp.exposure_count), 0) as n FROM wall_posts wp WHERE wp.phone = ?
+  `).get(phone).n;
+  // 帖子数
+  const postCount = db.prepare('SELECT COUNT(*) as n FROM wall_posts WHERE phone = ?').get(phone).n;
+  return { followers, following, totalLikes, totalViews, postCount };
+}));
+
+// ─── 我的浏览者列表 ──────────────────────────────────
+router.get('/my-viewers/:phone', (req, res) => JSON_RES(res, () => {
+  const phone = req.params.phone;
+  // 查看谁浏览过我的帖子
+  const viewers = db.prepare(`
+    SELECT u.name as nickname, u.phone, u.avatar, COUNT(DISTINCT we.post_id) as view_count,
+      MAX(we.created_at) as last_view_at
+    FROM wall_exposures we
+    JOIN wall_posts wp ON wp.id = we.post_id AND wp.phone = ?
+    LEFT JOIN users u ON u.phone = we.phone
+    WHERE we.phone != ?
+    GROUP BY we.phone
+    ORDER BY view_count DESC, last_view_at DESC
+    LIMIT 50
+  `).all(phone, phone);
+  // 获取我关注的人
+  const myFollowing = new Set(
+    db.prepare('SELECT following_phone FROM wall_follows WHERE follower_phone = ?').all(phone)
+      .map(f => f.following_phone)
+  );
+  return viewers.map(v => ({
+    ...v,
+    nickname: v.nickname || v.phone,
+    avatar: v.avatar || '',
+    isFollowing: myFollowing.has(v.phone),
+    viewCount: v.view_count
+  }));
+}));
+
 module.exports = router;
 module.exports.classifyTags = classifyTags;
