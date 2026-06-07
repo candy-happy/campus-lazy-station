@@ -7056,7 +7056,7 @@ function renderPetComments(comments) {
     container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary)">还没有留言，来说点什么吧~</div>';
     return;
   }
-  const myPhone = localStorage.getItem('lazy_phone') || '';
+  const myPhone = _phone() || '';
   container.innerHTML = comments.map(c => {
     const avatar = c.avatar && (c.avatar.startsWith('/') || c.avatar.startsWith('http'))
       ? '<img class="pet-comment-avatar" src="' + escHtml(c.avatar) + '" onclick="showWallUser(\'' + c.phone + '\')">'
@@ -7077,9 +7077,10 @@ function renderPetComments(comments) {
   }).join('');
 }
 
+function _phone(){try{const s=JSON.parse(localStorage.getItem('lazy_session')||'{}');return s.phone||''}catch(e){return''}}
 async function doPetLike(id) {
   if (!API._token) return showToast('请先登录');
-  const phone = localStorage.getItem('lazy_phone');
+  const phone = _phone();
   const data = await API.likePet(id, phone);
   if (data.error) return showToast(data.error);
   const btn = document.getElementById('petLikeBtn');
@@ -7089,7 +7090,7 @@ async function doPetLike(id) {
 
 async function doPetSight(id) {
   if (!API._token) return showToast('请先登录');
-  const phone = localStorage.getItem('lazy_phone');
+  const phone = _phone();
   // 简单的地点输入
   var location = prompt('你在哪里看到TA的？（可跳过）') || '';
   var note = prompt('有什么想说的？（可跳过）') || '';
@@ -7139,7 +7140,7 @@ async function submitPetComment() {
   if (!text && !_petCommentMedia.length) return showToast('请输入内容或上传媒体');
 
   const fd = new FormData();
-  fd.append('phone', localStorage.getItem('lazy_phone'));
+  fd.append('phone', _phone());
   fd.append('nickname', localStorage.getItem('lazy_nickname') || '');
   fd.append('content', text);
   _petCommentMedia.forEach(f => fd.append('media', f));
@@ -7157,7 +7158,7 @@ async function submitPetComment() {
 
 async function deletePetComment(commentId) {
   if (!confirm('确定删除这条留言？')) return;
-  const phone = localStorage.getItem('lazy_phone');
+  const phone = _phone();
   const data = await API.deletePetComment(commentId, phone);
   if (data.error) return showToast(data.error);
   showToast('已删除');
