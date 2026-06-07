@@ -154,14 +154,7 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
   } else {
     posts = db.prepare(`SELECT * FROM wall_posts ORDER BY exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
   }
-  // 更新曝光
-  if (phone) {
-    const insExp = db.prepare("INSERT OR IGNORE INTO wall_exposures (post_id, phone, created_at) VALUES (?, ?, datetime('now','localtime'))");
-    const updExp = db.prepare('UPDATE wall_posts SET exposure_count = exposure_count + 1, exposure_done = CASE WHEN exposure_count >= 2 THEN 1 ELSE 0 END WHERE id = ?');
-    posts.forEach(post => {
-      try { insExp.run(post.id, phone); updExp.run(post.id); } catch (e) {}
-    });
-  }
+  // 注意：浏览量只在点开帖子详情时计数（见 GET /posts/:id），feed列表不计数
   // 关注状态
   const followSet = new Set();
   if (phone) {
@@ -191,6 +184,14 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
 router.get('/posts/:id', (req, res) => JSON_RES(res, () => {
   const post = db.prepare('SELECT * FROM wall_posts WHERE id = ?').get(req.params.id);
   if (!post) return makeError('帖子不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
+  // 记录浏览量（点开详情才算浏览）
+  try {
+    const viewerPhone = req.query.phone || '';
+    if (viewerPhone) {
+      db.prepare("INSERT OR IGNORE INTO wall_exposures (post_id, phone, created_at) VALUES (?, ?, datetime('now','localtime'))").run(req.params.id, viewerPhone);
+      db.prepare('UPDATE wall_posts SET exposure_count = exposure_count + 1 WHERE id = ?').run(req.params.id);
+    }
+  } catch (e) {}
   // 同步最新头像
   let postAvatar = post.avatar;
   if (!postAvatar || (!postAvatar.startsWith('/') && !postAvatar.startsWith('http'))) {
