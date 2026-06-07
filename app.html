@@ -2453,7 +2453,7 @@
 .teacher-course-tag { display:inline-block;padding:4px 10px;border-radius:8px;background:#E3F2FD;color:#1565C0;font-size:12px;font-weight:500 }
 
 </style>
-<script src="api.js?v=3.0.4"></script>
+<script src="api.js?v=3.0.5"></script>
 </head>
 <body>
   <div class="app">
@@ -7098,57 +7098,101 @@ async function doPetLike(id) {
 
 async function openSightPage(id) {
   console.log('[DEBUG] openSightPage called, id=', id, 'token=', !!API._token, '_currentPet=', !!window._currentPet);
-  // 清理旧的打卡子页面
   var old = document.getElementById('sightPage_sub');
   if (old) { old.remove(); }
   if (!API._token) { showToast('⚠️ 请先登录'); return; }
   showToast('📍 正在打开打卡页面...');
   var pet = window._currentPet || {};
   var petName = pet.code_name || '这只小家伙';
-  try {
-    // 方案1: createElement（最可靠）
-    var wrap = document.createElement('div');
-    wrap.id = 'sightPage_sub';
-    wrap.className = 'sub-page';
-    wrap.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f5f5;z-index:3000;overflow-y:auto';
-    wrap.innerHTML =
-      '<div style="position:sticky;top:0;background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;padding:16px;display:flex;align-items:center;gap:12px;z-index:1">' +
-        '<button onclick="closeSightPage()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer">←</button>' +
-        '<span style="font-size:18px;font-weight:700">📍 目击打卡</span>' +
-      '</div>' +
-      '<div style="padding:16px">' +
-        '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">' +
-          '<div style="font-size:16px;font-weight:600;margin-bottom:12px">🐾 ' + escHtml(petName) + '</div>' +
-          '<div style="color:#999;font-size:13px">上传你拍到的照片，帮助确认TA的安全</div>' +
-        '</div>' +
-        '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">' +
-          '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📷 目击照片 <span style="color:#f44336">*</span></div>' +
-          '<input type="file" id="sightPhoto" accept="image/*" capture="environment" onchange="previewSightPhoto(this)" style="display:none">' +
-          '<div id="sightPhotoPreview" onclick="document.getElementById(\x27sightPhoto\x27).click()" style="border:2px dashed #ccc;border-radius:12px;padding:32px;text-align:center;cursor:pointer">' +
-            '<div style="font-size:36px;margin-bottom:8px">📸</div>' +
-            '<div style="color:#999;font-size:13px">点击上传照片（必填）</div>' +
-          '</div>' +
-          '<div id="sightPhotoThumb" style="display:none;margin-top:8px;position:relative">' +
-            '<img id="sightPhotoImg" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px">' +
-            '<button type="button" onclick="clearSightPhoto()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px">✕</button>' +
-          '</div>' +
-        '</div>' +
-        '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">' +
-          '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📍 目击地点 <span style="color:#f44336">*</span></div>' +
-          '<input type="text" id="sightLocation" placeholder="例如：一食堂门口、图书馆台阶..." style="width:100%;padding:12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none">' +
-        '</div>' +
-        '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">' +
-          '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📝 备注 <span style="color:#999;font-weight:400">（选填）</span></div>' +
-          '<textarea id="sightNote" placeholder="TA的状态怎么样？有什么想说的..." rows="3" style="width:100%;padding:12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;resize:none;outline:none"></textarea>' +
-        '</div>' +
-        '<button type="button" onclick="submitSight(' + id + ')" id="sightSubmitBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(76,175,80,0.3)">📍 提交打卡</button>' +
-      '</div>';
-    document.body.appendChild(wrap);
-    console.log('[DEBUG] sightPage_sub created via appendChild, exists:', !!document.getElementById('sightPage_sub'));
-  } catch(e) {
-    console.error('[ERROR] openSightPage failed:', e);
-    alert('打开打卡页面失败: ' + e.message);
-  }
+
+  // 纯DOM API构建，不依赖innerHTML
+  var wrap = document.createElement('div');
+  wrap.id = 'sightPage_sub';
+  wrap.className = 'sub-page';
+  wrap.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f5f5;z-index:3000;overflow-y:auto';
+
+  // 头部
+  var header = document.createElement('div');
+  header.style.cssText = 'position:sticky;top:0;background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;padding:16px;display:flex;align-items:center;gap:12px;z-index:1';
+  var backBtn = document.createElement('button');
+  backBtn.innerHTML = '←';
+  backBtn.style.cssText = 'background:none;border:none;color:#fff;font-size:22px;cursor:pointer';
+  backBtn.onclick = closeSightPage;
+  var title = document.createElement('span');
+  title.innerHTML = '📍 目击打卡';
+  title.style.cssText = 'font-size:18px;font-weight:700';
+  header.appendChild(backBtn);
+  header.appendChild(title);
+  wrap.appendChild(header);
+
+  // 内容区
+  var body = document.createElement('div');
+  body.style.cssText = 'padding:16px';
+
+  // 宠物信息卡片
+  body.appendChild(makeCard(
+    '<div style="font-size:16px;font-weight:600;margin-bottom:12px">🐾 ' + escHtml(petName) + '</div>' +
+    '<div style="color:#999;font-size:13px">上传你拍到的照片，帮助确认TA的安全</div>'
+  ));
+
+  // 照片区域
+  var photoCard = document.createElement('div');
+  photoCard.style.cssText = 'background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)';
+  photoCard.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📷 目击照片 <span style="color:#f44336">*</span></div>';
+  var fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.id = 'sightPhoto';
+  fileInput.accept = 'image/*';
+  fileInput.capture = 'environment';
+  fileInput.style.display = 'none';
+  fileInput.onchange = function() { previewSightPhoto(this); };
+  photoCard.appendChild(fileInput);
+  var previewArea = document.createElement('div');
+  previewArea.id = 'sightPhotoPreview';
+  previewArea.style.cssText = 'border:2px dashed #ccc;border-radius:12px;padding:32px;text-align:center;cursor:pointer';
+  previewArea.innerHTML = '<div style="font-size:36px;margin-bottom:8px">📸</div><div style="color:#999;font-size:13px">点击上传照片（必填）</div>';
+  previewArea.onclick = function() { document.getElementById('sightPhoto').click(); };
+  photoCard.appendChild(previewArea);
+  var thumbArea = document.createElement('div');
+  thumbArea.id = 'sightPhotoThumb';
+  thumbArea.style.cssText = 'display:none;margin-top:8px;position:relative';
+  thumbArea.innerHTML = '<img id="sightPhotoImg" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px"><button type="button" onclick="clearSightPhoto()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px">✕</button>';
+  photoCard.appendChild(thumbArea);
+  body.appendChild(photoCard);
+
+  // 地点
+  var locCard = document.createElement('div');
+  locCard.style.cssText = 'background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)';
+  locCard.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📍 目击地点 <span style="color:#f44336">*</span></div>' +
+    '<input type="text" id="sightLocation" placeholder="例如：一食堂门口、图书馆台阶..." style="width:100%;padding:12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none">';
+  body.appendChild(locCard);
+
+  // 备注
+  var noteCard = document.createElement('div');
+  noteCard.style.cssText = 'background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)';
+  noteCard.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📝 备注 <span style="color:#999;font-weight:400">（选填）</span></div>' +
+    '<textarea id="sightNote" placeholder="TA的状态怎么样？有什么想说的..." rows="3" style="width:100%;padding:12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;resize:none;outline:none"></textarea>';
+  body.appendChild(noteCard);
+
+  // 提交按钮
+  var submitBtn = document.createElement('button');
+  submitBtn.type = 'button';
+  submitBtn.id = 'sightSubmitBtn';
+  submitBtn.innerHTML = '📍 提交打卡';
+  submitBtn.style.cssText = 'width:100%;padding:14px;background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(76,175,80,0.3)';
+  submitBtn.onclick = function() { submitSight(id); };
+  body.appendChild(submitBtn);
+
+  wrap.appendChild(body);
+  document.body.appendChild(wrap);
+  console.log('[DEBUG] sightPage_sub created, childCount:', wrap.childNodes.length, 'body childCount:', wrap.lastChild.childNodes.length);
+}
+
+function makeCard(html) {
+  var d = document.createElement('div');
+  d.style.cssText = 'background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)';
+  d.innerHTML = html;
+  return d;
 }
 
 function closeSightPage() {
