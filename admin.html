@@ -775,6 +775,7 @@
   </div>
 </div>
 
+<div class="page-section" id="page-withdraw">
  <div class="page-header"><h1 class="page-title">提现审核</h1><p class="page-desc">处理骑手提现申请</p></div>
  <div class="stats-cards">
    <div class="stat-card"><div class="stat-icon" style="background:#E3F2FD">💸</div><div class="stat-info"><div class="stat-value" id="statWithdrawTotal">0</div><div class="stat-label">总申请数</div></div></div>
@@ -1747,7 +1748,7 @@
  orders = rawOrders.map(o => ({ ...o, id: o.order_no, pickupLocation: o.pickup_location, deliveryLocation: o.delivery_location, riderName: o.rider_name, createdAt: o.created_at }));
  riders = (await API.getRiders()).map(r => ({ ...r, createdAt: r.created_at }));
  if (currentAdmin?.role === 'super') admins = await API.getAdmins();
- updateStats(); renderRecentOrders(); renderOrdersTable(); renderRidersTable(); renderAdminsTable(); renderWithdrawTable(); loadAds(); initCharts();
+ await updateStats(); renderRecentOrders(); renderOrdersTable(); renderRidersTable(); renderAdminsTable(); renderWithdrawTable(); loadAds(); initCharts();
  showToast('数据已刷新');
  }
 
@@ -1968,7 +1969,7 @@
  let marketItemFilter = 'all';
  let marketOrderFilter = 'all';
  let marketTrendChart = null;
- let marketCategoryChart = null;
+ let marketCatAdminChart = null;
  const marketCategoryMap = { textbook:'教材', digital:'数码', daily:'日用', clothing:'服饰', sports:'运动', food:'食品', other:'其他' };
  const marketCondMap = { new:'全新', like_new:'几乎全新', good:'良好', fair:'一般' };
  const marketOrderStatusMap = { pending:{label:'待确认',cls:'badge-yellow'}, confirmed:{label:'已确认',cls:'badge-orange'}, completed:{label:'已完成',cls:'badge-green'}, cancelled:{label:'已取消',cls:'badge-red'} };
@@ -2167,8 +2168,8 @@
    // 分类图
    if (data.categories) {
      const ctx2 = document.getElementById('marketCategoryChart');
-     if (marketCategoryChart) marketCategoryChart.destroy();
-     marketCategoryChart = new Chart(ctx2, {
+     if (marketCatAdminChart) marketCatAdminChart.destroy();
+     marketCatAdminChart = new Chart(ctx2, {
        type: 'doughnut',
        data: { labels: data.categories.map(c=>marketCategoryMap[c.category]||c.category), datasets: [{ data: data.categories.map(c=>c.cnt), backgroundColor: ['#FF6B35','#3498DB','#2ECC71','#9B59B6','#F39C12','#E74C3C','#1ABC9C'] }] },
        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}} }
