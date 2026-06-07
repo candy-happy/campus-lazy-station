@@ -55,6 +55,16 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now','localtime')),
     UNIQUE(pet_id, phone)
   );
+
+  CREATE TABLE IF NOT EXISTS pet_sightings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pet_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    nickname TEXT DEFAULT '',
+    location TEXT DEFAULT '',
+    note TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
 `);
 
 // ─── 文件上传配置 ────────────────────────────────────────
@@ -280,19 +290,63 @@ router.put('/admin/update/:id', requireAdmin, upload.array('images', 6), (req, r
 router.delete('/admin/delete/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
   db.prepare('DELETE FROM pet_comments WHERE pet_id = ?').run(req.params.id);
   db.prepare('DELETE FROM pet_likes WHERE pet_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM pet_sightings WHERE pet_id = ?').run(req.params.id);
   db.prepare('DELETE FROM pets WHERE id = ?').run(req.params.id);
   return { message: '已删除' };
 }));
 
+// ─── 管理端：更新状态 ────────────────────────────────────
+router.put('/admin/status/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { status } = req.body;
+  const pet = db.prepare('SELECT id FROM pets WHERE id = ?').get(req.params.id);
+  if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
+  const validStatus = ['active', 'missing', 'adopted', 'graduated'];
+  if (!status || !validStatus.includes(status)) return makeError('无效状态', ErrorCode.PARAM_001, 400);
+  db.prepare(`UPDATE pets SET status = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(status, req.params.id);
+  return { message: '状态已更新', status };
+}));
+
+// ─── 管理端：目击记录查询 ────────────────────────────────────
+router.get('/admin/sightings/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const sightings = db.prepare(
+    `SELECT ps.*, u.nickname as user_nickname, u.avatar as user_avatar
+     FROM pet_sightings ps
+     LEFT JOIN users u ON ps.phone = u.phone
+     WHERE ps.pet_id = ? ORDER BY ps.created_at DESC LIMIT 50`
+  ).all(req.params.id);
+  return sightings;
+}));
+
+// ─── 用户端：目击记录 ────────────────────────────────
+router.get('/sightings/:id', (req, res) => JSON_RES(res, () => {
+  const sightings = db.prepare(
+    `SELECT ps.*, u.nickname as user_nickname, u.avatar as user_avatar
+     FROM pet_sightings ps
+     LEFT JOIN users u ON ps.phone = u.phone
+     WHERE ps.pet_id = ? ORDER BY ps.created_at DESC LIMIT 20`
+  ).all(req.params.id);
+  return sightings;
+}));
+
 // ─── 目击打卡：用户看到猫狗时记录 ──────────────────────
 router.post('/sight/:id', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { phone } = req.body;
+  const { phone, location, note } = req.body;
   if (!phone) return makeError('请先登录', ErrorCode.AUTH_001, 401);
   const pet = db.prepare('SELECT * FROM pets WHERE id = ?').get(req.params.id);
   if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
 
+  // 获取用户昵称
+  let nickname = '';
+  const user = db.prepare('SELECT nickname FROM users WHERE phone = ?').get(phone)
+    || db.prepare('SELECT nickname FROM riders WHERE phone = ?').get(phone);
+  if (user && user.nickname) nickname = user.nickname;
+
   // 更新最后目击时间 + 重置告警等级
   db.prepare(`UPDATE pets SET last_seen_at = datetime('now','localtime'), alert_level = 'none', updated_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
+
+  // 写入目击记录
+  db.prepare(`INSERT INTO pet_sightings (pet_id, phone, nickname, location, note) VALUES (?, ?, ?, ?, ?)`)
+    .run(req.params.id, phone, nickname, location || '', note || '');
 
   return { message: '打卡成功，已记录目击时间', last_seen_at: new Date().toLocaleString('zh-CN') };
 }));

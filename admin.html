@@ -665,15 +665,18 @@
   </div>
   <div class="market-admin-toolbar" style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border-color:#FFE0B2">
     <button class="btn btn-primary" onclick="showAddPetModal()" style="background:linear-gradient(135deg,#FF6D00,#FF9100);box-shadow:0 4px 14px rgba(255,109,0,0.3)">🐾 添加猫狗</button>
-    <div style="display:flex;gap:10px;align-items:center">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <select id="petFilterSpecies" onchange="loadPetsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFCC80;background:#fff;font-size:0.9rem;cursor:pointer">
-        <option value="all">🐾 全部</option><option value="cat">🐱 猫咪</option><option value="dog">🐶 狗狗</option>
+        <option value="all">🐾 全部物种</option><option value="cat">🐱 猫咪</option><option value="dog">🐶 狗狗</option>
+      </select>
+      <select id="petFilterStatus" onchange="loadPetsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFCC80;background:#fff;font-size:0.9rem;cursor:pointer">
+        <option value="all">📋 全部状态</option><option value="active">🟢 在校</option><option value="missing">🟠 走失</option><option value="adopted">💜 已领养</option><option value="graduated">🎓 已毕业</option>
       </select>
       <input type="text" id="petSearchInput" placeholder="🔍 搜索代号 / 品种..." oninput="loadPetsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFCC80;background:#fff;width:200px;font-size:0.9rem">
     </div>
   </div>
   <div class="table-card" style="border-color:#FFE0B2">
-    <table class="data-table"><thead><tr><th>头像</th><th>代号</th><th>物种</th><th>品种</th><th>出没地</th><th>最后目击</th><th>告警</th><th>❤️</th><th>💬</th><th>操作</th></tr></thead>
+    <table class="data-table"><thead><tr><th>头像</th><th>代号</th><th>物种</th><th>品种</th><th>出没地</th><th>状态</th><th>最后目击</th><th>告警</th><th>❤️</th><th>💬</th><th>操作</th></tr></thead>
     <tbody id="petsTable"></tbody></table>
   </div>
 </div>
@@ -727,7 +730,37 @@
   </div>
 </div>
 
-<div class="page-section" id="page-withdraw">
+<!-- 目击记录弹窗 -->
+<div class="modal-overlay" id="sightingsModal">
+  <div class="modal-content" style="max-width:600px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#4CAF50,#66BB6A);border-radius:12px 12px 0 0;padding:20px 24px">
+      <span class="modal-title" id="sightingsModalTitle" style="color:#fff;font-size:1.15rem">📍 目击记录</span>
+      <button class="modal-close" onclick="closeModal('sightingsModal')" style="color:#fff;background:rgba(255,255,255,0.2)">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:20px;max-height:60vh;overflow-y:auto" id="sightingsContent">
+      <div style="text-align:center;padding:30px;color:#999">加载中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- 状态管理弹窗 -->
+<div class="modal-overlay" id="petStatusModal">
+  <div class="modal-content" style="max-width:420px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#FF6D00,#FF9100);border-radius:12px 12px 0 0;padding:20px 24px">
+      <span class="modal-title" id="petStatusTitle" style="color:#fff;font-size:1.15rem">📋 修改状态</span>
+      <button class="modal-close" onclick="closeModal('petStatusModal')" style="color:#fff;background:rgba(255,255,255,0.2)">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:24px">
+      <input type="hidden" id="petStatusId">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <button onclick="changePetStatus('active')" style="padding:16px;border-radius:12px;border:2px solid #4CAF50;background:#E8F5E9;cursor:pointer;font-size:0.95rem;font-weight:600;color:#2E7D32;transition:all 0.2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">🟢 在校</button>
+        <button onclick="changePetStatus('missing')" style="padding:16px;border-radius:12px;border:2px solid #FF9800;background:#FFF3E0;cursor:pointer;font-size:0.95rem;font-weight:600;color:#E65100;transition:all 0.2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">🟠 走失</button>
+        <button onclick="changePetStatus('adopted')" style="padding:16px;border-radius:12px;border:2px solid #9C27B0;background:#F3E5F5;cursor:pointer;font-size:0.95rem;font-weight:600;color:#7B1FA2;transition:all 0.2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">💜 已领养</button>
+        <button onclick="changePetStatus('graduated')" style="padding:16px;border-radius:12px;border:2px solid #1976D2;background:#E3F2FD;cursor:pointer;font-size:0.95rem;font-weight:600;color:#1565C0;transition:all 0.2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">🎓 已毕业</button>
+      </div>
+    </div>
+  </div>
+</div>
  <div class="page-header"><h1 class="page-title">提现审核</h1><p class="page-desc">处理骑手提现申请</p></div>
  <div class="stats-cards">
    <div class="stat-card"><div class="stat-icon" style="background:#E3F2FD">💸</div><div class="stat-info"><div class="stat-value" id="statWithdrawTotal">0</div><div class="stat-label">总申请数</div></div></div>
@@ -2339,9 +2372,11 @@
 
     async function loadPetsAdmin() {
       const species = document.getElementById('petFilterSpecies').value;
+      const status = document.getElementById('petFilterStatus').value;
       const search = document.getElementById('petSearchInput').value.trim();
       let url = '/api/pets/list?limit=100';
       if (species !== 'all') url += '&species=' + species;
+      if (status !== 'all') url += '&status=' + status;
       const [petsRes, alertRes] = await Promise.all([
         fetch(url, { headers: AUTH() }).then(r => r.json()),
         fetch('/api/pets/alert-check', { headers: AUTH() }).then(r => r.json()).catch(function() { return { summary: { warning: 0, urgent: 0, critical: 0 } }; })
@@ -2356,37 +2391,48 @@
       document.getElementById('petAlertCritical').textContent = s.critical;
 
       var speciesEmoji = { cat: '\u{1F431}', dog: '\u{1F436}' };
+      var statusMap = {
+        active: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#E8F5E9;color:#2E7D32">\u{1F7E2} 在校</span>',
+        missing: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFF3E0;color:#E65100">\u{1F7E0} 走失</span>',
+        adopted: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#F3E5F5;color:#7B1FA2">\u{1F49C} 已领养</span>',
+        graduated: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#E3F2FD;color:#1565C0">\u{1F393} 已毕业</span>'
+      };
       var alertBadge = {
-        warning: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFF3E0;color:#E65100;border:1px solid #FFE0B2">\u26A0\uFE0F 7天未见</span>',
-        urgent: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FBE9E7;color:#BF360C;border:1px solid #FFAB91">\u{1F7E0} 15天未现</span>',
-        critical: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A;animation:pulse 2s infinite">\u{1F534} 30天失联</span>'
+        warning: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFF3E0;color:#E65100;border:1px solid #FFE0B2">\u26A0\uFE0F 7天</span>',
+        urgent: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FBE9E7;color:#BF360C;border:1px solid #FFAB91">\u{1F7E0} 15天</span>',
+        critical: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A;animation:pulse 2s infinite">\u{1F534} 30天</span>'
       };
       var rows = '';
       for (var i = 0; i < pets.length; i++) {
         var p = pets[i];
         var seenDays = p.daysSinceSeen;
         var seenText = seenDays === 0 ? '<span style="color:#4CAF50;font-weight:600">今日已见</span>' : seenDays !== null ? '<span style="color:' + (seenDays >= 30 ? '#B71C1C' : seenDays >= 15 ? '#BF360C' : seenDays >= 7 ? '#E65100' : '#666') + ';font-weight:600">' + seenDays + '天前</span>' : '-';
-        var alert = alertBadge[p.alert_level] || '<span style="color:#4CAF50;font-size:12px">\u2705 正常</span>';
+        var alert = alertBadge[p.alert_level] || '<span style="color:#4CAF50;font-size:12px">\u2705</span>';
         var rowBg = p.alert_level === 'critical' ? 'background:#FFF5F5;' : p.alert_level === 'urgent' ? 'background:#FFF8F0;' : '';
         var avatarBorder = p.alert_level === 'critical' ? '#EF5350' : p.alert_level === 'urgent' ? '#FF9800' : '#FFE0B2';
         var nameColor = p.alert_level === 'critical' ? '#B71C1C' : '#E65100';
         var avatarHtml = (p.avatar && p.avatar.charAt(0) === '/') ? '<img src="' + esc(p.avatar) + '" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ' + avatarBorder + '">' : '<span style="font-size:1.8rem">' + (speciesEmoji[p.species] || '\u{1F43E}') + '</span>';
+        var statusHtml = statusMap[p.status] || statusMap.active;
+        var sightingBtn = '<button class="btn" style="padding:4px 8px;font-size:0.75rem;border-color:#81C784;color:#2E7D32;border-radius:8px" onclick="showSightings(' + p.id + ',\'' + esc(p.code_name).replace(/'/g, "\\'") + '\')">\u{1F4CD}</button>';
+        var statusBtn = '<button class="btn" style="padding:4px 8px;font-size:0.75rem;border-color:#90CAF9;color:#1565C0;border-radius:8px" onclick="showStatusModal(' + p.id + ',\'' + esc(p.code_name).replace(/'/g, "\\'") + '\')">\u{1F4CB}</button>';
         rows += '<tr style="transition:background 0.2s;' + rowBg + '" onmouseenter="this.style.background=\'#FFF8E1\'" onmouseleave="this.style.background=\'' + rowBg + '\'">' +
           '<td>' + avatarHtml + '</td>' +
           '<td><strong style="color:' + nameColor + '">' + esc(p.code_name) + '</strong></td>' +
-          '<td>' + (speciesEmoji[p.species] || '\u{1F43E}') + ' ' + (p.species === 'cat' ? '猫咪' : '狗狗') + '</td>' +
+          '<td>' + (speciesEmoji[p.species] || '\u{1F43E}') + '</td>' +
           '<td style="color:#666">' + esc(p.breed || '-') + '</td>' +
           '<td style="color:#666">\u{1F4CD} ' + esc(p.location || '-') + '</td>' +
+          '<td>' + statusHtml + '</td>' +
           '<td>' + seenText + '</td>' +
           '<td>' + alert + '</td>' +
           '<td style="color:#EF5350;font-weight:600">' + (p.like_count||0) + '</td>' +
           '<td style="color:#42A5F5;font-weight:600">' + (p.comment_count||0) + '</td>' +
           '<td style="white-space:nowrap">' +
+            sightingBtn + ' ' + statusBtn + ' ' +
             '<button class="btn" style="padding:4px 10px;font-size:0.8rem;border-color:#FFCC80;color:#E65100;border-radius:8px" onclick="editPet(' + p.id + ')">\u270F\uFE0F</button> ' +
             '<button class="btn" style="padding:4px 10px;font-size:0.8rem;color:#ef4444;border-radius:8px" onclick="deletePet(' + p.id + ')">\u{1F5D1}\uFE0F</button>' +
           '</td></tr>';
       }
-      document.getElementById('petsTable').innerHTML = rows || '<tr><td colspan="10" style="text-align:center;padding:40px;color:#999;font-size:1rem">\u{1F43E} 暂无猫狗数据</td></tr>';
+      document.getElementById('petsTable').innerHTML = rows || '<tr><td colspan="11" style="text-align:center;padding:40px;color:#999;font-size:1rem">\u{1F43E} 暂无猫狗数据</td></tr>';
     }
 
     function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -2468,12 +2514,67 @@
     }
 
     async function deletePet(id) {
-      if (!confirm('确定删除这只猫狗吗？')) return;
+      if (!confirm('确定删除这只猫狗吗？相关留言和点赞也会被删除。')) return;
       const res = await fetch('/api/pets/admin/delete/' + id, { method: 'DELETE', headers: { ...AUTH(), 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: 'admin' }) });
       const data = await res.json();
       if (data.error) { showToast(data.error); return; }
       showToast('删除成功');
       loadPetsAdmin();
+    }
+
+    async function showSightings(id, name) {
+      document.getElementById('sightingsModalTitle').textContent = '\u{1F4CD} ' + name + ' 的目击记录';
+      document.getElementById('sightingsContent').innerHTML = '<div style="text-align:center;padding:30px;color:#999">加载中...</div>';
+      showModal('sightingsModal');
+      const res = await fetch('/api/pets/admin/sightings/' + id, { headers: AUTH() });
+      const sightings = await res.json();
+      if (!sightings || sightings.length === 0) {
+        document.getElementById('sightingsContent').innerHTML = '<div style="text-align:center;padding:40px;color:#999">\u{1F43E} 暂无目击记录</div>';
+        return;
+      }
+      var html = sightings.map(function(s) {
+        var avatarHtml = (s.user_avatar && s.user_avatar.charAt(0) === '/') ? '<img src="' + esc(s.user_avatar) + '" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid #C8E6C9">' : '<div style="width:36px;height:36px;border-radius:50%;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:1rem">\u{1F464}</div>';
+        var nickname = esc(s.user_nickname || s.nickname || s.phone);
+        var loc = s.location ? ' <span style="color:#999;font-size:0.8rem">\u{1F4CD} ' + esc(s.location) + '</span>' : '';
+        var note = s.note ? '<div style="margin-top:4px;color:#555;font-size:0.85rem">' + esc(s.note) + '</div>' : '';
+        return '<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #f0f0f0">' +
+          '<div>' + avatarHtml + '</div>' +
+          '<div style="flex:1"><div><strong>' + nickname + '</strong>' + loc + '</div>' + note +
+          '<div style="margin-top:4px;font-size:0.75rem;color:#aaa">' + timeAgoAdmin(s.created_at) + '</div></div></div>';
+      }).join('');
+      document.getElementById('sightingsContent').innerHTML = html;
+    }
+
+    function showStatusModal(id, name) {
+      document.getElementById('petStatusId').value = id;
+      document.getElementById('petStatusTitle').textContent = '\u{1F4CB} 修改「' + name + '」状态';
+      showModal('petStatusModal');
+    }
+
+    async function changePetStatus(status) {
+      const id = document.getElementById('petStatusId').value;
+      const res = await fetch('/api/pets/admin/status/' + id, {
+        method: 'PUT', headers: { ...AUTH(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (data.error) { showToast(data.error); return; }
+      closeModal('petStatusModal');
+      var statusNames = { active: '在校', missing: '走失', adopted: '已领养', graduated: '已毕业' };
+      showToast('状态已更新为：' + (statusNames[status] || status));
+      loadPetsAdmin();
+    }
+
+    function timeAgoAdmin(dateStr) {
+      if (!dateStr) return '';
+      var now = Date.now();
+      var d = new Date(dateStr).getTime();
+      var diff = Math.floor((now - d) / 1000);
+      if (diff < 60) return '刚刚';
+      if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
+      if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
+      if (diff < 2592000) return Math.floor(diff / 86400) + '天前';
+      return dateStr.substring(0, 10);
     }
 
     // Init dark mode from localStorage

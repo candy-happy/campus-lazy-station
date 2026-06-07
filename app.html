@@ -7004,6 +7004,26 @@ async function showPetDetail(id) {
 
   document.getElementById('petProfileCard').innerHTML = infoHtml;
 
+  // 目击记录
+  try {
+    const sightings = await API.getPetSightings(id);
+    if (sightings && sightings.length > 0) {
+      var sightHtml = '<div style="padding:0 16px 12px"><div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:8px">\u{1F4CD} 最近目击 (' + sightings.length + ')</div>';
+      sightings.slice(0, 10).forEach(function(s) {
+        var sAvatar = (s.user_avatar && s.user_avatar.startsWith('/')) ? '<img src="' + escHtml(s.user_avatar) + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover">' : '<span style="font-size:1rem">\u{1F464}</span>';
+        var sName = escHtml(s.user_nickname || s.nickname || '匿名');
+        var sLoc = s.location ? ' \u{1F4CD}' + escHtml(s.location) : '';
+        var sNote = s.note ? '<span style="color:#666;font-size:12px"> - ' + escHtml(s.note) + '</span>' : '';
+        sightHtml += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5">' +
+          sAvatar +
+          '<div style="flex:1;font-size:13px"><strong>' + sName + '</strong>' + sLoc + sNote + '</div>' +
+          '<span style="font-size:11px;color:#aaa">' + fmtTime(s.created_at) + '</span></div>';
+      });
+      sightHtml += '</div>';
+      document.getElementById('petProfileCard').innerHTML += sightHtml;
+    }
+  } catch(e) {}
+
   // 相关校园墙
   const relatedDiv = document.getElementById('petRelatedPosts');
   if (data.relatedPosts && data.relatedPosts.length) {
@@ -7070,9 +7090,12 @@ async function doPetLike(id) {
 async function doPetSight(id) {
   if (!API._token) return showToast('请先登录');
   const phone = localStorage.getItem('lazy_phone');
-  const data = await API.sightPet(id, phone);
+  // 简单的地点输入
+  var location = prompt('你在哪里看到TA的？（可跳过）') || '';
+  var note = prompt('有什么想说的？（可跳过）') || '';
+  const data = await API.sightPet(id, phone, location, note);
   if (data.error) return showToast(data.error);
-  showToast('📍 打卡成功！已记录目击时间');
+  showToast('\u{1F4CD} 打卡成功！已记录目击时间');
   // 刷新详情
   showPetDetail(id);
 }
