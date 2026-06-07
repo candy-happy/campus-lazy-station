@@ -255,6 +255,9 @@
  body.dark .filter-bar { background: var(--card-bg); border-color: var(--border); }
  .form-group { margin-bottom: 16px; }
  .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+/* 猫狗管理表单输入框聚焦 */
+#petModal .form-input:focus { border-color: #FF6D00 !important; box-shadow: 0 0 0 3px rgba(255,109,0,0.15) !important; }
+#petModal .form-input::placeholder { color: #FFB74D; }
  .form-input, .form-select, .form-textarea { width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.95rem; font-family: inherit; background: var(--card-bg); }
  .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--orange); }
  .form-input.error { border-color: var(--red); }
@@ -637,47 +640,70 @@
  </div>
  </div>
  <div class="page-section" id="page-pets">
-  <div class="page-header"><h1 class="page-title">🐱 猫狗管理</h1><p class="page-desc">管理校园猫狗身份卡，添加/编辑/删除</p></div>
-  <div class="market-admin-toolbar">
-    <button class="btn btn-primary" onclick="showAddPetModal()">➕ 添加猫狗</button>
-    <div style="display:flex;gap:8px;align-items:center">
-      <select id="petFilterSpecies" onchange="loadPetsAdmin()" style="padding:6px 12px;border-radius:8px;border:1px solid #ddd">
-        <option value="all">全部</option><option value="cat">猫咪</option><option value="dog">狗狗</option>
+  <div class="page-header" style="background:linear-gradient(135deg,#FFF3E0 0%,#FFE0B2 50%,#FFCC80 100%);border-radius:16px;padding:28px 32px;margin-bottom:20px">
+    <h1 class="page-title" style="font-size:1.6rem;background:linear-gradient(135deg,#FF6D00,#FF9100);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🐱 猫狗管理</h1>
+    <p class="page-desc" style="color:#BF360C;margin-top:4px">管理校园猫狗身份卡，添加 / 编辑 / 删除</p>
+  </div>
+  <div class="market-admin-toolbar" style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border-color:#FFE0B2">
+    <button class="btn btn-primary" onclick="showAddPetModal()" style="background:linear-gradient(135deg,#FF6D00,#FF9100);box-shadow:0 4px 14px rgba(255,109,0,0.3)">🐾 添加猫狗</button>
+    <div style="display:flex;gap:10px;align-items:center">
+      <select id="petFilterSpecies" onchange="loadPetsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFCC80;background:#fff;font-size:0.9rem;cursor:pointer">
+        <option value="all">🐾 全部</option><option value="cat">🐱 猫咪</option><option value="dog">🐶 狗狗</option>
       </select>
-      <input type="text" id="petSearchInput" placeholder="搜索代号/品种..." oninput="loadPetsAdmin()" style="padding:6px 12px;border-radius:8px;border:1px solid #ddd;width:180px">
+      <input type="text" id="petSearchInput" placeholder="🔍 搜索代号 / 品种..." oninput="loadPetsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFCC80;background:#fff;width:200px;font-size:0.9rem">
     </div>
   </div>
-  <div class="table-card">
-    <table class="data-table"><thead><tr><th>头像</th><th>代号</th><th>物种</th><th>品种</th><th>出没地</th><th>点赞</th><th>留言</th><th>状态</th><th>操作</th></tr></thead>
+  <div class="table-card" style="border-color:#FFE0B2">
+    <table class="data-table"><thead><tr><th>头像</th><th>代号</th><th>物种</th><th>品种</th><th>出没地</th><th>❤️</th><th>💬</th><th>状态</th><th>操作</th></tr></thead>
     <tbody id="petsTable"></tbody></table>
   </div>
 </div>
 
 <!-- 添加/编辑猫狗弹窗 -->
 <div class="modal-overlay" id="petModal">
-  <div class="modal" style="max-width:560px">
-    <div class="modal-header"><span class="modal-title" id="petModalTitle">添加猫狗</span><button class="modal-close" onclick="closeModal('petModal')">&times;</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="petEditId">
-      <div class="form-group"><label>代号 *</label><input type="text" id="petCodeName" class="form-input" placeholder="如：橘座大人"></div>
-      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="form-group"><label>物种 *</label><select id="petSpecies" class="form-input"><option value="cat">🐱 猫咪</option><option value="dog">🐶 狗狗</option></select></div>
-        <div class="form-group"><label>品种</label><input type="text" id="petBreed" class="form-input" placeholder="如：中华田园猫"></div>
-      </div>
-      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-        <div class="form-group"><label>性别</label><select id="petGender" class="form-input"><option value="male">♂ 公</option><option value="female">♀ 母</option><option value="unknown">未知</option></select></div>
-        <div class="form-group"><label>年龄</label><input type="text" id="petAge" class="form-input" placeholder="如：约3岁"></div>
-        <div class="form-group"><label>毛色</label><input type="text" id="petColor" class="form-input" placeholder="如：橘白"></div>
-      </div>
-      <div class="form-group"><label>出没地</label><input type="text" id="petLocation" class="form-input" placeholder="如：一食堂门口"></div>
-      <div class="form-group"><label>性格</label><input type="text" id="petPersonality" class="form-input" placeholder="如：贪吃、粘人"></div>
-      <div class="form-group"><label>标签(逗号分隔)</label><input type="text" id="petTags" class="form-input" placeholder="如：橘猫,一食堂,校霸"></div>
-      <div class="form-group"><label>简介</label><textarea id="petBio" class="form-input" rows="3" placeholder="猫狗的故事..."></textarea></div>
-      <div class="form-group"><label>照片</label><input type="file" id="petImages" multiple accept="image/*" class="form-input"></div>
+  <div class="modal-content" style="max-width:600px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#FF6D00,#FF9100);border-radius:12px 12px 0 0;padding:20px 24px">
+      <span class="modal-title" id="petModalTitle" style="color:#fff;font-size:1.15rem">🐾 添加猫狗</span>
+      <button class="modal-close" onclick="closeModal('petModal')" style="color:#fff;background:rgba(255,255,255,0.2)">&times;</button>
     </div>
-    <div class="modal-footer">
-      <button class="btn" onclick="closeModal('petModal')">取消</button>
-      <button class="btn btn-primary" onclick="savePet()">保存</button>
+    <div class="modal-body" style="padding:24px">
+      <input type="hidden" id="petEditId">
+      <!-- 代号 + 物种 -->
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">🐾 代号 *</label><input type="text" id="petCodeName" class="form-input" placeholder="如：橘座大人" style="border-color:#FFCC80"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">物种 *</label><select id="petSpecies" class="form-input" style="border-color:#FFCC80"><option value="cat">🐱 猫咪</option><option value="dog">🐶 狗狗</option></select></div>
+      </div>
+      <!-- 品种 + 性别 + 年龄 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">🏷️ 品种</label><input type="text" id="petBreed" class="form-input" placeholder="中华田园猫" style="border-color:#FFCC80"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">⚧ 性别</label><select id="petGender" class="form-input" style="border-color:#FFCC80"><option value="male">♂ 公</option><option value="female">♀ 母</option><option value="unknown">❓ 未知</option></select></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">📅 年龄</label><input type="text" id="petAge" class="form-input" placeholder="约3岁" style="border-color:#FFCC80"></div>
+      </div>
+      <!-- 毛色 + 出没地 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">🎨 毛色</label><input type="text" id="petColor" class="form-input" placeholder="橘白" style="border-color:#FFCC80"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">📍 出没地</label><input type="text" id="petLocation" class="form-input" placeholder="一食堂门口" style="border-color:#FFCC80"></div>
+      </div>
+      <!-- 性格 -->
+      <div class="form-group"><label class="form-label" style="color:#E65100">💭 性格</label><input type="text" id="petPersonality" class="form-input" placeholder="贪吃、粘人、怕生..." style="border-color:#FFCC80"></div>
+      <!-- 标签 -->
+      <div class="form-group"><label class="form-label" style="color:#E65100">🔖 标签 <span style="font-weight:400;color:#999;font-size:0.8rem">逗号分隔</span></label><input type="text" id="petTags" class="form-input" placeholder="橘猫, 一食堂, 校霸" style="border-color:#FFCC80"></div>
+      <!-- 简介 -->
+      <div class="form-group"><label class="form-label" style="color:#E65100">📝 简介</label><textarea id="petBio" class="form-input" rows="3" placeholder="写下这只猫狗的故事..." style="border-color:#FFCC80;resize:vertical"></textarea></div>
+      <!-- 照片 -->
+      <div class="form-group">
+        <label class="form-label" style="color:#E65100">📷 照片 <span style="font-weight:400;color:#999;font-size:0.8rem">最多6张</span></label>
+        <div style="position:relative">
+          <input type="file" id="petImages" multiple accept="image/*" style="display:none" onchange="previewPetImages(this)">
+          <button type="button" onclick="document.getElementById('petImages').click()" style="padding:10px 20px;border:2px dashed #FFCC80;border-radius:10px;background:#FFF8E1;color:#E65100;cursor:pointer;font-size:0.9rem;font-weight:600">📁 选择图片</button>
+          <span id="petImageCount" style="margin-left:10px;color:#999;font-size:0.85rem"></span>
+        </div>
+        <div id="petImagePreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="background:linear-gradient(180deg,#FFF8E1,#fff);border-top:1px solid #FFE0B2">
+      <button class="btn" onclick="closeModal('petModal')" style="border-radius:10px">取消</button>
+      <button class="btn btn-primary" onclick="savePet()" style="background:linear-gradient(135deg,#FF6D00,#FF9100);border-radius:10px;padding:10px 28px">✅ 保存</button>
     </div>
   </div>
 </div>
@@ -2301,30 +2327,34 @@
       let pets = await res.json();
       if (search) pets = pets.filter(p => (p.code_name + p.breed + p.location).includes(search));
       const speciesEmoji = { cat: '🐱', dog: '🐶' };
-      document.getElementById('petsTable').innerHTML = pets.map(p => `<tr>
-        <td>${p.avatar ? '<img src="' + p.avatar + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover">' : (speciesEmoji[p.species] || '🐾')}</td>
-        <td><strong>${esc(p.code_name)}</strong></td>
-        <td>${speciesEmoji[p.species] || p.species} ${p.species === 'cat' ? '猫' : '狗'}</td>
-        <td>${esc(p.breed || '-')}</td>
-        <td>${esc(p.location || '-')}</td>
-        <td>${p.like_count || 0}</td>
-        <td>${p.comment_count || 0}</td>
-        <td><span style="color:${p.status === 'active' ? '#10b981' : '#999'}">${p.status === 'active' ? '在线' : '离线'}</span></td>
-        <td>
-          <button class="btn" style="padding:3px 8px;font-size:0.8rem" onclick="editPet(${p.id})">编辑</button>
-          <button class="btn" style="padding:3px 8px;font-size:0.8rem;color:#ef4444" onclick="deletePet(${p.id})">删除</button>
+      const statusStyle = { active: 'background:#E8F5E9;color:#2E7D32', missing: 'background:#FFF3E0;color:#E65100', adopted: 'background:#E3F2FD;color:#1565C0', graduated: 'background:#F3E5F5;color:#7B1FA2' };
+      const statusLabel = { active: '在校园', missing: '走失', adopted: '已领养', graduated: '已毕业' };
+      document.getElementById('petsTable').innerHTML = pets.map(p => `<tr style="transition:background 0.2s" onmouseenter="this.style.background='#FFF8E1'" onmouseleave="this.style.background=''">
+        <td>${p.avatar && p.avatar.startsWith('/') ? '<img src="' + p.avatar + '" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #FFE0B2">' : '<span style="font-size:1.8rem">' + (speciesEmoji[p.species] || '🐾') + '</span>'}</td>
+        <td><strong style="color:#E65100">${esc(p.code_name)}</strong></td>
+        <td>${speciesEmoji[p.species] || '🐾'} ${p.species === 'cat' ? '猫咪' : '狗狗'}</td>
+        <td style="color:#666">${esc(p.breed || '-')}</td>
+        <td style="color:#666">📍 ${esc(p.location || '-')}</td>
+        <td style="color:#EF5350;font-weight:600">${p.like_count || 0}</td>
+        <td style="color:#42A5F5;font-weight:600">${p.comment_count || 0}</td>
+        <td><span style="padding:3px 10px;border-radius:20px;font-size:0.8rem;font-weight:600;${statusStyle[p.status] || statusStyle.active}">${statusLabel[p.status] || p.status}</span></td>
+        <td style="white-space:nowrap">
+          <button class="btn" style="padding:4px 10px;font-size:0.8rem;border-color:#FFCC80;color:#E65100;border-radius:8px" onclick="editPet(${p.id})">✏️ 编辑</button>
+          <button class="btn" style="padding:4px 10px;font-size:0.8rem;color:#ef4444;border-radius:8px" onclick="deletePet(${p.id})">🗑️ 删除</button>
         </td>
-      </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">暂无数据</td></tr>';
+      </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:40px;color:#999;font-size:1rem">🐾 暂无猫狗数据</td></tr>';
     }
 
     function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
     function showAddPetModal() {
       document.getElementById('petEditId').value = '';
-      document.getElementById('petModalTitle').textContent = '添加猫狗';
+      document.getElementById('petModalTitle').innerHTML = '🐾 添加猫狗';
       ['petCodeName','petBreed','petAge','petColor','petLocation','petPersonality','petTags','petBio'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('petSpecies').value = 'cat';
       document.getElementById('petGender').value = 'male';
+      document.getElementById('petImagePreview').innerHTML = '';
+      document.getElementById('petImageCount').textContent = '';
       showModal('petModal');
     }
 
@@ -2332,7 +2362,7 @@
       const res = await fetch('/api/pets/detail/' + id, { headers: AUTH() });
       const p = await res.json();
       document.getElementById('petEditId').value = p.id;
-      document.getElementById('petModalTitle').textContent = '编辑猫狗';
+      document.getElementById('petModalTitle').innerHTML = '✏️ 编辑「' + esc(p.code_name) + '」';
       document.getElementById('petCodeName').value = p.code_name || '';
       document.getElementById('petSpecies').value = p.species || 'cat';
       document.getElementById('petBreed').value = p.breed || '';
@@ -2343,7 +2373,27 @@
       document.getElementById('petPersonality').value = p.personality || '';
       document.getElementById('petTags').value = (p.tags || []).join(',');
       document.getElementById('petBio').value = p.bio || '';
+      // Show existing images
+      const previewDiv = document.getElementById('petImagePreview');
+      const existingImages = p.images || [];
+      previewDiv.innerHTML = existingImages.map((img, i) => '<div style="position:relative"><img src="' + img + '" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:2px solid #FFE0B2"></div>').join('');
+      document.getElementById('petImageCount').textContent = existingImages.length ? '已有 ' + existingImages.length + ' 张' : '';
       showModal('petModal');
+    }
+
+    function previewPetImages(input) {
+      const files = input.files;
+      document.getElementById('petImageCount').textContent = files.length ? '已选 ' + files.length + ' 张' : '';
+      const previewDiv = document.getElementById('petImagePreview');
+      // Only show new file previews (keep existing images from editPet)
+      const existing = previewDiv.querySelectorAll('[data-existing]').length ? '' : '';
+      let newHtml = '';
+      for (let i = 0; i < Math.min(files.length, 6); i++) {
+        const url = URL.createObjectURL(files[i]);
+        newHtml += '<div><img src="' + url + '" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:2px solid #FFCC80"></div>';
+      }
+      // Replace all previews with new files
+      previewDiv.innerHTML = newHtml;
     }
 
     async function savePet() {
