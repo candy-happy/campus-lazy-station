@@ -374,6 +374,8 @@ const API = {
   async likePet(id, phone) { return fetch('/api/pets/like/' + id, { method: 'POST', headers: { ...this._headers(), 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) }).then(r => r.json()); },
   async commentPet(id, data) { return fetch('/api/pets/comment/' + id, { method: 'POST', body: data }).then(r => r.json()); },
   async deletePetComment(commentId, phone) { return fetch('/api/pets/comment/' + commentId, { method: 'DELETE', headers: { ...this._headers(), 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) }).then(r => r.json()); },
+  async sightPet(id, phone) { return fetch('/api/pets/sight/' + id, { method: 'POST', headers: { ...this._headers(), 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) }).then(r => r.json()); },
+  async petAlertCheck() { return fetch('/api/pets/alert-check').then(r => r.json()); },
 
   // ─── 会话恢复 ───
   restoreSession() {

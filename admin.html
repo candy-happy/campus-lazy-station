@@ -258,6 +258,7 @@
 /* 猫狗管理表单输入框聚焦 */
 #petModal .form-input:focus { border-color: #FF6D00 !important; box-shadow: 0 0 0 3px rgba(255,109,0,0.15) !important; }
 #petModal .form-input::placeholder { color: #FFB74D; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
  .form-input, .form-select, .form-textarea { width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.95rem; font-family: inherit; background: var(--card-bg); }
  .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--orange); }
  .form-input.error { border-color: var(--red); }
@@ -644,6 +645,24 @@
     <h1 class="page-title" style="font-size:1.6rem;background:linear-gradient(135deg,#FF6D00,#FF9100);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🐱 猫狗管理</h1>
     <p class="page-desc" style="color:#BF360C;margin-top:4px">管理校园猫狗身份卡，添加 / 编辑 / 删除</p>
   </div>
+  <!-- 告警统计卡片 -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px" id="petAlertCards">
+    <div style="background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border-radius:12px;padding:16px;text-align:center;border:1px solid #FFE0B2">
+      <div style="font-size:28px">⚠️</div>
+      <div style="font-size:24px;font-weight:800;color:#E65100" id="petAlertWarning">0</div>
+      <div style="font-size:12px;color:#BF360C">7天未见</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#FBE9E7,#FFCCBC);border-radius:12px;padding:16px;text-align:center;border:1px solid #FFAB91">
+      <div style="font-size:28px">🟠</div>
+      <div style="font-size:24px;font-weight:800;color:#BF360C" id="petAlertUrgent">0</div>
+      <div style="font-size:12px;color:#BF360C">15天未现</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#FFEBEE,#FFCDD2);border-radius:12px;padding:16px;text-align:center;border:1px solid #EF9A9A">
+      <div style="font-size:28px">🔴</div>
+      <div style="font-size:24px;font-weight:800;color:#B71C1C" id="petAlertCritical">0</div>
+      <div style="font-size:12px;color:#B71C1C">30天失联</div>
+    </div>
+  </div>
   <div class="market-admin-toolbar" style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border-color:#FFE0B2">
     <button class="btn btn-primary" onclick="showAddPetModal()" style="background:linear-gradient(135deg,#FF6D00,#FF9100);box-shadow:0 4px 14px rgba(255,109,0,0.3)">🐾 添加猫狗</button>
     <div style="display:flex;gap:10px;align-items:center">
@@ -654,7 +673,7 @@
     </div>
   </div>
   <div class="table-card" style="border-color:#FFE0B2">
-    <table class="data-table"><thead><tr><th>头像</th><th>代号</th><th>物种</th><th>品种</th><th>出没地</th><th>❤️</th><th>💬</th><th>状态</th><th>操作</th></tr></thead>
+    <table class="data-table"><thead><tr><th>头像</th><th>代号</th><th>物种</th><th>品种</th><th>出没地</th><th>最后目击</th><th>告警</th><th>❤️</th><th>💬</th><th>操作</th></tr></thead>
     <tbody id="petsTable"></tbody></table>
   </div>
 </div>
@@ -2323,26 +2342,51 @@
       const search = document.getElementById('petSearchInput').value.trim();
       let url = '/api/pets/list?limit=100';
       if (species !== 'all') url += '&species=' + species;
-      const res = await fetch(url, { headers: AUTH() });
-      let pets = await res.json();
-      if (search) pets = pets.filter(p => (p.code_name + p.breed + p.location).includes(search));
-      const speciesEmoji = { cat: '🐱', dog: '🐶' };
-      const statusStyle = { active: 'background:#E8F5E9;color:#2E7D32', missing: 'background:#FFF3E0;color:#E65100', adopted: 'background:#E3F2FD;color:#1565C0', graduated: 'background:#F3E5F5;color:#7B1FA2' };
-      const statusLabel = { active: '在校园', missing: '走失', adopted: '已领养', graduated: '已毕业' };
-      document.getElementById('petsTable').innerHTML = pets.map(p => `<tr style="transition:background 0.2s" onmouseenter="this.style.background='#FFF8E1'" onmouseleave="this.style.background=''">
-        <td>${p.avatar && p.avatar.startsWith('/') ? '<img src="' + p.avatar + '" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #FFE0B2">' : '<span style="font-size:1.8rem">' + (speciesEmoji[p.species] || '🐾') + '</span>'}</td>
-        <td><strong style="color:#E65100">${esc(p.code_name)}</strong></td>
-        <td>${speciesEmoji[p.species] || '🐾'} ${p.species === 'cat' ? '猫咪' : '狗狗'}</td>
-        <td style="color:#666">${esc(p.breed || '-')}</td>
-        <td style="color:#666">📍 ${esc(p.location || '-')}</td>
-        <td style="color:#EF5350;font-weight:600">${p.like_count || 0}</td>
-        <td style="color:#42A5F5;font-weight:600">${p.comment_count || 0}</td>
-        <td><span style="padding:3px 10px;border-radius:20px;font-size:0.8rem;font-weight:600;${statusStyle[p.status] || statusStyle.active}">${statusLabel[p.status] || p.status}</span></td>
-        <td style="white-space:nowrap">
-          <button class="btn" style="padding:4px 10px;font-size:0.8rem;border-color:#FFCC80;color:#E65100;border-radius:8px" onclick="editPet(${p.id})">✏️ 编辑</button>
-          <button class="btn" style="padding:4px 10px;font-size:0.8rem;color:#ef4444;border-radius:8px" onclick="deletePet(${p.id})">🗑️ 删除</button>
-        </td>
-      </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:40px;color:#999;font-size:1rem">🐾 暂无猫狗数据</td></tr>';
+      const [petsRes, alertRes] = await Promise.all([
+        fetch(url, { headers: AUTH() }).then(r => r.json()),
+        fetch('/api/pets/alert-check', { headers: AUTH() }).then(r => r.json()).catch(function() { return { summary: { warning: 0, urgent: 0, critical: 0 } }; })
+      ]);
+      var pets = petsRes;
+      if (search) pets = pets.filter(function(p) { return (p.code_name + p.breed + p.location).includes(search); });
+
+      // 更新告警统计卡片
+      var s = alertRes.summary || { warning: 0, urgent: 0, critical: 0 };
+      document.getElementById('petAlertWarning').textContent = s.warning;
+      document.getElementById('petAlertUrgent').textContent = s.urgent;
+      document.getElementById('petAlertCritical').textContent = s.critical;
+
+      var speciesEmoji = { cat: '\u{1F431}', dog: '\u{1F436}' };
+      var alertBadge = {
+        warning: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFF3E0;color:#E65100;border:1px solid #FFE0B2">\u26A0\uFE0F 7天未见</span>',
+        urgent: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FBE9E7;color:#BF360C;border:1px solid #FFAB91">\u{1F7E0} 15天未现</span>',
+        critical: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A;animation:pulse 2s infinite">\u{1F534} 30天失联</span>'
+      };
+      var rows = '';
+      for (var i = 0; i < pets.length; i++) {
+        var p = pets[i];
+        var seenDays = p.daysSinceSeen;
+        var seenText = seenDays === 0 ? '<span style="color:#4CAF50;font-weight:600">今日已见</span>' : seenDays !== null ? '<span style="color:' + (seenDays >= 30 ? '#B71C1C' : seenDays >= 15 ? '#BF360C' : seenDays >= 7 ? '#E65100' : '#666') + ';font-weight:600">' + seenDays + '天前</span>' : '-';
+        var alert = alertBadge[p.alert_level] || '<span style="color:#4CAF50;font-size:12px">\u2705 正常</span>';
+        var rowBg = p.alert_level === 'critical' ? 'background:#FFF5F5;' : p.alert_level === 'urgent' ? 'background:#FFF8F0;' : '';
+        var avatarBorder = p.alert_level === 'critical' ? '#EF5350' : p.alert_level === 'urgent' ? '#FF9800' : '#FFE0B2';
+        var nameColor = p.alert_level === 'critical' ? '#B71C1C' : '#E65100';
+        var avatarHtml = (p.avatar && p.avatar.charAt(0) === '/') ? '<img src="' + esc(p.avatar) + '" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ' + avatarBorder + '">' : '<span style="font-size:1.8rem">' + (speciesEmoji[p.species] || '\u{1F43E}') + '</span>';
+        rows += '<tr style="transition:background 0.2s;' + rowBg + '" onmouseenter="this.style.background=\'#FFF8E1\'" onmouseleave="this.style.background=\'' + rowBg + '\'">' +
+          '<td>' + avatarHtml + '</td>' +
+          '<td><strong style="color:' + nameColor + '">' + esc(p.code_name) + '</strong></td>' +
+          '<td>' + (speciesEmoji[p.species] || '\u{1F43E}') + ' ' + (p.species === 'cat' ? '猫咪' : '狗狗') + '</td>' +
+          '<td style="color:#666">' + esc(p.breed || '-') + '</td>' +
+          '<td style="color:#666">\u{1F4CD} ' + esc(p.location || '-') + '</td>' +
+          '<td>' + seenText + '</td>' +
+          '<td>' + alert + '</td>' +
+          '<td style="color:#EF5350;font-weight:600">' + (p.like_count||0) + '</td>' +
+          '<td style="color:#42A5F5;font-weight:600">' + (p.comment_count||0) + '</td>' +
+          '<td style="white-space:nowrap">' +
+            '<button class="btn" style="padding:4px 10px;font-size:0.8rem;border-color:#FFCC80;color:#E65100;border-radius:8px" onclick="editPet(' + p.id + ')">\u270F\uFE0F</button> ' +
+            '<button class="btn" style="padding:4px 10px;font-size:0.8rem;color:#ef4444;border-radius:8px" onclick="deletePet(' + p.id + ')">\u{1F5D1}\uFE0F</button>' +
+          '</td></tr>';
+      }
+      document.getElementById('petsTable').innerHTML = rows || '<tr><td colspan="10" style="text-align:center;padding:40px;color:#999;font-size:1rem">\u{1F43E} 暂无猫狗数据</td></tr>';
     }
 
     function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }

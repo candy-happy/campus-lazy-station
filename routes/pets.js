@@ -25,6 +25,8 @@ db.exec(`
     avatar TEXT DEFAULT '',
     images TEXT DEFAULT '',
     bio TEXT DEFAULT '',
+    last_seen_at TEXT DEFAULT '',
+    alert_level TEXT DEFAULT 'none' CHECK(alert_level IN ('none','warning','urgent','critical')),
     like_count INTEGER DEFAULT 0,
     comment_count INTEGER DEFAULT 0,
     status TEXT DEFAULT 'active' CHECK(status IN ('active','missing','adopted','graduated')),
@@ -82,14 +84,28 @@ router.get('/list', (req, res) => JSON_RES(res, () => {
   const params = [];
   if (species && species !== 'all') { sql += ' AND species = ?'; params.push(species); }
   if (status) { sql += ' AND status = ?'; params.push(status); }
-  sql += ' ORDER BY updated_at DESC';
+  sql += ` ORDER BY CASE WHEN alert_level = 'critical' THEN 0 WHEN alert_level = 'urgent' THEN 1 WHEN alert_level = 'warning' THEN 2 ELSE 3 END, updated_at DESC`;
   const pets = db.prepare(sql).all(...params);
-  return pets.map(p => ({
-    ...p,
-    tags: p.tags ? p.tags.split(',').filter(Boolean) : [],
-    images: parseImageUrls(p.images),
-    avatar: p.avatar || (p.species === 'cat' ? '🐱' : '🐶')
-  }));
+  const now = Date.now();
+  return pets.map(p => {
+    let daysSinceSeen = null;
+    let displayAlert = p.alert_level;
+    if (p.last_seen_at) {
+      daysSinceSeen = Math.floor((now - new Date(p.last_seen_at).getTime()) / (1000*60*60*24));
+      if (daysSinceSeen >= 30) displayAlert = 'critical';
+      else if (daysSinceSeen >= 15) displayAlert = 'urgent';
+      else if (daysSinceSeen >= 7) displayAlert = 'warning';
+      else displayAlert = 'none';
+    }
+    return {
+      ...p,
+      tags: p.tags ? p.tags.split(',').filter(Boolean) : [],
+      images: parseImageUrls(p.images),
+      avatar: p.avatar || (p.species === 'cat' ? '🐱' : '🐶'),
+      daysSinceSeen,
+      alert_level: displayAlert
+    };
+  });
 }));
 
 // ─── 猫狗详情 ────────────────────────────────────────────
@@ -142,6 +158,8 @@ router.get('/detail/:id', (req, res) => JSON_RES(res, () => {
     tags: pet.tags ? pet.tags.split(',').filter(Boolean) : [],
     images: parseImageUrls(pet.images),
     avatar: pet.avatar || (pet.species === 'cat' ? '🐱' : '🐶'),
+    daysSinceSeen: pet.last_seen_at ? Math.floor((Date.now() - new Date(pet.last_seen_at).getTime()) / (1000*60*60*24)) : null,
+    alert_level: pet.alert_level || 'none',
     comments: enrichedComments,
     relatedPosts
   };
@@ -264,6 +282,59 @@ router.delete('/admin/delete/:id', requireAdmin, (req, res) => JSON_RES(res, () 
   db.prepare('DELETE FROM pet_likes WHERE pet_id = ?').run(req.params.id);
   db.prepare('DELETE FROM pets WHERE id = ?').run(req.params.id);
   return { message: '已删除' };
+}));
+
+// ─── 目击打卡：用户看到猫狗时记录 ──────────────────────
+router.post('/sight/:id', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { phone } = req.body;
+  if (!phone) return makeError('请先登录', ErrorCode.AUTH_001, 401);
+  const pet = db.prepare('SELECT * FROM pets WHERE id = ?').get(req.params.id);
+  if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
+
+  // 更新最后目击时间 + 重置告警等级
+  db.prepare(`UPDATE pets SET last_seen_at = datetime('now','localtime'), alert_level = 'none', updated_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
+
+  return { message: '打卡成功，已记录目击时间', last_seen_at: new Date().toLocaleString('zh-CN') };
+}));
+
+// ─── 告警检测：检查所有猫狗的失联状态 ────────────────────
+router.get('/alert-check', (req, res) => JSON_RES(res, () => {
+  const pets = db.prepare(`SELECT id, code_name, species, last_seen_at, alert_level, status FROM pets WHERE status = 'active'`).all();
+  const now = Date.now();
+  const alerts = { warning: [], urgent: [], critical: [] };
+
+  pets.forEach(p => {
+    if (!p.last_seen_at) return;
+    const lastSeen = new Date(p.last_seen_at).getTime();
+    const daysSince = (now - lastSeen) / (1000 * 60 * 60 * 24);
+
+    let newLevel = 'none';
+    if (daysSince >= 30) newLevel = 'critical';
+    else if (daysSince >= 15) newLevel = 'urgent';
+    else if (daysSince >= 7) newLevel = 'warning';
+
+    // 更新告警等级（只升不降，打卡时重置）
+    if (newLevel !== 'none') {
+      if (newLevel === 'critical' || p.alert_level !== 'critical') {
+        db.prepare('UPDATE pets SET alert_level = ? WHERE id = ?').run(newLevel, p.id);
+      }
+      const speciesEmoji = p.species === 'cat' ? '🐱' : '🐶';
+      const info = { id: p.id, code_name: p.code_name, species: p.species, speciesEmoji, last_seen_at: p.last_seen_at, daysSince: Math.round(daysSince), alert_level: newLevel };
+      alerts[newLevel].push(info);
+    }
+  });
+
+  return {
+    total: pets.length,
+    warning: alerts.warning,    // 7-14天
+    urgent: alerts.urgent,      // 15-29天
+    critical: alerts.critical,  // 30天+
+    summary: {
+      warning: alerts.warning.length,
+      urgent: alerts.urgent.length,
+      critical: alerts.critical.length
+    }
+  };
 }));
 
 module.exports = router;

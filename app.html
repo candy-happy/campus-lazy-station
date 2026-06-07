@@ -340,6 +340,10 @@
     .pet-filter-btn.active { background:linear-gradient(135deg,#ff9a56,#ff6a88); color:#fff; border-color:transparent; }
     .pet-card { background:#fff; border-radius:16px; overflow:hidden; margin-bottom:12px; box-shadow:var(--shadow); cursor:pointer; transition:transform .2s; }
     .pet-card:active { transform:scale(0.97); }
+    .pet-card-critical { border:2px solid #EF5350; animation:petCriticalPulse 2s infinite; }
+    .pet-card-urgent { border:2px solid #FF9800; }
+    @keyframes petCriticalPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,83,80,0.4)} 50%{box-shadow:0 0 0 8px rgba(239,83,80,0)} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
     .pet-card-avatar { width:100%; height:180px; object-fit:cover; display:block; }
     .pet-card-avatar-placeholder { width:100%; height:180px; display:flex; align-items:center; justify-content:center; font-size:80px; background:linear-gradient(135deg,#fff5f0,#fff0f5); }
     .pet-card-info { padding:12px 16px; }
@@ -6899,22 +6903,28 @@ async function loadPets(species = 'all') {
     const speciesName = p.species === 'cat' ? '猫咪' : '狗狗';
     const statusMap = { active: '在校', missing: '走失', adopted: '已领养', graduated: '已毕业' };
     const statusColor = { active: '#2ECC71', missing: '#E74C3C', adopted: '#3498DB', graduated: '#9B59B6' };
+    const alertConfig = { warning: { emoji: '⚠️', label: '7天未见', bg: '#FFF3E0', color: '#E65100', border: '#FFE0B2' }, urgent: { emoji: '🟠', label: '15天未现', bg: '#FBE9E7', color: '#BF360C', border: '#FFAB91' }, critical: { emoji: '🔴', label: '30天失联', bg: '#FFEBEE', color: '#B71C1C', border: '#EF9A9A' } };
+    const alert = alertConfig[p.alert_level];
+    const alertBadge = alert ? '<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:' + alert.bg + ';color:' + alert.color + ';border:1px solid ' + alert.border + ';font-weight:600;animation:pulse 2s infinite">' + alert.emoji + ' ' + alert.label + '</span>' : '';
+    const seenInfo = p.daysSinceSeen !== null && p.daysSinceSeen > 0 ? '<span style="font-size:11px;color:#999">已' + p.daysSinceSeen + '天未见</span>' : (p.daysSinceSeen === 0 ? '<span style="font-size:11px;color:#4CAF50">今日已见</span>' : '');
     const tags = (p.tags || []).map(t => '<span class="pet-card-tag">' + escHtml(t) + '</span>').join('');
     const avatar = p.avatar && (p.avatar.startsWith('/') || p.avatar.startsWith('http'))
       ? '<img class="pet-card-avatar" src="' + escHtml(p.avatar) + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' + '<div class="pet-card-avatar-placeholder" style="display:none">' + speciesEmoji + '</div>'
       : '<div class="pet-card-avatar-placeholder">' + speciesEmoji + '</div>';
-    return '<div class="pet-card" onclick="showPetDetail(' + p.id + ')">' +
+    return '<div class="pet-card' + (p.alert_level === 'critical' ? ' pet-card-critical' : p.alert_level === 'urgent' ? ' pet-card-urgent' : '') + '" onclick="showPetDetail(' + p.id + ')">' +
       avatar +
       '<div class="pet-card-info">' +
-        '<div style="display:flex;align-items:center;gap:6px">' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
           '<span class="pet-card-name">' + escHtml(p.code_name) + '</span>' +
           '<span style="font-size:11px;padding:1px 6px;border-radius:8px;color:#fff;background:' + (statusColor[p.status]||'#999') + '">' + (statusMap[p.status]||'在校') + '</span>' +
+          alertBadge +
         '</div>' +
         '<div class="pet-card-species">' + speciesEmoji + ' ' + speciesName + (p.breed ? ' · ' + escHtml(p.breed) : '') + '</div>' +
         (tags ? '<div class="pet-card-tags">' + tags + '</div>' : '') +
         '<div class="pet-card-stats">' +
           '<span>❤️ ' + (p.like_count||0) + '</span>' +
           '<span>💬 ' + (p.comment_count||0) + '</span>' +
+          seenInfo +
         '</div>' +
       '</div></div>';
   }).join('');
@@ -6945,11 +6955,20 @@ async function showPetDetail(id) {
   let infoHtml = '<div class="pet-profile-header">' +
     avatar +
     '<div class="pet-profile-name">' + escHtml(data.code_name) + '</div>' +
-    (data.bio ? '<div class="pet-profile-bio">' + escHtml(data.bio) + '</div>' : '') +
-    '<div class="pet-profile-stats">' +
+    (data.bio ? '<div class="pet-profile-bio">' + escHtml(data.bio) + '</div>' : '');
+
+  // 告警横幅
+  const alertConf = { warning: { emoji: '⚠️', label: '7天未见', bg: 'linear-gradient(135deg,#FFF3E0,#FFE0B2)', color: '#E65100' }, urgent: { emoji: '🟠', label: '15天未现', bg: 'linear-gradient(135deg,#FBE9E7,#FFCCBC)', color: '#BF360C' }, critical: { emoji: '🔴', label: '30天失联', bg: 'linear-gradient(135deg,#FFEBEE,#FFCDD2)', color: '#B71C1C' } };
+  const ac = alertConf[data.alert_level];
+  if (ac) {
+    infoHtml += '<div style="margin:8px 0;padding:10px 14px;border-radius:12px;background:' + ac.bg + ';color:' + ac.color + ';font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">' + ac.emoji + ' ' + escHtml(data.code_name) + '已' + (data.daysSinceSeen || '?') + '天未被目击（' + ac.label + '），如看到请点击下方「📍 我看到了」打卡</div>';
+  }
+
+  infoHtml += '<div class="pet-profile-stats">' +
       '<span>❤️ ' + (data.like_count||0) + '</span>' +
       '<span>💬 ' + (data.comment_count||0) + '</span>' +
       '<span>' + (statusMap[data.status]||'🟢 在校') + '</span>' +
+      (data.daysSinceSeen !== null ? '<span>🕐 ' + (data.daysSinceSeen === 0 ? '今日已见' : data.daysSinceSeen + '天未见') + '</span>' : '') +
     '</div>' +
   '</div>';
 
@@ -6977,8 +6996,11 @@ async function showPetDetail(id) {
     infoHtml += '</div>';
   }
 
-  // 点赞按钮
-  infoHtml += '<div style="padding:0 16px 12px"><button id="petLikeBtn" onclick="doPetLike(' + id + ')" style="background:linear-gradient(135deg,#ff9a56,#ff6a88);color:#fff;border:none;border-radius:20px;padding:8px 24px;font-size:14px;font-weight:600;cursor:pointer">❤️ 点赞</button></div>';
+  // 点赞按钮 + 目击打卡
+  infoHtml += '<div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">' +
+    '<button id="petLikeBtn" onclick="doPetLike(' + id + ')" style="background:linear-gradient(135deg,#ff9a56,#ff6a88);color:#fff;border:none;border-radius:20px;padding:8px 24px;font-size:14px;font-weight:600;cursor:pointer">❤️ 点赞</button>' +
+    '<button onclick="doPetSight(' + id + ')" style="background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;border:none;border-radius:20px;padding:8px 24px;font-size:14px;font-weight:600;cursor:pointer">📍 我看到了</button>' +
+  '</div>';
 
   document.getElementById('petProfileCard').innerHTML = infoHtml;
 
@@ -7043,6 +7065,16 @@ async function doPetLike(id) {
   const btn = document.getElementById('petLikeBtn');
   btn.textContent = data.liked ? '❤️ 已赞 (' + data.like_count + ')' : '🤍 点赞 (' + data.like_count + ')';
   btn.style.background = data.liked ? 'linear-gradient(135deg,#ff6a88,#ff4466)' : 'linear-gradient(135deg,#ff9a56,#ff6a88)';
+}
+
+async function doPetSight(id) {
+  if (!API._token) return showToast('请先登录');
+  const phone = localStorage.getItem('lazy_phone');
+  const data = await API.sightPet(id, phone);
+  if (data.error) return showToast(data.error);
+  showToast('📍 打卡成功！已记录目击时间');
+  // 刷新详情
+  showPetDetail(id);
 }
 
 function petToggleEmoji() {
