@@ -124,15 +124,19 @@ router.post('/wall-chat', requireAuth, (req, res) => JSON_RES(res, () => {
   const privacy = targetUser.chat_privacy || 'all';
   if (privacy !== 'all') {
     // 检查关注关系
+    // iFollow: 我(from)是否关注了对方(to) → from_phone 关注 to_phone
     const iFollow = db.prepare('SELECT id FROM wall_follows WHERE follower_phone=? AND following_phone=?').get(from_phone, to_phone);
+    // theyFollowMe: 对方(to)是否关注了我(from) → to_phone 关注 from_phone
+    const theyFollowMe = db.prepare('SELECT id FROM wall_follows WHERE follower_phone=? AND following_phone=?').get(to_phone, from_phone);
     if (privacy === 'followers') {
-      // 关注我的人才能私聊 → 对方是否关注了我？即 to_phone 是否关注了 from_phone
-      const theyFollowMe = db.prepare('SELECT id FROM wall_follows WHERE follower_phone=? AND following_phone=?').get(to_phone, from_phone);
-      if (!theyFollowMe) return makeError('对方仅允许关注者私聊', ErrorCode.CHAT_PRIVACY_BLOCKED);
+      // "关注我的人才能私聊" → 只有关注了对方的人(from关注to)才能私聊对方
+      if (!iFollow) return makeError('对方仅允许关注者私聊，请先关注TA', ErrorCode.CHAT_PRIVACY_BLOCKED);
     } else if (privacy === 'mutual') {
       // 互相关注才能私聊
-      const theyFollowMe = db.prepare('SELECT id FROM wall_follows WHERE follower_phone=? AND following_phone=?').get(to_phone, from_phone);
-      if (!iFollow || !theyFollowMe) return makeError('对方仅允许互关私聊', ErrorCode.CHAT_PRIVACY_BLOCKED);
+      if (!iFollow || !theyFollowMe) {
+        const reason = !iFollow ? '你需要先关注对方' : '对方还没有关注你';
+        return makeError('对方仅允许互关私聊，' + reason, ErrorCode.CHAT_PRIVACY_BLOCKED);
+      }
     }
   }
 

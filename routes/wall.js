@@ -353,6 +353,44 @@ router.get('/user/:phone', (req, res) => JSON_RES(res, () => {
   };
 }));
 
+// ─── 关注列表 ────────────────────────────────────────────
+router.get('/following/:phone', (req, res) => JSON_RES(res, () => {
+  const phone = req.params.phone;
+  const list = db.prepare(`
+    SELECT u.name as nickname, u.phone, u.avatar, 'following' as relation
+    FROM wall_follows f
+    LEFT JOIN users u ON u.phone = f.following_phone
+    WHERE f.follower_phone = ?
+    ORDER BY f.created_at DESC
+  `).all(phone);
+  return list.map(u => ({
+    ...u,
+    nickname: u.nickname || u.phone,
+    avatar: u.avatar || ''
+  }));
+}));
+
+// ─── 粉丝列表 ────────────────────────────────────────────
+router.get('/followers/:phone', (req, res) => JSON_RES(res, () => {
+  const phone = req.params.phone;
+  const myFollowing = new Set(
+    db.prepare('SELECT following_phone FROM wall_follows WHERE follower_phone = ?').all(phone).map(f => f.following_phone)
+  );
+  const list = db.prepare(`
+    SELECT u.name as nickname, u.phone, u.avatar
+    FROM wall_follows f
+    LEFT JOIN users u ON u.phone = f.follower_phone
+    WHERE f.following_phone = ?
+    ORDER BY f.created_at DESC
+  `).all(phone);
+  return list.map(u => ({
+    ...u,
+    nickname: u.nickname || u.phone,
+    avatar: u.avatar || '',
+    isFollowing: myFollowing.has(u.phone)
+  }));
+}));
+
 // ─── 删除帖子 ────────────────────────────────────────────
 router.delete('/posts/:id', requireAuth, (req, res) => JSON_RES(res, () => {
   db.prepare('DELETE FROM wall_posts WHERE id = ?').run(req.params.id);

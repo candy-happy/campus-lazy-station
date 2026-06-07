@@ -4579,7 +4579,7 @@
           <div class="wall-actions">
             <button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button>
             <button class="wall-action" onclick="showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button>
-            ${p.phone !== currentUser.phone ? '<button class="wall-action" onclick="event.stopPropagation();openWallChat(\''+p.phone+'\')">✉️ 私信</button>' : ''}
+            ${p.phone !== currentUser.phone ? '<button class="wall-action" onclick="event.stopPropagation();tryWallChat(\''+p.phone+'\')">✉️ 私信</button>' : ''}
           </div>
         </div>
       `;
@@ -4876,19 +4876,20 @@
       const data = await API.wallUserProfile(phone);
       if (data.error) return showToast(data.error);
       const posts = data.posts || [];
+      const isMe = phone === currentUser.phone;
       const el = document.getElementById('wallDetailContent');
       el.innerHTML = `
         <div style="text-align:center;padding:20px 0;border-bottom:1px solid var(--border,#eee);margin-bottom:16px">
           <div class="wall-avatar" style="width:64px;height:64px;${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? 'overflow:hidden' : 'font-size:28px'};margin:0 auto 12px">${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? '<img src="'+escHtml(data.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />' : (data.avatar && /\p{Emoji}/u.test(data.avatar) && data.avatar.length<=2 ? data.avatar : (data.nickname||'匿')[0])}</div>
           <div style="font-size:18px;font-weight:700">${escHtml(data.nickname)}</div>
           <div style="display:flex;justify-content:center;gap:24px;margin-top:12px">
-            <div><div style="font-size:18px;font-weight:900">${data.followers}</div><div style="font-size:12px;color:var(--text-secondary,#888)">粉丝</div></div>
-            <div><div style="font-size:18px;font-weight:900">${data.following}</div><div style="font-size:12px;color:var(--text-secondary,#888)">关注</div></div>
+            <div style="cursor:pointer" onclick="showFollowList('${phone}','followers')" title="查看粉丝列表"><div style="font-size:18px;font-weight:900">${data.followers}</div><div style="font-size:12px;color:var(--text-secondary,#888)">粉丝</div></div>
+            <div style="cursor:pointer" onclick="showFollowList('${phone}','following')" title="查看关注列表"><div style="font-size:18px;font-weight:900">${data.following}</div><div style="font-size:12px;color:var(--text-secondary,#888)">关注</div></div>
             <div><div style="font-size:18px;font-weight:900">${data.postCount}</div><div style="font-size:12px;color:var(--text-secondary,#888)">帖子</div></div>
           </div>
-          ${phone !== currentUser.phone ? '<div style="display:flex;gap:10px;margin-top:16px;justify-content:center"><button onclick="doWallFollow(\''+phone+'\')" class="submit-btn" style="padding:10px 24px">' + (data.isFollowing ? '已关注' : '+ 关注') + '</button><button onclick="openWallChat(\''+phone+'\')" class="submit-btn" style="padding:10px 24px;background:linear-gradient(135deg,#45B7D1,#6DD5ED);color:#fff">💬 私信</button></div>' : ''}
+          ${!isMe ? '<div style="display:flex;gap:10px;margin-top:16px;justify-content:center"><button onclick="doWallFollow(\''+phone+'\')" class="submit-btn" style="padding:10px 24px">' + (data.isFollowing ? '已关注' : '+ 关注') + '</button><button onclick="tryWallChat(\''+phone+'\')" class="submit-btn" style="padding:10px 24px;background:linear-gradient(135deg,#45B7D1,#6DD5ED);color:#fff">💬 私信</button></div>' : '<div style="margin-top:12px"><button onclick="showFollowList(\''+phone+'\',\'followers\')" class="submit-btn" style="padding:8px 16px;margin:0 6px;font-size:13px">👥 我的粉丝</button><button onclick="showFollowList(\''+phone+'\',\'following\')" class="submit-btn" style="padding:8px 16px;margin:0 6px;font-size:13px">👁 我的关注</button></div>'}
         </div>
-        <div style="font-weight:700;margin-bottom:12px">📝 TA的帖子</div>
+        <div style="font-weight:700;margin-bottom:12px">📝 ${isMe ? '我的' : 'TA的'}帖子</div>
         ${posts.length ? posts.map(p => `
           <div class="wall-card" style="margin-bottom:12px">
             <div class="wall-content" onclick="closeSubPage('wallDetailPage_sub');showWallDetail(${p.id})">${escHtml(p.content)}</div>
@@ -4902,7 +4903,6 @@
         `).join('') : '<div style="text-align:center;color:var(--text-secondary,#888);padding:20px">暂无帖子</div>'}
       `;
       openSubPage('wallDetailPage_sub');
-      /* overflow managed by sub-page */
     }
 
     // 关注/取消关注（用户主页按钮）
@@ -4926,17 +4926,24 @@
       if (post) post.isFollowing = res.following;
  }
 
-    // 校园墙私信
-    async function openWallChat(otherPhone) {
+    // 校园墙私信（带隐私检查+友好提示）
+    async function tryWallChat(otherPhone) {
       if (!currentUser) return showLoginPage();
       if (otherPhone === currentUser.phone) return showToast('不能给自己发私信');
       showToast('正在连接...');
       const res = await API.wallChat(currentUser.phone, otherPhone);
-      if (res.error) return showToast(res.error);
+      if (res.error) {
+        // 隐私限制 - 显示原因弹窗
+        if (res.code === 'CHAT_002' || res.code === 'CHAT_PRIVACY_BLOCKED') {
+          showChatBlockedDialog(otherPhone, res.error);
+        } else {
+          showToast(res.error);
+        }
+        return;
+      }
       closeSubPage('wallDetailPage_sub');
       currentConvId = res.id;
       currentConvPhone = otherPhone;
-      // 获取对方昵称
       const profile = await API.wallUserProfile(otherPhone);
       const otherName = profile.nickname || profile.name || otherPhone;
       document.getElementById('chatConvTitle').textContent = otherName;
@@ -4944,6 +4951,80 @@
       await loadChatMessages();
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
       chatRefreshTimer = setInterval(loadChatMessages, 5000);
+    }
+
+    // 私聊被拒弹窗
+    function showChatBlockedDialog(otherPhone, reason) {
+      let el = document.getElementById('chatBlockedPage_sub');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'chatBlockedPage_sub';
+        el.className = 'sub-page';
+        document.body.appendChild(el);
+      }
+      el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'chatBlockedPage_sub\')">←</button><span class="sub-page-title">💬 无法私聊</span></div>' +
+        '<div class="sub-page-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center">' +
+        '<div style="font-size:64px;margin-bottom:16px">🔒</div>' +
+        '<div style="font-size:18px;font-weight:700;margin-bottom:8px">对方设置了私聊权限</div>' +
+        '<div style="font-size:14px;color:var(--text-secondary,#888);margin-bottom:24px;line-height:1.6">' + escHtml(reason) + '</div>' +
+        '<button class="submit-btn" style="padding:12px 32px;font-size:15px" onclick="closeSubPage(\'chatBlockedPage_sub\');doWallFollow(\''+otherPhone+'\')">❤️ 关注对方</button>' +
+        '<button style="margin-top:12px;padding:10px 24px;border:1px solid var(--border,#ddd);border-radius:8px;background:transparent;color:var(--text-secondary,#888);font-size:14px" onclick="closeSubPage(\'chatBlockedPage_sub\')">返回</button>' +
+        '</div>';
+      openSubPage('chatBlockedPage_sub');
+    }
+
+    // 查看关注/粉丝列表
+    async function showFollowList(phone, type) {
+      const isMe = phone === currentUser.phone;
+      const title = type === 'followers' ? (isMe ? '我的粉丝' : 'TA的粉丝') : (isMe ? '我的关注' : 'TA的关注');
+      let el = document.getElementById('followListPage_sub');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'followListPage_sub';
+        el.className = 'sub-page';
+        document.body.appendChild(el);
+      }
+      el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'followListPage_sub\')">←</button><span class="sub-page-title">' + title + '</span></div><div class="sub-page-body" style="padding:12px"><div style="text-align:center;padding:20px;color:var(--text-secondary)">加载中...</div></div>';
+      openSubPage('followListPage_sub');
+
+      const list = type === 'followers' ? await API.wallFollowers(phone) : await API.wallFollowing(phone);
+      if (list.error) {
+        el.querySelector('.sub-page-body').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary)">' + escHtml(list.error) + '</div>';
+        return;
+      }
+      if (!list.length) {
+        el.querySelector('.sub-page-body').innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:48px;margin-bottom:12px">📭</div><div style="color:var(--text-secondary)">暂无' + (type === 'followers' ? '粉丝' : '关注') + '</div></div>';
+        return;
+      }
+      el.querySelector('.sub-page-body').innerHTML = list.map(u => {
+        const avatarHtml = u.avatar && (u.avatar.startsWith('/') || u.avatar.startsWith('http'))
+          ? '<img src="'+escHtml(u.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />'
+          : '<span style="font-size:18px">'+((u.nickname||'匿')[0])+'</span>';
+        const isSelf = u.phone === currentUser.phone;
+        const iFollowThem = type === 'followers' ? u.isFollowing : true; // following列表里都是我关注的人
+        const followBtn = isSelf ? '' : (iFollowThem
+          ? '<button onclick="toggleFollowFromList(\''+u.phone+'\',this)" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border,#ddd);background:transparent;font-size:12px;color:var(--text-secondary)">已关注</button>'
+          : '<button onclick="toggleFollowFromList(\''+u.phone+'\',this)" style="padding:5px 12px;border-radius:6px;border:none;background:var(--primary);color:#fff;font-size:12px">+ 关注</button>'
+        );
+        return '<div style="display:flex;align-items:center;padding:12px;border-bottom:1px solid var(--border,#eee)">' +
+          '<div style="width:40px;height:40px;border-radius:50%;background:var(--card-alt,#f0f0f0);display:flex;align-items:center;justify-content:center;cursor:pointer;margin-right:12px;overflow:hidden" onclick="closeSubPage(\'followListPage_sub\');closeSubPage(\'wallDetailPage_sub\');setTimeout(()=>showWallUser(\''+u.phone+'\'),100)">' + avatarHtml + '</div>' +
+          '<div style="flex:1;cursor:pointer" onclick="closeSubPage(\'followListPage_sub\');closeSubPage(\'wallDetailPage_sub\');setTimeout(()=>showWallUser(\''+u.phone+'\'),100)">' +
+          '<div style="font-weight:600;font-size:14px">' + escHtml(u.nickname) + '</div>' +
+          '</div>' + followBtn +
+          '</div>';
+      }).join('');
+    }
+
+    // 从粉丝列表关注/取消关注
+    async function toggleFollowFromList(phone, btn) {
+      if (!currentUser) return showLoginPage();
+      const res = await API.wallFollow(currentUser.phone, phone);
+      if (res.error) return showToast(res.error);
+      btn.textContent = res.following ? '已关注' : '+ 关注';
+      btn.style.background = res.following ? 'transparent' : 'var(--primary)';
+      btn.style.color = res.following ? 'var(--text-secondary)' : '#fff';
+      btn.style.border = res.following ? '1px solid var(--border,#ddd)' : 'none';
+      showToast(res.following ? '已关注' : '已取消关注');
     }
 
     
