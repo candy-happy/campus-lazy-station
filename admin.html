@@ -366,6 +366,7 @@
 <div class="nav-item" data-page="ads" onclick="switchPage('ads')"><span class="nav-item-icon">🖼️</span><span class="nav-item-label">广告管理</span></div>
 <div class="nav-item" data-page="market" onclick="switchPage('market')"><span class="nav-item-icon">🛒</span><span class="nav-item-label">二手市场</span></div>
 <div class="nav-item" data-page="ai" onclick="switchPage('ai')"><span class="nav-item-icon">🤖</span><span class="nav-item-label">AI审核</span></div>
+<div class="nav-item" data-page="pets" onclick="switchPage('pets')"><span class="nav-item-icon">🐱</span><span class="nav-item-label">猫狗管理</span></div>
 <div class="nav-item" data-page="withdraw" onclick="switchPage('withdraw')"><span class="nav-item-icon">💸</span><span class="nav-item-label">提现审核</span><span class="pending-badge" id="withdrawBadge" style="display:none">0</span></div>
  </div>
  <div class="nav-section" id="adminSection">
@@ -635,7 +636,53 @@
  <table class="data-table"><thead><tr><th>预览</th><th>标题</th><th>展示</th><th>点击</th><th>点击率</th><th>排序</th><th>状态</th><th>链接</th><th>有效期</th><th>操作</th></tr></thead><tbody id="adsTable"></tbody></table>
  </div>
  </div>
- <div class="page-section" id="page-withdraw">
+ <div class="page-section" id="page-pets">
+  <div class="page-header"><h1 class="page-title">🐱 猫狗管理</h1><p class="page-desc">管理校园猫狗身份卡，添加/编辑/删除</p></div>
+  <div class="market-admin-toolbar">
+    <button class="btn btn-primary" onclick="showAddPetModal()">➕ 添加猫狗</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="petFilterSpecies" onchange="loadPetsAdmin()" style="padding:6px 12px;border-radius:8px;border:1px solid #ddd">
+        <option value="all">全部</option><option value="cat">猫咪</option><option value="dog">狗狗</option>
+      </select>
+      <input type="text" id="petSearchInput" placeholder="搜索代号/品种..." oninput="loadPetsAdmin()" style="padding:6px 12px;border-radius:8px;border:1px solid #ddd;width:180px">
+    </div>
+  </div>
+  <div class="table-card">
+    <table class="data-table"><thead><tr><th>头像</th><th>代号</th><th>物种</th><th>品种</th><th>出没地</th><th>点赞</th><th>留言</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody id="petsTable"></tbody></table>
+  </div>
+</div>
+
+<!-- 添加/编辑猫狗弹窗 -->
+<div class="modal-overlay" id="petModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header"><span class="modal-title" id="petModalTitle">添加猫狗</span><button class="modal-close" onclick="closeModal('petModal')">&times;</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="petEditId">
+      <div class="form-group"><label>代号 *</label><input type="text" id="petCodeName" class="form-input" placeholder="如：橘座大人"></div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label>物种 *</label><select id="petSpecies" class="form-input"><option value="cat">🐱 猫咪</option><option value="dog">🐶 狗狗</option></select></div>
+        <div class="form-group"><label>品种</label><input type="text" id="petBreed" class="form-input" placeholder="如：中华田园猫"></div>
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="form-group"><label>性别</label><select id="petGender" class="form-input"><option value="male">♂ 公</option><option value="female">♀ 母</option><option value="unknown">未知</option></select></div>
+        <div class="form-group"><label>年龄</label><input type="text" id="petAge" class="form-input" placeholder="如：约3岁"></div>
+        <div class="form-group"><label>毛色</label><input type="text" id="petColor" class="form-input" placeholder="如：橘白"></div>
+      </div>
+      <div class="form-group"><label>出没地</label><input type="text" id="petLocation" class="form-input" placeholder="如：一食堂门口"></div>
+      <div class="form-group"><label>性格</label><input type="text" id="petPersonality" class="form-input" placeholder="如：贪吃、粘人"></div>
+      <div class="form-group"><label>标签(逗号分隔)</label><input type="text" id="petTags" class="form-input" placeholder="如：橘猫,一食堂,校霸"></div>
+      <div class="form-group"><label>简介</label><textarea id="petBio" class="form-input" rows="3" placeholder="猫狗的故事..."></textarea></div>
+      <div class="form-group"><label>照片</label><input type="file" id="petImages" multiple accept="image/*" class="form-input"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('petModal')">取消</button>
+      <button class="btn btn-primary" onclick="savePet()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-section" id="page-withdraw">
  <div class="page-header"><h1 class="page-title">提现审核</h1><p class="page-desc">处理骑手提现申请</p></div>
  <div class="stats-cards">
    <div class="stat-card"><div class="stat-icon" style="background:#E3F2FD">💸</div><div class="stat-info"><div class="stat-value" id="statWithdrawTotal">0</div><div class="stat-label">总申请数</div></div></div>
@@ -1592,6 +1639,7 @@
   if (page === 'market') { loadMarketItems(); }
   if (page === 'orders') { loadOrdersPage(); }
   if (page === 'riders') { loadRidersPage(); }
+  if (page === 'pets') { loadPetsAdmin(); }
  }
 
  function showModal(id) { document.getElementById(id).classList.add('active'); }
@@ -2238,6 +2286,100 @@
         document.getElementById('aiWallCommentProgress').style.display = 'none';
         btn.disabled = false;
       }
+    }
+
+    // ─── 猫狗管理 ────────────────────────────
+    const TK = () => localStorage.getItem('lazy_admin_token') || '';
+    const AUTH = () => ({ 'Authorization': 'Bearer ' + TK() });
+
+    async function loadPetsAdmin() {
+      const species = document.getElementById('petFilterSpecies').value;
+      const search = document.getElementById('petSearchInput').value.trim();
+      let url = '/api/pets/list?limit=100';
+      if (species !== 'all') url += '&species=' + species;
+      const res = await fetch(url, { headers: AUTH() });
+      let pets = await res.json();
+      if (search) pets = pets.filter(p => (p.code_name + p.breed + p.location).includes(search));
+      const speciesEmoji = { cat: '🐱', dog: '🐶' };
+      document.getElementById('petsTable').innerHTML = pets.map(p => `<tr>
+        <td>${p.avatar ? '<img src="' + p.avatar + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover">' : (speciesEmoji[p.species] || '🐾')}</td>
+        <td><strong>${esc(p.code_name)}</strong></td>
+        <td>${speciesEmoji[p.species] || p.species} ${p.species === 'cat' ? '猫' : '狗'}</td>
+        <td>${esc(p.breed || '-')}</td>
+        <td>${esc(p.location || '-')}</td>
+        <td>${p.like_count || 0}</td>
+        <td>${p.comment_count || 0}</td>
+        <td><span style="color:${p.status === 'active' ? '#10b981' : '#999'}">${p.status === 'active' ? '在线' : '离线'}</span></td>
+        <td>
+          <button class="btn" style="padding:3px 8px;font-size:0.8rem" onclick="editPet(${p.id})">编辑</button>
+          <button class="btn" style="padding:3px 8px;font-size:0.8rem;color:#ef4444" onclick="deletePet(${p.id})">删除</button>
+        </td>
+      </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">暂无数据</td></tr>';
+    }
+
+    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    function showAddPetModal() {
+      document.getElementById('petEditId').value = '';
+      document.getElementById('petModalTitle').textContent = '添加猫狗';
+      ['petCodeName','petBreed','petAge','petColor','petLocation','petPersonality','petTags','petBio'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('petSpecies').value = 'cat';
+      document.getElementById('petGender').value = 'male';
+      showModal('petModal');
+    }
+
+    async function editPet(id) {
+      const res = await fetch('/api/pets/detail/' + id, { headers: AUTH() });
+      const p = await res.json();
+      document.getElementById('petEditId').value = p.id;
+      document.getElementById('petModalTitle').textContent = '编辑猫狗';
+      document.getElementById('petCodeName').value = p.code_name || '';
+      document.getElementById('petSpecies').value = p.species || 'cat';
+      document.getElementById('petBreed').value = p.breed || '';
+      document.getElementById('petGender').value = p.gender || 'unknown';
+      document.getElementById('petAge').value = p.age || '';
+      document.getElementById('petColor').value = p.color || '';
+      document.getElementById('petLocation').value = p.location || '';
+      document.getElementById('petPersonality').value = p.personality || '';
+      document.getElementById('petTags').value = (p.tags || []).join(',');
+      document.getElementById('petBio').value = p.bio || '';
+      showModal('petModal');
+    }
+
+    async function savePet() {
+      const id = document.getElementById('petEditId').value;
+      const isEdit = !!id;
+      const fd = new FormData();
+      fd.append('code_name', document.getElementById('petCodeName').value);
+      fd.append('species', document.getElementById('petSpecies').value);
+      fd.append('breed', document.getElementById('petBreed').value);
+      fd.append('gender', document.getElementById('petGender').value);
+      fd.append('age', document.getElementById('petAge').value);
+      fd.append('color', document.getElementById('petColor').value);
+      fd.append('location', document.getElementById('petLocation').value);
+      fd.append('personality', document.getElementById('petPersonality').value);
+      fd.append('tags', document.getElementById('petTags').value);
+      fd.append('bio', document.getElementById('petBio').value);
+      const files = document.getElementById('petImages').files;
+      for (let i = 0; i < files.length; i++) fd.append('images', files[i]);
+
+      const url = isEdit ? '/api/pets/admin/update/' + id : '/api/pets/admin/add';
+      const method = isEdit ? 'PUT' : 'POST';
+      const res = await fetch(url, { method, headers: AUTH(), body: fd });
+      const data = await res.json();
+      if (data.error) { showToast(data.error); return; }
+      closeModal('petModal');
+      showToast(isEdit ? '更新成功' : '添加成功');
+      loadPetsAdmin();
+    }
+
+    async function deletePet(id) {
+      if (!confirm('确定删除这只猫狗吗？')) return;
+      const res = await fetch('/api/pets/admin/delete/' + id, { method: 'DELETE', headers: { ...AUTH(), 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: 'admin' }) });
+      const data = await res.json();
+      if (data.error) { showToast(data.error); return; }
+      showToast('删除成功');
+      loadPetsAdmin();
     }
 
     // Init dark mode from localStorage

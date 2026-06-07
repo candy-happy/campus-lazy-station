@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const router = express.Router();
 const db = require('../config/database');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { safeJSON, parseImageUrls } = require('../utils/helpers');
 
@@ -211,7 +211,7 @@ router.delete('/comment/:commentId', requireAuth, (req, res) => JSON_RES(res, ()
 }));
 
 // ─── 管理端：添加猫狗 ────────────────────────────────────
-router.post('/admin/add', requireAuth, upload.array('images', 6), (req, res) => JSON_RES(res, () => {
+router.post('/admin/add', requireAdmin, upload.array('images', 6), (req, res) => JSON_RES(res, () => {
   const { code_name, species, breed, gender, age, color, location, personality, tags, bio } = req.body;
   if (!code_name) return makeError('代号必填', ErrorCode.PARAM_001, 400);
 
@@ -234,7 +234,7 @@ router.post('/admin/add', requireAuth, upload.array('images', 6), (req, res) => 
 }));
 
 // ─── 管理端：更新猫狗 ────────────────────────────────────
-router.put('/admin/update/:id', requireAuth, upload.array('images', 6), (req, res) => JSON_RES(res, () => {
+router.put('/admin/update/:id', requireAdmin, upload.array('images', 6), (req, res) => JSON_RES(res, () => {
   const pet = db.prepare('SELECT * FROM pets WHERE id = ?').get(req.params.id);
   if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
 
@@ -259,7 +259,7 @@ router.put('/admin/update/:id', requireAuth, upload.array('images', 6), (req, re
 }));
 
 // ─── 管理端：删除猫狗 ────────────────────────────────────
-router.delete('/admin/delete/:id', requireAuth, (req, res) => JSON_RES(res, () => {
+router.delete('/admin/delete/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
   db.prepare('DELETE FROM pet_comments WHERE pet_id = ?').run(req.params.id);
   db.prepare('DELETE FROM pet_likes WHERE pet_id = ?').run(req.params.id);
   db.prepare('DELETE FROM pets WHERE id = ?').run(req.params.id);
