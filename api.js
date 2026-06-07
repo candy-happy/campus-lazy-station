@@ -289,6 +289,17 @@ const API = {
     return res.json();
   },
 
+  // ─── 校园墙私聊 ───
+  async wallChat(from_phone, to_phone) {
+    return fetch('/api/chat/wall-chat', { method: 'POST', headers: this._headers(), body: JSON.stringify({ from_phone, to_phone }) }).then(r => r.json());
+  },
+  async getChatPrivacy(phone) {
+    return fetch('/api/chat/chat-privacy?phone=' + phone, { headers: this._headers() }).then(r => r.json());
+  },
+  async setChatPrivacy(phone, privacy) {
+    return fetch('/api/chat/chat-privacy', { method: 'PUT', headers: this._headers(), body: JSON.stringify({ phone, privacy }) }).then(r => r.json());
+  },
+
 
   // ─── 二手交易市场 ───
   async getMarketItems(params = {}) {

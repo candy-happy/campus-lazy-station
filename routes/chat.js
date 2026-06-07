@@ -111,4 +111,59 @@ router.get('/unread', requireAuth, (req, res) => JSON_RES(res, () => {
   return { count };
 }));
 
+// ─── 校园墙私聊：获取或创建会话（带隐私校验）───────────
+router.post('/wall-chat', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { from_phone, to_phone } = req.body;
+  if (!from_phone || !to_phone) return makeError('缺少手机号', ErrorCode.CHAT_PARAM_INCOMPLETE);
+  if (from_phone === to_phone) return makeError('不能给自己发私信', ErrorCode.PARAM_INVALID);
+
+  // 检查对方的私聊隐私设置
+  const targetUser = db.prepare('SELECT phone, chat_privacy FROM users WHERE phone=?').get(to_phone);
+  if (!targetUser) return makeError('用户不存在', ErrorCode.USER_NOT_FOUND);
+
+  const privacy = targetUser.chat_privacy || 'all';
+  if (privacy !== 'all') {
+    // 检查关注关系
+    const iFollow = db.prepare('SELECT id FROM wall_follows WHERE follower_phone=? AND following_phone=?').get(from_phone, to_phone);
+    if (privacy === 'followers') {
+      // 关注我的人才能私聊 → 对方是否关注了我？即 to_phone 是否关注了 from_phone
+      const theyFollowMe = db.prepare('SELECT id FROM wall_follows WHERE follower_phone=? AND following_phone=?').get(to_phone, from_phone);
+      if (!theyFollowMe) return makeError('对方仅允许关注者私聊', ErrorCode.CHAT_PRIVACY_BLOCKED);
+    } else if (privacy === 'mutual') {
+      // 互相关注才能私聊
+      const theyFollowMe = db.prepare('SELECT id FROM wall_follows WHERE follower_phone=? AND following_phone=?').get(to_phone, from_phone);
+      if (!iFollow || !theyFollowMe) return makeError('对方仅允许互关私聊', ErrorCode.CHAT_PRIVACY_BLOCKED);
+    }
+  }
+
+  // 获取或创建会话（item_id 为 NULL 表示校园墙私聊）
+  let conv = db.prepare(
+    "SELECT * FROM conversations WHERE ((user1_phone=? AND user2_phone=?) OR (user1_phone=? AND user2_phone=?)) AND item_id IS NULL"
+  ).get(from_phone, to_phone, to_phone, from_phone);
+  if (!conv) {
+    const r = db.prepare(
+      "INSERT INTO conversations (user1_phone, user2_phone, item_id, item_title, created_at) VALUES (?,?,NULL,'校园墙私信',datetime('now','localtime'))"
+    ).run(from_phone, to_phone);
+    conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(r.lastInsertRowid);
+  }
+  return conv;
+}));
+
+// ─── 获取用户私聊隐私设置 ────────────────────────────────
+router.get('/chat-privacy', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.query.phone;
+  if (!phone) return makeError('缺少手机号', ErrorCode.PARAM_MISSING);
+  const user = db.prepare('SELECT chat_privacy FROM users WHERE phone=?').get(phone);
+  return { privacy: (user && user.chat_privacy) || 'all' };
+}));
+
+// ─── 更新用户私聊隐私设置 ────────────────────────────────
+router.put('/chat-privacy', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { phone, privacy } = req.body;
+  if (!phone) return makeError('缺少手机号', ErrorCode.PARAM_MISSING);
+  if (!['all', 'mutual', 'followers'].includes(privacy)) return makeError('无效的隐私设置', ErrorCode.PARAM_INVALID);
+  db.prepare('UPDATE users SET chat_privacy=? WHERE phone=?').run(privacy, phone);
+  return { ok: true, privacy };
+}));
+
 module.exports = router;

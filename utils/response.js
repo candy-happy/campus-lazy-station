@@ -47,6 +47,7 @@ const ErrorCode = {
 
   // 聊天 CHAT_xxx
   CHAT_PARAM_INCOMPLETE: 'CHAT_001',
+  CHAT_PRIVACY_BLOCKED: 'CHAT_002',
 
   // 限速 RATE_xxx (见 middleware/rateLimit.js)
 

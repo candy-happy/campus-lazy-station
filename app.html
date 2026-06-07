@@ -4579,6 +4579,7 @@
           <div class="wall-actions">
             <button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button>
             <button class="wall-action" onclick="showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button>
+            ${p.phone !== currentUser.phone ? '<button class="wall-action" onclick="event.stopPropagation();openWallChat(\''+p.phone+'\')">✉️ 私信</button>' : ''}
           </div>
         </div>
       `;
@@ -4885,7 +4886,7 @@
             <div><div style="font-size:18px;font-weight:900">${data.following}</div><div style="font-size:12px;color:var(--text-secondary,#888)">关注</div></div>
             <div><div style="font-size:18px;font-weight:900">${data.postCount}</div><div style="font-size:12px;color:var(--text-secondary,#888)">帖子</div></div>
           </div>
-          ${phone !== currentUser.phone ? '<button onclick="doWallFollow(\''+phone+'\')" class="submit-btn" style="margin-top:16px;padding:10px 24px">' + (data.isFollowing ? '已关注' : '+ 关注') + '</button>' : ''}
+          ${phone !== currentUser.phone ? '<div style="display:flex;gap:10px;margin-top:16px;justify-content:center"><button onclick="doWallFollow(\''+phone+'\')" class="submit-btn" style="padding:10px 24px">' + (data.isFollowing ? '已关注' : '+ 关注') + '</button><button onclick="openWallChat(\''+phone+'\')" class="submit-btn" style="padding:10px 24px;background:linear-gradient(135deg,#45B7D1,#6DD5ED);color:#fff">💬 私信</button></div>' : ''}
         </div>
         <div style="font-weight:700;margin-bottom:12px">📝 TA的帖子</div>
         ${posts.length ? posts.map(p => `
@@ -4924,6 +4925,26 @@
       const post = wallPosts.find(p => p.id === postId);
       if (post) post.isFollowing = res.following;
  }
+
+    // 校园墙私信
+    async function openWallChat(otherPhone) {
+      if (!currentUser) return showLoginPage();
+      if (otherPhone === currentUser.phone) return showToast('不能给自己发私信');
+      showToast('正在连接...');
+      const res = await API.wallChat(currentUser.phone, otherPhone);
+      if (res.error) return showToast(res.error);
+      closeSubPage('wallDetailPage_sub');
+      currentConvId = res.id;
+      currentConvPhone = otherPhone;
+      // 获取对方昵称
+      const profile = await API.wallUserProfile(otherPhone);
+      const otherName = profile.nickname || profile.name || otherPhone;
+      document.getElementById('chatConvTitle').textContent = otherName;
+      openSubPage('chatConvPage_sub');
+      await loadChatMessages();
+      if (chatRefreshTimer) clearInterval(chatRefreshTimer);
+      chatRefreshTimer = setInterval(loadChatMessages, 5000);
+    }
 
     
     // ═══════════════════════════════════════════════════════
@@ -5812,34 +5833,45 @@
     function showSettings() {
       if (!currentUser) return showToast(_t('loginFirst'));
       const isDark = document.body.classList.contains('dark');
-      let el = document.getElementById('settingsPage_sub');
-      if (!el) {
-        el = document.createElement('div');
-        el.id = 'settingsPage_sub';
-        el.className = 'sub-page';
-        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'settingsPage_sub\')">←</button><span class="sub-page-title">' + _t('settingsTitle') + '</span></div><div class="sub-page-body"></div>';
-        document.body.appendChild(el);
-      }
-      el.querySelector('.sub-page-body').innerHTML =
-        '<div class="settings-section">' +
-        '<div class="settings-section-title">' + _t('settingsAppearance') + '</div>' +
-        '<div class="settings-item">' +
-        '<div class="settings-item-left">' + _t('darkMode') + '</div>' +
-        '<label class="toggle-switch"><input type="checkbox" id="darkToggle" ' + (isDark ? 'checked' : '') + ' onchange="toggleDark(this.checked)"><span class="toggle-track ' + (isDark?'on':'off') + '"></span><span class="toggle-thumb ' + (isDark?'on':'off') + '"></span></label>' +
-        '</div>' +
-        '<div class="settings-item" style="cursor:pointer" onclick="toggleLanguage()">' +
-        '<div class="settings-item-left">' + _t('languageLabel') + '</div>' +
-        '<div class="settings-item-right" style="font-weight:600;color:var(--primary)">' + (_lang === 'zh' ? '中文' : 'English') + ' ›</div>' +
-        '</div></div>' +
-        '<div class="settings-section">' +
-        '<div class="settings-section-title">' + _t('settingsAccount') + '</div>' +
-        '<div class="settings-item">' +
-        '<div class="settings-item-left">' + _t('phoneLabel') + '</div>' +
-        '<div class="settings-item-right">' + escHtml(currentUser.phone) + '</div>' +
-        '</div></div>' +
-        '<button class="settings-logout-btn" onclick="if(confirm(t(\'logoutConfirm\'))){localStorage.removeItem(\'lazyUser\');location.reload()}">' + _t('logoutBtn') + '</button>' +
-        '<div class="settings-version">' + _t('versionText') + '</div>';
-      openSubPage('settingsPage_sub');
+      // 加载私聊隐私设置
+      API.getChatPrivacy(currentUser.phone).then(pr => {
+        const curPrivacy = pr.privacy || 'all';
+        const privacyLabels = { all: '所有人', mutual: '互相关注', followers: '关注我的人' };
+        let el = document.getElementById('settingsPage_sub');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'settingsPage_sub';
+          el.className = 'sub-page';
+          el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'settingsPage_sub\')">←</button><span class="sub-page-title">' + _t('settingsTitle') + '</span></div><div class="sub-page-body"></div>';
+          document.body.appendChild(el);
+        }
+        el.querySelector('.sub-page-body').innerHTML =
+          '<div class="settings-section">' +
+          '<div class="settings-section-title">' + _t('settingsAppearance') + '</div>' +
+          '<div class="settings-item">' +
+          '<div class="settings-item-left">' + _t('darkMode') + '</div>' +
+          '<label class="toggle-switch"><input type="checkbox" id="darkToggle" ' + (isDark ? 'checked' : '') + ' onchange="toggleDark(this.checked)"><span class="toggle-track ' + (isDark?'on':'off') + '"></span><span class="toggle-thumb ' + (isDark?'on':'off') + '"></span></label>' +
+          '</div>' +
+          '<div class="settings-item" style="cursor:pointer" onclick="toggleLanguage()">' +
+          '<div class="settings-item-left">' + _t('languageLabel') + '</div>' +
+          '<div class="settings-item-right" style="font-weight:600;color:var(--primary)">' + (_lang === 'zh' ? '中文' : 'English') + ' ›</div>' +
+          '</div></div>' +
+          '<div class="settings-section">' +
+          '<div class="settings-section-title">🔐 隐私设置</div>' +
+          '<div class="settings-item" style="cursor:pointer" onclick="showChatPrivacyOptions()">' +
+          '<div class="settings-item-left">💬 谁可以私聊我</div>' +
+          '<div class="settings-item-right" style="font-weight:600;color:var(--primary)" id="chatPrivacyLabel">' + privacyLabels[curPrivacy] + ' ›</div>' +
+          '</div></div>' +
+          '<div class="settings-section">' +
+          '<div class="settings-section-title">' + _t('settingsAccount') + '</div>' +
+          '<div class="settings-item">' +
+          '<div class="settings-item-left">' + _t('phoneLabel') + '</div>' +
+          '<div class="settings-item-right">' + escHtml(currentUser.phone) + '</div>' +
+          '</div></div>' +
+          '<button class="settings-logout-btn" onclick="if(confirm(_t(\'logoutConfirm\'))){localStorage.removeItem(\'lazyUser\');location.reload()}">' + _t('logoutBtn') + '</button>' +
+          '<div class="settings-version">' + _t('versionText') + '</div>';
+        openSubPage('settingsPage_sub');
+      });
     }
     function toggleLanguage() {
       setLang(_lang === 'zh' ? 'en' : 'zh');
@@ -5849,6 +5881,44 @@
       localStorage.setItem('lazyTheme', on ? 'dark' : 'light');
       const btn = document.getElementById('themeBtn');
       if (btn) btn.textContent = on ? '☀️' : '🌙';
+      closeSubPage('settingsPage_sub');
+      setTimeout(() => showSettings(), 200);
+    }
+
+    // 私聊隐私选择
+    async function showChatPrivacyOptions() {
+      const pr = await API.getChatPrivacy(currentUser.phone);
+      const cur = pr.privacy || 'all';
+      let el = document.getElementById('chatPrivacyPage_sub');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'chatPrivacyPage_sub';
+        el.className = 'sub-page';
+        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'chatPrivacyPage_sub\')">←</button><span class="sub-page-title">💬 谁可以私聊我</span></div><div class="sub-page-body"></div>';
+        document.body.appendChild(el);
+      }
+      const options = [
+        { value: 'all', icon: '🌐', name: '所有人', desc: '任何用户都可以给你发私信' },
+        { value: 'followers', icon: '👥', name: '关注我的人', desc: '只有关注了你的人才能私聊' },
+        { value: 'mutual', icon: '🤝', name: '互相关注', desc: '只有互相关注的好友才能私聊' }
+      ];
+      el.querySelector('.sub-page-body').innerHTML = '<div style="padding:12px">' + options.map(o =>
+        '<div class="settings-item" style="cursor:pointer;padding:16px;border-radius:12px;margin-bottom:10px;background:var(--card);box-shadow:var(--shadow);border:2px solid ' + (cur === o.value ? 'var(--primary)' : 'transparent') + '" onclick="setChatPrivacy(\'' + o.value + '\')">' +
+        '<div style="display:flex;align-items:center;gap:12px">' +
+        '<div style="font-size:28px;width:40px;text-align:center">' + o.icon + '</div>' +
+        '<div style="flex:1"><div style="font-weight:700;font-size:15px">' + o.name + '</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px">' + o.desc + '</div></div>' +
+        (cur === o.value ? '<div style="color:var(--primary);font-size:20px">✓</div>' : '') +
+        '</div></div>'
+      ).join('') + '</div>';
+      openSubPage('chatPrivacyPage_sub');
+    }
+
+    async function setChatPrivacy(privacy) {
+      const res = await API.setChatPrivacy(currentUser.phone, privacy);
+      if (res.error) return showToast(res.error);
+      const labels = { all: '所有人', mutual: '互相关注', followers: '关注我的人' };
+      showToast('已设为：' + labels[privacy]);
+      closeSubPage('chatPrivacyPage_sub');
       closeSubPage('settingsPage_sub');
       setTimeout(() => showSettings(), 200);
     }
