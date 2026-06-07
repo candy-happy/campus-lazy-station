@@ -2453,7 +2453,7 @@
 .teacher-course-tag { display:inline-block;padding:4px 10px;border-radius:8px;background:#E3F2FD;color:#1565C0;font-size:12px;font-weight:500 }
 
 </style>
-<script src="api.js?v=3.0.8"></script>
+<script src="api.js?v=3.0.9"></script>
 </head>
 <body>
   <div class="app">
@@ -7097,7 +7097,6 @@ async function doPetLike(id) {
 }
 
 async function openSightPage(id) {
-  alert('[v3.0.5] openSightPage 被调用! id=' + id);
   console.log('[DEBUG] openSightPage called, id=', id, 'token=', !!API._token, '_currentPet=', !!window._currentPet);
   var old = document.getElementById('sightPage_sub');
   if (old) { old.remove(); }
@@ -7187,19 +7186,6 @@ async function openSightPage(id) {
   wrap.appendChild(body);
   document.body.appendChild(wrap);
   console.log('[DEBUG] sightPage_sub created, childCount:', wrap.childNodes.length, 'body childCount:', wrap.lastChild.childNodes.length);
-  alert('[DEBUG] 页面已创建! 子元素数=' + wrap.childNodes.length + ', body子元素=' + wrap.lastChild.childNodes.length);
-  
-  // 强制可见性调试
-  setTimeout(function() {
-    var el = document.getElementById('sightPage_sub');
-    if (el) {
-      var rect = el.getBoundingClientRect();
-      var computed = window.getComputedStyle(el);
-      alert('[CSS DEBUG] 元素存在!\n显示:' + computed.display + '\n可见性:' + computed.visibility + '\n透明度:' + computed.opacity + \n             '\n位置:top=' + rect.top + ' left=' + rect.left + '\n宽高:' + rect.width + 'x' + rect.height + \n             '\nzIndex:' + computed.zIndex + '\nposition:' + computed.position);
-    } else {
-      alert('[CSS DEBUG] 元素不存在!!');
-    }
-  }, 100);
 }
 
 function makeCard(html) {
