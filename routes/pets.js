@@ -52,8 +52,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     pet_id INTEGER NOT NULL,
     phone TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now','localtime')),
-    UNIQUE(pet_id, phone)
+    created_at TEXT DEFAULT (datetime('now','localtime'))
   );
 
   CREATE TABLE IF NOT EXISTS pet_sightings (
@@ -63,6 +62,8 @@ db.exec(`
     nickname TEXT DEFAULT '',
     location TEXT DEFAULT '',
     note TEXT DEFAULT '',
+    status TEXT DEFAULT 'pending',
+    reviewed_at TEXT,
     created_at TEXT DEFAULT (datetime('now','localtime'))
   );
 `);
@@ -188,7 +189,7 @@ router.post('/like/:id', requireAuth, (req, res) => JSON_RES(res, () => {
     return { liked: false, like_count: db.prepare('SELECT like_count FROM pets WHERE id = ?').get(req.params.id).like_count };
   } else {
     db.prepare("INSERT INTO pet_likes (pet_id, phone) VALUES (?, ?)").run(req.params.id, phone);
-    db.prepare('UPDATE pets SET like_count = like_count + 1, updated_at = datetime("now","localtime") WHERE id = ?').run(req.params.id);
+    db.prepare(`UPDATE pets SET like_count = like_count + 1, updated_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
     return { liked: true, like_count: db.prepare('SELECT like_count FROM pets WHERE id = ?').get(req.params.id).like_count };
   }
 }));
@@ -222,7 +223,7 @@ router.post('/comment/:id', requireAuth, upload.array('media', 6), (req, res) =>
      VALUES (?, ?, ?, ?, ?, ?, ?)`
   );
   const result = stmt.run(req.params.id, phone, nickname || '', avatar, content || '', images, parent_id || null);
-  db.prepare('UPDATE pets SET comment_count = comment_count + 1, updated_at = datetime("now","localtime") WHERE id = ?').run(req.params.id);
+  db.prepare(`UPDATE pets SET comment_count = comment_count + 1, updated_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
 
   return { id: result.lastInsertRowid, message: '留言成功' };
 }));
@@ -323,7 +324,7 @@ router.get('/sightings/:id', (req, res) => JSON_RES(res, () => {
     `SELECT ps.*, u.nickname as user_nickname, u.avatar as user_avatar
      FROM pet_sightings ps
      LEFT JOIN users u ON ps.phone = u.phone
-     WHERE ps.pet_id = ? ORDER BY ps.created_at DESC LIMIT 20`
+     WHERE ps.pet_id = ? AND ps.status = 'approved' ORDER BY ps.created_at DESC LIMIT 20`
   ).all(req.params.id);
   return sightings;
 }));
@@ -341,14 +342,11 @@ router.post('/sight/:id', requireAuth, (req, res) => JSON_RES(res, () => {
     || db.prepare('SELECT nickname FROM riders WHERE phone = ?').get(phone);
   if (user && user.nickname) nickname = user.nickname;
 
-  // 更新最后目击时间 + 重置告警等级
-  db.prepare(`UPDATE pets SET last_seen_at = datetime('now','localtime'), alert_level = 'none', updated_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
-
-  // 写入目击记录
-  db.prepare(`INSERT INTO pet_sightings (pet_id, phone, nickname, location, note) VALUES (?, ?, ?, ?, ?)`)
+  // 写入目击记录（待审核），不立即更新last_seen_at
+  const result = db.prepare(`INSERT INTO pet_sightings (pet_id, phone, nickname, location, note, status) VALUES (?, ?, ?, ?, ?, 'pending')`)
     .run(req.params.id, phone, nickname, location || '', note || '');
 
-  return { message: '打卡成功，已记录目击时间', last_seen_at: new Date().toLocaleString('zh-CN') };
+  return { message: '打卡成功，等待管理端审核确认', sighting_id: result.lastInsertRowid };
 }));
 
 // ─── 告警检测：检查所有猫狗的失联状态 ────────────────────
@@ -389,6 +387,40 @@ router.get('/alert-check', (req, res) => JSON_RES(res, () => {
       critical: alerts.critical.length
     }
   };
+}));
+
+// ─── 管理端审核目击记录 ──────────────────────────────
+router.put('/admin/review-sighting/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { action } = req.body; // 'approve' | 'reject'
+  if (!action || !['approve', 'reject'].includes(action)) return makeError('无效操作', ErrorCode.PARAM_INVALID, 400);
+
+  const sighting = db.prepare('SELECT * FROM pet_sightings WHERE id = ?').get(req.params.id);
+  if (!sighting) return makeError('目击记录不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
+  if (sighting.status !== 'pending') return makeError('该记录已审核', ErrorCode.PARAM_INVALID, 400);
+
+  if (action === 'approve') {
+    // 更新目击记录状态
+    db.prepare(`UPDATE pet_sightings SET status = 'approved', reviewed_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
+    // 更新猫狗最后目击时间 + 重置告警
+    db.prepare(`UPDATE pets SET last_seen_at = datetime('now','localtime'), alert_level = 'none', updated_at = datetime('now','localtime') WHERE id = ?`).run(sighting.pet_id);
+    return { message: '审核通过，已更新目击时间' };
+  } else {
+    db.prepare(`UPDATE pet_sightings SET status = 'rejected', reviewed_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
+    return { message: '已驳回' };
+  }
+}));
+
+// ─── 管理端获取待审核目击列表 ──────────────────────────
+router.get('/admin/pending-sightings', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const sightings = db.prepare(`
+    SELECT ps.*, p.code_name, p.species, u.nickname as user_nickname, u.avatar as user_avatar
+    FROM pet_sightings ps
+    LEFT JOIN pets p ON ps.pet_id = p.id
+    LEFT JOIN users u ON ps.phone = u.phone
+    WHERE ps.status = 'pending'
+    ORDER BY ps.created_at DESC
+  `).all();
+  return sightings;
 }));
 
 module.exports = router;

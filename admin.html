@@ -673,6 +673,7 @@
         <option value="all">📋 全部状态</option><option value="active">🟢 在校</option><option value="missing">🟠 走失</option><option value="adopted">💜 已领养</option><option value="graduated">🎓 已毕业</option>
       </select>
       <input type="text" id="petSearchInput" placeholder="🔍 搜索代号 / 品种..." oninput="loadPetsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFCC80;background:#fff;width:200px;font-size:0.9rem">
+      <button class="btn" id="petReviewBtn" onclick="showReviewSightings()" style="padding:8px 16px;border-radius:10px;border:2px solid #43A047;background:#E8F5E9;color:#2E7D32;font-weight:600;font-size:0.85rem;cursor:pointer;position:relative">🔍 待审核<span id="petPendingBadge" style="position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:#E74C3C;color:#fff;font-size:11px;font-weight:700;display:none;justify-content:center;align-items:center;padding:0 4px">0</span></button>
     </div>
   </div>
   <div class="table-card" style="border-color:#FFE0B2">
@@ -761,6 +762,19 @@
     </div>
   </div>
 </div>
+
+<!-- 目击审核弹窗 -->
+<div class="modal-overlay" id="reviewSightingsModal">
+  <div class="modal-content" style="max-width:600px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#43A047,#66BB6A);border-radius:12px 12px 0 0;padding:20px 24px">
+      <span class="modal-title" style="color:#fff;font-size:1.15rem">\u{1F50D} 目击审核</span>
+      <button class="modal-close" onclick="closeModal('reviewSightingsModal')" style="color:#fff;background:rgba(255,255,255,0.2)">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:16px;max-height:500px;overflow-y:auto" id="reviewSightingsContent">
+    </div>
+  </div>
+</div>
+
  <div class="page-header"><h1 class="page-title">提现审核</h1><p class="page-desc">处理骑手提现申请</p></div>
  <div class="stats-cards">
    <div class="stat-card"><div class="stat-icon" style="background:#E3F2FD">💸</div><div class="stat-info"><div class="stat-value" id="statWithdrawTotal">0</div><div class="stat-label">总申请数</div></div></div>
@@ -2389,6 +2403,19 @@
       document.getElementById('petAlertWarning').textContent = s.warning;
       document.getElementById('petAlertUrgent').textContent = s.urgent;
       document.getElementById('petAlertCritical').textContent = s.critical;
+
+      // Update pending sightings badge
+      try {
+        const pendingRes = await fetch('/api/pets/admin/pending-sightings', { headers: AUTH() });
+        const pendingList = await pendingRes.json();
+        const badge = document.getElementById('petPendingBadge');
+        if (badge && pendingList && pendingList.length > 0) {
+          badge.textContent = pendingList.length;
+          badge.style.display = 'flex';
+        } else if (badge) {
+          badge.style.display = 'none';
+        }
+      } catch(e) {}
 
       var speciesEmoji = { cat: '\u{1F431}', dog: '\u{1F436}' };
       var statusMap = {

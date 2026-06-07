@@ -378,6 +378,8 @@ const API = {
   async petAlertCheck() { return fetch('/api/pets/alert-check').then(r => r.json()); },
   async getPetSightings(id) { return fetch('/api/pets/sightings/' + id).then(r => r.json()); },
   async updatePetStatus(id, status) { return fetch('/api/pets/admin/status/' + id, { method: 'PUT', headers: { ...this._headers(), 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }).then(r => r.json()); },
+  async getPendingSightings() { return fetch('/api/pets/admin/pending-sightings', { headers: this._headers() }).then(r => r.json()); },
+  async reviewSighting(id, action) { return fetch('/api/pets/admin/review-sighting/' + id, { method: 'PUT', headers: { ...this._headers(), 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) }).then(r => r.json()); },
 
   // ─── 会话恢复 ───
   restoreSession() {

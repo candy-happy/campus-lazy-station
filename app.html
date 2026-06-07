@@ -7095,7 +7095,7 @@ async function doPetSight(id) {
   var note = prompt('有什么想说的？（可跳过）') || '';
   const data = await API.sightPet(id, phone, location, note);
   if (data.error) return showToast(data.error);
-  showToast('\u{1F4CD} 打卡成功！已记录目击时间');
+  showToast('\u{1F4CD} 打卡成功！等待管理端审核确认');
   // 刷新详情
   showPetDetail(id);
 }
