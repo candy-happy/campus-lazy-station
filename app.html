@@ -252,11 +252,11 @@
     }
     .service-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px 12px;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
       background: var(--card);
       border-radius: var(--radius);
-      padding: 20px 12px;
+      padding: 16px 12px;
       box-shadow: var(--shadow);
     }
     .service-item {
@@ -269,24 +269,69 @@
     }
     .service-item:active { transform: scale(0.95); }
     .service-icon {
-      width: 52px;
-      height: 52px;
+      width: 50px;
+      height: 50px;
       border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 26px;
+      font-size: 24px;
       transition: all 0.2s;
     }
-    .service-item:nth-child(1) .service-icon { background: linear-gradient(135deg, #FF6B6B, #FF8E8E); }
-    .service-item:nth-child(2) .service-icon { background: linear-gradient(135deg, #4ECDC4, #6EE7DE); }
-    .service-item:nth-child(3) .service-icon { background: linear-gradient(135deg, #45B7D1, #6DD5ED); }
-    .service-item:nth-child(4) .service-icon { background: linear-gradient(135deg, #96CEB4, #B8E0C8); }
-    .service-item:nth-child(5) .service-icon { background: linear-gradient(135deg, #DDA0DD, #E8B8E8); }
-    .service-item:nth-child(6) .service-icon { background: linear-gradient(135deg, #F7DC6F, #F9E79F); }
-    .service-item:nth-child(7) .service-icon { background: linear-gradient(135deg, #BB8FCE, #D7BDE2); }
-    .service-item:nth-child(8) .service-icon { background: linear-gradient(135deg, #85C1E9, #AED6F1); }
-    .service-name { font-size: 12px; font-weight: 500; color: var(--text); text-align: center; }
+    .service-item:nth-child(1) .service-icon { background: linear-gradient(135deg, #FF6B35, #FF8E53); }
+    .service-item:nth-child(2) .service-icon { background: linear-gradient(135deg, #45B7D1, #6DD5ED); }
+    .service-item:nth-child(3) .service-icon { background: linear-gradient(135deg, #4ECDC4, #6EE7DE); }
+    .service-item:nth-child(4) .service-icon { background: linear-gradient(135deg, #F7DC6F, #F9E79F); }
+    .service-item:nth-child(5) .service-icon { background: linear-gradient(135deg, #BB8FCE, #D7BDE2); }
+    .service-name { font-size: 12px; font-weight: 600; color: var(--text); text-align: center; }
+    .service-placeholder .service-icon {
+      background: var(--bg) !important;
+      border: 2px dashed var(--border);
+      opacity: 0.5;
+    }
+    .service-placeholder .service-name { color: var(--text-secondary); }
+    /* 跑腿服务选择页 */
+    .errand-hero {
+      text-align: center;
+      padding: 20px 16px;
+      background: linear-gradient(135deg, #FF6B35, #FF8E53);
+      border-radius: 14px;
+      color: #fff;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(255,107,53,0.3);
+    }
+    .errand-hero-icon { font-size: 40px; margin-bottom: 8px; }
+    .errand-hero-title { font-size: 20px; font-weight: 800; }
+    .errand-hero-desc { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+    .errand-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .errand-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 18px 10px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1.5px solid transparent;
+    }
+    .errand-card:active { transform: scale(0.95); }
+    .errand-card:hover { border-color: var(--primary); }
+    .errand-card-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin: 0 auto 10px;
+    }
+    .errand-card-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .errand-card-price { font-size: 12px; color: var(--primary); margin-top: 4px; font-weight: 600; }
+    .errand-card-desc { font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4; }
 
     /* ═══════════════════════════════════════════════════════
        🎁 快捷入口
@@ -2309,37 +2354,25 @@
         <!-- 服务分类 -->
         <div class="section">
           <div class="service-grid">
-            <div class="service-item" onclick="openOrderModal('delivery')">
-              <div class="service-icon">🍱</div>
-              <div class="service-name" data-i18n="serviceDelivery">代取外卖</div><!-- data-i18n:serviceDelivery -->
-            </div>
-            <div class="service-item" onclick="openOrderModal('express')">
-              <div class="service-icon">📦</div>
-              <div class="service-name" data-i18n="serviceExpress">代取快递</div><!-- data-i18n:serviceExpress -->
+            <div class="service-item" onclick="showErrandServices()">
+              <div class="service-icon">🏃</div>
+              <div class="service-name" data-i18n="serviceErrandAll">跑腿服务</div><!-- data-i18n:serviceErrandAll -->
             </div>
             <div class="service-item" onclick="openSubPage('teacherListPage_sub')">
               <div class="service-icon">👨‍🏫</div>
               <div class="service-name" data-i18n="serviceTeacher">师说</div><!-- data-i18n:serviceTeacher -->
             </div>
-            <div class="service-item" onclick="openOrderModal('purchase')">
-              <div class="service-icon">🛒</div>
-              <div class="service-name" data-i18n="servicePurchase">代买东西</div><!-- data-i18n:servicePurchase -->
+            <div class="service-item service-placeholder" onclick="showToast(_t('moreServiceSoon'))">
+              <div class="service-icon">🔜</div>
+              <div class="service-name">敬请期待</div>
             </div>
-            <div class="service-item" onclick="openOrderModal('laundry')">
-              <div class="service-icon">👕</div>
-              <div class="service-name" data-i18n="serviceLaundry">代取洗衣</div><!-- data-i18n:serviceLaundry -->
+            <div class="service-item service-placeholder" onclick="showToast(_t('moreServiceSoon'))">
+              <div class="service-icon">🔜</div>
+              <div class="service-name">敬请期待</div>
             </div>
-            <div class="service-item" onclick="openOrderModal('errand')">
-              <div class="service-icon">🏃</div>
-              <div class="service-name" data-i18n="serviceErrand">跑腿办事</div><!-- data-i18n:serviceErrand -->
-            </div>
-            <div class="service-item" onclick="openOrderModal('other')">
-              <div class="service-icon">💡</div>
-              <div class="service-name" data-i18n="serviceOther">其他服务</div><!-- data-i18n:serviceOther -->
-            </div>
-            <div class="service-item" onclick="showToast(_t('moreServiceSoon'))">
-              <div class="service-icon">➕</div>
-              <div class="service-name" data-i18n="serviceMore">更多服务</div><!-- data-i18n:serviceMore -->
+            <div class="service-item service-placeholder" onclick="showToast(_t('moreServiceSoon'))">
+              <div class="service-icon">🔜</div>
+              <div class="service-name">敬请期待</div>
             </div>
           </div>
 
@@ -5134,6 +5167,50 @@
     }
 
     // ══════ 涓嬪崟寮圭獥 ══════
+    function showErrandServices() {
+      let el = document.getElementById('errandPage_sub');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'errandPage_sub';
+        el.className = 'sub-page';
+        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'errandPage_sub\')">←</button><span class="sub-page-title">🏃 跑腿服务</span></div><div class="sub-page-body"></div>';
+        document.body.appendChild(el);
+      }
+      const services = [
+        { key:'delivery', icon:'🍱', name:_t('serviceDelivery'), desc:_t('serviceDescDelivery'), price:2 },
+        { key:'express', icon:'📦', name:_t('serviceExpress'), desc:_t('serviceDescExpress'), price:2 },
+        { key:'purchase', icon:'🛒', name:_t('servicePurchase'), desc:_t('serviceDescPurchase'), price:3 },
+        { key:'laundry', icon:'👕', name:_t('serviceLaundry'), desc:_t('serviceDescLaundry'), price:2 },
+        { key:'errand', icon:'🏃', name:_t('serviceErrand'), desc:_t('serviceDescErrand'), price:5 },
+        { key:'other', icon:'✨', name:_t('serviceOther'), desc:_t('serviceDescOther'), price:3 }
+      ];
+      const gradients = [
+        'linear-gradient(135deg, #FF6B6B, #FF8E8E)',
+        'linear-gradient(135deg, #4ECDC4, #6EE7DE)',
+        'linear-gradient(135deg, #DDA0DD, #E8B8E8)',
+        'linear-gradient(135deg, #F7DC6F, #F9E79F)',
+        'linear-gradient(135deg, #45B7D1, #6DD5ED)',
+        'linear-gradient(135deg, #96CEB4, #B8E0C8)'
+      ];
+      let h = '<div class="errand-hero">';
+      h += '<div class="errand-hero-icon">🏃</div>';
+      h += '<div class="errand-hero-title">跑腿服务</div>';
+      h += '<div class="errand-hero-desc">选择你需要的服务，骑手即刻出发</div>';
+      h += '</div>';
+      h += '<div class="errand-grid">';
+      services.forEach((s, i) => {
+        h += '<div class="errand-card" onclick="closeSubPage(\'errandPage_sub\');openOrderModal(\'' + s.key + '\')">';
+        h += '<div class="errand-card-icon" style="background:' + gradients[i] + '">' + s.icon + '</div>';
+        h += '<div class="errand-card-name">' + s.name + '</div>';
+        h += '<div class="errand-card-price">¥' + s.price + '起</div>';
+        h += '<div class="errand-card-desc">' + s.desc + '</div>';
+        h += '</div>';
+      });
+      h += '</div>';
+      el.querySelector('.sub-page-body').innerHTML = h;
+      openSubPage('errandPage_sub');
+    }
+
     function openOrderModal(type) {
       if (!currentUser) return showLoginPage();
       currentService = type;
