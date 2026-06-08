@@ -30,6 +30,8 @@ db.exec(`
     like_count INTEGER DEFAULT 0,
     comment_count INTEGER DEFAULT 0,
     status TEXT DEFAULT 'active' CHECK(status IN ('active','missing','adopted','graduated')),
+    health_status TEXT DEFAULT 'healthy' CHECK(health_status IN ('healthy','sick','injured','pregnant','nursing','quarantine','other')),
+    health_note TEXT DEFAULT '',
     created_at TEXT DEFAULT (datetime('now','localtime')),
     updated_at TEXT DEFAULT (datetime('now','localtime'))
   );
@@ -67,6 +69,10 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now','localtime'))
   );
 `);
+
+// ─── 数据库迁移：添加新列 ────────────────────────────────────
+try { db.prepare('ALTER TABLE pets ADD COLUMN health_status TEXT DEFAULT "healthy"').run(); } catch(e) {}
+try { db.prepare('ALTER TABLE pets ADD COLUMN health_note TEXT DEFAULT ""').run(); } catch(e) {}
 
 // ─── 文件上传配置 ────────────────────────────────────────
 const uploadDir = path.join(__dirname, '..', 'uploads', 'pets');
@@ -256,7 +262,7 @@ router.delete('/comment/:commentId', requireAuth, (req, res) => JSON_RES(res, ()
 
 // ─── 管理端：添加猫狗 ────────────────────────────────────
 router.post('/admin/add', requireAdmin, upload.array('images', 6), (req, res) => JSON_RES(res, () => {
-  const { code_name, species, breed, gender, age, color, location, personality, tags, bio } = req.body;
+  const { code_name, species, breed, gender, age, color, location, personality, tags, bio, health_status, health_note } = req.body;
   if (!code_name) return makeError('代号必填', ErrorCode.PARAM_001, 400);
 
   const existing = db.prepare('SELECT id FROM pets WHERE code_name = ?').get(code_name);
@@ -270,10 +276,10 @@ router.post('/admin/add', requireAdmin, upload.array('images', 6), (req, res) =>
   }
 
   const stmt = db.prepare(
-    `INSERT INTO pets (code_name, species, breed, gender, age, color, location, personality, tags, avatar, images, bio)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO pets (code_name, species, breed, gender, age, color, location, personality, tags, avatar, images, bio, health_status, health_note)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
-  const result = stmt.run(code_name, species || 'cat', breed || '', gender || 'unknown', age || '', color || '', location || '', personality || '', tags || '', avatar, imagePaths.join(',') || '', bio || '');
+  const result = stmt.run(code_name, species || 'cat', breed || '', gender || 'unknown', age || '', color || '', location || '', personality || '', tags || '', avatar, imagePaths.join(',') || '', bio || '', health_status || 'healthy', health_note || '');
   return { id: result.lastInsertRowid, message: '添加成功' };
 }));
 
@@ -282,7 +288,7 @@ router.put('/admin/update/:id', requireAdmin, upload.array('images', 6), (req, r
   const pet = db.prepare('SELECT * FROM pets WHERE id = ?').get(req.params.id);
   if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
 
-  const { code_name, species, breed, gender, age, color, location, personality, tags, bio, status } = req.body;
+  const { code_name, species, breed, gender, age, color, location, personality, tags, bio, status, health_status, health_note } = req.body;
   const imagePaths = [];
   if (req.files && req.files.length > 0) {
     req.files.forEach(f => imagePaths.push('/uploads/pets/' + f.filename));
@@ -294,10 +300,12 @@ router.put('/admin/update/:id', requireAdmin, upload.array('images', 6), (req, r
     `UPDATE pets SET code_name=COALESCE(?,code_name), species=COALESCE(?,species), breed=COALESCE(?,breed),
      gender=COALESCE(?,gender), age=COALESCE(?,age), color=COALESCE(?,color), location=COALESCE(?,location),
      personality=COALESCE(?,personality), tags=COALESCE(?,tags), bio=COALESCE(?,bio), images=?, status=COALESCE(?,status),
+     health_status=COALESCE(?,health_status), health_note=COALESCE(?,health_note),
      updated_at=datetime('now','localtime') WHERE id=?`
   ).run(
     code_name || null, species || null, breed || null, gender || null, age || null, color || null,
-    location || null, personality || null, tags || null, bio || null, newImages, status || null, req.params.id
+    location || null, personality || null, tags || null, bio || null, newImages, status || null,
+    health_status || null, health_note || null, req.params.id
   );
   return { message: '更新成功' };
 }));
@@ -320,6 +328,17 @@ router.put('/admin/status/:id', requireAdmin, (req, res) => JSON_RES(res, () => 
   if (!status || !validStatus.includes(status)) return makeError('无效状态', ErrorCode.PARAM_001, 400);
   db.prepare(`UPDATE pets SET status = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(status, req.params.id);
   return { message: '状态已更新', status };
+}));
+
+// ─── 管理端：更新健康状态 ────────────────────────────────────
+router.put('/admin/health-status/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { health_status, health_note } = req.body;
+  const pet = db.prepare('SELECT id FROM pets WHERE id = ?').get(req.params.id);
+  if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
+  const validStatus = ['healthy', 'sick', 'injured', 'pregnant', 'nursing', 'quarantine', 'other'];
+  if (!health_status || !validStatus.includes(health_status)) return makeError('无效健康状态', ErrorCode.PARAM_001, 400);
+  db.prepare(`UPDATE pets SET health_status = ?, health_note = COALESCE(?,health_note), updated_at = datetime('now','localtime') WHERE id = ?`).run(health_status, health_note !== undefined ? health_note : null, req.params.id);
+  return { message: '健康状态已更新', health_status };
 }));
 
 // ─── 管理端：目击记录查询 ────────────────────────────────────

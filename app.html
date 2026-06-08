@@ -6920,6 +6920,7 @@ async function loadPets(species = 'all') {
         '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
           '<span class="pet-card-name">' + escHtml(p.code_name) + '</span>' +
           '<span style="font-size:11px;padding:1px 6px;border-radius:8px;color:#fff;background:' + (statusColor[p.status]||'#999') + '">' + (statusMap[p.status]||'在校') + '</span>' +
+          (p.health_status && p.health_status !== 'healthy' ? '<span style="font-size:11px;padding:1px 6px;border-radius:8px;color:#fff;background:' + ({sick:'#FF9800',injured:'#F44336',pregnant:'#E91E63',nursing:'#9C27B0',quarantine:'#795548',other:'#607D8B'}[p.health_status]||'#999') + '">' + ({sick:'🤒 生病',injured:'🩹 受伤',pregnant:'🤰 怀孕',nursing:'🍼 哺乳',quarantine:'🏥 隔离',other:'⚠️ 异常'}[p.health_status]||'') + '</span>' : '') +
           alertBadge +
         '</div>' +
         '<div class="pet-card-species">' + speciesEmoji + ' ' + speciesName + (p.breed ? ' · ' + escHtml(p.breed) : '') + '</div>' +
@@ -6968,6 +6969,13 @@ async function showPetDetail(id) {
     infoHtml += '<div style="margin:8px 0;padding:10px 14px;border-radius:12px;background:' + ac.bg + ';color:' + ac.color + ';font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">' + ac.emoji + ' ' + escHtml(data.code_name) + '已' + (data.daysSinceSeen || '?') + '天未被目击（' + ac.label + '），如看到请点击下方「📍 我看到了」打卡</div>';
   }
 
+  // 健康状态横幅
+  const healthConf = { sick: { emoji: '🤒', label: '生病中', bg: 'linear-gradient(135deg,#FFF3E0,#FFE0B2)', color: '#E65100' }, injured: { emoji: '🩹', label: '受伤中', bg: 'linear-gradient(135deg,#FFEBEE,#FFCDD2)', color: '#C62828' }, pregnant: { emoji: '🤰', label: '怀孕中', bg: 'linear-gradient(135deg,#FCE4EC,#F8BBD0)', color: '#AD1457' }, nursing: { emoji: '🍼', label: '哺乳期', bg: 'linear-gradient(135deg,#F3E5F5,#E1BEE7)', color: '#6A1B9A' }, quarantine: { emoji: '🏥', label: '隔离中', bg: 'linear-gradient(135deg,#EFEBE9,#D7CCC8)', color: '#4E342E' }, other: { emoji: '⚠️', label: '异常状态', bg: 'linear-gradient(135deg,#ECEFF1,#CFD8DC)', color: '#37474F' } };
+  const hc = healthConf[data.health_status];
+  if (hc) {
+    infoHtml += '<div style="margin:8px 0;padding:10px 14px;border-radius:12px;background:' + hc.bg + ';color:' + hc.color + ';font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">' + hc.emoji + ' ' + escHtml(data.code_name) + '当前' + hc.label + (data.health_note ? '（' + escHtml(data.health_note) + '）' : '') + '，请小心对待</div>';
+  }
+
   infoHtml += '<div class="pet-profile-stats">' +
       '<span>❤️ ' + (data.like_count||0) + '</span>' +
       '<span>💬 ' + (data.comment_count||0) + '</span>' +
@@ -6982,6 +6990,7 @@ async function showPetDetail(id) {
     '<div class="pet-info-item"><div class="pet-info-label">性别</div><div class="pet-info-value">' + (genderMap[data.gender]||'未知') + '</div></div>' +
     '<div class="pet-info-item"><div class="pet-info-label">年龄</div><div class="pet-info-value">' + (data.age || '未知') + '</div></div>' +
     '<div class="pet-info-item"><div class="pet-info-label">毛色</div><div class="pet-info-value">' + (data.color || '未知') + '</div></div>' +
+    '<div class="pet-info-item"><div class="pet-info-label">健康</div><div class="pet-info-value">' + ({healthy:'💚 健康',sick:'🤒 生病',injured:'🩹 受伤',pregnant:'🤰 怀孕',nursing:'🍼 哺乳',quarantine:'🏥 隔离',other:'⚠️ 异常'}[data.health_status]||'💚 健康') + (data.health_note ? ' · ' + escHtml(data.health_note) : '') + '</div></div>' +
     '<div class="pet-info-item"><div class="pet-info-label">出没地</div><div class="pet-info-value">' + (data.location || '未知') + '</div></div>' +
     (data.personality ? '<div class="pet-info-item" style="grid-column:span 2"><div class="pet-info-label">性格</div><div class="pet-info-value">' + escHtml(data.personality) + '</div></div>' : '') +
   '</div>';

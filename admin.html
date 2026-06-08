@@ -686,12 +686,15 @@
       <select id="petFilterStatus" onchange="loadPetsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFCC80;background:#fff;font-size:0.9rem;cursor:pointer">
         <option value="all">📋 全部状态</option><option value="active">🟢 在校</option><option value="missing">🟠 走失</option><option value="adopted">💜 已领养</option><option value="graduated">🎓 已毕业</option>
       </select>
+      <select id="petFilterHealth" onchange="loadPetsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFCC80;background:#fff;font-size:0.9rem;cursor:pointer">
+        <option value="all">🏥 全部健康</option><option value="healthy">💚 健康</option><option value="sick">🤒 生病</option><option value="injured">🩹 受伤</option><option value="pregnant">🤰 怀孕</option><option value="nursing">🍼 哺乳</option><option value="quarantine">🏥 隔离</option><option value="other">⚠️ 异常</option>
+      </select>
       <input type="text" id="petSearchInput" placeholder="🔍 搜索代号 / 品种..." oninput="loadPetsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFCC80;background:#fff;width:200px;font-size:0.9rem">
       <button class="btn" id="petReviewBtn" onclick="showReviewSightings()" style="padding:8px 16px;border-radius:10px;border:2px solid #43A047;background:#E8F5E9;color:#2E7D32;font-weight:600;font-size:0.85rem;cursor:pointer;position:relative">🔍 待审核<span id="petPendingBadge" style="position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:#E74C3C;color:#fff;font-size:11px;font-weight:700;display:none;justify-content:center;align-items:center;padding:0 4px">0</span></button>
     </div>
   </div>
   <div class="table-card" style="border-color:#FFE0B2">
-    <table class="data-table"><thead><tr><th>头像</th><th>代号</th><th>物种</th><th>品种</th><th>出没地</th><th>状态</th><th>最后目击</th><th>告警</th><th>❤️</th><th>💬</th><th>操作</th></tr></thead>
+    <table class="data-table"><thead><tr><th>头像</th><th>代号</th><th>物种</th><th>品种</th><th>出没地</th><th>状态</th><th>健康</th><th>最后目击</th><th>告警</th><th>❤️</th><th>💬</th><th>操作</th></tr></thead>
     <tbody id="petsTable"></tbody></table>
   </div>
 </div>
@@ -723,6 +726,11 @@
       </div>
       <!-- 性格 -->
       <div class="form-group"><label class="form-label" style="color:#E65100">💭 性格</label><input type="text" id="petPersonality" class="form-input" placeholder="贪吃、粘人、怕生..." style="border-color:#FFCC80"></div>
+      <!-- 健康状态 + 备注 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">🏥 健康状态</label><select id="petHealthStatus" class="form-input" style="border-color:#FFCC80"><option value="healthy">💚 健康</option><option value="sick">🤒 生病</option><option value="injured">🩹 受伤</option><option value="pregnant">🤰 怀孕</option><option value="nursing">🍼 哺乳</option><option value="quarantine">🏥 隔离</option><option value="other">⚠️ 异常</option></select></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">📝 健康备注</label><input type="text" id="petHealthNoteInput" class="form-input" placeholder="如：感冒中..." style="border-color:#FFCC80"></div>
+      </div>
       <!-- 标签 -->
       <div class="form-group"><label class="form-label" style="color:#E65100">🔖 标签 <span style="font-weight:400;color:#999;font-size:0.8rem">逗号分隔</span></label><input type="text" id="petTags" class="form-input" placeholder="橘猫, 一食堂, 校霸" style="border-color:#FFCC80"></div>
       <!-- 简介 -->
@@ -785,6 +793,32 @@
       <button class="modal-close" onclick="closeModal('reviewSightingsModal')" style="color:#fff;background:rgba(255,255,255,0.2)">&times;</button>
     </div>
     <div class="modal-body" style="padding:16px;max-height:500px;overflow-y:auto" id="reviewSightingsContent">
+    </div>
+  </div>
+</div>
+
+<!-- 健康状态弹窗 -->
+<div class="modal-overlay" id="petHealthModal">
+  <div class="modal-content" style="max-width:460px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#E91E63,#F06292);border-radius:12px 12px 0 0;padding:20px 24px">
+      <span class="modal-title" id="petHealthTitle" style="color:#fff;font-size:1.15rem">🏥 修改健康状态</span>
+      <button class="modal-close" onclick="closeModal('petHealthModal')" style="color:#fff;background:rgba(255,255,255,0.2)">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:24px">
+      <input type="hidden" id="petHealthId">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <button onclick="changePetHealth('healthy')" style="padding:14px;border-radius:12px;border:2px solid #4CAF50;background:#E8F5E9;cursor:pointer;font-size:0.9rem;font-weight:600;color:#2E7D32;transition:all 0.2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">💚 健康</button>
+        <button onclick="changePetHealth('sick')" style="padding:14px;border-radius:12px;border:2px solid #FF9800;background:#FFF3E0;cursor:pointer;font-size:0.9rem;font-weight:600;color:#E65100;transition:all 0.2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">🤒 生病</button>
+        <button onclick="changePetHealth('injured')" style="padding:14px;border-radius:12px;border:2px solid #F44336;background:#FFEBEE;cursor:pointer;font-size:0.9rem;font-weight:600;color:#C62828;transition:all 0.2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">🩹 受伤</button>
+        <button onclick="changePetHealth('pregnant')" style="padding:14px;border-radius:12px;border:2px solid #E91E63;background:#FCE4EC;cursor:pointer;font-size:0.9rem;font-weight:600;color:#AD1457;transition:all 0.2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">🤰 怀孕</button>
+        <button onclick="changePetHealth('nursing')" style="padding:14px;border-radius:12px;border:2px solid #9C27B0;background:#F3E5F5;cursor:pointer;font-size:0.9rem;font-weight:600;color:#6A1B9A;transition:all 0.2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">🍼 哺乳</button>
+        <button onclick="changePetHealth('quarantine')" style="padding:14px;border-radius:12px;border:2px solid #795548;background:#EFEBE9;cursor:pointer;font-size:0.9rem;font-weight:600;color:#4E342E;transition:all 0.2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">🏥 隔离</button>
+        <button onclick="changePetHealth('other')" style="padding:14px;border-radius:12px;border:2px solid #607D8B;background:#ECEFF1;cursor:pointer;font-size:0.9rem;font-weight:600;color:#37474F;transition:all 0.2s;grid-column:span 2" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">⚠️ 其他异常</button>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label" style="color:#AD1457">📝 健康备注</label>
+        <textarea id="petHealthNote" class="form-input" rows="2" placeholder="描述健康情况，如：感冒流鼻涕、怀孕约2个月..." style="border-color:#F8BBD0;resize:vertical"></textarea>
+      </div>
     </div>
   </div>
 </div>
@@ -2088,7 +2122,7 @@
        '<td><span class="badge ' + status.cls + '">' + status.label + '</span></td>' +
        '<td style="font-size:12px">' + (item.created_at||'').slice(0,16) + '</td>' +
        '<td><button class="btn btn-sm" onclick="offlineMarketItem(' + item.id + ')">下架</button> <button class="btn btn-sm btn-danger" onclick="deleteMarketItem(' + item.id + ')">删除</button></td></tr>';
-   }).join('') || '<tr><td colspan="11"><div class="empty-state"><div class="empty-state-icon">🛒</div><div class="empty-state-text">暂无商品数据</div></div></td></tr>';
+   }).join('') || '<tr><td colspan="12"><div class="empty-state"><div class="empty-state-icon">🛒</div><div class="empty-state-text">暂无商品数据</div></div></td></tr>';
  }
  function toggleAllMarketItems(el) {
    document.querySelectorAll('.market-item-check').forEach(c => c.checked = el.checked);
@@ -2451,6 +2485,7 @@
     async function loadPetsAdmin() {
       const species = document.getElementById('petFilterSpecies').value;
       const status = document.getElementById('petFilterStatus').value;
+      const health = document.getElementById('petFilterHealth').value;
       const search = document.getElementById('petSearchInput').value.trim();
       let url = '/api/pets/list?limit=100';
       if (species !== 'all') url += '&species=' + species;
@@ -2460,7 +2495,8 @@
         fetch('/api/pets/alert-check', { headers: AUTH() }).then(r => r.json()).catch(function() { return { summary: { warning: 0, urgent: 0, critical: 0 } }; })
       ]);
       var pets = petsRes;
-      if (search) pets = pets.filter(function(p) { return (p.code_name + p.breed + p.location).includes(search); });
+      if (search) pets = pets.filter(function(p) { return (p.code_name + p.breed + p.location + (p.health_note||'')).includes(search); });
+      if (health !== 'all') pets = pets.filter(function(p) { return p.health_status === health; });
 
       // 更新告警统计卡片
       var s = alertRes.summary || { warning: 0, urgent: 0, critical: 0 };
@@ -2503,6 +2539,15 @@
         urgent: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FBE9E7;color:#BF360C;border:1px solid #FFAB91">\u{1F7E0} 15天</span>',
         critical: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A;animation:pulse 2s infinite">\u{1F534} 30天</span>'
       };
+      var healthBadge = {
+        healthy: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#E8F5E9;color:#2E7D32">💚 健康</span>',
+        sick: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFF3E0;color:#E65100;animation:pulse 2s infinite">🤒 生病</span>',
+        injured: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFEBEE;color:#C62828;animation:pulse 2s infinite">🩹 受伤</span>',
+        pregnant: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FCE4EC;color:#AD1457">🤰 怀孕</span>',
+        nursing: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#F3E5F5;color:#6A1B9A">🍼 哺乳</span>',
+        quarantine: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#EFEBE9;color:#4E342E">🏥 隔离</span>',
+        other: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#ECEFF1;color:#37474F">⚠️ 异常</span>'
+      };
       var rows = '';
       for (var i = 0; i < pets.length; i++) {
         var p = pets[i];
@@ -2515,25 +2560,36 @@
         var avatarHtml = (p.avatar && p.avatar.charAt(0) === '/') ? '<img src="' + esc(p.avatar) + '" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ' + avatarBorder + '">' : '<span style="font-size:1.8rem">' + (speciesEmoji[p.species] || '\u{1F43E}') + '</span>';
         var statusHtml = statusMap[p.status] || statusMap.active;
         var sightingBtn = '<button class="btn" style="padding:4px 8px;font-size:0.75rem;border-color:#81C784;color:#2E7D32;border-radius:8px" onclick="showSightings(' + p.id + ',\'' + esc(p.code_name).replace(/'/g, "\\'") + '\')">\u{1F4CD}</button>';
-        var statusBtn = '<button class="btn" style="padding:4px 8px;font-size:0.75rem;border-color:#90CAF9;color:#1565C0;border-radius:8px" onclick="showStatusModal(' + p.id + ',\'' + esc(p.code_name).replace(/'/g, "\\'") + '\')">\u{1F4CB}</button>';
-        rows += '<tr style="transition:background 0.2s;' + rowBg + '" onmouseenter="this.style.background=\'#FFF8E1\'" onmouseleave="this.style.background=\'' + rowBg + '\'">' +
+        var statusBtn = '<button class="btn" style="padding:4px 8px;font-size:0.75rem;border-color:#90CAF9;color:#1565C0;border-radius:8px" onclick="showStatusModal(' + p.id + ',\'' + esc(p.code_name).replace(/'/g, "\\'") + '\')">📋</button>';
+        var healthBtn = '<button class="btn" style="padding:4px 8px;font-size:0.75rem;border-color:#F48FB1;color:#AD1457;border-radius:8px" onclick="showHealthModal(' + p.id + ',\'' + esc(p.code_name).replace(/'/g, "\\'") + '\',\'' + (p.health_status||'healthy') + '\',\'' + esc(p.health_note||'').replace(/'/g, "\\'") + '\')">🏥</button>';
+        var healthBadgeMap = {
+          healthy: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#E8F5E9;color:#2E7D32">💚 健康</span>',
+          sick: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFF3E0;color:#E65100;animation:pulse 2s infinite">🤒 生病</span>',
+          injured: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFEBEE;color:#C62828;animation:pulse 2s infinite">🩹 受伤</span>',
+          pregnant: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FCE4EC;color:#AD1457">🤰 怀孕</span>',
+          nursing: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#F3E5F5;color:#6A1B9A">🍼 哺乳</span>',
+          quarantine: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#EFEBE9;color:#4E342E">🏥 隔离</span>',
+          other: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#ECEFF1;color:#37474F">⚠️ 异常</span>'
+        };
+        var healthHtml = healthBadgeMap[p.health_status || 'healthy'] || healthBadgeMap.healthy;
+        if (p.health_note && p.health_status !== 'healthy') healthHtml += '<div style="font-size:10px;color:#999;margin-top:2px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(p.health_note) + '">' + esc(p.health_note) + '</div>';
+        rows += '<tr style="transition:background 0.2s;' + rowBg + '" onmouseenter="this.style.background=\'#FFF8E1\'" onmouseleave="this.style.background=\'' + rowBg + '\">' +
           '<td>' + avatarHtml + '</td>' +
           '<td><strong style="color:' + nameColor + '">' + esc(p.code_name) + '</strong></td>' +
-          '<td>' + (speciesEmoji[p.species] || '\u{1F43E}') + '</td>' +
+          '<td>' + (speciesEmoji[p.species] || '🐾') + '</td>' +
           '<td style="color:#666">' + esc(p.breed || '-') + '</td>' +
-          '<td style="color:#666">\u{1F4CD} ' + esc(p.location || '-') + '</td>' +
+          '<td style="color:#666">📍 ' + esc(p.location || '-') + '</td>' +
           '<td>' + statusHtml + '</td>' +
+          '<td>' + healthHtml + '</td>' +
           '<td>' + seenText + '</td>' +
           '<td>' + alert + '</td>' +
           '<td style="color:#EF5350;font-weight:600">' + (p.like_count||0) + '</td>' +
           '<td style="color:#42A5F5;font-weight:600">' + (p.comment_count||0) + '</td>' +
           '<td style="white-space:nowrap">' +
-            sightingBtn + ' ' + statusBtn + ' ' +
-            '<button class="btn" style="padding:4px 10px;font-size:0.8rem;border-color:#FFCC80;color:#E65100;border-radius:8px" onclick="editPet(' + p.id + ')">\u270F\uFE0F</button> ' +
-            '<button class="btn" style="padding:4px 10px;font-size:0.8rem;color:#ef4444;border-radius:8px" onclick="deletePet(' + p.id + ')">\u{1F5D1}\uFE0F</button>' +
-          '</td></tr>';
-      }
-      document.getElementById('petsTable').innerHTML = rows || '<tr><td colspan="11" style="text-align:center;padding:40px;color:#999;font-size:1rem">\u{1F43E} 暂无猫狗数据</td></tr>';
+            sightingBtn + ' ' + statusBtn + ' ' + healthBtn + ' ' +
+            '<button class="btn" style="padding:4px 10px;font-size:0.8rem;border-color:#FFCC80;color:#E65100;border-radius:8px" onclick="editPet(' + p.id + ')">✏️</button> ' +
+            '<button class="btn" style="padding:4px 10px;font-size:0.8rem;color:#ef4444;border-radius:8px" onclick="deletePet(' + p.id + ')">🗑️</button>' +
+          '</td></tr>';      document.getElementById('petsTable').innerHTML = rows || '<tr><td colspan="12" style="text-align:center;padding:40px;color:#999;font-size:1rem">\u{1F43E} 暂无猫狗数据</td></tr>';
     }
 
     function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -2541,9 +2597,10 @@
     function showAddPetModal() {
       document.getElementById('petEditId').value = '';
       document.getElementById('petModalTitle').innerHTML = '🐾 添加猫狗';
-      ['petCodeName','petBreed','petAge','petColor','petLocation','petPersonality','petTags','petBio'].forEach(id => document.getElementById(id).value = '');
+      ['petCodeName','petBreed','petAge','petColor','petLocation','petPersonality','petTags','petBio','petHealthNoteInput'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('petSpecies').value = 'cat';
       document.getElementById('petGender').value = 'male';
+      document.getElementById('petHealthStatus').value = 'healthy';
       document.getElementById('petImagePreview').innerHTML = '';
       document.getElementById('petImageCount').textContent = '';
       showModal('petModal');
@@ -2564,6 +2621,8 @@
       document.getElementById('petPersonality').value = p.personality || '';
       document.getElementById('petTags').value = (p.tags || []).join(',');
       document.getElementById('petBio').value = p.bio || '';
+      document.getElementById('petHealthStatus').value = p.health_status || 'healthy';
+      document.getElementById('petHealthNoteInput').value = p.health_note || '';
       // Show existing images
       const previewDiv = document.getElementById('petImagePreview');
       const existingImages = p.images || [];
@@ -2601,6 +2660,8 @@
       fd.append('personality', document.getElementById('petPersonality').value);
       fd.append('tags', document.getElementById('petTags').value);
       fd.append('bio', document.getElementById('petBio').value);
+      fd.append('health_status', document.getElementById('petHealthStatus').value);
+      fd.append('health_note', document.getElementById('petHealthNoteInput').value);
       const files = document.getElementById('petImages').files;
       for (let i = 0; i < files.length; i++) fd.append('images', files[i]);
 
@@ -2664,6 +2725,28 @@
       closeModal('petStatusModal');
       var statusNames = { active: '在校', missing: '走失', adopted: '已领养', graduated: '已毕业' };
       showToast('状态已更新为：' + (statusNames[status] || status));
+      loadPetsAdmin();
+    }
+
+    function showHealthModal(id, name, healthStatus, healthNote) {
+      document.getElementById('petHealthId').value = id;
+      document.getElementById('petHealthTitle').textContent = '🏥 修改「' + name + '」健康状态';
+      document.getElementById('petHealthNote').value = healthNote || '';
+      showModal('petHealthModal');
+    }
+
+    async function changePetHealth(health_status) {
+      const id = document.getElementById('petHealthId').value;
+      const health_note = document.getElementById('petHealthNote').value.trim();
+      const res = await fetch('/api/pets/admin/health-status/' + id, {
+        method: 'PUT', headers: { ...AUTH(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ health_status, health_note })
+      });
+      const data = await res.json();
+      if (data.error) { showToast(data.error); return; }
+      closeModal('petHealthModal');
+      var healthNames = { healthy: '健康', sick: '生病', injured: '受伤', pregnant: '怀孕', nursing: '哺乳', quarantine: '隔离', other: '异常' };
+      showToast('健康状态已更新为：' + (healthNames[health_status] || health_status));
       loadPetsAdmin();
     }
 
