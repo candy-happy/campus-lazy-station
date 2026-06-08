@@ -648,6 +648,16 @@
     <h1 class="page-title" style="font-size:1.6rem;background:linear-gradient(135deg,#FF6D00,#FF9100);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🐱 猫狗管理</h1>
     <p class="page-desc" style="color:#BF360C;margin-top:4px">管理校园猫狗身份卡，添加 / 编辑 / 删除</p>
   </div>
+  <!-- 守护者告警详情 -->
+  <div id="petGuardianAlert" style="display:none;margin-bottom:16px;border-radius:14px;padding:16px 20px;border:1px solid #EF9A9A;background:linear-gradient(135deg,#FFEBEE,#FFF3E0);cursor:pointer;transition:all 0.2s" onclick="toggleGuardianDetail()">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="font-size:1.3rem">🐱‍👤</span>
+      <strong style="color:#B71C1C;font-size:1rem">守护者告警</strong>
+      <span id="petGuardianSummary" style="font-size:0.85rem;color:#BF360C"></span>
+      <span style="margin-left:auto;font-size:0.8rem;color:#999" id="petGuardianToggle">▼ 展开</span>
+    </div>
+    <div id="petGuardianDetail" style="display:none;font-size:0.9rem;line-height:1.8"></div>
+  </div>
   <!-- 告警统计卡片 -->
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px" id="petAlertCards">
     <div style="background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border-radius:12px;padding:16px;text-align:center;border:1px solid #FFE0B2">
@@ -2408,6 +2418,9 @@
       document.getElementById('petAlertUrgent').textContent = s.urgent;
       document.getElementById('petAlertCritical').textContent = s.critical;
 
+      // 更新守护者告警详情
+      if (typeof updateGuardianAlert === 'function') updateGuardianAlert(alertRes);
+
       // Update pending sightings badge
       try {
         const pendingRes = await fetch('/api/pets/admin/pending-sightings', { headers: AUTH() });
@@ -2607,6 +2620,111 @@
       if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
       if (diff < 2592000) return Math.floor(diff / 86400) + '天前';
       return dateStr.substring(0, 10);
+    }
+
+    // ─── 守护者告警详情 ────────────────────────────
+    var _guardianAlertData = null;
+    var _guardianDetailOpen = false;
+
+    function toggleGuardianDetail() {
+      _guardianDetailOpen = !_guardianDetailOpen;
+      var detail = document.getElementById('petGuardianDetail');
+      var toggle = document.getElementById('petGuardianToggle');
+      if (_guardianDetailOpen) {
+        detail.style.display = 'block';
+        toggle.textContent = '▲ 收起';
+      } else {
+        detail.style.display = 'none';
+        toggle.textContent = '▼ 展开';
+      }
+    }
+
+    function updateGuardianAlert(alertRes) {
+      var s = alertRes.summary || { warning: 0, urgent: 0, critical: 0 };
+      var total = s.warning + s.urgent + s.critical;
+      var el = document.getElementById('petGuardianAlert');
+      var summary = document.getElementById('petGuardianSummary');
+      var detail = document.getElementById('petGuardianDetail');
+
+      if (total === 0) {
+        el.style.display = 'none';
+        _guardianAlertData = null;
+        return;
+      }
+
+      _guardianAlertData = alertRes;
+      el.style.display = 'block';
+      summary.textContent = '共 ' + total + ' 只猫狗失联';
+
+      var html = '';
+      if (alertRes.critical && alertRes.critical.length > 0) {
+        html += '<div style="margin-bottom:6px"><strong style="color:#B71C1C">🔴 30天失联：</strong>' + alertRes.critical.map(function(p) { return '<span style="background:#FFEBEE;padding:2px 8px;border-radius:8px;margin:2px;display:inline-block;font-weight:600;color:#B71C1C">' + p.speciesEmoji + esc(p.code_name) + ' <span style="font-weight:400;font-size:0.8rem">(' + p.daysSince + '天)</span></span>'; }).join('') + '</div>';
+      }
+      if (alertRes.urgent && alertRes.urgent.length > 0) {
+        html += '<div style="margin-bottom:6px"><strong style="color:#BF360C">🟠 15天未现：</strong>' + alertRes.urgent.map(function(p) { return '<span style="background:#FBE9E7;padding:2px 8px;border-radius:8px;margin:2px;display:inline-block;font-weight:600;color:#BF360C">' + p.speciesEmoji + esc(p.code_name) + ' <span style="font-weight:400;font-size:0.8rem">(' + p.daysSince + '天)</span></span>'; }).join('') + '</div>';
+      }
+      if (alertRes.warning && alertRes.warning.length > 0) {
+        html += '<div style="margin-bottom:6px"><strong style="color:#E65100">⚠️ 7天未见：</strong>' + alertRes.warning.map(function(p) { return '<span style="background:#FFF3E0;padding:2px 8px;border-radius:8px;margin:2px;display:inline-block;font-weight:600;color:#E65100">' + p.speciesEmoji + esc(p.code_name) + ' <span style="font-weight:400;font-size:0.8rem">(' + p.daysSince + '天)</span></span>'; }).join('') + '</div>';
+      }
+      html += '<div style="margin-top:8px;color:#999;font-size:0.8rem">💡 请安排巡查确认猫狗安全，用户打卡可自动解除告警</div>';
+      detail.innerHTML = html;
+    }
+
+    // ─── 待审核目击 ────────────────────────────
+    async function showReviewSightings() {
+      var content = document.getElementById('reviewSightingsContent');
+      content.innerHTML = '<div style="text-align:center;padding:30px;color:#999">加载中...</div>';
+      showModal('reviewSightingsModal');
+      try {
+        var res = await fetch('/api/pets/admin/pending-sightings', { headers: AUTH() });
+        var list = await res.json();
+        if (!list || list.length === 0) {
+          content.innerHTML = '<div style="text-align:center;padding:40px;color:#999">\u{1F43E} 暂无待审核目击记录</div>';
+          return;
+        }
+        var speciesEmoji = { cat: '\u{1F431}', dog: '\u{1F436}' };
+        var html = list.map(function(s) {
+          var avatarHtml = (s.user_avatar && s.user_avatar.charAt(0) === '/') ? '<img src="' + esc(s.user_avatar) + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1.5px solid #C8E6C9">' : '<div style="width:40px;height:40px;border-radius:50%;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:1rem">\u{1F464}</div>';
+          var petEmoji = speciesEmoji[s.species] || '\u{1F43E}';
+          var petName = esc(s.code_name || '未知');
+          var nickname = esc(s.user_nickname || s.phone || '匿名');
+          var loc = s.location ? '<span style="color:#999;font-size:0.8rem">\u{1F4CD} ' + esc(s.location) + '</span>' : '';
+          var note = s.note ? '<div style="margin-top:4px;color:#555;font-size:0.85rem">' + esc(s.note) + '</div>' : '';
+          var photoHtml = s.photo ? '<div style="margin-top:8px"><img src="' + esc(s.photo) + '" style="max-width:120px;max-height:90px;border-radius:8px;object-fit:cover;cursor:pointer" onclick="window.open(this.src)"></div>' : '';
+          return '<div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #f0f0f0;align-items:flex-start">' +
+            '<div>' + avatarHtml + '</div>' +
+            '<div style="flex:1">' +
+              '<div><strong>' + nickname + '</strong> 目击了 <strong style="color:#E65100">' + petEmoji + ' ' + petName + '</strong> ' + loc + '</div>' +
+              note + photoHtml +
+              '<div style="margin-top:4px;font-size:0.75rem;color:#aaa">' + timeAgoAdmin(s.created_at) + '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:6px;flex-shrink:0">' +
+              '<button onclick="reviewSighting(' + s.id + ',\'approve\')" style="padding:6px 12px;border-radius:8px;border:none;background:#4CAF50;color:#fff;cursor:pointer;font-size:0.8rem;font-weight:600">\u2705 通过</button>' +
+              '<button onclick="reviewSighting(' + s.id + ',\'reject\')" style="padding:6px 12px;border-radius:8px;border:none;background:#EF5350;color:#fff;cursor:pointer;font-size:0.8rem;font-weight:600">\u274C 驳回</button>' +
+            '</div></div>';
+        }).join('');
+        content.innerHTML = html;
+      } catch(e) {
+        content.innerHTML = '<div style="text-align:center;padding:30px;color:#E74C3C">加载失败: ' + esc(e.message) + '</div>';
+      }
+    }
+
+    async function reviewSighting(id, action) {
+      try {
+        var res = await fetch('/api/pets/admin/review-sighting/' + id, {
+          method: 'PUT',
+          headers: { ...AUTH(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: action })
+        });
+        var data = await res.json();
+        if (data.error) { showToast(data.error); return; }
+        showToast(action === 'approve' ? '\u2705 审核通过，已更新目击时间' : '\u274C 已驳回');
+        // 刷新审核列表和猫狗列表
+        showReviewSightings();
+        loadPetsAdmin();
+      } catch(e) {
+        showToast('操作失败: ' + e.message);
+      }
     }
 
     // Init dark mode from localStorage
