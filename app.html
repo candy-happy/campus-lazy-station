@@ -372,47 +372,56 @@
       <div class="sub-page-body" id="wallDetailContent"></div>
     </div>
 
-    <!-- 聊天列表子页面 -->
-    <div class="sub-page" id="chatListPage_sub">
-      <div class="sub-page-header">
-        <button class="sub-page-back" onclick="closeSubPage('chatListPage_sub')">←</button>
-        <span class="sub-page-title">💬 我的消息</span>
+    <!-- 聊天列表弹窗 -->
+    <div class="modal-overlay" id="chatListModal" style="display:none">
+      <div class="modal-container">
+        <div class="modal-header">
+          <span class="modal-title">💬 我的消息</span>
+          <button class="modal-close" onclick="closeChatListModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="chatListBody" style="overflow-y:auto"></div>
+        </div>
       </div>
-      <div id="chatListBody" style="overflow-y:auto"></div>
     </div>
 
-    <!-- 聊天对话子页面 -->
-    <div class="sub-page" id="chatConvPage_sub">
-      <div class="sub-page-header">
-        <button class="sub-page-back" onclick="closeSubPage('chatConvPage_sub')">←</button>
-        <span class="sub-page-title" id="chatConvTitle">对话</span>
-      </div>
-      <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px;min-height:calc(100vh - 180px)"></div>
-      <div class="chat-input-bar">
-        <span class="chat-attach-btn" onclick="toggleEmojiPicker()">😊</span>
-        <label class="chat-attach-btn" title="发送图片/视频">
-          📎<input type="file" accept="image/*,video/*" style="display:none" onchange="userChatUpload(this)">
-        </label>
-        <input id="chatInput" class="chat-input-field" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChatMsg()" />
-        <button onclick="sendChatMsg()" class="chat-send-btn">发送</button>
-        <div id="emojiPicker" class="chat-emoji-picker">
-          <div style="display:flex;gap:8px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:8px">
-            <span id="tabEmoji" style="font-size:13px;font-weight:600;color:var(--primary);cursor:pointer;padding:4px 8px;border-radius:8px;background:var(--bg)">😊 表情</span>
-            <span id="tabGif" style="font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:8px" onclick="switchPickerTab('gif')">🖼️ GIF</span>
-          </div>
-          <div id="emojiTabContent"><div style="display:flex;flex-wrap:wrap;gap:4px" id="emojiGrid"></div></div>
-          <div id="gifTabContent" style="display:none">
-            <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('hello')">👋 打招呼</span>
-              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('thanks')">🙏 感谢</span>
-              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('happy')">😊 开心</span>
-              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('funny')">😂 搞笑</span>
-              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('cool')">😎 酷</span>
-              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('love')">❤️ 爱</span>
-              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('sad')">😢 难过</span>
-              <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('food')">🍔 美食</span>
+    <!-- 聊天对话弹窗 -->
+    <div class="modal-overlay" id="chatConvModal" style="display:none">
+      <div class="modal-container modal-large">
+        <div class="modal-header">
+          <button class="modal-back" onclick="closeChatConvModal()">←</button>
+          <span class="modal-title" id="chatConvTitle">对话</span>
+          <button class="modal-close" onclick="closeChatConvModal()">×</button>
+        </div>
+        <div class="modal-body chat-body">
+          <div id="chatMessages"></div>
+        </div>
+        <div class="chat-input-bar">
+          <span class="chat-attach-btn" onclick="toggleEmojiPicker()">😊</span>
+          <label class="chat-attach-btn" title="发送图片/视频">
+            📎<input type="file" accept="image/*,video/*" style="display:none" onchange="userChatUpload(this)">
+          </label>
+          <input id="chatInput" class="chat-input-field" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChatMsg()" />
+          <button onclick="sendChatMsg()" class="chat-send-btn">发送</button>
+          <div id="emojiPicker" class="chat-emoji-picker">
+            <div style="display:flex;gap:8px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:8px">
+              <span id="tabEmoji" style="font-size:13px;font-weight:600;color:var(--primary);cursor:pointer;padding:4px 8px;border-radius:8px;background:var(--bg)">😊 表情</span>
+              <span id="tabGif" style="font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:8px" onclick="switchPickerTab('gif')">🖼️ GIF</span>
             </div>
-            <div id="gifResults" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+            <div id="emojiTabContent"><div style="display:flex;flex-wrap:wrap;gap:4px" id="emojiGrid"></div></div>
+            <div id="gifTabContent" style="display:none">
+              <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('hello')">👋 打招呼</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('thanks')">🙏 感谢</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('happy')">😊 开心</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('funny')">😂 搞笑</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('cool')">😎 酷</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('love')">❤️ 爱</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('sad')">😢 难过</span>
+                <span style="font-size:12px;padding:4px 10px;border-radius:12px;background:var(--bg);cursor:pointer" onclick="searchGif('food')">🍔 美食</span>
+              </div>
+              <div id="gifResults" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+            </div>
           </div>
         </div>
       </div>

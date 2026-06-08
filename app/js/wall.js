@@ -525,7 +525,8 @@
       const profile = await API.wallUserProfile(otherPhone);
       const otherName = profile.nickname || profile.name || otherPhone;
       document.getElementById('chatConvTitle').textContent = otherName;
-      openSubPage('chatConvPage_sub');
+      document.getElementById('chatConvModal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
       await loadChatMessages();
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
       chatRefreshTimer = setInterval(loadChatMessages, 5000);
@@ -551,7 +552,8 @@
       const profile = await API.wallUserProfile(otherPhone);
       const otherName = profile.nickname || profile.name || otherPhone;
       document.getElementById('chatConvTitle').textContent = otherName;
-      openSubPage('chatConvPage_sub');
+      document.getElementById('chatConvModal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
       await loadChatMessages();
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
       chatRefreshTimer = setInterval(loadChatMessages, 5000);
@@ -755,9 +757,14 @@
 
     async function openChatList() {
       if (!currentUser) return showLoginPage();
-      openSubPage('chatListPage_sub');
-      /* overflow managed by sub-page */
+      document.getElementById('chatListModal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
       await loadChatList();
+    }
+
+    function closeChatListModal() {
+      document.getElementById('chatListModal').style.display = 'none';
+      document.body.style.overflow = '';
     }
 
 
@@ -792,13 +799,25 @@
       currentConvId = convId;
       currentConvPhone = otherPhone;
       document.getElementById('chatConvTitle').textContent = otherName || otherPhone;
-      closeSubPage('chatListPage_sub');
-      openSubPage('chatConvPage_sub');
-      /* overflow managed by sub-page */
+      // 关闭消息列表弹窗，打开对话弹窗
+      document.getElementById('chatListModal').style.display = 'none';
+      document.getElementById('chatConvModal').style.display = 'flex';
       await loadChatMessages();
       // 自动刷新
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
       chatRefreshTimer = setInterval(loadChatMessages, 5000);
+    }
+
+    function closeChatConvModal() {
+      document.getElementById('chatConvModal').style.display = 'none';
+      document.body.style.overflow = '';
+      // 回到消息列表
+      document.getElementById('chatListModal').style.display = 'flex';
+      // 停止刷新
+      if (chatRefreshTimer) {
+        clearInterval(chatRefreshTimer);
+        chatRefreshTimer = null;
+      }
     }
 
 
@@ -965,8 +984,10 @@ window.toggleFollowFromList = toggleFollowFromList;
 window.showMyViewers = showMyViewers;
 window.showMyWallLikes = showMyWallLikes;
 window.openChatList = openChatList;
+window.closeChatListModal = closeChatListModal;
 window.loadChatList = loadChatList;
 window.openChatConv = openChatConv;
+window.closeChatConvModal = closeChatConvModal;
 window.loadChatMessages = loadChatMessages;
 window.sendChatMsg = sendChatMsg;
 window.userChatUpload = userChatUpload;

@@ -893,11 +893,21 @@
       const map = {
         'orderModal':'orderPage_sub','detailModal':'detailPage_sub',
         'wallPostModal':'wallPostPage_sub','wallDetailModal':'wallDetailPage_sub',
-        'chatListModal':'chatListPage_sub','chatConvModal':'chatConvPage_sub',
         'rateModal':'ratePage_sub','notifModal':'notifPage_sub',
         'settingsModal':'settingsPage_sub','profileModal':'profilePage_sub',
         'genericModal':'genericPage_sub'
       };
+      // 消息弹窗使用新的弹窗机制
+      if (id === 'chatListModal') {
+        document.getElementById('chatListModal').style.display = 'none';
+        document.body.style.overflow = '';
+        return;
+      }
+      if (id === 'chatConvModal') {
+        document.getElementById('chatConvModal').style.display = 'none';
+        document.body.style.overflow = '';
+        return;
+      }
       const target = map[id] || id;
       closeSubPage(target);
     }
