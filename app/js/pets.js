@@ -105,7 +105,7 @@ async function showPetDetail(id) {
   const alertConf = { warning: { emoji: '⚠️', label: '7天未见', bg: 'linear-gradient(135deg,#FFF3E0,#FFE0B2)', color: '#E65100' }, urgent: { emoji: '🟠', label: '15天未现', bg: 'linear-gradient(135deg,#FBE9E7,#FFCCBC)', color: '#BF360C' }, critical: { emoji: '🔴', label: '30天失联', bg: 'linear-gradient(135deg,#FFEBEE,#FFCDD2)', color: '#B71C1C' } };
   const ac = alertConf[data.alert_level];
   if (ac) {
-    infoHtml += '<div style="margin:8px 0;padding:10px 14px;border-radius:12px;background:' + ac.bg + ';color:' + ac.color + ';font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">' + ac.emoji + ' ' + escHtml(data.code_name) + '已' + (data.daysSinceSeen || '?') + '天未被目击（' + ac.label + '），如看到请点击下方「📍 我看到了」打卡</div>';
+    infoHtml += '<div style="margin:8px 0;padding:10px 14px;border-radius:12px;background:' + ac.bg + ';color:' + ac.color + ';font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">' + ac.emoji + ' ' + escHtml(data.code_name) + '已' + (data.daysSinceSeen || '?') + '天未被目击，如看到请点击下方「📍 我看到了」打卡</div>';
   }
 
   // 健康状态横幅
