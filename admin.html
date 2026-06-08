@@ -2591,6 +2591,7 @@
             '<button class="btn" style="padding:4px 10px;font-size:0.8rem;color:#ef4444;border-radius:8px" onclick="deletePet(' + p.id + ')">🗑️</button>' +
           '</td></tr>';      document.getElementById('petsTable').innerHTML = rows || '<tr><td colspan="12" style="text-align:center;padding:40px;color:#999;font-size:1rem">\u{1F43E} 暂无猫狗数据</td></tr>';
     }
+    }
 
     function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
