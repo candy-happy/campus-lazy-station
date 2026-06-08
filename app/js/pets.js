@@ -444,7 +444,7 @@ async function submitSight(id) {
     } else {
       showToast('📋 上报成功！等待管理端审核确认');
       closeSightPage();
-      showPetDetail(id);
+      await showPetDetail(id);
     }
   } catch(e) {
     showToast('提交失败，请重试');
