@@ -64,6 +64,8 @@ db.exec(`
     nickname TEXT DEFAULT '',
     location TEXT DEFAULT '',
     note TEXT DEFAULT '',
+    photo TEXT DEFAULT '',
+    health_status TEXT DEFAULT '',
     status TEXT DEFAULT 'pending',
     reviewed_at TEXT,
     created_at TEXT DEFAULT (datetime('now','localtime'))
@@ -73,6 +75,8 @@ db.exec(`
 // ─── 数据库迁移：添加新列 ────────────────────────────────────
 try { db.prepare('ALTER TABLE pets ADD COLUMN health_status TEXT DEFAULT "healthy"').run(); } catch(e) {}
 try { db.prepare('ALTER TABLE pets ADD COLUMN health_note TEXT DEFAULT ""').run(); } catch(e) {}
+try { db.prepare('ALTER TABLE pet_sightings ADD COLUMN photo TEXT DEFAULT ""').run(); } catch(e) {}
+try { db.prepare('ALTER TABLE pet_sightings ADD COLUMN health_status TEXT DEFAULT ""').run(); } catch(e) {}
 
 // ─── 文件上传配置 ────────────────────────────────────────
 const uploadDir = path.join(__dirname, '..', 'uploads', 'pets');
@@ -365,7 +369,7 @@ router.get('/sightings/:id', (req, res) => JSON_RES(res, () => {
 
 // ─── 目击打卡：用户看到猫狗时记录 ──────────────────────
 router.post('/sight/:id', requireAuth, upload.single('photo'), (req, res) => JSON_RES(res, () => {
-  const { phone, location, note } = req.body;
+  const { phone, location, note, health_status } = req.body;
   if (!phone) return makeError('请先登录', ErrorCode.AUTH_001, 401);
   if (!location || !location.trim()) return makeError('请填写目击地点', ErrorCode.PARAM_INVALID, 400);
   const pet = db.prepare('SELECT * FROM pets WHERE id = ?').get(req.params.id);
@@ -376,7 +380,7 @@ router.post('/sight/:id', requireAuth, upload.single('photo'), (req, res) => JSO
   if (req.file) {
     photo = '/uploads/pets/' + req.file.filename;
   } else {
-    return makeError('请上传目击照片', ErrorCode.PARAM_INVALID, 400);
+    return makeError('请上传照片', ErrorCode.PARAM_INVALID, 400);
   }
 
   // 获取用户昵称
@@ -389,10 +393,12 @@ router.post('/sight/:id', requireAuth, upload.single('photo'), (req, res) => JSO
   }
 
   // 写入目击记录（待审核），不立即更新last_seen_at
-  const result = db.prepare(`INSERT INTO pet_sightings (pet_id, phone, nickname, location, note, photo, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')`)
-    .run(req.params.id, phone, nickname, location.trim(), note || '', photo);
+  const validHealth = ['healthy', 'sick', 'injured', 'pregnant', 'nursing', 'quarantine', 'other'];
+  const hs = (health_status && validHealth.includes(health_status)) ? health_status : '';
+  const result = db.prepare(`INSERT INTO pet_sightings (pet_id, phone, nickname, location, note, photo, health_status, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`)
+    .run(req.params.id, phone, nickname, location.trim(), note || '', photo, hs);
 
-  return { message: '打卡成功，等待管理端审核确认', sighting_id: result.lastInsertRowid };
+  return { message: '上报成功，等待管理端审核确认', sighting_id: result.lastInsertRowid };
 }));
 
 // ─── 告警检测：检查所有猫狗的失联状态 ────────────────────
@@ -449,6 +455,10 @@ router.put('/admin/review-sighting/:id', requireAdmin, (req, res) => JSON_RES(re
     db.prepare(`UPDATE pet_sightings SET status = 'approved', reviewed_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
     // 更新猫狗最后目击时间 + 重置告警
     db.prepare(`UPDATE pets SET last_seen_at = datetime('now','localtime'), alert_level = 'none', updated_at = datetime('now','localtime') WHERE id = ?`).run(sighting.pet_id);
+    // 如果上报了健康状态，同步更新宠物健康状态
+    if (sighting.health_status) {
+      db.prepare(`UPDATE pets SET health_status = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(sighting.health_status, sighting.pet_id);
+    }
     return { message: '审核通过，已更新目击时间' };
   } else {
     db.prepare(`UPDATE pet_sightings SET status = 'rejected', reviewed_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);

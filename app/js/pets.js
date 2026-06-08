@@ -105,7 +105,7 @@ async function showPetDetail(id) {
   const alertConf = { warning: { emoji: '⚠️', label: '7天未见', bg: 'linear-gradient(135deg,#FFF3E0,#FFE0B2)', color: '#E65100' }, urgent: { emoji: '🟠', label: '15天未现', bg: 'linear-gradient(135deg,#FBE9E7,#FFCCBC)', color: '#BF360C' }, critical: { emoji: '🔴', label: '30天失联', bg: 'linear-gradient(135deg,#FFEBEE,#FFCDD2)', color: '#B71C1C' } };
   const ac = alertConf[data.alert_level];
   if (ac) {
-    infoHtml += '<div style="margin:8px 0;padding:10px 14px;border-radius:12px;background:' + ac.bg + ';color:' + ac.color + ';font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">' + ac.emoji + ' ' + escHtml(data.code_name) + '已' + (data.daysSinceSeen || '?') + '天未被目击，如看到请点击下方「📍 我看到了」打卡</div>';
+    infoHtml += '<div style="margin:8px 0;padding:10px 14px;border-radius:12px;background:' + ac.bg + ';color:' + ac.color + ';font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">' + ac.emoji + ' ' + escHtml(data.code_name) + '已' + (data.daysSinceSeen || '?') + '天未被目击，如看到请点击下方「📋 上报状况」</div>';
   }
 
   // 健康状态横幅
@@ -152,7 +152,7 @@ async function showPetDetail(id) {
   const liked = data.userLiked;
   infoHtml += '<div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap">' +
     '<button id="petLikeBtn" onclick="doPetLike(' + id + ')" style="background:' + (liked ? 'linear-gradient(135deg,#ff6a88,#ff4466)' : 'linear-gradient(135deg,#ff9a56,#ff6a88)') + ';color:#fff;border:none;border-radius:20px;padding:8px 24px;font-size:14px;font-weight:600;cursor:pointer">' + (liked ? '❤️ 已赞 (' + (data.like_count||0) + ')' : '❤️ 点赞 (' + (data.like_count||0) + ')') + '</button>' +
-    '<button id="sightBtn" onclick="openSightPage(' + id + ')" style="background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;border:none;border-radius:20px;padding:8px 24px;font-size:14px;font-weight:600;cursor:pointer;transition:transform 0.15s" ontouchstart="this.style.transform=\'scale(0.95)\'" ontouchend="this.style.transform=\'scale(1)\'">📍 我看到了</button>' +
+    '<button id="sightBtn" onclick="openSightPage(' + id + ')" style="background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;border:none;border-radius:20px;padding:8px 24px;font-size:14px;font-weight:600;cursor:pointer;transition:transform 0.15s" ontouchstart="this.style.transform=\'scale(0.95)\'" ontouchend="this.style.transform=\'scale(1)\'">📋 上报状况</button>' +
   '</div>';
 
   document.getElementById('petProfileCard').innerHTML = infoHtml;
@@ -256,7 +256,7 @@ async function openSightPage(id) {
   var old = document.getElementById('sightPage_sub');
   if (old) { old.remove(); }
   if (!API._token) { showToast('⚠️ 请先登录'); return; }
-  showToast('📍 正在打开打卡页面...');
+  showToast('📋 正在打开上报页面...');
   var pet = window._currentPet || {};
   var petName = pet.code_name || '这只小家伙';
 
@@ -274,7 +274,7 @@ async function openSightPage(id) {
   backBtn.style.cssText = 'background:none;border:none;color:#fff;font-size:22px;cursor:pointer';
   backBtn.onclick = closeSightPage;
   var title = document.createElement('span');
-  title.innerHTML = '📍 目击打卡';
+  title.innerHTML = '📋 上报状况';
   title.style.cssText = 'font-size:18px;font-weight:700';
   header.appendChild(backBtn);
   header.appendChild(title);
@@ -287,13 +287,13 @@ async function openSightPage(id) {
   // 宠物信息卡片
   body.appendChild(makeCard(
     '<div style="font-size:16px;font-weight:600;margin-bottom:12px">🐾 ' + escHtml(petName) + '</div>' +
-    '<div style="color:#999;font-size:13px">上传你拍到的照片，帮助确认TA的安全</div>'
+    '<div style="color:#999;font-size:13px">上传照片，上报TA的最新位置和健康状况</div>'
   ));
 
   // 照片区域
   var photoCard = document.createElement('div');
   photoCard.style.cssText = 'background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)';
-  photoCard.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📷 目击照片 <span style="color:#f44336">*</span></div>';
+  photoCard.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📷 照片 <span style="color:#f44336">*</span></div>';
   var fileInput = document.createElement('input');
   fileInput.type = 'file';
   fileInput.id = 'sightPhoto';
@@ -305,7 +305,7 @@ async function openSightPage(id) {
   var previewArea = document.createElement('div');
   previewArea.id = 'sightPhotoPreview';
   previewArea.style.cssText = 'border:2px dashed #ccc;border-radius:12px;padding:32px;text-align:center;cursor:pointer';
-  previewArea.innerHTML = '<div style="font-size:36px;margin-bottom:8px">📸</div><div style="color:#999;font-size:13px">点击上传照片（必填）</div>';
+  previewArea.innerHTML = '<div style="font-size:36px;margin-bottom:8px">📸</div><div style="color:#999;font-size:13px">点击上传照片（必填）</div><div style="color:#bbb;font-size:11px;margin-top:4px">记录TA的当前状态</div>';
   previewArea.onclick = function() { document.getElementById('sightPhoto').click(); };
   photoCard.appendChild(previewArea);
   var thumbArea = document.createElement('div');
@@ -318,22 +318,48 @@ async function openSightPage(id) {
   // 地点
   var locCard = document.createElement('div');
   locCard.style.cssText = 'background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)';
-  locCard.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📍 目击地点 <span style="color:#f44336">*</span></div>' +
+  locCard.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📍 发现地点 <span style="color:#f44336">*</span></div>' +
     '<input type="text" id="sightLocation" placeholder="例如：一食堂门口、图书馆台阶..." style="width:100%;padding:12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none">';
   body.appendChild(locCard);
+
+  // 健康状况选择
+  var healthCard = document.createElement('div');
+  healthCard.style.cssText = 'background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)';
+  healthCard.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:10px">💊 健康状况 <span style="color:#999;font-weight:400">（选填）</span></div>' +
+    '<div id="sightHealthOptions" style="display:flex;flex-wrap:wrap;gap:8px">' +
+    '<label style="display:flex;align-items:center;gap:4px;padding:6px 12px;border:2px solid #e0e0e0;border-radius:20px;font-size:13px;cursor:pointer;transition:all 0.2s"><input type="radio" name="sightHealth" value="healthy" style="display:none"><span>😊 健康</span></label>' +
+    '<label style="display:flex;align-items:center;gap:4px;padding:6px 12px;border:2px solid #e0e0e0;border-radius:20px;font-size:13px;cursor:pointer;transition:all 0.2s"><input type="radio" name="sightHealth" value="sick" style="display:none"><span>🤒 生病</span></label>' +
+    '<label style="display:flex;align-items:center;gap:4px;padding:6px 12px;border:2px solid #e0e0e0;border-radius:20px;font-size:13px;cursor:pointer;transition:all 0.2s"><input type="radio" name="sightHealth" value="injured" style="display:none"><span>🤕 受伤</span></label>' +
+    '<label style="display:flex;align-items:center;gap:4px;padding:6px 12px;border:2px solid #e0e0e0;border-radius:20px;font-size:13px;cursor:pointer;transition:all 0.2s"><input type="radio" name="sightHealth" value="pregnant" style="display:none"><span>🤰 怀孕</span></label>' +
+    '<label style="display:flex;align-items:center;gap:4px;padding:6px 12px;border:2px solid #e0e0e0;border-radius:20px;font-size:13px;cursor:pointer;transition:all 0.2s"><input type="radio" name="sightHealth" value="nursing" style="display:none"><span>🐾 哺乳</span></label>' +
+    '<label style="display:flex;align-items:center;gap:4px;padding:6px 12px;border:2px solid #e0e0e0;border-radius:20px;font-size:13px;cursor:pointer;transition:all 0.2s"><input type="radio" name="sightHealth" value="quarantine" style="display:none"><span>🏥 隔离</span></label>' +
+    '<label style="display:flex;align-items:center;gap:4px;padding:6px 12px;border:2px solid #e0e0e0;border-radius:20px;font-size:13px;cursor:pointer;transition:all 0.2s"><input type="radio" name="sightHealth" value="other" style="display:none"><span>❓ 其他</span></label>' +
+    '</div>';
+  body.appendChild(healthCard);
+  // 健康状况单选按钮交互
+  setTimeout(function() {
+    var labels = document.querySelectorAll('#sightHealthOptions label');
+    labels.forEach(function(lbl) {
+      lbl.addEventListener('click', function() {
+        labels.forEach(function(l) { l.style.borderColor = '#e0e0e0'; l.style.background = '#fff'; });
+        lbl.style.borderColor = '#4CAF50';
+        lbl.style.background = '#E8F5E9';
+      });
+    });
+  }, 100);
 
   // 备注
   var noteCard = document.createElement('div');
   noteCard.style.cssText = 'background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)';
-  noteCard.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📝 备注 <span style="color:#999;font-weight:400">（选填）</span></div>' +
-    '<textarea id="sightNote" placeholder="TA的状态怎么样？有什么想说的..." rows="3" style="width:100%;padding:12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;resize:none;outline:none"></textarea>';
+  noteCard.innerHTML = '<div style="font-size:14px;font-weight:600;margin-bottom:8px">📝 补充说明 <span style="color:#999;font-weight:400">（选填）</span></div>' +
+    '<textarea id="sightNote" placeholder="描述TA的状态或你想说的..." rows="3" style="width:100%;padding:12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;resize:none;outline:none"></textarea>';
   body.appendChild(noteCard);
 
   // 提交按钮
   var submitBtn = document.createElement('button');
   submitBtn.type = 'button';
   submitBtn.id = 'sightSubmitBtn';
-  submitBtn.innerHTML = '📍 提交打卡';
+  submitBtn.innerHTML = '📋 提交上报';
   submitBtn.style.cssText = 'width:100%;padding:14px;background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(76,175,80,0.3)';
   submitBtn.onclick = function() { submitSight(id); };
   body.appendChild(submitBtn);
@@ -387,12 +413,14 @@ async function submitSight(id) {
   const location = (document.getElementById('sightLocation').value || '').trim();
   const note = (document.getElementById('sightNote').value || '').trim();
   const photoInput = document.getElementById('sightPhoto');
+  const healthRadio = document.querySelector('input[name="sightHealth"]:checked');
+  const health_status = healthRadio ? healthRadio.value : '';
 
   if (!photoInput.files || !photoInput.files[0]) {
-    showToast('请上传目击照片'); return;
+    showToast('请上传照片'); return;
   }
   if (!location) {
-    showToast('请填写目击地点'); return;
+    showToast('请填写发现地点'); return;
   }
 
   const btn = document.getElementById('sightSubmitBtn');
@@ -403,6 +431,7 @@ async function submitSight(id) {
   fd.append('location', location);
   fd.append('note', note);
   fd.append('photo', photoInput.files[0]);
+  if (health_status) fd.append('health_status', health_status);
 
   try {
     const res = await fetch('/api/pets/sight/' + id, {
@@ -414,14 +443,14 @@ async function submitSight(id) {
     if (data.error) {
       showToast(data.error);
     } else {
-      showToast('📍 打卡成功！等待管理端审核确认');
+      showToast('📋 上报成功！等待管理端审核确认');
       closeSightPage();
       showPetDetail(id);
     }
   } catch(e) {
     showToast('提交失败，请重试');
   }
-  btn.disabled = false; btn.textContent = '📍 提交打卡';
+  btn.disabled = false; btn.textContent = '📋 提交上报';
 }
 
 

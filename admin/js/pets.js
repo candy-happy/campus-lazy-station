@@ -204,13 +204,13 @@
     }
 
     async function showSightings(id, name) {
-      document.getElementById('sightingsModalTitle').textContent = '\u{1F4CD} ' + name + ' 的目击记录';
+      document.getElementById('sightingsModalTitle').textContent = '\u{1F4CD} ' + name + ' 的上报记录';
       document.getElementById('sightingsContent').innerHTML = '<div style="text-align:center;padding:30px;color:#999">加载中...</div>';
       showModal('sightingsModal');
       const res = await fetch('/api/pets/admin/sightings/' + id, { headers: AUTH() });
       const sightings = await res.json();
       if (!sightings || sightings.length === 0) {
-        document.getElementById('sightingsContent').innerHTML = '<div style="text-align:center;padding:40px;color:#999">\u{1F43E} 暂无目击记录</div>';
+        document.getElementById('sightingsContent').innerHTML = '<div style="text-align:center;padding:40px;color:#999">\u{1F43E} 暂无上报记录</div>';
         return;
       }
       var html = sightings.map(function(s) {
@@ -333,7 +333,7 @@
         var res = await fetch('/api/pets/admin/pending-sightings', { headers: AUTH() });
         var list = await res.json();
         if (!list || list.length === 0) {
-          content.innerHTML = '<div style="text-align:center;padding:40px;color:#999">\u{1F43E} 暂无待审核目击记录</div>';
+          content.innerHTML = '<div style="text-align:center;padding:40px;color:#999">\u{1F43E} 暂无待审核上报</div>';
           return;
         }
         var speciesEmoji = { cat: '\u{1F431}', dog: '\u{1F436}' };
@@ -345,10 +345,12 @@
           var loc = s.location ? '<span style="color:#999;font-size:0.8rem">\u{1F4CD} ' + esc(s.location) + '</span>' : '';
           var note = s.note ? '<div style="margin-top:4px;color:#555;font-size:0.85rem">' + esc(s.note) + '</div>' : '';
           var photoHtml = s.photo ? '<div style="margin-top:8px"><img src="' + esc(s.photo) + '" style="max-width:120px;max-height:90px;border-radius:8px;object-fit:cover;cursor:pointer" onclick="window.open(this.src)"></div>' : '';
+          var healthLabels = { healthy: '😊 健康', sick: '🤒 生病', injured: '🤕 受伤', pregnant: '🤰 怀孕', nursing: '🐾 哺乳', quarantine: '🏥 隔离', other: '❓ 其他' };
+          var healthHtml = s.health_status ? '<span style="display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;font-size:0.75rem;font-weight:600;background:#E8F5E9;color:#2E7D32">' + (healthLabels[s.health_status] || s.health_status) + '</span>' : '';
           return '<div style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #f0f0f0;align-items:flex-start">' +
             '<div>' + avatarHtml + '</div>' +
             '<div style="flex:1">' +
-              '<div><strong>' + nickname + '</strong> 目击了 <strong style="color:#E65100">' + petEmoji + ' ' + petName + '</strong> ' + loc + '</div>' +
+              '<div><strong>' + nickname + '</strong> 上报了 <strong style="color:#E65100">' + petEmoji + ' ' + petName + '</strong> ' + loc + healthHtml + '</div>' +
               note + photoHtml +
               '<div style="margin-top:4px;font-size:0.75rem;color:#aaa">' + timeAgoAdmin(s.created_at) + '</div>' +
             '</div>' +
