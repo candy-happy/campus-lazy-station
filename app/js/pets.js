@@ -257,32 +257,31 @@ async function openSightPage(id) {
   if (old) { old.remove(); }
   if (!API._token) { showToast('⚠️ 请先登录'); return; }
   showToast('📋 正在打开上报页面...');
-  var pet = window._currentPet || {};
-  var petName = pet.code_name || '这只小家伙';
-
-  // 纯DOM API构建，不依赖innerHTML
+  const petData = await API.getPet(id);
+  if (!petData || petData.error) { showToast('获取宠物信息失败'); return; }
+  const petName = petData.name || '未知小动物';
+  
   var wrap = document.createElement('div');
   wrap.id = 'sightPage_sub';
   wrap.className = 'sub-page';
-  wrap.style.cssText = 'display:block;position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f5f5;z-index:3000;overflow-y:auto';
 
   // 头部
   var header = document.createElement('div');
-  header.style.cssText = 'position:sticky;top:0;background:linear-gradient(135deg,#4CAF50,#66BB6A);color:#fff;padding:16px;display:flex;align-items:center;gap:12px;z-index:1';
+  header.className = 'sub-page-header';
   var backBtn = document.createElement('button');
+  backBtn.className = 'sub-page-back';
   backBtn.innerHTML = '←';
-  backBtn.style.cssText = 'background:none;border:none;color:#fff;font-size:22px;cursor:pointer';
   backBtn.onclick = closeSightPage;
   var title = document.createElement('span');
+  title.className = 'sub-page-title';
   title.innerHTML = '📋 上报状况';
-  title.style.cssText = 'font-size:18px;font-weight:700';
   header.appendChild(backBtn);
   header.appendChild(title);
   wrap.appendChild(header);
 
   // 内容区
   var body = document.createElement('div');
-  body.style.cssText = 'padding:16px';
+  body.className = 'sub-page-body';
 
   // 宠物信息卡片
   body.appendChild(makeCard(
@@ -366,6 +365,7 @@ async function openSightPage(id) {
 
   wrap.appendChild(body);
   document.body.appendChild(wrap);
+  openSubPage('sightPage_sub');
   console.log('[DEBUG] sightPage_sub created, childCount:', wrap.childNodes.length, 'body childCount:', wrap.lastChild.childNodes.length);
 }
 
@@ -381,8 +381,7 @@ function makeCard(html) {
 
 
 function closeSightPage() {
-  const p = document.getElementById('sightPage_sub');
-  if (p) p.remove();
+  closeSubPage('sightPage_sub');
 }
 
 
