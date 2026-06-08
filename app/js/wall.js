@@ -832,6 +832,7 @@
         const isMe = m.sender_phone === currentUser.phone;
         let content;
         const c = m.content;
+        const time = new Date(m.created_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         if (m.type === 'image') {
           content = '<img src="'+escHtml(c)+'" style="max-width:100%;border-radius:8px;display:block;cursor:pointer" onclick="window.open(this.src)" />';
         } else if (m.type === 'video') {
@@ -845,11 +846,8 @@
           content = escHtml(c);
         }
         return `
-          <div style="display:flex;justify-content:${isMe?'flex-end':'flex-start'};margin-bottom:10px">
-            <div style="max-width:70%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;
-              background:${isMe?'var(--primary)':'var(--card)'};color:${isMe?'#fff':'var(--text)'};border:1px solid ${isMe?'transparent':'var(--border)'}">
-              ${content}
-            </div>
+          <div class="message-bubble ${isMe?'me':'other'}">
+            <div class="message-content">${content}<div class="message-time">${time}</div></div>
           </div>
         `;
       }).join('');
