@@ -84,27 +84,7 @@
             </div>
           </div>
 
-          <!-- 快捷入口 -->
-          <div class="quick-entry">
-            <div class="quick-card discount" onclick="showCoupons()">
-              <div class="quick-icon">🎫</div>
-              <div class="quick-info">
-                <div class="quick-title" data-i18n="coupons">优惠券</div>
-                <div class="quick-desc" data-i18n="viewCoupons">查看可用优惠</div>
-              </div>
-              <div class="quick-value" id="couponCount">2</div>
-            </div>
-            <div class="quick-card points" onclick="showPoints()">
-              <div class="quick-icon">⭐</div>
-              <div class="quick-info">
-                <div class="quick-title" data-i18n="myPoints">我的积分</div>
-                <div class="quick-desc" data-i18n="pointsDesc">积分可抵现金</div>
-              </div>
-              <div class="quick-value" id="pointsCount">168</div>
-            </div>
 
-
-          </div>
         </div>
 
         <!-- 📱 校园墙 -->
@@ -230,6 +210,16 @@
         </div>
 
         <div class="me-menu-card">
+          <div class="me-menu-item" onclick="showCoupons()">
+            <span class="me-menu-icon">🎫</span>
+            <span class="me-menu-text" data-i18n="menuCoupons">优惠券</span>
+            <span class="me-menu-arrow">›</span>
+          </div>
+          <div class="me-menu-item" onclick="showPoints()">
+            <span class="me-menu-icon">⭐</span>
+            <span class="me-menu-text" data-i18n="menuPoints">我的积分</span>
+            <span class="me-menu-arrow">›</span>
+          </div>
           <div class="me-menu-item" onclick="openMyTrades()">
             <span class="me-menu-icon">🛒</span>
             <span class="me-menu-text" data-i18n="menuTrades">我的交易</span>
