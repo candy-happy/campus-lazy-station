@@ -264,7 +264,7 @@ async function openSightPage(id) {
   var wrap = document.createElement('div');
   wrap.id = 'sightPage_sub';
   wrap.className = 'sub-page';
-  wrap.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f5f5;z-index:3000;overflow-y:auto';
+  wrap.style.cssText = 'display:block;position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f5f5;z-index:3000;overflow-y:auto';
 
   // 头部
   var header = document.createElement('div');
