@@ -11,6 +11,23 @@ const fs = require('fs');
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
 
+// ─── 数据库表初始化 ──────────────────────────────────────────
+try {
+  db.prepare(`CREATE TABLE IF NOT EXISTS ai_review_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source TEXT NOT NULL,           -- 来源: wall_post/wall_comment/market_item/market_comment/teacher_review
+    source_id INTEGER NOT NULL,     -- 源数据ID
+    phone TEXT NOT NULL,            -- 用户手机号
+    content_preview TEXT DEFAULT '',-- 内容预览
+    violation INTEGER DEFAULT 0,    -- 是否违规: 0/1
+    level TEXT DEFAULT 'none',      -- 违规等级: high/medium/low/none
+    category TEXT DEFAULT '',       -- 违规类别
+    reason TEXT DEFAULT '',         -- 违规原因
+    action TEXT DEFAULT 'pass',     -- 操作: pass/block/下架
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  )`).run();
+} catch(e) { console.error('[AI审核] 创建表失败:', e.message); }
+
 // ─── DeepSeek API 调用封装 ──────────────────────────────────
 function callDeepSeek(messages, maxTokens = 1024) {
   return new Promise((resolve, reject) => {
