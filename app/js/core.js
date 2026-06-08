@@ -683,7 +683,7 @@
 
 
     function showMainApp() {
-      document.getElementById('wallPage').classList.add('active');
+      document.getElementById('homePage').classList.add('active');
       document.querySelectorAll('.nav-item')[0].classList.add('active');
       if (currentUser) loadWallFeed();
     }
@@ -787,20 +787,17 @@
     function switchPage(page) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      if (page === 'wall') {
-        document.getElementById('wallPage').classList.add('active');
+      if (page === 'home') {
+        document.getElementById('homePage').classList.add('active');
         document.querySelectorAll('.nav-item')[0]?.classList.add('active');
         if (currentUser) loadWallFeed();
-      } else if (page === 'home') {
-        document.getElementById('homePage').classList.add('active');
-        document.querySelectorAll('.nav-item')[1]?.classList.add('active');
       } else if (page === 'order') {
         document.getElementById('orderPage').classList.add('active');
-        document.querySelectorAll('.nav-item')[2]?.classList.add('active');
+        document.querySelectorAll('.nav-item')[1]?.classList.add('active');
         renderOrders();
       } else if (page === 'me') {
         document.getElementById('mePage').classList.add('active');
-        document.querySelectorAll('.nav-item')[3]?.classList.add('active');
+        document.querySelectorAll('.nav-item')[2]?.classList.add('active');
         updateMePage();
       }
     }
