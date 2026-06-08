@@ -55,7 +55,7 @@
       var alertBadge = {
         warning: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFF3E0;color:#E65100;border:1px solid #FFE0B2">\u26A0\uFE0F 7天</span>',
         urgent: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FBE9E7;color:#BF360C;border:1px solid #FFAB91">\u{1F7E0} 15天</span>',
-        critical: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A;animation:pulse 2s infinite">\u{1F534} 31天</span>'
+        critical: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A;animation:pulse 2s infinite">\u{1F534} 30天</span>'
       };
       var healthBadge = {
         healthy: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#E8F5E9;color:#2E7D32">💚 健康</span>',
@@ -313,13 +313,13 @@
 
       var html = '';
       if (alertRes.critical && alertRes.critical.length > 0) {
-        html += '<div style="margin-bottom:6px"><strong style="color:#B71C1C">🔴 31天失联：</strong>' + alertRes.critical.map(function(p) { return '<span style="background:#FFEBEE;padding:2px 8px;border-radius:8px;margin:2px;display:inline-block;font-weight:600;color:#B71C1C">' + p.speciesEmoji + esc(p.code_name) + ' <span style="font-weight:400;font-size:0.8rem">(' + p.daysSince + '天)</span></span>'; }).join('') + '</div>';
+        html += '<div style="margin-bottom:6px"><strong style="color:#B71C1C">🔴 30天失联：</strong>' + alertRes.critical.map(function(p) { return '<span style="background:#FFEBEE;padding:2px 8px;border-radius:8px;margin:2px;display:inline-block;font-weight:600;color:#B71C1C">' + p.speciesEmoji + esc(p.code_name) + '</span>'; }).join('') + '</div>';
       }
       if (alertRes.urgent && alertRes.urgent.length > 0) {
-        html += '<div style="margin-bottom:6px"><strong style="color:#BF360C">🟠 15天未现：</strong>' + alertRes.urgent.map(function(p) { return '<span style="background:#FBE9E7;padding:2px 8px;border-radius:8px;margin:2px;display:inline-block;font-weight:600;color:#BF360C">' + p.speciesEmoji + esc(p.code_name) + ' <span style="font-weight:400;font-size:0.8rem">(' + p.daysSince + '天)</span></span>'; }).join('') + '</div>';
+        html += '<div style="margin-bottom:6px"><strong style="color:#BF360C">🟠 15天未现：</strong>' + alertRes.urgent.map(function(p) { return '<span style="background:#FBE9E7;padding:2px 8px;border-radius:8px;margin:2px;display:inline-block;font-weight:600;color:#BF360C">' + p.speciesEmoji + esc(p.code_name) + '</span>'; }).join('') + '</div>';
       }
       if (alertRes.warning && alertRes.warning.length > 0) {
-        html += '<div style="margin-bottom:6px"><strong style="color:#E65100">⚠️ 7天未见：</strong>' + alertRes.warning.map(function(p) { return '<span style="background:#FFF3E0;padding:2px 8px;border-radius:8px;margin:2px;display:inline-block;font-weight:600;color:#E65100">' + p.speciesEmoji + esc(p.code_name) + ' <span style="font-weight:400;font-size:0.8rem">(' + p.daysSince + '天)</span></span>'; }).join('') + '</div>';
+        html += '<div style="margin-bottom:6px"><strong style="color:#E65100">⚠️ 7天未见：</strong>' + alertRes.warning.map(function(p) { return '<span style="background:#FFF3E0;padding:2px 8px;border-radius:8px;margin:2px;display:inline-block;font-weight:600;color:#E65100">' + p.speciesEmoji + esc(p.code_name) + '</span>'; }).join('') + '</div>';
       }
       html += '<div style="margin-top:8px;color:#999;font-size:0.8rem">💡 请安排巡查确认猫狗安全，用户打卡可自动解除告警</div>';
       detail.innerHTML = html;

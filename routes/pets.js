@@ -109,7 +109,7 @@ router.get('/list', (req, res) => JSON_RES(res, () => {
     let displayAlert = p.alert_level;
     if (p.last_seen_at) {
       daysSinceSeen = Math.floor((now - new Date(p.last_seen_at).getTime()) / (1000*60*60*24));
-      if (daysSinceSeen >= 31) displayAlert = 'critical';
+      if (daysSinceSeen >= 30) displayAlert = 'critical';
       else if (daysSinceSeen >= 15) displayAlert = 'urgent';
       else if (daysSinceSeen >= 7) displayAlert = 'warning';
       else displayAlert = 'none';
@@ -407,7 +407,7 @@ router.get('/alert-check', (req, res) => JSON_RES(res, () => {
     const daysSince = (now - lastSeen) / (1000 * 60 * 60 * 24);
 
     let newLevel = 'none';
-    if (daysSince >= 31) newLevel = 'critical';
+    if (daysSince >= 30) newLevel = 'critical';
     else if (daysSince >= 15) newLevel = 'urgent';
     else if (daysSince >= 7) newLevel = 'warning';
 
@@ -426,7 +426,7 @@ router.get('/alert-check', (req, res) => JSON_RES(res, () => {
     total: pets.length,
     warning: alerts.warning,    // 7-14天
     urgent: alerts.urgent,      // 15-29天
-    critical: alerts.critical,  // 31天+
+    critical: alerts.critical,  // 30天+
     summary: {
       warning: alerts.warning.length,
       urgent: alerts.urgent.length,
