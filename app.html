@@ -230,10 +230,9 @@
             <span class="me-menu-text" data-i18n="menuListings">我的在售</span>
             <span class="me-menu-arrow">›</span>
           </div>
-          <div class="me-menu-item" onclick="openChatList()">
-            <span class="me-menu-icon">💬</span>
-            <span class="me-menu-text" data-i18n="menuMessages">我的消息</span>
-            <span class="me-menu-badge" id="meMsgBadge" style="display:none">0</span>
+          <div class="me-menu-item" onclick="switchPage('order')">
+            <span class="me-menu-icon">📋</span>
+            <span class="me-menu-text" data-i18n="menuOrders">我的订单</span>
             <span class="me-menu-arrow">›</span>
           </div>
           <div class="me-menu-item" onclick="showAddresses()">
@@ -740,9 +739,9 @@
         <span class="nav-icon">🏠</span>
         <span class="nav-text" data-i18n="navHome">首页</span>
       </div>
-      <div class="nav-item" onclick="switchPage('order')">
-        <span class="nav-icon">📋</span>
-        <span class="nav-text" data-i18n="navOrders">订单</span>
+      <div class="nav-item" onclick="openChatList()">
+        <span class="nav-icon">💬</span>
+        <span class="nav-text" data-i18n="navMessages">消息</span>
       </div>
       <div class="nav-item" onclick="switchPage('me')">
         <span class="nav-icon">👤</span>

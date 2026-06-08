@@ -791,10 +791,10 @@
         document.getElementById('homePage').classList.add('active');
         document.querySelectorAll('.nav-item')[0]?.classList.add('active');
         if (currentUser) loadWallFeed();
-      } else if (page === 'order') {
-        document.getElementById('orderPage').classList.add('active');
+      } else if (page === 'message') {
+        document.getElementById('homePage').classList.add('active');
         document.querySelectorAll('.nav-item')[1]?.classList.add('active');
-        renderOrders();
+        openChatList();
       } else if (page === 'me') {
         document.getElementById('mePage').classList.add('active');
         document.querySelectorAll('.nav-item')[2]?.classList.add('active');
