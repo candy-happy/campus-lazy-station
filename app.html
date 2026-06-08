@@ -372,30 +372,29 @@
       <div class="sub-page-body" id="wallDetailContent"></div>
     </div>
 
-    <!-- 聊天列表弹窗 -->
-    <div class="modal-overlay" id="chatListModal" style="display:none">
-      <div class="modal-container">
-        <div class="modal-header">
-          <span class="modal-title">💬 我的消息</span>
-          <button class="modal-close" onclick="closeChatListModal()">×</button>
-        </div>
-        <div class="modal-body">
-          <div id="chatListBody" style="overflow-y:auto"></div>
+    <!-- ═══════════════════════════════════════════════════════
+         💬 消息页面
+    ═══════════════════════════════════════════════════════ -->
+    <div class="page" id="messagePage">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-top">
+          <div class="logo">
+            <span class="logo-text">💬 消息</span>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- 聊天对话弹窗 -->
-    <div class="modal-overlay" id="chatConvModal" style="display:none">
-      <div class="modal-container modal-large">
-        <div class="modal-header">
-          <button class="modal-back" onclick="closeChatConvModal()">←</button>
-          <span class="modal-title" id="chatConvTitle">对话</span>
-          <button class="modal-close" onclick="closeChatConvModal()">×</button>
+      
+      <!-- 消息列表 -->
+      <div class="content-area" id="chatListBody"></div>
+      
+      <!-- 聊天对话区域（初始隐藏） -->
+      <div class="chat-conversation" id="chatConversation" style="display:none">
+        <div class="chat-header">
+          <button class="chat-back" onclick="backToChatList()">←</button>
+          <span class="chat-title" id="chatConvTitle">对话</span>
         </div>
-        <div class="modal-body chat-body">
-          <div id="chatMessages"></div>
-        </div>
+        <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-bar">
           <span class="chat-attach-btn" onclick="toggleEmojiPicker()">😊</span>
           <label class="chat-attach-btn" title="发送图片/视频">
@@ -748,7 +747,7 @@
         <span class="nav-icon">🏠</span>
         <span class="nav-text" data-i18n="navHome">首页</span>
       </div>
-      <div class="nav-item" onclick="openChatList()">
+      <div class="nav-item" onclick="switchPage('message')">
         <span class="nav-icon">💬</span>
         <span class="nav-text" data-i18n="navMessages">消息</span>
       </div>

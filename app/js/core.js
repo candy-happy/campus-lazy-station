@@ -792,9 +792,9 @@
         document.querySelectorAll('.nav-item')[0]?.classList.add('active');
         if (currentUser) loadWallFeed();
       } else if (page === 'message') {
-        document.getElementById('homePage').classList.add('active');
+        document.getElementById('messagePage').classList.add('active');
         document.querySelectorAll('.nav-item')[1]?.classList.add('active');
-        openChatList();
+        initMessagePage();
       } else if (page === 'me') {
         document.getElementById('mePage').classList.add('active');
         document.querySelectorAll('.nav-item')[2]?.classList.add('active');
@@ -897,17 +897,6 @@
         'settingsModal':'settingsPage_sub','profileModal':'profilePage_sub',
         'genericModal':'genericPage_sub'
       };
-      // 消息弹窗使用新的弹窗机制
-      if (id === 'chatListModal') {
-        document.getElementById('chatListModal').style.display = 'none';
-        document.body.style.overflow = '';
-        return;
-      }
-      if (id === 'chatConvModal') {
-        document.getElementById('chatConvModal').style.display = 'none';
-        document.body.style.overflow = '';
-        return;
-      }
       const target = map[id] || id;
       closeSubPage(target);
     }

@@ -525,8 +525,10 @@
       const profile = await API.wallUserProfile(otherPhone);
       const otherName = profile.nickname || profile.name || otherPhone;
       document.getElementById('chatConvTitle').textContent = otherName;
-      document.getElementById('chatConvModal').style.display = 'flex';
-      document.body.style.overflow = 'hidden';
+      // 切换到消息页面并显示聊天对话
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('messagePage').classList.add('active');
+      document.getElementById('chatConversation').style.display = 'flex';
       await loadChatMessages();
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
       chatRefreshTimer = setInterval(loadChatMessages, 5000);
@@ -756,15 +758,18 @@
 
 
     async function openChatList() {
+      // 切换到消息页面时加载消息列表
       if (!currentUser) return showLoginPage();
-      document.getElementById('chatListModal').style.display = 'flex';
-      document.body.style.overflow = 'hidden';
       await loadChatList();
     }
 
-    function closeChatListModal() {
-      document.getElementById('chatListModal').style.display = 'none';
-      document.body.style.overflow = '';
+    // 初始化消息页面
+    async function initMessagePage() {
+      if (!currentUser) {
+        document.getElementById('chatListBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary)"><div style="font-size:48px;margin-bottom:16px">💬</div><div>请先登录</div></div>';
+        return;
+      }
+      await loadChatList();
     }
 
 
@@ -799,20 +804,17 @@
       currentConvId = convId;
       currentConvPhone = otherPhone;
       document.getElementById('chatConvTitle').textContent = otherName || otherPhone;
-      // 关闭消息列表弹窗，打开对话弹窗
-      document.getElementById('chatListModal').style.display = 'none';
-      document.getElementById('chatConvModal').style.display = 'flex';
+      // 显示聊天对话，隐藏消息列表
+      document.getElementById('chatConversation').style.display = 'flex';
       await loadChatMessages();
       // 自动刷新
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
       chatRefreshTimer = setInterval(loadChatMessages, 5000);
     }
 
-    function closeChatConvModal() {
-      document.getElementById('chatConvModal').style.display = 'none';
-      document.body.style.overflow = '';
-      // 回到消息列表
-      document.getElementById('chatListModal').style.display = 'flex';
+    function backToChatList() {
+      // 隐藏聊天对话，回到消息列表
+      document.getElementById('chatConversation').style.display = 'none';
       // 停止刷新
       if (chatRefreshTimer) {
         clearInterval(chatRefreshTimer);
@@ -984,10 +986,10 @@ window.toggleFollowFromList = toggleFollowFromList;
 window.showMyViewers = showMyViewers;
 window.showMyWallLikes = showMyWallLikes;
 window.openChatList = openChatList;
-window.closeChatListModal = closeChatListModal;
+window.initMessagePage = initMessagePage;
 window.loadChatList = loadChatList;
 window.openChatConv = openChatConv;
-window.closeChatConvModal = closeChatConvModal;
+window.backToChatList = backToChatList;
 window.loadChatMessages = loadChatMessages;
 window.sendChatMsg = sendChatMsg;
 window.userChatUpload = userChatUpload;
