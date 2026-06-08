@@ -41,7 +41,7 @@ async function loadPets(species = 'all') {
     const speciesName = p.species === 'cat' ? '猫咪' : '狗狗';
     const statusMap = { active: '在校', missing: '走失', adopted: '已领养', graduated: '已毕业' };
     const statusColor = { active: '#2ECC71', missing: '#E74C3C', adopted: '#3498DB', graduated: '#9B59B6' };
-    const alertConfig = { warning: { emoji: '⚠️', label: '7天未见', bg: '#FFF3E0', color: '#E65100', border: '#FFE0B2' }, urgent: { emoji: '🟠', label: '15天未现', bg: '#FBE9E7', color: '#BF360C', border: '#FFAB91' }, critical: { emoji: '🔴', label: '30天失联', bg: '#FFEBEE', color: '#B71C1C', border: '#EF9A9A' } };
+    const alertConfig = { warning: { emoji: '⚠️', label: '7天未见', bg: '#FFF3E0', color: '#E65100', border: '#FFE0B2' }, urgent: { emoji: '🟠', label: '15天未现', bg: '#FBE9E7', color: '#BF360C', border: '#FFAB91' }, critical: { emoji: '🔴', label: '31天失联', bg: '#FFEBEE', color: '#B71C1C', border: '#EF9A9A' } };
     const alert = alertConfig[p.alert_level];
     const alertBadge = alert ? '<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:' + alert.bg + ';color:' + alert.color + ';border:1px solid ' + alert.border + ';font-weight:600;animation:pulse 2s infinite">' + alert.emoji + ' ' + alert.label + '</span>' : '';
     const seenInfo = p.daysSinceSeen !== null && p.daysSinceSeen > 0 ? '<span style="font-size:11px;color:#999">已' + p.daysSinceSeen + '天未见</span>' : (p.daysSinceSeen === 0 ? '<span style="font-size:11px;color:#4CAF50">今日已见</span>' : '');
@@ -102,7 +102,7 @@ async function showPetDetail(id) {
     (data.bio ? '<div class="pet-profile-bio">' + escHtml(data.bio) + '</div>' : '');
 
   // 告警横幅
-  const alertConf = { warning: { emoji: '⚠️', label: '7天未见', bg: 'linear-gradient(135deg,#FFF3E0,#FFE0B2)', color: '#E65100' }, urgent: { emoji: '🟠', label: '15天未现', bg: 'linear-gradient(135deg,#FBE9E7,#FFCCBC)', color: '#BF360C' }, critical: { emoji: '🔴', label: '30天失联', bg: 'linear-gradient(135deg,#FFEBEE,#FFCDD2)', color: '#B71C1C' } };
+  const alertConf = { warning: { emoji: '⚠️', label: '7天未见', bg: 'linear-gradient(135deg,#FFF3E0,#FFE0B2)', color: '#E65100' }, urgent: { emoji: '🟠', label: '15天未现', bg: 'linear-gradient(135deg,#FBE9E7,#FFCCBC)', color: '#BF360C' }, critical: { emoji: '🔴', label: '31天失联', bg: 'linear-gradient(135deg,#FFEBEE,#FFCDD2)', color: '#B71C1C' } };
   const ac = alertConf[data.alert_level];
   if (ac) {
     infoHtml += '<div style="margin:8px 0;padding:10px 14px;border-radius:12px;background:' + ac.bg + ';color:' + ac.color + ';font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">' + ac.emoji + ' ' + escHtml(data.code_name) + '已' + (data.daysSinceSeen || '?') + '天未被目击（' + ac.label + '），如看到请点击下方「📍 我看到了」打卡</div>';
