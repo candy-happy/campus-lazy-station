@@ -795,6 +795,9 @@
         document.getElementById('messagePage').classList.add('active');
         document.querySelectorAll('.nav-item')[1]?.classList.add('active');
         initMessagePage();
+      } else if (page === 'order') {
+        document.getElementById('orderPage').classList.add('active');
+        renderOrders();
       } else if (page === 'me') {
         document.getElementById('mePage').classList.add('active');
         document.querySelectorAll('.nav-item')[2]?.classList.add('active');
