@@ -11,7 +11,11 @@ router.get('/:phone', requireAuth, (req, res) => JSON_RES(res, () =>
 ));
 
 // ─── 标记已读 ─────────────────────────────────────────────
-router.patch('/:phone/read', (req, res) => JSON_RES(res, () => {
+router.patch('/:phone/read', requireAuth, (req, res) => JSON_RES(res, () => {
+  // 只能修改自己的通知
+  if (req.params.phone !== req.user.phone) {
+    return makeError('无权操作', ErrorCode.FORBIDDEN);
+  }
   const { ids } = req.body;
   if (ids && ids.length) {
     db.prepare(`UPDATE notifications SET read=1 WHERE phone=? AND id IN (${ids.map(()=>'?').join(',')})`)

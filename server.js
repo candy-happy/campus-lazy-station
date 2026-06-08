@@ -12,7 +12,25 @@ const PORT = config.PORT;
 
 // ─── 基础中间件 ────────────────────────────────────────
 app.use(securityHeaders);
-app.use(require('cors')());
+// CORS 配置：限制来源白名单
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://localhost',
+      'http://campus-lazy-station.local',
+      undefined // 允许无 origin 的请求（如 curl）
+    ];
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+};
+app.use(require('cors')(corsOptions));
 app.use(express.json());
 app.use(rateLimit());
 

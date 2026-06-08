@@ -116,7 +116,7 @@ router.post('/:id/like', (req, res) => JSON_RES(res, () => {
 }));
 
 // ── 评论教师（每天每位教师限一次，需AI审核） ──────
-router.post('/:id/review', (req, res) => JSON_RES(res, () => {
+router.post('/:id/review', async (req, res) => JSON_RES(res, async () => {
   if (!req.user) return { error: '请先登录', code: 'AUTH_001', status: 401 };
   
   const teacher = db.prepare('SELECT id, name FROM teachers WHERE id = ?').get(req.params.id);
@@ -137,7 +137,7 @@ router.post('/:id/review', (req, res) => JSON_RES(res, () => {
   // AI审核评论
   let aiResult = { violation: false, level: 'none', category: '无', reason: '' };
   try {
-    aiResult = aiChecker.checkTextContent(content, 'teacher_review');
+    aiResult = await aiChecker.checkTextContent(content, 'teacher_review');
     if (aiResult.violation && aiResult.level === 'high') {
       console.log(`[AI审核] 教师评价被拦截: teacher=${teacher.name}, phone=${phone}, level=${aiResult.level}, reason=${aiResult.reason}`);
       return { error: '评价内容不符合规范：' + (aiResult.reason || '请修改后重新提交'), code: 'AI_001', status: 403 };

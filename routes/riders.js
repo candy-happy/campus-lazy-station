@@ -53,8 +53,12 @@ router.get('/check-uid/:uid', requireAdmin, (req, res) => JSON_RES(res, () => {
   return { exists: !!existing };
 }));
 
-// ─── 骑手冻结状态检查（骑手端轮询用，不需要admin） ────────────
-router.get('/frozen-check/:phone', (req, res) => {
+// ─── 骑手冻结状态检查（骑手端轮询用，只能检查自己） ────────────
+router.get('/frozen-check/:phone', requireAuth, (req, res) => {
+  // 只能检查自己的冻结状态
+  if (req.user.phone !== req.params.phone) {
+    return res.status(403).json({ error: '无权查看', code: 'FORBIDDEN' });
+  }
   const rider = db.prepare('SELECT frozen, frozen_reason FROM riders WHERE phone = ?').get(req.params.phone);
   if (!rider) return res.json({ frozen: false });
   return res.json({ frozen: !!rider.frozen, frozen_reason: rider.frozen_reason || null });

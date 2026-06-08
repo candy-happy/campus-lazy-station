@@ -28,10 +28,20 @@ if (!status) {
 const changedFiles = status.split('\n').filter(Boolean).length;
 console.log(`[auto-push] 检测到 ${changedFiles} 个文件变更`);
 
-// 提交
+// 提交（只添加源代码文件，排除敏感文件）
 const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
 const commitMsg = `auto-save: ${now}`;
-const commitResult = run(`git add -A && git commit -m "${commitMsg}"`);
+// 只添加源代码文件，避免提交数据库、上传文件、配置文件等敏感内容
+const addResult = run(`git add \
+  -- '*.js' '*.cjs' '*.html' '*.css' '*.json' '*.md' \
+  -- 'routes/' 'middleware/' 'utils/' 'config/' \
+  -- 'app/' 'rider/' 'admin/' \
+  -- ':!*.db' ':!uploads/' ':!.env' ':!node_modules/'`);
+if (addResult && addResult.startsWith('ERROR')) {
+  console.log(`[auto-push] add failed: ${addResult}`);
+  process.exit(1);
+}
+const commitResult = run(`git commit -m "${commitMsg}"`);
 console.log(`[auto-push] commit: ${commitResult.split('\n')[0]}`);
 
 // 推送

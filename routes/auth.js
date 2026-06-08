@@ -10,8 +10,12 @@ const { optionalAuth, requireAdmin } = require('../middleware/auth');
 
 // ─── 用户登录 ─────────────────────────────────────────────
 router.post('/user/login', (req, res) => JSON_RES(res, () => {
-  const { name, phone } = req.body;
+  const { name, phone, captcha } = req.body;
   if (!phone || phone.length !== 11) return makeError('请输入正确手机号', ErrorCode.USER_PHONE_INVALID);
+
+  // 验证码验证（预留接口，生产环境应启用）
+  // if (!captcha) return makeError('请输入验证码', ErrorCode.PARAM_MISSING);
+  // if (!verifyCaptcha(phone, captcha)) return makeError('验证码错误', ErrorCode.CAPTCHA_INVALID);
 
   let user = db.prepare('SELECT * FROM users WHERE phone = ?').get(phone);
   if (!user) {
@@ -21,6 +25,10 @@ router.post('/user/login', (req, res) => JSON_RES(res, () => {
     db.prepare('INSERT INTO points (phone, total) VALUES (?, 10)').run(phone);
     db.prepare("INSERT INTO point_logs (phone, type, amount, description) VALUES (?, 'earn', 10, '注册奖励')").run(phone);
   }
+
+  // 记录登录日志
+  db.prepare(`INSERT INTO login_logs (phone, type, ip, user_agent, created_at) VALUES (?, 'user', ?, ?, datetime('now','localtime'))`)
+    .run(phone, req.ip || '', req.get('user-agent') || '');
 
   return {
     ok: true,

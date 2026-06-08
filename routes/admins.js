@@ -29,7 +29,7 @@ router.delete('/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 禁用/启用管理员 ───────────────────────────────────────
-router.patch('/:id', (req, res) => JSON_RES(res, () => {
+router.patch('/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
   db.prepare("UPDATE admins SET status = ? WHERE id = ? AND role != 'super'").run(req.body.status, req.params.id);
   return { ok: true };
 }));

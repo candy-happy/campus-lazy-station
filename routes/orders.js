@@ -38,9 +38,13 @@ router.post('/', requireAuth, (req, res) => JSON_RES(res, () => {
   return { ok: true, order: { ...order, phone: order.phone, phoneDisplay: fmtPhone(order.phone) } };
 }));
 
-// ─── 订单列表 ─────────────────────────────────────────────
+// ─── 订单列表（支持分页） ──────────────────────────────────
 router.get('/', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { phone, rider_phone, status } = req.query;
+  const { phone, rider_phone, status, page = 1, limit = 20 } = req.query;
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+  const offset = (pageNum - 1) * limitNum;
+  
   let sql = 'SELECT * FROM orders WHERE 1=1';
   const params = [];
 
@@ -51,19 +55,38 @@ router.get('/', requireAuth, (req, res) => JSON_RES(res, () => {
     else if (status === 'my') { sql += " AND rider_phone IS NOT NULL AND status NOT IN ('pending')"; }
     else { sql += ' AND status = ?'; params.push(status); }
   }
-  sql += ' ORDER BY created_at DESC';
+  
+  // 先查询总数
+  const countSql = sql.replace('SELECT *', 'SELECT COUNT(*) as cnt');
+  const total = db.prepare(countSql).get(...params).cnt;
+  
+  // 添加分页和排序
+  sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+  params.push(limitNum, offset);
 
-  return db.prepare(sql).all(...params).map(o => {
-    const user = db.prepare('SELECT name FROM users WHERE phone = ?').get(o.phone);
-    return {
+  // 优化N+1查询：批量获取用户信息
+  const orders = db.prepare(sql).all(...params);
+  const phoneSet = new Set(orders.map(o => o.phone));
+  const userMap = new Map();
+  if (phoneSet.size > 0) {
+    const placeholders = Array.from(phoneSet).map(() => '?').join(',');
+    const users = db.prepare(`SELECT phone, name FROM users WHERE phone IN (${placeholders})`).all(...phoneSet);
+    users.forEach(u => userMap.set(u.phone, u.name));
+  }
+
+  return {
+    total,
+    page: pageNum,
+    limit: limitNum,
+    list: orders.map(o => ({
       ...o,
       phone: o.phone,
       phoneDisplay: fmtPhone(o.phone),
-      user_name: user ? user.name : '',
+      user_name: userMap.get(o.phone) || '',
       rider_phone: o.rider_phone,
       rider_phoneDisplay: fmtPhone(o.rider_phone)
-    };
-  });
+    }))
+  };
 }));
 
 // ─── 订单详情 ─────────────────────────────────────────────
@@ -77,6 +100,18 @@ router.get('/:id', requireAuth, (req, res) => JSON_RES(res, () => {
 // ─── 骑手接单 ─────────────────────────────────────────────
 router.post('/:id/accept', requireAuth, (req, res) => JSON_RES(res, () => {
   const { rider_phone, rider_name } = req.body;
+  
+  // 验证骑手身份：请求者必须是骑手本人
+  if (req.user.phone !== rider_phone) {
+    return makeError('只能接自己的单', ErrorCode.FORBIDDEN);
+  }
+  
+  // 验证骑手存在且状态正常
+  const rider = db.prepare('SELECT * FROM riders WHERE phone = ? AND status = 1').get(rider_phone);
+  if (!rider) {
+    return makeError('骑手不存在或已被冻结', ErrorCode.FORBIDDEN);
+  }
+  
   db.prepare(`UPDATE orders SET status='accepted', rider_phone=?, rider_name=?, progress=30, accepted_at=datetime('now','localtime')
     WHERE (id=? OR order_no=?) AND status='pending'`)
     .run(rider_phone, rider_name, req.params.id, req.params.id);
@@ -96,11 +131,19 @@ router.post('/:id/start', requireAuth, (req, res) => JSON_RES(res, () => {
 router.post('/:id/complete', requireAuth, (req, res) => JSON_RES(res, () => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
   if (!order) return makeError('订单不存在', ErrorCode.ORDER_NOT_FOUND);
+  
+  // 验证操作者身份：只有骑手本人或管理员可以完成订单
+  if (order.rider_phone && req.user.phone !== order.rider_phone && req.user.type !== 'admin') {
+    return makeError('只能完成自己的订单', ErrorCode.FORBIDDEN);
+  }
+  
   db.prepare(`UPDATE orders SET status='completed', progress=100, completed_at=datetime('now','localtime') WHERE id = ?`).run(order.id);
 
   if (order.rider_phone) {
+    // 骑手收入 = 订单金额 * 80%（平台抽成20%）
+    const riderEarning = Math.round(order.price * 0.8 * 100) / 100;
     db.prepare('UPDATE riders SET total_orders = total_orders + 1, total_earnings = total_earnings + ? WHERE phone = ?')
-      .run(order.price, order.rider_phone);
+      .run(riderEarning, order.rider_phone);
     const rider = db.prepare('SELECT total_orders FROM riders WHERE phone = ?').get(order.rider_phone);
     const newLevel = calcRiderLevel(rider.total_orders);
     db.prepare('UPDATE riders SET level = ? WHERE phone = ?').run(newLevel, order.rider_phone);

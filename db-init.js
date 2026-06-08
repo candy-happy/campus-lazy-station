@@ -145,9 +145,9 @@ insertCoupon.run(1, '新用户专享', 5, 0, '2026-12-31 23:59');
 insertCoupon.run(2, '满10减3', 3, 10, '2026-12-31 23:59');
 
 // 插入总管理员
-const bcrypt = { hash: (p) => p }; // 简化版，生产环境应使用bcrypt
+const bcrypt = require('bcryptjs');
 const insertAdmin = db.prepare(`INSERT OR IGNORE INTO admins (id, username, password, role) VALUES (?, ?, ?, ?)`);
-insertAdmin.run(1, 'admin', 'admin123', 'super');
+insertAdmin.run(1, 'admin', bcrypt.hashSync('admin123', 10), 'super');
 
 console.log('✅ 数据库初始化完成！');
 console.log('📊 已创建表: users, riders, orders, coupons, points, point_logs, admins, services, notifications');
