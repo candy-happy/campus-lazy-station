@@ -24,7 +24,7 @@
     <!-- ═══════════════════════════════════════════════════════
          🏠 首页
     ═══════════════════════════════════════════════════════ -->
-    <div class="page active" id="homePage">
+    <div class="page" id="homePage">
       <!-- Header -->
       <div class="header">
         <div class="header-top">
@@ -335,7 +335,7 @@
     <!-- ═══════════════════════════════════════════════════════
          🧱 校园墙页
     ═══════════════════════════════════════════════════════ -->
-    <div class="page" id="wallPage">
+    <div class="page active" id="wallPage">
       <div class="header" style="padding-bottom:12px">
         <div class="header-top">
           <div class="logo"><span class="logo-text">📱 校园墙</span></div>
@@ -750,13 +750,13 @@
 
     <!-- 底部导航 -->
     <div class="bottom-nav">
-      <div class="nav-item active" onclick="switchPage('home')">
-        <span class="nav-icon">🏠</span>
-        <span class="nav-text" data-i18n="navHome">首页</span>
-      </div>
-      <div class="nav-item" onclick="switchPage('wall')">
+      <div class="nav-item active" onclick="switchPage('wall')">
         <span class="nav-icon">📱</span>
         <span class="nav-text" data-i18n="navWall">校园墙</span>
+      </div>
+      <div class="nav-item" onclick="switchPage('home')">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-text" data-i18n="navHome">首页</span>
       </div>
       <div class="nav-item" onclick="switchPage('order')">
         <span class="nav-icon">📋</span>
