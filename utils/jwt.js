@@ -31,24 +31,42 @@ function generateToken(payload) {
 function verifyToken(token) {
   try {
     const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    
-    const [headerB64, payloadB64, signature] = parts;
-    
-    // 验证签名
-    const expectedSignature = crypto
-      .createHmac('sha256', JWT_SECRET)
-      .update(`${headerB64}.${payloadB64}`)
-      .digest('base64url');
-    
-    if (signature !== expectedSignature) return null;
-    
-    const data = JSON.parse(base64urlDecode(payloadB64));
-    
-    // 验证过期时间
-    if (data.exp < Date.now()) return null;
-    
-    return data;
+
+    // 旧格式Token（只有2部分）不再接受，强制要求签名验证
+    if (parts.length === 2) {
+      console.warn('[JWT] 拒绝旧格式无签名Token');
+      return null;
+    }
+
+    // 新格式Token：3部分，有签名
+    if (parts.length === 3) {
+      const [headerB64, payloadB64, signature] = parts;
+
+      // 验证签名（恒定时间比较，防止时序攻击）
+      const expectedSignature = crypto
+        .createHmac('sha256', JWT_SECRET)
+        .update(`${headerB64}.${payloadB64}`)
+        .digest('base64url');
+
+      if (signature.length !== expectedSignature.length) return null;
+      if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) return null;
+
+      // 验证header算法
+      const header = JSON.parse(base64urlDecode(headerB64));
+      if (header.alg !== 'HS256') return null;
+
+      const data = JSON.parse(base64urlDecode(payloadB64));
+
+      // 验证过期时间
+      if (data.exp && data.exp < Date.now()) return null;
+
+      // 验证必要字段
+      if (!data.phone || !data.type) return null;
+
+      return data;
+    }
+
+    return null;
   } catch {
     return null;
   }

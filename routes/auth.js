@@ -4,14 +4,21 @@ const bcrypt = require('bcryptjs');
 const router = express.Router();
 const db = require('../config/database');
 const { generateToken } = require('../utils/jwt');
-const { fmtPhone } = require('../utils/helpers');
+const { fmtPhone, sanitizeString, isValidPhone } = require('../utils/helpers');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { optionalAuth, requireAdmin } = require('../middleware/auth');
+const rateLimit = require('../middleware/rateLimit');
 
 // ─── 用户登录 ─────────────────────────────────────────────
-router.post('/user/login', (req, res) => JSON_RES(res, () => {
+// 登录接口严格限速：每IP每分钟最多5次
+const loginRateLimit = rateLimit(5, 60 * 1000);
+
+router.post('/user/login', loginRateLimit, (req, res) => JSON_RES(res, () => {
   const { name, phone, captcha } = req.body;
-  if (!phone || phone.length !== 11) return makeError('请输入正确手机号', ErrorCode.USER_PHONE_INVALID);
+  
+  // 输入验证
+  if (!phone || !isValidPhone(phone)) return makeError('请输入正确手机号', ErrorCode.USER_PHONE_INVALID);
+  const sanitizedName = sanitizeString(name || '同学', 20);
 
   // 验证码验证（预留接口，生产环境应启用）
   // if (!captcha) return makeError('请输入验证码', ErrorCode.PARAM_MISSING);
@@ -19,7 +26,7 @@ router.post('/user/login', (req, res) => JSON_RES(res, () => {
 
   let user = db.prepare('SELECT * FROM users WHERE phone = ?').get(phone);
   if (!user) {
-    db.prepare('INSERT INTO users (name, phone) VALUES (?, ?)').run(name || '同学', phone);
+    db.prepare('INSERT INTO users (name, phone) VALUES (?, ?)').run(sanitizedName, phone);
     user = db.prepare('SELECT * FROM users WHERE phone = ?').get(phone);
     // 注册奖励积分
     db.prepare('INSERT INTO points (phone, total) VALUES (?, 10)').run(phone);
@@ -38,11 +45,11 @@ router.post('/user/login', (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 骑手登录 ─────────────────────────────────────────────
-router.post('/rider/login', (req, res) => JSON_RES(res, () => {
+router.post('/rider/login', loginRateLimit, (req, res) => JSON_RES(res, () => {
   const { uid, student_id, phone } = req.body;
   if (!uid) return makeError('请输入UID编号', ErrorCode.PARAM_MISSING);
   if (!student_id) return makeError('请输入学号', ErrorCode.PARAM_MISSING);
-  if (!phone || phone.length !== 11) return makeError('请输入正确手机号', ErrorCode.USER_PHONE_INVALID);
+  if (!phone || !isValidPhone(phone)) return makeError('请输入正确手机号', ErrorCode.USER_PHONE_INVALID);
 
   // 骑手必须由管理端创建，不再自动注册
   const rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(phone);
@@ -68,7 +75,10 @@ router.post('/rider/login', (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 管理员登录 ───────────────────────────────────────────
-router.post('/admin/login', (req, res) => JSON_RES(res, () => {
+// 管理员登录更严格限速：每IP每分钟最多3次
+const adminRateLimit = rateLimit(3, 60 * 1000);
+
+router.post('/admin/login', adminRateLimit, (req, res) => JSON_RES(res, () => {
   const { username, password } = req.body;
   const admin = db.prepare('SELECT * FROM admins WHERE username = ?').get(username);
   if (!admin) return makeError('账号或密码错误', ErrorCode.FORBIDDEN);

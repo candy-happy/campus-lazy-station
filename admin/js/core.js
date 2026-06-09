@@ -45,6 +45,7 @@ function switchPage(page) {
   if (page === 'orders') { loadOrdersPage(); }
   if (page === 'riders') { loadRidersPage(); }
   if (page === 'pets') { loadPetsAdmin(); }
+  if (page === 'reports') { loadReports(); }
 }
 
 function showModal(id) { document.getElementById(id).classList.add('active'); }
@@ -91,9 +92,12 @@ async function showDashboard() {
     updatePendingBadge();
   }
   try {
-    const rawOrders = await API.getOrders();
+    const ordersRes = await API.getOrders();
+    const rawOrders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.list || []);
     orders = rawOrders.map(o => ({ ...o, id: o.order_no, pickupLocation: o.pickup_location, deliveryLocation: o.delivery_location, riderName: o.rider_name, createdAt: o.created_at }));
-    riders = (await API.getRiders()).map(r => ({ ...r, createdAt: r.created_at }));
+    const ridersRes = await API.getRiders();
+    const rawRiders = Array.isArray(ridersRes) ? ridersRes : (ridersRes.list || ridersRes.riders || []);
+    riders = rawRiders.map(r => ({ ...r, createdAt: r.created_at }));
   } catch(e) { console.error(e); }
 
   updateStats();
@@ -102,7 +106,6 @@ async function showDashboard() {
   renderRidersTable();
   renderAdminsTable();
   renderWithdrawTable();
-  initCharts();
   updateNavBadges();
 }
 
@@ -136,9 +139,12 @@ async function updateNavBadges() {
 
 // ─── 刷新数据 ───
 async function refreshData() {
-  const rawOrders = await API.getOrders();
+  const ordersRes = await API.getOrders();
+  const rawOrders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.list || []);
   orders = rawOrders.map(o => ({ ...o, id: o.order_no, pickupLocation: o.pickup_location, deliveryLocation: o.delivery_location, riderName: o.rider_name, createdAt: o.created_at }));
-  riders = (await API.getRiders()).map(r => ({ ...r, createdAt: r.created_at }));
+  const ridersRes = await API.getRiders();
+  const rawRiders = Array.isArray(ridersRes) ? ridersRes : (ridersRes.list || ridersRes.riders || []);
+  riders = rawRiders.map(r => ({ ...r, createdAt: r.created_at }));
   if (currentAdmin?.role === 'super') admins = await API.getAdmins();
   await updateStats();
   try{renderRecentOrders()}catch(e){}
@@ -147,7 +153,6 @@ async function refreshData() {
   try{renderAdminsTable()}catch(e){}
   try{await renderWithdrawTable()}catch(e){}
   try{loadAds()}catch(e){}
-  try{initCharts()}catch(e){}
   try{await updateNavBadges()}catch(e){}
   showToast('数据已刷新');
 }

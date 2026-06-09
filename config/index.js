@@ -11,7 +11,15 @@ module.exports = {
   DB_PATH: process.env.DB_PATH || require('path').join(__dirname, '..', 'lazy_station.db'),
 
   // JWT
-  JWT_SECRET: process.env.JWT_SECRET || 'campus-lazy-secret-2026',
+  JWT_SECRET: process.env.JWT_SECRET || (() => {
+    // 生产环境必须设置 JWT_SECRET，否则抛出错误
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('生产环境必须设置 JWT_SECRET 环境变量');
+    }
+    // 开发环境使用默认值，但输出警告
+    console.warn('⚠️  警告: 使用默认 JWT_SECRET，生产环境请务必在 .env 中设置');
+    return 'campus-lazy-secret-2026';
+  })(),
   JWT_EXPIRES_MS: 86400000, // 24小时
 
   // 文件上传

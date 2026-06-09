@@ -6,9 +6,30 @@ const { ADMIN_ENTRY_PATH } = require('../config');
 function securityHeaders(req, res, next) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('X-XSS-Protection', '0'); // 现代浏览器已移除该功能，设为0避免兼容模式
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.removeHeader('X-Powered-By'); // 隐藏服务器信息
+
+  // CSRF 防护：SameSite cookie策略
+  // 由于项目使用JWT token认证（非cookie session），CSRF风险较低
+  // 但为防止未来改用cookie认证，提前设置SameSite策略
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+  // 内容安全策略（CSP）
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline'; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data: blob:; " +
+    "media-src 'self' blob:; " +
+    "connect-src 'self'; " +
+    "font-src 'self'; " +
+    "object-src 'none'; " +
+    "frame-src 'none'; " +
+    "base-uri 'self'; " +
+    "form-action 'self'"
+  );
+
   next();
 }
 

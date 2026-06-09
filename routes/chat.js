@@ -8,6 +8,19 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+// ─── 辅助：获取当前登录用户手机号 ──────────────────────────
+function getAuthPhone(req) {
+  return req.user && req.user.phone;
+}
+
+// ─── 辅助：验证用户是否是会话参与者 ──────────────────────────
+function isConversationParticipant(convId, phone) {
+  if (!convId || !phone) return false;
+  const conv = db.prepare('SELECT user1_phone, user2_phone FROM conversations WHERE id=?').get(convId);
+  if (!conv) return false;
+  return conv.user1_phone === phone || conv.user2_phone === phone;
+}
+
 // ─── 聊天文件上传配置 ──────────────────────────────────────
 const CHAT_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'chat');
 if (!fs.existsSync(CHAT_UPLOAD_DIR)) fs.mkdirSync(CHAT_UPLOAD_DIR, { recursive: true });
@@ -40,6 +53,11 @@ router.post('/upload', requireAuth, chatUpload.single('file'), (req, res) => JSO
 router.post('/conversation', requireAuth, (req, res) => JSON_RES(res, () => {
   const { user_phone, rider_phone, order_id, order_title } = req.body;
   if (!user_phone || !rider_phone) return makeError('缺少手机号', ErrorCode.CHAT_PARAM_INCOMPLETE);
+  // 安全校验：当前登录用户必须是会话参与者之一
+  const authPhone = getAuthPhone(req);
+  if (authPhone !== user_phone && authPhone !== rider_phone) {
+    return makeError('无权创建此会话', ErrorCode.PARAM_INVALID);
+  }
   let conv = db.prepare(
     "SELECT * FROM conversations WHERE ((user1_phone=? AND user2_phone=?) OR (user1_phone=? AND user2_phone=?)) AND (item_id=? OR 0=?)"
   ).get(user_phone, rider_phone, rider_phone, user_phone, order_id || 0, order_id ? 0 : 1);
@@ -54,7 +72,7 @@ router.post('/conversation', requireAuth, (req, res) => JSON_RES(res, () => {
 
 // ─── 会话列表 ──────────────────────────────────────────────
 router.get('/conversations', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = req.query.phone;
+  const phone = getAuthPhone(req);
   if (!phone) return [];
   const convs = db.prepare(
     "SELECT c.*, " +
@@ -74,6 +92,15 @@ router.get('/conversations', requireAuth, (req, res) => JSON_RES(res, () => {
 router.post('/send', requireAuth, (req, res) => JSON_RES(res, () => {
   const { conversation_id, sender_phone, content, type } = req.body;
   if (!conversation_id || !sender_phone || !content) return makeError('参数不完整', ErrorCode.CHAT_PARAM_INCOMPLETE);
+  // 安全校验：发送者必须是当前登录用户
+  const authPhone = getAuthPhone(req);
+  if (authPhone !== sender_phone) {
+    return makeError('只能以本人身份发送消息', ErrorCode.PARAM_INVALID);
+  }
+  // 安全校验：发送者必须是会话参与者
+  if (!isConversationParticipant(conversation_id, sender_phone)) {
+    return makeError('你不是该会话的参与者', ErrorCode.PARAM_INVALID);
+  }
   const r = db.prepare(
     "INSERT INTO messages (conversation_id,sender_phone,content,type,created_at) VALUES (?,?,?,?,datetime('now','localtime'))"
   ).run(conversation_id, sender_phone, content, type || 'text');
@@ -86,7 +113,11 @@ router.post('/send', requireAuth, (req, res) => JSON_RES(res, () => {
 // ─── 消息列表 ──────────────────────────────────────────────
 router.get('/messages/:conversation_id', requireAuth, (req, res) => JSON_RES(res, () => {
   const cid = req.params.conversation_id;
-  const phone = req.query.phone;
+  const phone = getAuthPhone(req);
+  // 安全校验：只有会话参与者才能查看消息
+  if (!isConversationParticipant(cid, phone)) {
+    return makeError('无权查看此会话', ErrorCode.PARAM_INVALID);
+  }
   const before = req.query.before;
   let msgs;
   if (before) {
@@ -103,7 +134,7 @@ router.get('/messages/:conversation_id', requireAuth, (req, res) => JSON_RES(res
 
 // ─── 未读消息数 ────────────────────────────────────────────
 router.get('/unread', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = req.query.phone;
+  const phone = getAuthPhone(req);
   if (!phone) return { count: 0 };
   const count = db.prepare(
     'SELECT COUNT(*) as n FROM messages WHERE sender_phone!=? AND is_read=0 AND conversation_id IN (SELECT id FROM conversations WHERE user1_phone=? OR user2_phone=?)'
@@ -116,6 +147,11 @@ router.post('/wall-chat', requireAuth, (req, res) => JSON_RES(res, () => {
   const { from_phone, to_phone } = req.body;
   if (!from_phone || !to_phone) return makeError('缺少手机号', ErrorCode.CHAT_PARAM_INCOMPLETE);
   if (from_phone === to_phone) return makeError('不能给自己发私信', ErrorCode.PARAM_INVALID);
+  // 安全校验：发送者必须是当前登录用户
+  const authPhone = getAuthPhone(req);
+  if (authPhone !== from_phone) {
+    return makeError('只能以本人身份发起私聊', ErrorCode.PARAM_INVALID);
+  }
 
   // 检查对方的私聊隐私设置
   const targetUser = db.prepare('SELECT phone, chat_privacy FROM users WHERE phone=?').get(to_phone);
@@ -157,6 +193,11 @@ router.post('/wall-chat', requireAuth, (req, res) => JSON_RES(res, () => {
 router.get('/chat-privacy', requireAuth, (req, res) => JSON_RES(res, () => {
   const phone = req.query.phone;
   if (!phone) return makeError('缺少手机号', ErrorCode.PARAM_MISSING);
+  // 安全校验：只能查看自己的隐私设置
+  const authPhone = getAuthPhone(req);
+  if (authPhone !== phone) {
+    return makeError('无权查看他人的隐私设置', ErrorCode.PARAM_INVALID);
+  }
   const user = db.prepare('SELECT chat_privacy FROM users WHERE phone=?').get(phone);
   return { privacy: (user && user.chat_privacy) || 'all' };
 }));
@@ -165,6 +206,11 @@ router.get('/chat-privacy', requireAuth, (req, res) => JSON_RES(res, () => {
 router.put('/chat-privacy', requireAuth, (req, res) => JSON_RES(res, () => {
   const { phone, privacy } = req.body;
   if (!phone) return makeError('缺少手机号', ErrorCode.PARAM_MISSING);
+  // 安全校验：只能修改自己的隐私设置
+  const authPhone = getAuthPhone(req);
+  if (authPhone !== phone) {
+    return makeError('无权修改他人的隐私设置', ErrorCode.PARAM_INVALID);
+  }
   if (!['all', 'mutual', 'followers'].includes(privacy)) return makeError('无效的隐私设置', ErrorCode.PARAM_INVALID);
   db.prepare('UPDATE users SET chat_privacy=? WHERE phone=?').run(privacy, phone);
   return { ok: true, privacy };

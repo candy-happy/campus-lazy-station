@@ -135,17 +135,33 @@ router.get('/stats/reviews/:phone', requireRider, (req, res) => JSON_RES(res, ()
 router.get('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
   const rider = db.prepare('SELECT * FROM riders WHERE phone = ?').get(req.params.phone);
   if (!rider) return makeError('骑手不存在', ErrorCode.RIDER_NOT_FOUND);
-  return { ...rider, phone: rider.phone, phoneDisplay: fmtPhone(rider.phone) };
+  
+  // 隐私保护：只有骑手本人或管理员可以看到完整手机号
+  const isOwner = req.user.phone === rider.phone;
+  const isAdmin = req.user.type === 'admin';
+  
+  if (isOwner || isAdmin) {
+    return { ...rider, phone: rider.phone, phoneDisplay: fmtPhone(rider.phone) };
+  } else {
+    // 对其他用户隐藏完整手机号
+    const { phone, ...rest } = rider;
+    return { ...rest, phoneDisplay: fmtPhone(rider.phone) };
+  }
 }));
 
 // ─── 更新骑手资料 ──────────────────────────────────────────
 router.put('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
+  // IDOR防护：只能修改自己的资料（管理员除外）
+  if (req.user.type !== 'admin' && req.user.phone !== req.params.phone) {
+    return makeError('无权修改他人资料', 'FORBIDDEN');
+  }
+
   const { name, avatar, dormitory } = req.body;
   const sets = [];
   const vals = [];
-  if (name !== undefined) { sets.push('name=?'); vals.push(name); }
-  if (avatar !== undefined) { sets.push('avatar=?'); vals.push(avatar); }
-  if (dormitory !== undefined) { sets.push('dormitory=?'); vals.push(dormitory); }
+  if (name !== undefined) { sets.push('name=?'); vals.push(String(name).slice(0, 50)); }
+  if (avatar !== undefined) { sets.push('avatar=?'); vals.push(String(avatar).slice(0, 255)); }
+  if (dormitory !== undefined) { sets.push('dormitory=?'); vals.push(String(dormitory).slice(0, 100)); }
   if (!sets.length) return makeError('无更新内容', ErrorCode.USER_NO_UPDATE);
   vals.push(req.params.phone);
   db.prepare('UPDATE riders SET ' + sets.join(',') + ' WHERE phone=?').run(...vals);
@@ -155,6 +171,10 @@ router.put('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
 
 // ─── 骑手头像上传 ──────────────────────────────────────────
 router.post('/:phone/avatar', requireAuth, avatarUpload.single('avatar'), (req, res) => JSON_RES(res, () => {
+  // IDOR防护：只能上传自己的头像（管理员除外）
+  if (req.user.type !== 'admin' && req.user.phone !== req.params.phone) {
+    return makeError('无权修改他人资料', 'FORBIDDEN');
+  }
   if (!req.file) return makeError('请选择图片', 'PARAM_001');
   const url = '/uploads/avatars/' + req.file.filename;
   db.prepare('UPDATE riders SET avatar = ? WHERE phone = ?').run(url, req.params.phone);
@@ -164,6 +184,10 @@ router.post('/:phone/avatar', requireAuth, avatarUpload.single('avatar'), (req, 
 
 // ─── 更新骑手状态 ──────────────────────────────────────────
 router.patch('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
+  // IDOR防护：只能修改自己的状态
+  if (req.user.type !== 'admin' && req.user.phone !== req.params.phone) {
+    return makeError('无权修改他人资料', 'FORBIDDEN');
+  }
   const { status } = req.body;
   if (status) db.prepare('UPDATE riders SET status = ? WHERE phone = ?').run(status, req.params.phone);
   return { ok: true };

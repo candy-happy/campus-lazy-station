@@ -60,7 +60,7 @@ router.get('/', (req, res) => JSON_RES(res, () => {
   
   const total = db.prepare(`SELECT COUNT(*) as c FROM teachers WHERE ${where}`).get(...params).c;
   const teachers = db.prepare(
-    `SELECT id, name, college, title, research, avatar, like_count, review_count, avg_rating FROM teachers WHERE ${where} ORDER BY like_count DESC, review_count DESC LIMIT ? OFFSET ?`
+    `SELECT id, name, college, title, research, avatar, education, graduate, courses, like_count, review_count, avg_rating FROM teachers WHERE ${where} ORDER BY like_count DESC, review_count DESC LIMIT ? OFFSET ?`
   ).all(...params, parseInt(limit), offset);
   
   return { teachers, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) };

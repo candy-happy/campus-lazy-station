@@ -1,5 +1,8 @@
 // === 广告管理 ===
 
+let adsFilter = 'all';
+let adsList = [];
+
  async function loadAds() {
  adsList = await API.getAdminAds();
  // 更新广告统计

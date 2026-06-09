@@ -20,8 +20,31 @@ async function loadTeacherColleges() {
       res.colleges.forEach(c => {
         bar.innerHTML += '<div class="teacher-college-tag" data-college="' + c.college + '" onclick="filterTeacherCollege(\'' + c.college + '\')">' + c.college + '(' + c.count + ')</div>';
       });
+      // 设置滚动监听更新箭头
+      setTimeout(updateTeacherCollegeArrows, 50);
+      bar.onscroll = updateTeacherCollegeArrows;
     }
   } catch(e) { console.error('loadTeacherColleges:', e); }
+}
+
+function updateTeacherCollegeArrows() {
+  const el = document.getElementById('teacherCollegeBar');
+  const leftBtn = document.getElementById('teacherCollegeLeft');
+  const rightBtn = document.getElementById('teacherCollegeRight');
+  if (!el || !leftBtn || !rightBtn) return;
+  const hasOverflow = el.scrollWidth > el.clientWidth + 2;
+  const canScrollLeft = el.scrollLeft > 2;
+  const canScrollRight = el.scrollLeft < el.scrollWidth - el.clientWidth - 2;
+  leftBtn.style.opacity = (hasOverflow && canScrollLeft) ? '1' : '0';
+  leftBtn.style.pointerEvents = (hasOverflow && canScrollLeft) ? 'auto' : 'none';
+  rightBtn.style.opacity = (hasOverflow && canScrollRight) ? '1' : '0';
+  rightBtn.style.pointerEvents = (hasOverflow && canScrollRight) ? 'auto' : 'none';
+}
+
+function scrollTeacherCollege(dir) {
+  const el = document.getElementById('teacherCollegeBar');
+  if (!el) return;
+  el.scrollBy({ left: dir * 200, behavior: 'smooth' });
 }
 
 
@@ -57,13 +80,21 @@ async function loadTeachers(reset = true) {
       res.teachers.forEach(t => {
         const ratingClass = t.avg_rating >= 4 ? 'teacher-rating-high' : t.avg_rating >= 3 ? 'teacher-rating-mid' : 'teacher-rating-low';
         const titleTag = t.title ? '<span style="font-size:11px;color:#1976D2;background:#E3F2FD;padding:1px 6px;border-radius:4px;margin-left:6px">' + t.title + '</span>' : '';
-        const gradTag = t.graduate ? '<span style="font-size:10px;color:#7B1FA2;background:#F3E5F5;padding:1px 6px;border-radius:4px;margin-left:4px">' + (t.graduate.includes('博士') ? _t('teacherDr') : _t('teacherMs')) + '</span>' : '';
+        const gradTag = t.graduate ? '<span style="font-size:10px;color:#7B1FA2;background:#F3E5F5;padding:1px 6px;border-radius:4px;margin-left:4px">' + (t.graduate.includes('博士') ? '博士' : '硕士') + '</span>' : (t.education && t.education.includes('博士') ? '<span style="font-size:10px;color:#7B1FA2;background:#F3E5F5;padding:1px 6px;border-radius:4px;margin-left:4px">博士</span>' : '');
+        // 课程标签（最多3个）
+        let courseTags = '';
+        if (t.courses) {
+          const cList = t.courses.split(/[，,、；;]/).filter(c => c.trim()).slice(0, 3);
+          courseTags = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' +
+            cList.map(c => '<span style="font-size:10px;color:#1565C0;background:#E3F2FD;padding:1px 6px;border-radius:4px">' + c.trim() + '</span>').join('') + '</div>';
+        }
         container.innerHTML += '<div class="teacher-card" onclick="openTeacherDetail(' + t.id + ')">' +
           '<div class="teacher-avatar-lg">' + t.name.charAt(0) + '</div>' +
           '<div class="teacher-info">' +
             '<div class="teacher-name">' + t.name + titleTag + gradTag + '</div>' +
             '<div class="teacher-meta">' + t.college + '</div>' +
             (t.research ? '<div class="teacher-meta" style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔬 ' + t.research.substring(0, 28) + (t.research.length > 28 ? '...' : '') + '</div>' : '') +
+            courseTags +
             '<div class="teacher-stats">' +
               '<span class="teacher-stat">👍 ' + (t.like_count||0) + '</span>' +
               '<span class="teacher-stat">💬 ' + (t.review_count||0) + '</span>' +
@@ -91,38 +122,59 @@ async function openTeacherDetail(id) {
     const t = res.teacher;
     if (!t) return showToast('教师不存在');
     document.getElementById('teacherDetailTitle').textContent = t.name;
-    
-    const ratingClass = t.avg_rating >= 4 ? 'teacher-rating-high' : t.avg_rating >= 3 ? 'teacher-rating-mid' : 'teacher-rating-low';
-    
+
     // ── 教师信息头部卡片（渐变背景） ──
+    const researchTags = t.research
+      ? t.research.split(/[，,、；;]/).filter(r => r.trim()).map(r =>
+          '<span style="display:inline-block;padding:3px 10px;border-radius:12px;background:rgba(255,255,255,.2);font-size:11px;margin:2px">' + r.trim() + '</span>'
+        ).join('')
+      : '';
+
     document.getElementById('teacherInfoHeader').innerHTML =
-      '<div style="background:linear-gradient(135deg,#1565C0,#42A5F5);padding:24px 16px 20px;color:#fff;text-align:center">' +
-        '<div class="teacher-avatar-lg" style="width:72px;height:72px;font-size:30px;margin:0 auto 10px;background:rgba(255,255,255,.2);color:#fff;border:2px solid rgba(255,255,255,.4)">' + t.name.charAt(0) + '</div>' +
-        '<div style="font-size:20px;font-weight:700">' + t.name + '</div>' +
-        '<div style="font-size:13px;opacity:.85;margin-top:4px">' + t.college + (t.title ? ' · ' + t.title : '') + '</div>' +
-        '<div style="display:flex;gap:20px;justify-content:center;margin-top:14px">' +
-          '<div style="text-align:center"><div style="font-size:20px;font-weight:700">' + (t.like_count||0) + '</div><div style="font-size:10px;opacity:.7">点赞</div></div>' +
-          '<div style="text-align:center"><div style="font-size:20px;font-weight:700">' + (t.review_count||0) + '</div><div style="font-size:10px;opacity:.7">评价</div></div>' +
-          '<div style="text-align:center"><div style="font-size:20px;font-weight:700">⭐ ' + (t.avg_rating||0).toFixed(1) + '</div><div style="font-size:10px;opacity:.7">评分</div></div>' +
+      '<div style="background:linear-gradient(135deg,#1565C0,#42A5F5);padding:28px 16px 22px;color:#fff;text-align:center">' +
+        '<div style="width:76px;height:76px;font-size:32px;margin:0 auto 12px;background:rgba(255,255,255,.2);color:#fff;border:3px solid rgba(255,255,255,.4);border-radius:50%;display:flex;align-items:center;justify-content:center">' + t.name.charAt(0) + '</div>' +
+        '<div style="font-size:22px;font-weight:700">' + t.name + '</div>' +
+        '<div style="font-size:13px;opacity:.85;margin-top:6px">' + t.college + (t.title ? ' · ' + t.title : '') + '</div>' +
+        (researchTags ? '<div style="margin-top:10px">' + researchTags + '</div>' : '') +
+        '<div style="display:flex;gap:24px;justify-content:center;margin-top:16px">' +
+          '<div style="text-align:center"><div style="font-size:22px;font-weight:700">' + (t.like_count||0) + '</div><div style="font-size:10px;opacity:.7">点赞</div></div>' +
+          '<div style="width:1px;height:30px;background:rgba(255,255,255,.3)"></div>' +
+          '<div style="text-align:center"><div style="font-size:22px;font-weight:700">' + (t.review_count||0) + '</div><div style="font-size:10px;opacity:.7">评价</div></div>' +
+          '<div style="width:1px;height:30px;background:rgba(255,255,255,.3)"></div>' +
+          '<div style="text-align:center"><div style="font-size:22px;font-weight:700">⭐ ' + (t.avg_rating||0).toFixed(1) + '</div><div style="font-size:10px;opacity:.7">评分</div></div>' +
         '</div>' +
       '</div>';
-    
-        // ── 结构化信息区块 ──
+
+    // ── 结构化信息区块 ──
     const infoParts = [];
-    // 毕业院校与学位
+
+    // 个人简介（放在最前面）
+    if (t.bio) {
+      let cleanBio = t.bio;
+      cleanBio = cleanBio.replace(/^(教授|副教授|讲师|助教|高级工程师)[。，;]/, '');
+      cleanBio = cleanBio.replace(/研究方向[：:][^。]+。?/, '');
+      cleanBio = cleanBio.replace(/主讲课程[：:][^]+$/, '');
+      cleanBio = cleanBio.replace(/(\d{4}年|年)(博士|硕士)毕业于[^。]+。?/g, '');
+      cleanBio = cleanBio.replace(/(本科|硕士|博士|硕士研究生|博士研究生|大学本科)[。，;]*/g, '');
+      cleanBio = cleanBio.replace(/邮箱[：:]?\s*[^\s，。;]+/g, '');
+      cleanBio = cleanBio.replace(/\S+@\S+\.\S+/g, '');
+      cleanBio = cleanBio.trim();
+      if (cleanBio.length > 5) {
+        infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📝 个人简介</div>' +
+          '<div class="teacher-info-item" style="color:#555;line-height:1.7">' + cleanBio + '</div></div>');
+      }
+    }
+
+    // 毕业院校
     const eduParts = [];
-    if (t.education) eduParts.push('🏫 ' + t.education);
-    if (t.undergraduate && !t.education) eduParts.push('🎓 本科：' + t.undergraduate);
-    if (t.graduate && !t.education) eduParts.push('🎓 研究生：' + t.graduate);
+    if (t.undergraduate) eduParts.push('<div class="teacher-info-item">🎓 本科：' + t.undergraduate + '</div>');
+    if (t.graduate) eduParts.push('<div class="teacher-info-item">🎓 研究生：' + t.graduate + '</div>');
+    if (t.education && eduParts.length === 0) eduParts.push('<div class="teacher-info-item">🏫 ' + t.education + '</div>');
     if (eduParts.length > 0) {
       infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🎓 毕业院校</div>' +
-        eduParts.map(e => '<div class="teacher-info-item">' + e + '</div>').join('') + '</div>');
+        eduParts.join('') + '</div>');
     }
-    // 研究方向
-    if (t.research) {
-      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🔬 研究方向</div>' +
-        '<div class="teacher-info-item">' + t.research + '</div></div>');
-    }
+
     // 主讲课程
     if (t.courses) {
       const courseList = t.courses.split(/[，,、；;]/).filter(c => c.trim()).map(c => c.replace(/《/g,'').replace(/》/g,'').trim());
@@ -131,55 +183,37 @@ async function openTeacherDetail(id) {
           courseList.map(c => '<span class="teacher-course-tag">' + c + '</span>').join('') +
         '</div></div>');
     }
+
     // 学术论文
     if (t.papers) {
       const paperLines = t.papers.split(/[；;]/).filter(l => l.trim());
       infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📄 学术论文</div>' +
-        paperLines.map(p => '<div class="teacher-info-item">• ' + p.trim() + '</div>').join('') +
+        paperLines.map(p => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">• ' + p.trim() + '</div>').join('') +
       '</div>');
     }
+
     // 科研项目
     if (t.projects) {
       const projLines = t.projects.split(/[；;]/).filter(l => l.trim());
       infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🔬 科研项目</div>' +
-        projLines.map(p => '<div class="teacher-info-item">• ' + p.trim() + '</div>').join('') +
+        projLines.map(p => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">• ' + p.trim() + '</div>').join('') +
       '</div>');
     }
+
+    // 主要成果
+    if (t.achievements) {
+      const achLines = t.achievements.split('\n').filter(l => l.trim());
+      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🏆 主要成果</div>' +
+        achLines.map(a => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">🏅 ' + a + '</div>').join('') +
+      '</div>');
+    }
+
     // 社会兼职
     if (t.social_roles) {
       const roleLines = t.social_roles.split(/[；;]/).filter(l => l.trim());
       infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🌐 社会兼职</div>' +
         roleLines.map(r => '<div class="teacher-info-item">• ' + r.trim() + '</div>').join('') +
       '</div>');
-    }
-    // 主要成果
-    if (t.achievements) {
-      const achLines = t.achievements.split('\n').filter(l => l.trim());
-      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🏆 主要成果</div>' +
-        achLines.map(a => '<div class="teacher-info-item">• ' + a + '</div>').join('') +
-      '</div>');
-    }
-// 个人简介（bio中非结构化内容）
-    if (t.bio) {
-      // 移除已展示的字段内容，避免重复
-      let cleanBio = t.bio;
-      // 去掉职称（已在标题展示）
-      cleanBio = cleanBio.replace(/^(教授|副教授|讲师|助教|高级工程师)[。，;]/, '');
-      // 去掉研究方向（已单独展示）
-      cleanBio = cleanBio.replace(/研究方向[：:][^。]+。?/, '');
-      // 去掉主讲课程（已单独展示）
-      cleanBio = cleanBio.replace(/主讲课程[：:][^]+$/, '');
-      // 去掉学历信息
-      cleanBio = cleanBio.replace(/(\d{4}年|年)(博士|硕士)毕业于[^。]+。?/g, '');
-      cleanBio = cleanBio.replace(/(本科|硕士|博士|硕士研究生|博士研究生|大学本科)[。，;]*/g, '');
-      // 去掉邮箱
-      cleanBio = cleanBio.replace(/邮箱[：:]?\s*[^\s，。;]+/g, '');
-      cleanBio = cleanBio.replace(/\S+@\S+\.\S+/g, '');
-      cleanBio = cleanBio.trim();
-      if (cleanBio.length > 5) {
-        infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📝 个人简介</div>' +
-          '<div class="teacher-info-item" style="color:#555;line-height:1.6">' + cleanBio + '</div></div>');
-      }
     }
     
     document.getElementById('teacherDetailInfo').innerHTML = infoParts.length > 0

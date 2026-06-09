@@ -68,11 +68,20 @@ function JSON_RES(res, fn) {
     }
     res.json(result);
   } catch (e) {
-    console.error(`[ERROR] ${e.message}`, e.stack);
+    // 生产环境不泄露详细错误信息
+    const isDev = process.env.NODE_ENV === 'development';
+    
+    // 仅开发环境输出详细错误日志
+    if (isDev) {
+      console.error(`[ERROR] ${e.message}`, e.stack);
+    } else {
+      console.error(`[ERROR] ${e.message}`);
+    }
+    
     res.status(500).json({
-      error: '服务器内部错误',
+      error: isDev ? '服务器内部错误: ' + e.message : '服务器内部错误',
       code: ErrorCode.UNKNOWN_ERROR,
-      detail: process.env.NODE_ENV === 'development' ? e.message : undefined
+      detail: isDev ? { message: e.message, stack: e.stack } : undefined
     });
   }
 }

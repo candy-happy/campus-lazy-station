@@ -1,5 +1,33 @@
 // === 二手市场管理 ===
 
+let marketItemFilter = 'all';
+let marketOrderFilter = 'all';
+let marketItemsList = [];
+let marketOrdersList = [];
+let marketCommentsList = [];
+let marketTrendChart = null;
+let marketCatAdminChart = null;
+
+const marketCategoryMap = {
+  textbook: '教材书籍', digital: '数码电子', daily: '生活用品',
+  clothing: '服饰鞋包', sports: '运动户外', food: '食品饮料', other: '其他'
+};
+const marketCondMap = {
+  '全新': '全新', '9成新': '9成新', '8成新': '8成新',
+  '7成新': '7成新', '6成新及以下': '6成新及以下'
+};
+const marketItemStatusMap = {
+  active: { label: '在售', cls: 'badge-green' },
+  offline: { label: '已下架', cls: 'badge-gray' },
+  sold: { label: '已售出', cls: 'badge-blue' }
+};
+const marketOrderStatusMap = {
+  pending: { label: '待确认', cls: 'badge-yellow' },
+  confirmed: { label: '已确认', cls: 'badge-blue' },
+  completed: { label: '已完成', cls: 'badge-green' },
+  cancelled: { label: '已取消', cls: 'badge-red' }
+};
+
  async function fetchMarketAPI(path) {
    const res = await fetch('/api/market/admin/' + path, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') } });
    const data = await res.json();

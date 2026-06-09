@@ -7,7 +7,7 @@ const router = express.Router();
 const db = require('../config/database');
 const { requireAuth } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
-const { safeJSON, parseImageUrls } = require('../utils/helpers');
+const { safeJSON, parseImageUrls, validateUploadFile } = require('../utils/helpers');
 const aiChecker = require('./ai');
 
 // ─── AI审核记录写入辅助 ────────────────────────────────
@@ -56,8 +56,21 @@ function cleanupUploadedFiles(files) {
 router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res) => {
   try {
     const { phone, nickname, avatar, content, gif_urls, tags } = req.body;
-    if (!phone || !content) return res.status(400).json({ error: '缺少手机号或内容', code: 'SYS_002' });
+    if (!phone || !content) {
+      cleanupUploadedFiles(req.files);
+      return res.status(400).json({ error: '缺少手机号或内容', code: 'SYS_002' });
+    }
     const files = req.files || [];
+
+    // 文件魔数校验
+    for (const f of files) {
+      const validation = validateUploadFile(f);
+      if (!validation.valid) {
+        cleanupUploadedFiles(files);
+        return res.status(400).json({ error: validation.error, code: 'PARAM_INVALID' });
+      }
+    }
+
     const imageUrls = files.filter(f => f.mimetype.startsWith('image/')).map(f => '/uploads/wall/' + f.filename);
     const videoUrls = files.filter(f => f.mimetype.startsWith('video/')).map(f => '/uploads/wall/' + f.filename);
     const images = [...imageUrls, ...videoUrls].join(',');
@@ -133,26 +146,42 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
   const l = Math.min(50, parseInt(limit) || 20);
   const offset = (p - 1) * l;
   let posts;
-  // 标签筛选
+
+  // 大分类→子标签映射（与前端 TAG_CATEGORIES 保持一致）
+  const CATEGORY_MAP = getCategoryMap();
+
+  // 标签筛选（支持大分类筛选）
   if (tag) {
+    const subs = CATEGORY_MAP[tag]; // 如果是大分类，获取其子标签
+    let tagWhere, tagParams;
+    if (subs && subs.length > 0) {
+      // 大分类筛选：匹配大分类本身或任一子标签
+      const conditions = subs.map(() => 'tags LIKE ?').join(' OR ');
+      tagWhere = `(${conditions} OR tags LIKE ?)`;
+      tagParams = [...subs.map(s => '%' + s + '%'), '%' + tag + '%'];
+    } else {
+      tagWhere = 'tags LIKE ?';
+      tagParams = ['%' + tag + '%'];
+    }
+
     if (tab === 'following' && phone) {
       posts = db.prepare(`SELECT p.* FROM wall_posts p
         JOIN wall_follows f ON f.following_phone = p.phone AND f.follower_phone = ?
-        WHERE p.tags LIKE ?
-        ORDER BY p.created_at DESC LIMIT ? OFFSET ?`).all(phone, '%' + tag + '%', l, offset);
+        WHERE p.${tagWhere.replace(/tags/g, 'p.tags')}
+        ORDER BY p.is_pinned DESC, p.created_at DESC LIMIT ? OFFSET ?`).all(phone, ...tagParams, l, offset);
     } else if (tab === 'hot') {
-      posts = db.prepare(`SELECT * FROM wall_posts WHERE exposure_done = 1 AND tags LIKE ? ORDER BY like_count DESC, created_at DESC LIMIT ? OFFSET ?`).all('%' + tag + '%', l, offset);
+      posts = db.prepare(`SELECT * FROM wall_posts WHERE exposure_done = 1 AND ${tagWhere} ORDER BY is_pinned DESC, like_count DESC, created_at DESC LIMIT ? OFFSET ?`).all(...tagParams, l, offset);
     } else {
-      posts = db.prepare(`SELECT * FROM wall_posts WHERE tags LIKE ? ORDER BY exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all('%' + tag + '%', l, offset);
+      posts = db.prepare(`SELECT * FROM wall_posts WHERE ${tagWhere} ORDER BY is_pinned DESC, exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all(...tagParams, l, offset);
     }
   } else if (tab === 'following' && phone) {
     posts = db.prepare(`SELECT p.* FROM wall_posts p
       JOIN wall_follows f ON f.following_phone = p.phone AND f.follower_phone = ?
-      ORDER BY p.created_at DESC LIMIT ? OFFSET ?`).all(phone, l, offset);
+      ORDER BY p.is_pinned DESC, p.created_at DESC LIMIT ? OFFSET ?`).all(phone, l, offset);
   } else if (tab === 'hot') {
-    posts = db.prepare(`SELECT * FROM wall_posts WHERE exposure_done = 1 ORDER BY like_count DESC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
+    posts = db.prepare(`SELECT * FROM wall_posts WHERE exposure_done = 1 ORDER BY is_pinned DESC, like_count DESC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
   } else {
-    posts = db.prepare(`SELECT * FROM wall_posts ORDER BY exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
+    posts = db.prepare(`SELECT * FROM wall_posts ORDER BY is_pinned DESC, exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
   }
   // 注意：浏览量只在点开帖子详情时计数（见 GET /posts/:id），feed列表不计数
   // 关注状态
@@ -538,6 +567,117 @@ router.get('/my-viewers/:phone', (req, res) => JSON_RES(res, () => {
     viewCount: v.view_count
   }));
 }));
+
+// ─── 举报帖子/评论 ──────────────────────────────────────
+router.post('/report', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { target_type, target_id, reason, detail } = req.body;
+  const phone = req.user.phone;
+  if (!target_type || !target_id || !reason) return makeError('参数不完整');
+  if (!['post', 'comment'].includes(target_type)) return makeError('举报类型无效');
+  const validReasons = ['广告推广', '色情低俗', '诈骗信息', '人身攻击', '虚假信息', '侵权内容', '其他'];
+  if (!validReasons.includes(reason)) return makeError('举报原因无效');
+
+  // 防止重复举报
+  const existing = db.prepare('SELECT id FROM wall_reports WHERE target_type = ? AND target_id = ? AND reporter_phone = ?').get(target_type, target_id, phone);
+  if (existing) return makeError('您已举报过该内容');
+
+  db.prepare("INSERT INTO wall_reports (target_type, target_id, reporter_phone, reason, detail, status, created_at) VALUES (?, ?, ?, ?, ?, 'pending', datetime('now','localtime'))")
+    .run(target_type, target_id, phone, reason, detail || '');
+
+  // 同一内容被3人以上举报时自动隐藏
+  const reportCount = db.prepare('SELECT COUNT(*) as c FROM wall_reports WHERE target_type = ? AND target_id = ?').get(target_type, target_id).c;
+  if (reportCount >= 3) {
+    if (target_type === 'post') {
+      db.prepare('UPDATE wall_posts SET exposure_done = 1 WHERE id = ?').run(target_id);
+    }
+    // 通知管理员
+    try {
+      db.prepare("INSERT INTO notifications (phone, type, title, content, read, created_at) VALUES (?, 'system', ?, ?, 0, datetime('now','localtime'))")
+        .run('admin', '内容被多人举报', `一个${target_type === 'post' ? '帖子' : '评论'}被${reportCount}人举报，已自动隐藏，请及时处理`);
+    } catch(e) {}
+  }
+
+  return { ok: true };
+}));
+
+// ─── 管理端：举报列表 ──────────────────────────────────
+router.get('/reports', requireAuth, (req, res) => JSON_RES(res, () => {
+  const status = req.query.status || 'pending';
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(50, parseInt(req.query.limit) || 20);
+  const offset = (page - 1) * limit;
+  const where = status === 'all' ? '1=1' : "status = ?";
+  const params = status === 'all' ? [] : [status];
+  const total = db.prepare(`SELECT COUNT(*) as c FROM wall_reports WHERE ${where}`).get(...params).c;
+  const reports = db.prepare(`SELECT r.*,
+    CASE WHEN r.target_type = 'post' THEN p.content WHEN r.target_type = 'comment' THEN c.content ELSE '' END as target_content
+    FROM wall_reports r
+    LEFT JOIN wall_posts p ON r.target_type = 'post' AND p.id = r.target_id
+    LEFT JOIN wall_comments c ON r.target_type = 'comment' AND c.id = r.target_id
+    WHERE ${where}
+    ORDER BY r.created_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
+  return { reports, total, page, totalPages: Math.ceil(total / limit) };
+}));
+
+// ─── 管理端：处理举报 ──────────────────────────────────
+router.post('/reports/:id/handle', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { action, admin_note } = req.body; // action: 'dismiss' | 'remove'
+  const report = db.prepare('SELECT * FROM wall_reports WHERE id = ?').get(req.params.id);
+  if (!report) return makeError('举报不存在');
+  if (action === 'remove') {
+    // 删除目标内容
+    if (report.target_type === 'post') {
+      db.prepare('DELETE FROM wall_posts WHERE id = ?').run(report.target_id);
+    } else if (report.target_type === 'comment') {
+      db.prepare('DELETE FROM wall_comments WHERE id = ?').run(report.target_id);
+    }
+    db.prepare("UPDATE wall_reports SET status = 'resolved', admin_note = ?, handled_at = datetime('now','localtime') WHERE id = ?").run(admin_note || '已删除内容', req.params.id);
+  } else {
+    db.prepare("UPDATE wall_reports SET status = 'dismissed', admin_note = ?, handled_at = datetime('now','localtime') WHERE id = ?").run(admin_note || '举报不成立', req.params.id);
+  }
+  return { ok: true };
+}));
+
+// ─── 置顶/取消置顶帖子 ─────────────────────────────────
+router.post('/pin/:id', requireAuth, (req, res) => JSON_RES(res, () => {
+  const post = db.prepare('SELECT * FROM wall_posts WHERE id=?').get(req.params.id);
+  if (!post) return makeError('帖子不存在', ErrorCode.PARAM_INVALID);
+  const newPin = post.is_pinned ? 0 : 1;
+  db.prepare('UPDATE wall_posts SET is_pinned=? WHERE id=?').run(newPin, req.params.id);
+  return { ok: true, is_pinned: newPin };
+}));
+
+// ─── 精华/取消精华帖子 ─────────────────────────────────
+router.post('/feature/:id', requireAuth, (req, res) => JSON_RES(res, () => {
+  const post = db.prepare('SELECT * FROM wall_posts WHERE id=?').get(req.params.id);
+  if (!post) return makeError('帖子不存在', ErrorCode.PARAM_INVALID);
+  const newFeature = post.is_featured ? 0 : 1;
+  db.prepare('UPDATE wall_posts SET is_featured=? WHERE id=?').run(newFeature, req.params.id);
+  return { ok: true, is_featured: newFeature };
+}));
+
+// ─── 同步前端自定义标签映射 ─────────────────────────────
+let _clientCategoryMap = null;
+router.post('/category-map', requireAuth, (req, res) => JSON_RES(res, () => {
+  _clientCategoryMap = req.body;
+  return { ok: true };
+}));
+
+// 获取合并后的 CATEGORY_MAP
+function getCategoryMap() {
+  if (_clientCategoryMap) return _clientCategoryMap;
+  return {
+    '生活': ['日常','美食','情感','树洞','打卡','穿搭','追剧'],
+    '学习': ['考试','考研','竞赛','读书'],
+    '求职': ['就业','实习','兼职'],
+    '交易': ['二手','闲置','拼单'],
+    '出行': ['拼车','快递','租房'],
+    '兴趣': ['运动','音乐','摄影','数码','健身','社团'],
+    '游戏': ['手游','端游','主机','电竞','开黑','攻略','Steam'],
+    '社交': ['表白','活动','社交','志愿'],
+    '互助': ['求助','吐槽','失物','招领'],
+  };
+}
 
 module.exports = router;
 module.exports.classifyTags = classifyTags;

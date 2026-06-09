@@ -4,20 +4,27 @@ const router = express.Router();
 const db = require('../config/database');
 const { requireAuth } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
-const { fmtPhone, genOrderNo, calcRiderLevel } = require('../utils/helpers');
+const { fmtPhone, genOrderNo, calcRiderLevel, sanitizeString, sanitizeNumber, isValidPhone } = require('../utils/helpers');
 
 // ─── 创建订单 ─────────────────────────────────────────────
 router.post('/', requireAuth, (req, res) => JSON_RES(res, () => {
   const { type, pickup_location, delivery_location, details, phone, tip } = req.body;
   if (!phone || !pickup_location || !delivery_location) return makeError('缺少必填信息', ErrorCode.PARAM_MISSING);
 
+  // 输入验证
+  if (!isValidPhone(phone)) return makeError('手机号格式错误', ErrorCode.PARAM_INVALID);
+  const sanitizedPickup = sanitizeString(pickup_location, 100);
+  const sanitizedDelivery = sanitizeString(delivery_location, 100);
+  const sanitizedDetails = sanitizeString(details || '', 500);
+  const sanitizedTip = sanitizeNumber(tip, 0, 1000);
+
   const svc = db.prepare('SELECT * FROM services WHERE key = ?').get(type);
-  const price = (svc ? svc.base_price : 2) + (tip || 0);
+  const price = (svc ? svc.base_price : 2) + sanitizedTip;
   const orderNo = genOrderNo();
 
   db.prepare(`INSERT INTO orders (order_no, type, pickup_location, delivery_location, details, phone, price, tip, status, progress, created_at)
     VALUES (?,?,?,?,?,?,?,?,'pending',10,datetime('now','localtime'))`)
-    .run(orderNo, type, pickup_location, delivery_location, details || '', phone, price, tip || 0);
+    .run(orderNo, type, sanitizedPickup, sanitizedDelivery, sanitizedDetails, phone, price, sanitizedTip);
 
   // 奖励积分
   const pts = db.prepare('SELECT * FROM points WHERE phone = ?').get(phone);
@@ -93,8 +100,26 @@ router.get('/', requireAuth, (req, res) => JSON_RES(res, () => {
 router.get('/:id', requireAuth, (req, res) => JSON_RES(res, () => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
   if (!order) return makeError('订单不存在', ErrorCode.ORDER_NOT_FOUND, 404);
+  
+  // 隐私保护：只有订单创建者、 assigned骑手或管理员可以看到完整手机号
+  const isOwner = order.phone === req.user.phone;
+  const isRider = order.rider_phone === req.user.phone;
+  const isAdmin = req.user.type === 'admin';
+  const canSeeFullPhone = isOwner || isRider || isAdmin;
+  
   const user = db.prepare('SELECT name FROM users WHERE phone = ?').get(order.phone);
-  return { ...order, phone: order.phone, phoneDisplay: fmtPhone(order.phone), user_name: user ? user.name : '' };
+  const result = { ...order, phoneDisplay: fmtPhone(order.phone), user_name: user ? user.name : '' };
+  
+  if (canSeeFullPhone) {
+    result.phone = order.phone;
+    if (order.rider_phone) result.rider_phone = order.rider_phone;
+  } else {
+    // 对其他用户隐藏完整手机号
+    delete result.phone;
+    delete result.rider_phone;
+  }
+  
+  return result;
 }));
 
 // ─── 骑手接单 ─────────────────────────────────────────────
@@ -152,10 +177,16 @@ router.post('/:id/complete', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 取消订单 ─────────────────────────────────────────────
-// pending→用户直接取消; accepted/running→发起取消申请等待审核
+// pending→用户直接取消 accepted/running→发起取消申请等待审核
 router.post('/:id/cancel', requireAuth, (req, res) => JSON_RES(res, () => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
   if (!order) return makeError('订单不存在', ErrorCode.ORDER_NOT_FOUND, 404);
+
+  // IDOR防护：只有订单创建者或管理员可以取消
+  if (req.user.type !== 'admin' && order.phone !== req.user.phone) {
+    return makeError('无权操作此订单', 'FORBIDDEN');
+  }
+
   const { reason } = req.body;
 
   // 已有取消申请待审核
@@ -182,6 +213,12 @@ router.post('/:id/cancel', requireAuth, (req, res) => JSON_RES(res, () => {
 router.post('/:id/refund', requireAuth, (req, res) => JSON_RES(res, () => {
   const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
   if (!order) return makeError('订单不存在', ErrorCode.ORDER_NOT_FOUND, 404);
+
+  // IDOR防护：只有订单创建者或管理员可以申请退款
+  if (req.user.type !== 'admin' && order.phone !== req.user.phone) {
+    return makeError('无权操作此订单', 'FORBIDDEN');
+  }
+
   const { reason } = req.body;
 
   if (order.status !== 'completed') return makeError('只有已完成的订单可以申请退款');
@@ -257,12 +294,28 @@ router.post('/:id/refund-review', requireAuth, (req, res) => JSON_RES(res, () =>
 
 // ─── 评价订单 ─────────────────────────────────────────────
 router.post('/:id/rate', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { stars, comment, phone } = req.body;
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? OR order_no = ?').get(req.params.id, req.params.id);
+  if (!order) return makeError('订单不存在', ErrorCode.ORDER_NOT_FOUND, 404);
+
+  // IDOR防护：只有订单创建者可以评价
+  if (order.phone !== req.user.phone) {
+    return makeError('无权评价此订单', 'FORBIDDEN');
+  }
+
+  // 防止重复评价
+  if (order.rating_stars) return makeError('已评价过此订单', 'ORDER_ALREADY_RATED');
+
+  const { stars, comment } = req.body;
+  const ratingStars = Math.min(5, Math.max(1, parseInt(stars) || 5));
+  const ratingComment = String(comment || '').slice(0, 500);
+
   db.prepare(`UPDATE orders SET rating_stars=?, rating_comment=?, rating_at=datetime('now','localtime')
-    WHERE (id=? OR order_no=?) AND status='completed'`)
-    .run(stars, comment || '', req.params.id, req.params.id);
-  db.prepare('UPDATE points SET total = total + 2 WHERE phone = ?').run(phone);
-  db.prepare("INSERT INTO point_logs (phone, type, amount, description) VALUES (?, 'earn', 2, '评价奖励')").run(phone);
+    WHERE id=? AND status='completed'`)
+    .run(ratingStars, ratingComment, order.id);
+
+  // 使用订单创建者的手机号发放积分（而非请求体中的phone，防止伪造）
+  db.prepare('UPDATE points SET total = total + 2 WHERE phone = ?').run(order.phone);
+  db.prepare("INSERT INTO point_logs (phone, type, amount, description) VALUES (?, 'earn', 2, '评价奖励')").run(order.phone);
   return { ok: true };
 }));
 

@@ -107,14 +107,15 @@ router.get('/items', (req, res) => JSON_RES(res, () => {
 
   const countRow = db.prepare('SELECT COUNT(*) as cnt FROM market_items mi ' + where).get(...params);
   const items = db.prepare(
-    'SELECT mi.*, u.name as seller_name, u.avatar as seller_avatar FROM market_items mi ' +
+    'SELECT mi.id, mi.title, mi.description, mi.price, mi.category, mi.condition, mi.images, mi.seller_name, mi.seller_phone, mi.status, mi.views, mi.like_count, mi.created_at, u.name as seller_display_name, u.avatar as seller_avatar FROM market_items mi ' +
     'LEFT JOIN users u ON mi.seller_phone = u.phone ' +
     where + ' ORDER BY ' + orderBy + ' LIMIT ? OFFSET ?'
   ).all(...params, l, offset);
 
-  // 填充诚信度和头像处理
+  // 填充诚信度和头像处理，手机号脱敏
   items.forEach(item => {
     item.trust = getTrustLevel(item.seller_phone);
+    item.seller_phone = fmtPhone(item.seller_phone); // 脱敏手机号
     try { item.images = JSON.parse(item.images || '[]'); } catch(e) { item.images = []; }
   });
 

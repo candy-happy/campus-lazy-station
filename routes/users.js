@@ -39,20 +39,36 @@ router.get('/', requireAdmin, (req, res) => JSON_RES(res, () =>
 router.get('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
   const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(req.params.phone);
   if (!user) return makeError('用户不存在', ErrorCode.USER_NOT_FOUND);
-  return { ...user, phone: user.phone, phoneDisplay: fmtPhone(user.phone) };
+  
+  // 隐私保护：只有用户本人或管理员可以看到完整手机号
+  const isOwner = req.user.phone === user.phone;
+  const isAdmin = req.user.type === 'admin';
+  
+  if (isOwner || isAdmin) {
+    return { ...user, phone: user.phone, phoneDisplay: fmtPhone(user.phone) };
+  } else {
+    // 对其他用户隐藏完整手机号
+    const { phone, ...rest } = user;
+    return { ...rest, phoneDisplay: fmtPhone(user.phone) };
+  }
 }));
 
 // ─── 更新用户资料 ──────────────────────────────────────────
 router.put('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
+  // IDOR防护：只能修改自己的资料（管理员除外）
+  if (req.user.type !== 'admin' && req.user.phone !== req.params.phone) {
+    return makeError('无权修改他人资料', 'FORBIDDEN');
+  }
+
   const { nickname, name, avatar, bio, dormitory, room } = req.body;
   const sets = [];
   const vals = [];
-  if (nickname !== undefined) { sets.push('nickname=?'); vals.push(nickname); }
-  if (name !== undefined) { sets.push('name=?'); vals.push(name); }
-  if (avatar !== undefined) { sets.push('avatar=?'); vals.push(avatar); }
-  if (bio !== undefined) { sets.push('bio=?'); vals.push(bio); }
-  if (dormitory !== undefined) { sets.push('dormitory=?'); vals.push(dormitory); }
-  if (room !== undefined) { sets.push('room=?'); vals.push(room); }
+  if (nickname !== undefined) { sets.push('nickname=?'); vals.push(String(nickname).slice(0, 50)); }
+  if (name !== undefined) { sets.push('name=?'); vals.push(String(name).slice(0, 50)); }
+  if (avatar !== undefined) { sets.push('avatar=?'); vals.push(String(avatar).slice(0, 255)); }
+  if (bio !== undefined) { sets.push('bio=?'); vals.push(String(bio).slice(0, 500)); }
+  if (dormitory !== undefined) { sets.push('dormitory=?'); vals.push(String(dormitory).slice(0, 100)); }
+  if (room !== undefined) { sets.push('room=?'); vals.push(String(room).slice(0, 20)); }
   if (!sets.length) return makeError('无更新内容', ErrorCode.USER_NO_UPDATE);
 
   vals.push(req.params.phone);
@@ -63,6 +79,10 @@ router.put('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
 
 // ─── 用户头像上传 ──────────────────────────────────────────
 router.post('/:phone/avatar', requireAuth, avatarUpload.single('avatar'), (req, res) => JSON_RES(res, () => {
+  // IDOR防护：只能上传自己的头像（管理员除外）
+  if (req.user.type !== 'admin' && req.user.phone !== req.params.phone) {
+    return makeError('无权修改他人资料', 'FORBIDDEN');
+  }
   if (!req.file) return makeError('请选择图片', 'PARAM_001');
   const url = '/uploads/avatars/' + req.file.filename;
   db.prepare('UPDATE users SET avatar = ? WHERE phone = ?').run(url, req.params.phone);

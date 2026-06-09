@@ -1,5 +1,8 @@
 // === 订单管理 ===
 
+let orderTimeRange = 'all';
+let orderFilter = 'all';
+
  function toggleOrderDatePick() {
    const dp = document.getElementById('orderDatePick');
    if (!dp) return;
@@ -29,7 +32,8 @@
 
  async function loadOrdersPage() {
  try {
- const rawOrders = await API.getOrders();
+ const res = await API.getOrders();
+ const rawOrders = Array.isArray(res) ? res : (res.list || []);
  orders = rawOrders.map(o => ({ ...o, id: o.order_no, pickupLocation: o.pickup_location, deliveryLocation: o.delivery_location, riderName: o.rider_name, createdAt: o.created_at }));
  renderOrdersTable();
  } catch(e) { console.error('订单数据加载失败:', e); }
@@ -95,7 +99,8 @@
  try {
  await API.cancelOrder(id, '管理员取消');
  showToast('订单已取消');
- const rawOrders = await API.getOrders();
+ const res = await API.getOrders();
+ const rawOrders = Array.isArray(res) ? res : (res.list || []);
  orders = rawOrders.map(o => ({ ...o, id: o.order_no, pickupLocation: o.pickup_location, deliveryLocation: o.delivery_location, riderName: o.rider_name, createdAt: o.created_at }));
  renderOrdersTable(); renderRecentOrders(); updateStats();
  } catch(e) { showToast(e.message); }
@@ -106,13 +111,14 @@
    const label = action === 'approve' ? '同意取消' : '拒绝取消';
    if (!confirm('确定' + label + '？')) return;
    try {
-     const res = await API.reviewCancel(id, action, '管理员');
-     if (res.ok) {
+     const res2 = await API.reviewCancel(id, action, '管理员');
+     if (res2.ok) {
        showToast(label + '成功');
-       const rawOrders = await API.getOrders();
+       const res = await API.getOrders();
+       const rawOrders = Array.isArray(res) ? res : (res.list || []);
        orders = rawOrders.map(o => ({ ...o, id: o.order_no, pickupLocation: o.pickup_location, deliveryLocation: o.delivery_location, riderName: o.rider_name, createdAt: o.created_at }));
        renderOrdersTable(); updateStats();
-     } else { showToast(res.error || '操作失败'); }
+     } else { showToast(res2.error || '操作失败'); }
    } catch(e) { showToast(e.message || '操作失败'); }
  }
 
@@ -126,13 +132,14 @@
    const labelMap = { approve_full: '全额退款', approve_partial: '部分退款¥' + refundAmount, reject: '打回退款申请' };
    if (!confirm('确定' + labelMap[action] + '？')) return;
    try {
-     const res = await API.reviewRefund(id, action, refundAmount, '管理员');
-     if (res.ok) {
+     const res2 = await API.reviewRefund(id, action, refundAmount, '管理员');
+     if (res2.ok) {
        showToast(labelMap[action] + '成功');
-       const rawOrders = await API.getOrders();
+       const res = await API.getOrders();
+       const rawOrders = Array.isArray(res) ? res : (res.list || []);
        orders = rawOrders.map(o => ({ ...o, id: o.order_no, pickupLocation: o.pickup_location, deliveryLocation: o.delivery_location, riderName: o.rider_name, createdAt: o.created_at }));
        renderOrdersTable(); updateStats();
-     } else { showToast(res.error || '操作失败'); }
+     } else { showToast(res2.error || '操作失败'); }
    } catch(e) { showToast(e.message || '操作失败'); }
  }
 

@@ -196,6 +196,19 @@ db.exec(`
     UNIQUE(post_id, phone)
   );
 
+  CREATE TABLE IF NOT EXISTS wall_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    target_type TEXT NOT NULL DEFAULT 'post',
+    target_id INTEGER NOT NULL,
+    reporter_phone TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    detail TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'pending',
+    admin_note TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    handled_at TEXT DEFAULT ''
+  );
+
   CREATE TABLE IF NOT EXISTS conversations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user1_phone TEXT NOT NULL,
@@ -263,10 +276,52 @@ db.exec(`
     ai_level TEXT DEFAULT 'none',
     created_at TEXT DEFAULT (datetime('now','localtime'))
   );
+
+  CREATE TABLE IF NOT EXISTS ai_review_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source TEXT NOT NULL,
+    source_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    content_preview TEXT DEFAULT '',
+    violation INTEGER DEFAULT 0,
+    level TEXT DEFAULT 'none',
+    category TEXT DEFAULT '',
+    reason TEXT DEFAULT '',
+    action TEXT DEFAULT 'pass',
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS login_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'user',
+    ip TEXT DEFAULT '',
+    user_agent TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT NOT NULL,
+    nickname TEXT DEFAULT '',
+    category TEXT NOT NULL DEFAULT 'other',
+    content TEXT NOT NULL,
+    images TEXT DEFAULT '',
+    contact TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'pending',
+    reply TEXT DEFAULT '',
+    reply_by TEXT DEFAULT '',
+    reply_at TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
 `);
 
 // ─── 数据库迁移 ─────────────────────────────────────────
 try { db.exec('ALTER TABLE riders ADD COLUMN avatar TEXT'); } catch(e) { /* 列已存在则忽略 */ }
+try { db.exec('ALTER TABLE wall_posts ADD COLUMN is_pinned INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE wall_posts ADD COLUMN is_featured INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN chat_privacy TEXT DEFAULT \'all\''); } catch(e) {}
+try { db.exec('ALTER TABLE market_items ADD COLUMN trade_status TEXT DEFAULT \'available\''); } catch(e) {}
 
 // ─── 基础数据初始化 ─────────────────────────────────────
 const initData = db.transaction(() => {

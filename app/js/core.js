@@ -644,7 +644,7 @@
           API.getNotifications(currentUser.phone),
           API.getAds()
         ]);
-        orders = Array.isArray(o) ? o : [];
+        orders = Array.isArray(o) ? o : (o && o.list || []);
         coupons = Array.isArray(c) ? c : [];
         userPoints = p || { total: 0, history: [] };
         notifications = Array.isArray(n) ? n : [];
@@ -653,6 +653,8 @@
         updateMePage();
         updateNotifBadge();
         loadMarketItems(true); // 加载二手市场
+        startChatPolling(); // 启动消息轮询
+        startNotifPolling(); // 启动通知轮询
       } catch(e) {
         console.error('loadData error:', e);
         orders = [];
@@ -702,7 +704,7 @@
     function toggleTheme() {
       document.body.classList.toggle('dark');
       const isDark = document.body.classList.contains('dark');
-      document.getElementById('themeBtn').textContent = isDark ? '...' : '...';
+      document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
       localStorage.setItem('lazyTheme', isDark ? 'dark' : 'light');
     }
 
@@ -723,35 +725,65 @@
         const avatarHtml = p.avatar && (p.avatar.startsWith('/') || p.avatar.startsWith('http'))
           ? '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="'+escHtml(p.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" /></div>'
           : '<div class="wall-avatar" style="cursor:pointer" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页">'+(p.avatar && /\p{Emoji}/u.test(p.avatar) && p.avatar.length<=2 ? p.avatar : (p.nickname||'匿')[0])+'</div>';
+        const hasImages = p.images && p.images.length;
+        // 图片布局：1张大图/2张并排/3+宫格
+        let imageGrid = '';
+        if (hasImages) {
+          const imgs = (Array.isArray(p.images) ? p.images : p.images.split(',').filter(Boolean));
+          const imgCount = imgs.length;
+          if (imgCount === 1) {
+            const url = typeof imgs[0] === 'object' ? imgs[0].url : imgs[0];
+            const isVid = typeof imgs[0] === 'object' ? imgs[0].isVideo : /\.mp4|\.mov|\.webm/i.test(url);
+            imageGrid = isVid
+              ? '<video src="' + url + '" controls style="width:100%;border-radius:12px;margin-top:8px" muted></video>'
+              : '<img src="' + url + '" style="width:100%;max-height:280px;object-fit:cover;border-radius:12px;margin-top:8px" loading="lazy" onclick="showWallDetail('+p.id+')" />';
+          } else if (imgCount === 2) {
+            imageGrid = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px">' + imgs.map(img => {
+              const url = typeof img === 'object' ? img.url : img;
+              const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
+              return isVid ? '<video src="' + url + '" style="width:100%;height:140px;object-fit:cover;border-radius:8px" muted></video>' : '<img src="' + url + '" style="width:100%;height:140px;object-fit:cover;border-radius:8px" loading="lazy" />';
+            }).join('') + '</div>';
+          } else {
+            imageGrid = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px">' + imgs.slice(0,9).map(img => {
+              const url = typeof img === 'object' ? img.url : img;
+              const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
+              return isVid ? '<video src="' + url + '" style="width:100%;height:100px;object-fit:cover;border-radius:6px" muted></video>' : '<img src="' + url + '" style="width:100%;height:100px;object-fit:cover;border-radius:6px" loading="lazy" />';
+            }).join('') + (imgCount > 9 ? '<div style="width:100%;height:100px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-secondary)">+' + (imgCount - 9) + '</div>' : '') + '</div>';
+          }
+        }
+        // 标签
+        const tagsHtml = (p.tags && p.tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">' + p.tags.map(t => {
+          const cfg = TAG_CONFIG[t] || { emoji: '🏷️', color: '#95A5A6' };
+          return '<span onclick="event.stopPropagation();filterByTag(\''+t+'\')" style="display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:10px;font-size:11px;background:'+cfg.color+'18;color:'+cfg.color+';cursor:pointer">'+cfg.emoji+' '+t+'</span>';
+        }).join('') + '</div>' : '';
+        const aiTagsHtml = (p.ai_tags && p.ai_tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' + p.ai_tags.map(at => '<span onclick="event.stopPropagation();filterByTag(\''+at+'\')" style="display:inline-flex;align-items:center;gap:2px;padding:1px 7px;border-radius:9px;font-size:10px;background:#8E44AD12;color:#8E44AD;cursor:pointer">🤖 '+escHtml(at)+'</span>').join('') + '</div>' : '';
+        const badgeHtml = (p.is_pinned ? '<span style="display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:8px;font-size:10px;background:#E74C3C18;color:#E74C3C;font-weight:600;margin-right:4px">📌 置顶</span>' : '') + (p.is_featured ? '<span style="display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:8px;font-size:10px;background:#F39C1218;color:#F39C12;font-weight:600">⭐ 精华</span>' : '');
         return `
-        <div class="wall-card">
+        <div class="wall-card" style="border-radius:14px;overflow:hidden;${p.is_pinned ? 'border-left:3px solid #E74C3C' : ''}${p.is_featured ? 'border-left:3px solid #F39C12' : ''}">
           <div class="wall-card-header">
             ${avatarHtml}
             <div style="flex:1;min-width:0">
-              <div class="wall-nickname" onclick="showWallUser('${p.phone}')" style="cursor:pointer">${escHtml(p.nickname||_t('teacherReviewAnonymous'))}</div>
+              <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+                <span class="wall-nickname" onclick="showWallUser('${p.phone}')" style="cursor:pointer">${escHtml(p.nickname||_t('teacherReviewAnonymous'))}</span>
+                ${badgeHtml}
+              </div>
               <div class="wall-time">${timeAgo(p.created_at)}</div>
             </div>
-            ${p.phone !== (currentUser && currentUser.phone) ? '<button onclick="event.stopPropagation();doWallFollowFeed('+p.id+',\''+p.phone+'\',this)" class="wall-follow-btn ' + (p.isFollowing?'followed':'') + '">' + (p.isFollowing?'已关注':'+ 关注') + '</button>' : ''}
+            <button onclick="event.stopPropagation();showReportMenu('post',${p.id})" style="background:none;border:none;font-size:18px;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:50%;transition:background 0.2s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">⋯</button>
           </div>
-          <div class="wall-content" onclick="showWallDetail(${p.id})" style="cursor:pointer">${escHtml(p.content)}</div>
-          ${(p.tags && p.tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">' + p.tags.map(t => {
-            const cfg = TAG_CONFIG[t] || { emoji: '🏷️', color: '#95A5A6' };
-            return '<span onclick="event.stopPropagation();filterByTag(\''+t+'\')" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:11px;background:'+cfg.color+'18;color:'+cfg.color+';cursor:pointer;transition:all 0.2s" onmouseover="this.style.background=\''+cfg.color+'30\'" onmouseout="this.style.background=\''+cfg.color+'18\'">'+cfg.emoji+' '+t+'</span>';
-          }).join('') + '</div>' : ''}
-          ${(p.ai_tags && p.ai_tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">' + p.ai_tags.map(at => '<span onclick="event.stopPropagation();filterByTag(\''+at+'\')" style="display:inline-flex;align-items:center;gap:2px;padding:1px 7px;border-radius:9px;font-size:10px;background:#8E44AD12;color:#8E44AD;cursor:pointer">🤖 '+escHtml(at)+'</span>').join('') + '</div>' : ''}
-          ${p.images && p.images.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + (Array.isArray(p.images) ? p.images : p.images.split(',').filter(Boolean)).map(img => {
-            const url = typeof img === 'object' ? img.url : img;
-            const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
-            return isVid ? '<video src="' + url + '" style="width:100px;height:100px;object-fit:cover;border-radius:8px" muted></video>' : '<img src="' + url + '" style="width:100px;height:100px;object-fit:cover;border-radius:8px" loading="lazy" />';
-          }).join('') + '</div>' : ''}
-          <div class="wall-actions">
+          <div class="wall-content" onclick="showWallDetail(${p.id})" style="cursor:pointer;font-size:15px;line-height:1.6">${escHtml(p.content)}</div>
+          ${tagsHtml}${aiTagsHtml}
+          ${imageGrid}
+          <div class="wall-actions" style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px">
             <button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button>
             <button class="wall-action" onclick="showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button>
-            ${p.phone !== currentUser.phone ? '<button class="wall-action" onclick="event.stopPropagation();tryWallChat(\''+p.phone+'\')">✉️ 私信</button>' : ''}
+            <button class="wall-action" onclick="event.stopPropagation();showReportMenu('post',${p.id})" style="margin-left:auto;color:var(--text-secondary)">🚫</button>
           </div>
         </div>
       `;
       }).join('');
+      // 触发无限滚动观察
+      setupWallInfiniteScroll();
     }
 
 
@@ -1124,6 +1156,7 @@ window.renderWallFeed = renderWallFeed;
 window._avatarColor = _avatarColor;
 window.timeAgo = timeAgo;
 window.escHtml = escHtml;
+window.fmtTime = fmtTime;
 window.switchPage = switchPage;
 window.updateMePage = updateMePage;
 window.updateNotifBadge = updateNotifBadge;
@@ -1142,3 +1175,159 @@ window.insertAnimEmoji = insertAnimEmoji;
 window.insertGif = insertGif;
 window.previewImage = previewImage;
 window.showToast = showToast;
+
+    // ═══════════════════════════════════════════════════════
+    // 🔍 全局搜索（融合首页+校园墙搜索）
+    // ═══════════════════════════════════════════════════════
+    let _globalSearchTimer = null;
+
+    async function doGlobalSearch() {
+      const q = document.getElementById('globalSearchInput').value.trim();
+      if (!q) return;
+      document.getElementById('globalSearchClear').style.display = '';
+      // 搜索校园墙帖子
+      try {
+        const data = await API.wallSearch(q, currentUser.phone);
+        const posts = Array.isArray(data) ? data : [];
+        if (posts.length > 0) {
+          wallPosts = posts;
+          _wallSearchMode = true;
+          switchPage('wallPage');
+          renderWallFeed();
+          hideGlobalSearchHints();
+          return;
+        }
+      } catch(e) {}
+      // 无结果提示
+      showToast('未找到相关内容');
+      hideGlobalSearchHints();
+    }
+
+    function clearGlobalSearch() {
+      const input = document.getElementById('globalSearchInput');
+      if (input) input.value = '';
+      document.getElementById('globalSearchClear').style.display = 'none';
+      _wallSearchMode = false;
+      hideGlobalSearchHints();
+      if (typeof loadWallFeed === 'function') loadWallFeed();
+    }
+
+    async function showGlobalSearchHints() {
+      const q = document.getElementById('globalSearchInput').value.trim();
+      const hints = document.getElementById('globalSearchHints');
+      if (!q) { hints.style.display = 'none'; return; }
+      clearTimeout(_globalSearchTimer);
+      _globalSearchTimer = setTimeout(async () => {
+        try {
+          const data = await API.wallSearch(q, currentUser.phone);
+          const posts = Array.isArray(data) ? data : [];
+          let html = '';
+          if (posts.length > 0) {
+            html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">📱 校园墙</div>';
+            posts.slice(0, 5).forEach(p => {
+              html += '<div onclick="doGlobalSearch()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">' + escHtml((p.content||'').slice(0,60)) + '</div>';
+            });
+          }
+          // 搜索服务关键词
+          const serviceKeywords = { '外卖': 'delivery', '快递': 'express', '打印': 'print', '跑腿': 'errand', '代买': 'purchase', '洗衣': 'laundry' };
+          const matchedServices = Object.entries(serviceKeywords).filter(([k]) => k.includes(q) || q.includes(k));
+          if (matchedServices.length > 0) {
+            html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">🛎️ 服务</div>';
+            matchedServices.forEach(([name, key]) => {
+              html += '<div onclick="showErrandServices()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">🏃 ' + name + '服务</div>';
+            });
+          }
+          if (!html) html = '<div style="padding:12px;font-size:13px;color:var(--text-secondary);text-align:center">无搜索结果</div>';
+          hints.innerHTML = html;
+          hints.style.display = 'block';
+        } catch(e) {
+          hints.style.display = 'none';
+        }
+      }, 300);
+    }
+
+    function hideGlobalSearchHints() {
+      const hints = document.getElementById('globalSearchHints');
+      if (hints) hints.style.display = 'none';
+    }
+
+    // 点击外部关闭搜索提示
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.search-bar')) hideGlobalSearchHints();
+    });
+
+    window.doGlobalSearch = doGlobalSearch;
+    window.clearGlobalSearch = clearGlobalSearch;
+    window.showGlobalSearchHints = showGlobalSearchHints;
+    window.hideGlobalSearchHints = hideGlobalSearchHints;
+
+    // ═══════════════════════════════════════════════════════
+    // 💬 消息轮询（私聊未读提醒）
+    // ═══════════════════════════════════════════════════════
+    let _chatPollTimer = null;
+    let _lastUnreadCount = 0;
+
+    function startChatPolling() {
+      if (_chatPollTimer) clearInterval(_chatPollTimer);
+      pollChatUnread();
+      _chatPollTimer = setInterval(pollChatUnread, 15000); // 每15秒轮询
+    }
+
+    async function pollChatUnread() {
+      if (!currentUser) return;
+      try {
+        const data = await API.getChatUnread();
+        const count = data.count || 0;
+        const badge = document.getElementById('chatBadge');
+        if (badge) {
+          badge.textContent = count > 99 ? '99+' : count;
+          badge.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+        // 新消息提醒（仅当数量增加时）
+        if (count > _lastUnreadCount && _lastUnreadCount >= 0) {
+          const newMsgs = count - _lastUnreadCount;
+          if (newMsgs > 0 && _lastUnreadCount > 0) {
+            showToast('收到 ' + newMsgs + ' 条新消息');
+          }
+        }
+        _lastUnreadCount = count;
+      } catch(e) {}
+    }
+
+    window.startChatPolling = startChatPolling;
+
+    // ═══════════════════════════════════════════════════════
+    // 🔔 通知轮询（实时更新通知徽章）
+    // ═══════════════════════════════════════════════════════
+    let _notifPollTimer = null;
+    let _lastNotifCount = 0;
+
+    function startNotifPolling() {
+      if (_notifPollTimer) clearInterval(_notifPollTimer);
+      pollNotifications();
+      _notifPollTimer = setInterval(pollNotifications, 30000); // 每30秒轮询
+    }
+
+    async function pollNotifications() {
+      if (!currentUser) return;
+      try {
+        const data = await API.getNotifications(currentUser.phone);
+        const newNotifs = Array.isArray(data) ? data : [];
+        const newUnread = newNotifs.filter(n => !n.read).length;
+        // 更新徽章
+        const badge = document.getElementById('notifBadge');
+        if (badge) {
+          badge.textContent = newUnread;
+          badge.style.display = newUnread > 0 ? 'flex' : 'none';
+        }
+        // 新通知提醒
+        if (newUnread > _lastNotifCount && _lastNotifCount >= 0 && _lastNotifCount > 0) {
+          const diff = newUnread - _lastNotifCount;
+          showToast('收到 ' + diff + ' 条新通知');
+        }
+        _lastNotifCount = newUnread;
+        notifications = newNotifs;
+      } catch(e) {}
+    }
+
+    window.startNotifPolling = startNotifPolling;

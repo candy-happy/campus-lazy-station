@@ -1,0 +1,22 @@
+﻿<!DOCTYPE html>
+<html>
+<head><title>Chart Test</title></head>
+<body>
+<canvas id="testChart" width="400" height="200"></canvas>
+<script src="http://localhost:3000/api.js"></script>
+<script>
+(async function() {
+  try {
+    const res = await API.adminLogin('admin', 'admin123');
+    console.log('Login OK, token:', API._token ? 'yes' : 'no');
+    const s = await API.getStats();
+    console.log('Stats daily_stats count:', s.daily_stats ? s.daily_stats.length : 0);
+    const d = s.daily_stats.slice(-7);
+    console.log('Last 7 days:', JSON.stringify(d.map(x => ({date:x.date, wall_posts:x.wall_posts, market_items:x.market_items, ai_reviews:x.ai_reviews}))));
+  } catch(e) {
+    console.error('Error:', e);
+  }
+})();
+</script>
+</body>
+</html>

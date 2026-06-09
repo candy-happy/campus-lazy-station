@@ -6,9 +6,13 @@ const { requireAuth } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 
 // ─── 通知列表 ─────────────────────────────────────────────
-router.get('/:phone', requireAuth, (req, res) => JSON_RES(res, () =>
-  db.prepare('SELECT * FROM notifications WHERE phone = ? ORDER BY created_at DESC LIMIT 30').all(req.params.phone)
-));
+router.get('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
+  // 安全校验：只能查看自己的通知
+  if (req.params.phone !== req.user.phone) {
+    return makeError('无权查看他人通知', ErrorCode.FORBIDDEN);
+  }
+  return db.prepare('SELECT * FROM notifications WHERE phone = ? ORDER BY created_at DESC LIMIT 30').all(req.params.phone);
+}));
 
 // ─── 标记已读 ─────────────────────────────────────────────
 router.patch('/:phone/read', requireAuth, (req, res) => JSON_RES(res, () => {

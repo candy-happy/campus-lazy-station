@@ -54,6 +54,10 @@ router.get('/', requireAdmin, (req, res) => JSON_RES(res, () => {
       wall_posts: db.prepare("SELECT COUNT(*) as n FROM wall_posts WHERE date(created_at)=?").get(d).n,
       wall_comments: db.prepare("SELECT COUNT(*) as n FROM wall_comments WHERE date(created_at)=?").get(d).n,
       wall_likes: db.prepare("SELECT COUNT(*) as n FROM wall_likes WHERE date(created_at)=?").get(d).n,
+      market_items: db.prepare("SELECT COUNT(*) as n FROM market_items WHERE date(created_at)=?").get(d).n,
+      market_orders: db.prepare("SELECT COUNT(*) as n FROM market_orders WHERE date(created_at)=?").get(d).n,
+      ai_reviews: db.prepare("SELECT COUNT(*) as n FROM ai_review_logs WHERE date(created_at)=?").get(d).n,
+      ai_violations: db.prepare("SELECT COUNT(*) as n FROM ai_review_logs WHERE violation=1 AND date(created_at)=?").get(d).n,
     });
   }
 

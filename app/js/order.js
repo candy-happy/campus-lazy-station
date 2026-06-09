@@ -11,7 +11,7 @@
       if (!currentUser) return;
       try {
         const o = await API.getOrders({ phone: currentUser.phone });
-        const newOrders = Array.isArray(o) ? o : [];
+        const newOrders = Array.isArray(o) ? o : (o && o.list || []);
         newOrders.forEach(no => {
           const old = orders.find(o2 => o2.id === no.id);
           if (old && old.status !== no.status) {

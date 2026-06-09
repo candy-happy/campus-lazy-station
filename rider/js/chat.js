@@ -119,8 +119,9 @@
    if (!o) {
      try {
        const res = await API.getOrders({ rider_phone: currentRider.phone, status: 'my' });
-       o = (res || []).find(x => x.order_no === orderNo);
-       if (o) myOrders = res || myOrders;
+       const list = Array.isArray(res) ? res : (res && res.list || []);
+       o = list.find(x => x.order_no === orderNo);
+       if (o) myOrders = list;
      } catch(e2) { console.error('fetch order error:', e2); }
    }
    if (!o || !o.phone) return showToast('无法获取用户信息');

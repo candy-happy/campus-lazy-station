@@ -10,6 +10,21 @@ const API = {
   _headers() { const h = { 'Content-Type': 'application/json' }; if (this._token) h['Authorization'] = 'Bearer ' + this._token; return h; },
   _authHeaders() { const h = {}; if (this._token) h['Authorization'] = 'Bearer ' + this._token; return h; },
 
+  // ─── 简易内存缓存 ──────────────────────────────────────
+  _cache: {},
+  _cacheTTL: 30000, // 默认30秒
+  _cachedFetch(key, url, ttl) {
+    const now = Date.now();
+    const entry = this._cache[key];
+    if (entry && now - entry.time < (ttl || this._cacheTTL)) return Promise.resolve(entry.data);
+    return fetch(url, { headers: this._headers() }).then(r => r.json()).then(data => {
+      this._cache[key] = { data, time: now };
+      return data;
+    });
+  },
+  _invalidateCache(key) { delete this._cache[key]; },
+  _invalidateAllCache() { this._cache = {}; },
+
   // 恢复token（按角色读取各自独立的token key，避免跨端覆盖）
   _init() {
     // 先从 lazy_session 判断角色
@@ -149,16 +164,17 @@ const API = {
   },
 
   // ─── 优惠券 ───
-  async getCoupons() { return fetch('/api/coupons', { headers: this._headers() }).then(r => r.json()); },
+  async getCoupons() { return this._cachedFetch('coupons', '/api/coupons', 60000); },
   async claimCoupon(phone, coupon_id) {
     const res = await fetch('/api/coupons/claim', { method: 'POST', headers: this._headers(), body: JSON.stringify({ phone, coupon_id }) }).then(r => r.json());
     if (res.error) throw new Error(res.error);
+    this._invalidateCache('coupons');
     return res;
   },
   async getMyCoupons(phone) { return fetch('/api/coupons/mine?phone=' + phone, { headers: this._headers() }).then(r => r.json()); },
 
   // ─── 积分 ───
-  async getPoints(phone) { return fetch('/api/points/' + phone, { headers: this._headers() }).then(r => r.json()); },
+  async getPoints(phone) { return this._cachedFetch('points_' + phone, '/api/points/' + phone, 30000); },
 
   // ─── 地址管理 ───
   async getAddresses(phone) { return fetch('/api/addresses?phone=' + phone, { headers: this._headers() }).then(r => r.json()); },
@@ -179,7 +195,7 @@ const API = {
   },
 
   // ─── 广告 ───
-  async getAds() { return fetch('/api/ads', { headers: this._headers() }).then(r => r.json()); },
+  async getAds() { return this._cachedFetch('ads', '/api/ads', 120000); },
   async getAdminAds() { return fetch('/api/ads/admin', { headers: this._headers() }).then(r => r.json()); },
   async addAd(data) {
     const res = await fetch('/api/ads/admin', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
@@ -269,6 +285,9 @@ const API = {
   async wallFollowers(phone) { return fetch('/api/wall/followers/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async wallMyStats(phone) { return fetch('/api/wall/my-stats/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async wallMyViewers(phone) { return fetch('/api/wall/my-viewers/' + phone, { headers: this._headers() }).then(r => r.json()); },
+  async wallReport(targetType, targetId, reason, detail) { return fetch('/api/wall/report', {
+    method: 'POST', headers: this._headers(), body: JSON.stringify({ target_type: targetType, target_id: targetId, reason, detail: detail || '' })
+  }).then(r => r.json()); },
 
   // ─── 聊天 ───
   async chatGetOrCreateConversation(data) { return fetch('/api/chat/conversation', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },
@@ -276,6 +295,7 @@ const API = {
   async chatSend(data) { return fetch('/api/chat/send', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },
   async chatMessages(conversationId, phone, before) { let url = '/api/chat/messages/' + conversationId + '?phone=' + phone; if (before) url += '&before=' + before; return fetch(url, { headers: this._headers() }).then(r => r.json()); },
   async chatUnread(phone) { return fetch('/api/chat/unread?phone=' + phone, { headers: this._headers() }).then(r => r.json()); },
+  async getChatUnread() { return fetch('/api/chat/unread', { headers: this._headers() }).then(r => r.json()); },
 
   // ─── 骑手钱包 ───
   async riderWallet(phone) { return fetch('/api/rider/wallet?phone=' + phone, { headers: this._headers() }).then(r => r.json()); },
@@ -415,7 +435,66 @@ const API = {
     localStorage.removeItem('lazyPoints');
     localStorage.removeItem('lazyAddrs');
     localStorage.removeItem('lazyNotifs');
-  }
+  },
+
+  // ─── 社团 ───
+  async getClubs(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return fetch('/api/clubs' + (qs ? '?' + qs : ''), { headers: this._headers() }).then(r => r.json());
+  },
+  async getClub(id) { return fetch('/api/clubs/' + id, { headers: this._headers() }).then(r => r.json()); },
+  async createClub(data, file) {
+    if (file) {
+      const fd = new FormData();
+      Object.entries(data).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v); });
+      fd.append('logo', file);
+      return fetch('/api/clubs', { method: 'POST', headers: this._authHeaders(), body: fd }).then(r => r.json());
+    }
+    return fetch('/api/clubs', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
+  },
+  async joinClub(id) { return fetch('/api/clubs/' + id + '/join', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
+  async leaveClub(id) { return fetch('/api/clubs/' + id + '/leave', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
+  async updateClub(id, data, file) {
+    if (file) {
+      const fd = new FormData();
+      Object.entries(data || {}).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v); });
+      fd.append('logo', file);
+      return fetch('/api/clubs/' + id, { method: 'PUT', headers: this._authHeaders(), body: fd }).then(r => r.json());
+    }
+    return fetch('/api/clubs/' + id, { method: 'PUT', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
+  },
+  async getClubCategories() { return fetch('/api/clubs/meta/categories', { headers: this._headers() }).then(r => r.json()); },
+
+  // ─── 活动 ───
+  async getActivities(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return fetch('/api/activities' + (qs ? '?' + qs : ''), { headers: this._headers() }).then(r => r.json());
+  },
+  async getActivity(id) { return fetch('/api/activities/' + id, { headers: this._headers() }).then(r => r.json()); },
+  async createActivity(data, file) {
+    if (file) {
+      const fd = new FormData();
+      Object.entries(data).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v); });
+      fd.append('cover', file);
+      return fetch('/api/activities', { method: 'POST', headers: this._authHeaders(), body: fd }).then(r => r.json());
+    }
+    return fetch('/api/activities', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
+  },
+  async signupActivity(id) { return fetch('/api/activities/' + id + '/signup', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
+  async cancelActivitySignup(id) { return fetch('/api/activities/' + id + '/cancel-signup', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
+  async checkinActivity(id) { return fetch('/api/activities/' + id + '/checkin', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
+  async getActivityParticipants(id) { return fetch('/api/activities/' + id + '/participants', { headers: this._headers() }).then(r => r.json()); },
+  async updateActivity(id, data, file) {
+    if (file) {
+      const fd = new FormData();
+      Object.entries(data || {}).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v); });
+      fd.append('cover', file);
+      return fetch('/api/activities/' + id, { method: 'PUT', headers: this._authHeaders(), body: fd }).then(r => r.json());
+    }
+    return fetch('/api/activities/' + id, { method: 'PUT', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
+  },
+  async deleteActivity(id) { return fetch('/api/activities/' + id, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
+  async getActivityCategories() { return fetch('/api/activities/meta/categories', { headers: this._headers() }).then(r => r.json()); }
 };
 
 // 全局暴露

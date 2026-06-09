@@ -227,16 +227,18 @@
    if (!currentRider) return;
    try {
      // 获取待接单 + 我的订单
-     const [pending, mine] = await Promise.all([
+     const [pendingRes, mineRes] = await Promise.all([
        API.getOrders({ status: 'pending' }),
        API.getOrders({ rider_phone: currentRider.phone, status: 'my' })
      ]);
+     const pending = Array.isArray(pendingRes) ? pendingRes : (pendingRes && pendingRes.list || []);
+     const mine = Array.isArray(mineRes) ? mineRes : (mineRes && mineRes.list || []);
      // 合并去重
      const map = new Map();
-     [...(pending||[]), ...(mine||[])].forEach(o => map.set(o.order_no || o.id, o));
+     [...pending, ...mine].forEach(o => map.set(o.order_no || o.id, o));
      riderAllOrders = Array.from(map.values());
-     newOrders = pending || [];
-     myOrders = mine || [];
+     newOrders = pending;
+     myOrders = mine;
      renderRiderOrders();
    } catch(e) {
      console.error('refreshOrders error:', e);

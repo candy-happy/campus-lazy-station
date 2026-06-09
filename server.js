@@ -5,6 +5,7 @@ const path = require('path');
 const config = require('./config');
 const { securityHeaders, adminFallback } = require('./middleware/security');
 const rateLimit = require('./middleware/rateLimit');
+const requestLogger = require('./middleware/requestLogger');
 const { optionalAuth } = require('./middleware/auth');
 
 const app = express();
@@ -12,23 +13,29 @@ const PORT = config.PORT;
 
 // ─── 基础中间件 ────────────────────────────────────────
 app.use(securityHeaders);
+app.use(requestLogger); // 请求日志与安全检测
 // CORS 配置：限制来源白名单
 const corsOptions = {
   origin: (origin, callback) => {
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      'http://localhost',
-      'http://campus-lazy-station.local',
-      undefined // 允许无 origin 的请求（如 curl）
-    ];
+    const allowedOrigins = config.CORS_ORIGINS
+      ? config.CORS_ORIGINS.split(',').map(s => s.trim())
+      : [
+          'http://localhost:3000',
+          'http://127.0.0.1:3000',
+          'http://localhost',
+          'http://campus-lazy-station.local',
+          undefined // 允许无 origin 的请求（如 curl）
+        ];
     if (allowedOrigins.includes(origin) || !origin) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
 };
 app.use(require('cors')(corsOptions));
 app.use(express.json());
@@ -45,9 +52,34 @@ app.use(express.static(path.join(__dirname), {
   }
 }));
 
-// ─── uploads 目录静态服务 ─────────────────────────────────
+// ─── uploads 目录静态服务 ────────────────────────────────
+// 禁用目录浏览，防止文件枚举遍历
+// 先添加路径遍历防护中间件
+app.use('/uploads', (req, res, next) => {
+  // 防止路径遍历攻击
+  if (req.url.includes('..') || req.url.includes('%2e%2e') || req.url.includes('%252e')) {
+    return res.status(403).json({ error: '非法路径' });
+  }
+  // 只允许访问子目录中的文件，不允许直接列出目录
+  const parts = req.url.split('/').filter(Boolean);
+  if (parts.length === 0 || (parts.length === 1 && !parts[0].includes('.'))) {
+    return res.status(403).json({ error: '禁止目录浏览' });
+  }
+  next();
+});
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   maxAge: '7d', // 上传文件可缓存7天
+  dotfiles: 'ignore', // 忽略隐藏文件
+  index: false, // 禁用目录索引（防止目录遍历）
+  setHeaders: (res, filePath) => {
+    // 为静态资源设置安全头
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    // 图片/视频文件设置缓存控制
+    if (/\.(jpg|jpeg|png|gif|webp|mp4|webm)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+    }
+  }
 }));
 
 // ─── 认证中间件（可选，全局挂载） ──────────────────────────
@@ -120,6 +152,15 @@ app.use('/api/teachers', require('./routes/teachers'));
 // 猫狗日记
 app.use('/api/pets', require('./routes/pets'));
 
+// 问题反馈
+app.use('/api/feedback', require('./routes/feedback'));
+
+// 社团
+app.use('/api/clubs', require('./routes/clubs'));
+
+// 活动
+app.use('/api/activities', require('./routes/activities'));
+
 // ─── 404 处理 ────────────────────────────────────────────
 app.use('/api', (req, res) => {
   res.status(404).json({ error: '接口不存在', code: 'SYS_004' });
@@ -127,14 +168,30 @@ app.use('/api', (req, res) => {
 
 // ─── 全局错误处理 ────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
-  if (err.name === 'MulterError') {
-    return res.status(400).json({ error: '文件上传失败: ' + err.message, code: 'SYS_007' });
+  const isDev = config.NODE_ENV === 'development';
+  
+  // 仅开发环境输出详细错误日志
+  if (isDev) {
+    console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+    console.error(err.stack);
+  } else {
+    console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
   }
+  
+  if (err.name === 'MulterError') {
+    return res.status(400).json({ error: '文件上传失败', code: 'SYS_007' });
+  }
+  
+  // CORS错误
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ error: '跨域请求被拒绝', code: 'SYS_008' });
+  }
+  
+  // 生产环境不泄露详细错误信息
   res.status(500).json({
-    error: '服务器内部错误',
+    error: isDev ? '服务器内部错误: ' + err.message : '服务器内部错误',
     code: 'SYS_001',
-    detail: config.NODE_ENV === 'development' ? err.message : undefined
+    detail: isDev ? { message: err.message, stack: err.stack } : undefined
   });
 });
 

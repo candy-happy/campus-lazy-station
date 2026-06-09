@@ -123,6 +123,105 @@ db.exec(`
     read INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now','localtime'))
   );
+
+  CREATE TABLE IF NOT EXISTS clubs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    logo TEXT,
+    category TEXT DEFAULT '其他',
+    description TEXT,
+    president_phone TEXT NOT NULL,
+    member_count INTEGER DEFAULT 1,
+    status TEXT DEFAULT 'active' CHECK(status IN ('active','frozen','pending')),
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS club_members (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    club_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    role TEXT DEFAULT 'member' CHECK(role IN ('owner','admin','member')),
+    joined_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(club_id, phone)
+  );
+
+  CREATE TABLE IF NOT EXISTS activities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    cover TEXT,
+    description TEXT,
+    location TEXT,
+    start_time TEXT,
+    end_time TEXT,
+    signup_deadline TEXT,
+    max_participants INTEGER DEFAULT 0,
+    current_participants INTEGER DEFAULT 0,
+    category TEXT DEFAULT '其他',
+    publisher_type TEXT DEFAULT 'user' CHECK(publisher_type IN ('club','user')),
+    publisher_id INTEGER,
+    publisher_name TEXT,
+    phone TEXT NOT NULL,
+    status TEXT DEFAULT 'open' CHECK(status IN ('open','closed','cancelled','ended')),
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS activity_signups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    activity_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    status TEXT DEFAULT 'signed' CHECK(status IN ('signed','cancelled','attended')),
+    signed_up_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(activity_id, phone)
+  );
+`);
+
+// ─── 性能优化索引 ──────────────────────────────────────────
+db.exec(`
+  -- 用户表索引
+  CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+
+  -- 订单表索引（高频查询字段）
+  CREATE INDEX IF NOT EXISTS idx_orders_phone ON orders(phone);
+  CREATE INDEX IF NOT EXISTS idx_orders_rider_phone ON orders(rider_phone);
+  CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+  CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_orders_order_no ON orders(order_no);
+
+  -- 骑手表索引
+  CREATE INDEX IF NOT EXISTS idx_riders_phone ON riders(phone);
+  CREATE INDEX IF NOT EXISTS idx_riders_status ON riders(status);
+
+  -- 优惠券表索引
+  CREATE INDEX IF NOT EXISTS idx_coupons_phone ON coupons(phone);
+
+  -- 积分表索引
+  CREATE INDEX IF NOT EXISTS idx_points_phone ON points(phone);
+  CREATE INDEX IF NOT EXISTS idx_point_logs_phone ON point_logs(phone);
+
+  -- 通知表索引
+  CREATE INDEX IF NOT EXISTS idx_notifications_phone ON notifications(phone);
+  CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(phone, read);
+
+  -- 社团表索引
+  CREATE INDEX IF NOT EXISTS idx_clubs_status ON clubs(status);
+  CREATE INDEX IF NOT EXISTS idx_clubs_category ON clubs(category);
+  CREATE INDEX IF NOT EXISTS idx_clubs_president_phone ON clubs(president_phone);
+
+  -- 社团成员表索引
+  CREATE INDEX IF NOT EXISTS idx_club_members_club_id ON club_members(club_id);
+  CREATE INDEX IF NOT EXISTS idx_club_members_phone ON club_members(phone);
+
+  -- 活动表索引
+  CREATE INDEX IF NOT EXISTS idx_activities_status ON activities(status);
+  CREATE INDEX IF NOT EXISTS idx_activities_category ON activities(category);
+  CREATE INDEX IF NOT EXISTS idx_activities_phone ON activities(phone);
+  CREATE INDEX IF NOT EXISTS idx_activities_start_time ON activities(start_time);
+  CREATE INDEX IF NOT EXISTS idx_activities_publisher ON activities(publisher_type, publisher_id);
+
+  -- 活动报名表索引
+  CREATE INDEX IF NOT EXISTS idx_activity_signups_activity_id ON activity_signups(activity_id);
+  CREATE INDEX IF NOT EXISTS idx_activity_signups_phone ON activity_signups(phone);
+  CREATE INDEX IF NOT EXISTS idx_activity_signups_status ON activity_signups(activity_id, status);
 `);
 
 // 插入基础数据
@@ -150,6 +249,6 @@ const insertAdmin = db.prepare(`INSERT OR IGNORE INTO admins (id, username, pass
 insertAdmin.run(1, 'admin', bcrypt.hashSync('admin123', 10), 'super');
 
 console.log('✅ 数据库初始化完成！');
-console.log('📊 已创建表: users, riders, orders, coupons, points, point_logs, admins, services, notifications');
+console.log('📊 已创建表: users, riders, orders, coupons, points, point_logs, admins, services, notifications, clubs, club_members, activities, activity_signups');
 console.log('👤 总管理员: admin / admin123');
 db.close();

@@ -1,4 +1,5 @@
 // === AI审核 ===
+    let _aiLogsPage = 1;
 
     function switchAiTab(tab, btn) {
       document.querySelectorAll('#page-ai .market-tab').forEach(t => t.classList.remove('active'));
@@ -16,8 +17,9 @@
       const action = document.getElementById('aiLogAction').value;
       try {
         // 加载统计
-        const statsRes = await fetch('/api/ai/stats', { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') } });
+        const statsRes = await fetch('/api/ai/stats', { headers: API._authHeaders() });
         const stats = await statsRes.json();
+        if (stats.error) { showToast('加载统计失败: ' + stats.error); return; }
         document.getElementById('aiLogTotal').textContent = stats.total || 0;
         document.getElementById('aiLogViolations').textContent = stats.violations || 0;
         document.getElementById('aiLogBlocked').textContent = stats.blocked || 0;
@@ -27,8 +29,9 @@
         if (source !== 'all') params.set('source', source);
         if (level !== 'all') params.set('level', level);
         if (action !== 'all') params.set('action', action);
-        const res = await fetch('/api/ai/logs?' + params, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') } });
+        const res = await fetch('/api/ai/logs?' + params, { headers: API._authHeaders() });
         const data = await res.json();
+        if (data.error) { showToast('加载记录失败: ' + data.error); return; }
         const tbody = document.getElementById('aiLogsTable');
         tbody.innerHTML = '';
         const sourceMap = { wall_post: '📢墙帖子', wall_comment: '💬墙评论', market_item: '🛒商品', market_comment: '💬商品评论' };

@@ -186,7 +186,7 @@ async function checkWallPost(post) {
     },
     {
       role: 'user',
-      content: `标题: ${post.title || ''}\n内容: ${post.content || ''}\n话题: ${post.topic || ''}`
+      content: `内容: ${post.content || ''}\n话题: ${post.tags || ''}`
     }
   ];
 
@@ -246,10 +246,18 @@ async function checkWallPost(post) {
 // 批量检测二手市场商品（必须在 /:id 之前注册）
 router.post('/market/batch', requireAdmin, async (req, res) => {
   try {
-    const { status = 'active', limit = 50 } = req.body;
-    const items = db.prepare(
-      "SELECT * FROM market_items WHERE status = ? ORDER BY created_at DESC LIMIT ?"
-    ).all(status, +limit);
+    const { status = 'active', limit = 50, skip_reviewed = true } = req.body;
+    // 排除已审核的商品
+    let items;
+    if (skip_reviewed) {
+      items = db.prepare(
+        "SELECT * FROM market_items WHERE status = ? AND id NOT IN (SELECT source_id FROM ai_review_logs WHERE source = 'market_item') ORDER BY created_at DESC LIMIT ?"
+      ).all(status, +limit);
+    } else {
+      items = db.prepare(
+        "SELECT * FROM market_items WHERE status = ? ORDER BY created_at DESC LIMIT ?"
+      ).all(status, +limit);
+    }
     
     const results = [];
     for (const item of items) {
@@ -281,18 +289,25 @@ router.post('/market/:id', requireAdmin, async (req, res) => {
 });
 
 // 批量检测校园墙帖子（必须在 /:id 之前注册）
-// 批量检测校园墙帖子（必须在 /:id 之前注册）
 router.post('/wall/batch', requireAdmin, async (req, res) => {
   try {
-    const { limit = 50 } = req.body;
-    const posts = db.prepare(
-      "SELECT * FROM wall_posts ORDER BY created_at DESC LIMIT ?"
-    ).all(+limit);
+    const { limit = 50, skip_reviewed = true } = req.body;
+    // 排除已审核的帖子
+    let posts;
+    if (skip_reviewed) {
+      posts = db.prepare(
+        "SELECT * FROM wall_posts WHERE id NOT IN (SELECT source_id FROM ai_review_logs WHERE source = 'wall_post') ORDER BY created_at DESC LIMIT ?"
+      ).all(+limit);
+    } else {
+      posts = db.prepare(
+        "SELECT * FROM wall_posts ORDER BY created_at DESC LIMIT ?"
+      ).all(+limit);
+    }
     
     const results = [];
     for (const post of posts) {
       const result = await checkWallPost(post);
-      results.push({ postId: post.id, title: post.title, author: post.phone, ...result });
+      results.push({ postId: post.id, title: (post.content || '').slice(0, 30), author: post.phone, ...result });
       await new Promise(r => setTimeout(r, 500));
     }
     
@@ -309,7 +324,7 @@ router.post('/wall/:id', requireAdmin, async (req, res) => {
     const post = db.prepare('SELECT * FROM wall_posts WHERE id = ?').get(req.params.id);
     if (!post) return res.status(404).json({ error: '帖子不存在', code: 'SYS_004' });
     const result = await checkWallPost(post);
-    res.json({ postId: post.id, title: post.title, ...result });
+    res.json({ postId: post.id, title: (post.content || '').slice(0, 30), ...result });
   } catch(e) {
     res.status(500).json({ error: e.message, code: 'SYS_001' });
   }
@@ -318,10 +333,18 @@ router.post('/wall/:id', requireAdmin, async (req, res) => {
 // 检测校园墙评论
 router.post('/wall/comments/batch', requireAdmin, async (req, res) => {
   try {
-    const { limit = 50 } = req.body;
-    const comments = db.prepare(
-      "SELECT c.*, p.title as post_title FROM wall_comments c LEFT JOIN wall_posts p ON c.post_id = p.id ORDER BY c.created_at DESC LIMIT ?"
-    ).all(+limit);
+    const { limit = 50, skip_reviewed = true } = req.body;
+    // 排除已审核的评论
+    let comments;
+    if (skip_reviewed) {
+      comments = db.prepare(
+        "SELECT c.*, p.content as post_content FROM wall_comments c LEFT JOIN wall_posts p ON c.post_id = p.id WHERE c.id NOT IN (SELECT source_id FROM ai_review_logs WHERE source = 'wall_comment') ORDER BY c.created_at DESC LIMIT ?"
+      ).all(+limit);
+    } else {
+      comments = db.prepare(
+        "SELECT c.*, p.content as post_content FROM wall_comments c LEFT JOIN wall_posts p ON c.post_id = p.id ORDER BY c.created_at DESC LIMIT ?"
+      ).all(+limit);
+    }
     
     const results = [];
     for (const comment of comments) {
@@ -334,7 +357,7 @@ router.post('/wall/comments/batch', requireAdmin, async (req, res) => {
 {"violation": true/false, "reason": "违规原因", "level": "high/medium/low/none", "category": "不当/违法/骚扰/广告/无"}
 只返回JSON。`
         },
-        { role: 'user', content: `帖子标题: ${comment.post_title || ''}\n评论内容: ${comment.content || ''}` }
+        { role: 'user', content: `帖子内容: ${(comment.post_content || '').slice(0, 100)}\n评论内容: ${comment.content || ''}` }
       ];
       
       try {
@@ -358,6 +381,7 @@ router.post('/wall/comments/batch', requireAdmin, async (req, res) => {
 // ─── 审核记录查询API ─────────────────────────────────
 // 查询审核记录（必须在 /:id 路由之前）
 router.get('/logs', requireAdmin, (req, res) => {
+  console.log('[AI审核] /api/ai/logs 请求收到', req.user);
   try {
     const { source, level, action, page = 1, limit = 20 } = req.query;
     const p = Math.max(1, parseInt(page));
@@ -373,12 +397,14 @@ router.get('/logs', requireAdmin, (req, res) => {
     const rows = db.prepare(`SELECT * FROM ai_review_logs ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`).all(...params, l, offset);
     res.json({ total, page: p, limit: l, rows });
   } catch(e) {
+    console.error('[AI审核] /api/ai/logs 错误:', e.message);
     res.status(500).json({ error: e.message, code: 'SYS_001' });
   }
 });
 
 // 审核统计
 router.get('/stats', requireAdmin, (req, res) => {
+  console.log('[AI审核] /api/ai/stats 请求收到', req.user);
   try {
     const total = db.prepare('SELECT count(*) as cnt FROM ai_review_logs').get().cnt;
     const violations = db.prepare("SELECT count(*) as cnt FROM ai_review_logs WHERE violation = 1").get().cnt;
@@ -388,6 +414,7 @@ router.get('/stats', requireAdmin, (req, res) => {
     const recent24h = db.prepare("SELECT count(*) as cnt FROM ai_review_logs WHERE created_at > datetime('now','localtime','-1 day')").get().cnt;
     res.json({ total, violations, blocked, byLevel, bySource, recent24h });
   } catch(e) {
+    console.error('[AI审核] /api/ai/stats 错误:', e.message);
     res.status(500).json({ error: e.message, code: 'SYS_001' });
   }
 });

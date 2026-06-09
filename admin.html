@@ -52,6 +52,8 @@
 <div class="nav-item" data-page="ai" onclick="switchPage('ai')"><span class="nav-item-icon">🤖</span><span class="nav-item-label">AI审核</span><span class="pending-badge" id="aiBadge" style="display:none">0</span></div>
 <div class="nav-item" data-page="pets" onclick="switchPage('pets')"><span class="nav-item-icon">🐱</span><span class="nav-item-label">猫狗管理</span><span class="pending-badge" id="petBadge" style="display:none">0</span></div>
 <div class="nav-item" data-page="withdraw" onclick="switchPage('withdraw')"><span class="nav-item-icon">💸</span><span class="nav-item-label">提现审核</span><span class="pending-badge" id="withdrawBadge" style="display:none">0</span></div>
+<div class="nav-item" data-page="feedback" onclick="switchPage('feedback')"><span class="nav-item-icon">💬</span><span class="nav-item-label">问题反馈</span><span class="pending-badge" id="feedbackBadge" style="display:none">0</span></div>
+<div class="nav-item" data-page="reports" onclick="switchPage('reports')"><span class="nav-item-icon">🚫</span><span class="nav-item-label">举报管理</span><span class="pending-badge" id="reportBadge" style="display:none">0</span></div>
  </div>
  <div class="nav-section" id="adminSection">
  <div class="nav-section-title">系统管理</div>
@@ -165,6 +167,13 @@
  <div class="section-stat"><span class="section-stat-value" id="statWallLikes">0</span><span class="section-stat-label">点赞</span></div>
  <div class="section-stat"><span class="section-stat-value" id="statWallFollows">0</span><span class="section-stat-label">关注</span></div>
  </div>
+ <div class="chart-header" style="margin-top:8px"><span></span>
+   <div style="display:flex;gap:4px">
+     <button class="range-btn wall-range active" data-range="7" onclick="switchWallTrend(7,this)">7天</button>
+     <button class="range-btn wall-range" data-range="14" onclick="switchWallTrend(14,this)">14天</button>
+     <button class="range-btn wall-range" data-range="30" onclick="switchWallTrend(30,this)">30天</button>
+   </div>
+ </div>
  <div class="chart-container" style="height:200px"><canvas id="wallActivityChart"></canvas></div>
  </div>
  <!-- 二手市场 -->
@@ -176,7 +185,14 @@
  <div class="section-stat"><span class="section-stat-value" id="statMarketRevenue">¥0</span><span class="section-stat-label">交易额</span></div>
  <div class="section-stat"><span class="section-stat-value" id="statMarketOrders">0</span><span class="section-stat-label">成交</span></div>
  </div>
- <div class="chart-container" style="height:200px"><canvas id="marketCategoryChart"></canvas></div>
+ <div class="chart-header" style="margin-top:8px"><span></span>
+   <div style="display:flex;gap:4px">
+     <button class="range-btn market-range active" data-range="7" onclick="switchMarketTrend(7,this)">7天</button>
+     <button class="range-btn market-range" data-range="14" onclick="switchMarketTrend(14,this)">14天</button>
+     <button class="range-btn market-range" data-range="30" onclick="switchMarketTrend(30,this)">30天</button>
+   </div>
+ </div>
+ <div class="chart-container" style="height:200px"><canvas id="marketTrendOverviewChart"></canvas></div>
  </div>
  <!-- AI审核 -->
  <div class="chart-card">
@@ -187,17 +203,33 @@
  <div class="section-stat"><span class="section-stat-value" id="statAiBlocked">0</span><span class="section-stat-label">拦截</span></div>
  <div class="section-stat"><span class="section-stat-value" id="statAiRate">0%</span><span class="section-stat-label">违规率</span></div>
  </div>
- <div class="ai-bar-wrap">
- <div class="ai-bar"><div class="ai-bar-pass" id="aiBarPass" style="width:100%"></div><div class="ai-bar-violation" id="aiBarViolation" style="width:0%"></div></div>
- <div class="ai-bar-legend"><span>✅ 合规 <b id="aiBarPassPct">100%</b></span><span>🚫 违规 <b id="aiBarViolationPct">0%</b></span></div>
+ <div class="chart-header" style="margin-top:8px"><span></span>
+   <div style="display:flex;gap:4px">
+     <button class="range-btn ai-range active" data-range="7" onclick="switchAiTrend(7,this)">7天</button>
+     <button class="range-btn ai-range" data-range="14" onclick="switchAiTrend(14,this)">14天</button>
+     <button class="range-btn ai-range" data-range="30" onclick="switchAiTrend(30,this)">30天</button>
+   </div>
  </div>
+ <div class="chart-container" style="height:200px"><canvas id="aiTrendChart"></canvas></div>
  </div>
  </div>
 
  <!-- 图表区 -->
  <div class="charts-grid">
- <div class="chart-card"><div class="chart-header"><span class="chart-title">📈 订单趋势</span></div><div class="chart-container"><canvas id="ordersChart"></canvas></div></div>
- <div class="chart-card"><div class="chart-header"><span class="chart-title">👥 用户增长</span></div><div class="chart-container"><canvas id="usersChart"></canvas></div></div>
+ <div class="chart-card"><div class="chart-header"><span class="chart-title">📈 订单趋势</span>
+   <div style="display:flex;gap:4px">
+     <button class="range-btn order-range active" data-range="7" onclick="switchOrderTrend(7,this)">7天</button>
+     <button class="range-btn order-range" data-range="14" onclick="switchOrderTrend(14,this)">14天</button>
+     <button class="range-btn order-range" data-range="30" onclick="switchOrderTrend(30,this)">30天</button>
+   </div>
+ </div><div class="chart-container"><canvas id="ordersChart"></canvas></div></div>
+ <div class="chart-card"><div class="chart-header"><span class="chart-title">👥 用户增长</span>
+   <div style="display:flex;gap:4px">
+     <button class="range-btn user-range active" data-range="7" onclick="switchUserTrend(7,this)">7天</button>
+     <button class="range-btn user-range" data-range="14" onclick="switchUserTrend(14,this)">14天</button>
+     <button class="range-btn user-range" data-range="30" onclick="switchUserTrend(30,this)">30天</button>
+   </div>
+ </div><div class="chart-container"><canvas id="usersChart"></canvas></div></div>
  <div class="chart-card"><div class="chart-header"><span class="chart-title">🥧 服务分布</span></div><div class="chart-container"><canvas id="servicesChart"></canvas></div></div>
  </div>
 
@@ -497,6 +529,55 @@
       </div>
     </div>
   </div>
+</div>
+
+<div class="page-section" id="page-feedback">
+ <div class="page-header"><h1 class="page-title">问题反馈</h1><p class="page-desc">查看和回复用户反馈</p></div>
+ <div class="stats-cards">
+   <div class="stat-card"><div class="stat-icon" style="background:#E3F2FD">💬</div><div class="stat-info"><div class="stat-value" id="statFbTotal">0</div><div class="stat-label">总反馈数</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#FFF8E1">⏳</div><div class="stat-info"><div class="stat-value" id="statFbPending">0</div><div class="stat-label">待处理</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#E8F5E9">✅</div><div class="stat-info"><div class="stat-value" id="statFbReplied">0</div><div class="stat-label">已回复</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#F3E5F5">🔒</div><div class="stat-info"><div class="stat-value" id="statFbClosed">0</div><div class="stat-label">已关闭</div></div></div>
+ </div>
+ <div class="table-card">
+ <div class="table-header">
+   <span class="table-title">📋 反馈列表</span>
+   <div style="display:flex;gap:8px;align-items:center">
+     <select id="fbFilterStatus" onchange="loadFeedbackList()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--text)">
+       <option value="all">全部状态</option>
+       <option value="pending">待处理</option>
+       <option value="processing">处理中</option>
+       <option value="replied">已回复</option>
+       <option value="closed">已关闭</option>
+     </select>
+     <select id="fbFilterCategory" onchange="loadFeedbackList()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--text)">
+       <option value="all">全部类型</option>
+       <option value="bug">Bug报告</option>
+       <option value="feature">功能建议</option>
+       <option value="complaint">投诉</option>
+       <option value="other">其他</option>
+     </select>
+   </div>
+ </div>
+ <table class="data-table"><thead><tr><th>ID</th><th>用户</th><th>类型</th><th>内容</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody id="feedbackTable"></tbody></table>
+ <div id="feedbackPager" style="display:flex;justify-content:center;gap:8px;align-items:center;padding:12px;font-size:13px;color:var(--text-secondary)"></div>
+ </div>
+</div>
+
+<div class="page-section" id="page-reports">
+ <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+  <h2 style="margin:0">🚫 举报管理</h2>
+  <div style="display:flex;gap:8px">
+   <select id="reportStatusFilter" onchange="loadReports()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px">
+    <option value="pending">待处理</option>
+    <option value="resolved">已处理</option>
+    <option value="dismissed">已驳回</option>
+    <option value="all">全部</option>
+   </select>
+  </div>
+ </div>
+ <div id="reportsList"></div>
+ <div id="reportsPager" style="display:flex;justify-content:center;gap:8px;align-items:center;padding:12px;font-size:13px;color:var(--text-secondary)"></div>
 </div>
 
 <div class="page-section" id="page-withdraw">
@@ -819,18 +900,46 @@
  </div>
  <div class="toast" id="toast"></div>
 
+ <!-- 反馈回复弹窗 -->
+ <div class="modal-overlay" id="fbReplyModal">
+   <div class="modal-content" style="max-width:500px">
+     <div class="modal-header"><h3>回复反馈</h3><button class="modal-close" onclick="closeFbReplyModal()">&times;</button></div>
+     <div class="modal-body">
+       <input type="hidden" id="fbReplyId">
+       <div style="margin-bottom:14px">
+         <label style="font-size:14px;font-weight:600;display:block;margin-bottom:6px">回复内容</label>
+         <textarea id="fbReplyText" rows="4" placeholder="请输入回复内容..." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:14px;resize:vertical;outline:none;box-sizing:border-box;font-family:inherit"></textarea>
+       </div>
+       <div style="margin-bottom:14px">
+         <label style="font-size:14px;font-weight:600;display:block;margin-bottom:6px">更新状态</label>
+         <select id="fbReplyStatus" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--card-bg);color:var(--text)">
+           <option value="processing">处理中</option>
+           <option value="replied">已回复</option>
+           <option value="closed">已关闭</option>
+         </select>
+       </div>
+     </div>
+     <div class="modal-footer">
+       <button class="btn" onclick="closeFbReplyModal()">取消</button>
+       <button class="btn btn-primary" onclick="submitFbReply()">提交回复</button>
+     </div>
+   </div>
+ </div>
+
  
  <!-- 模块化JS加载（按依赖顺序） -->
- <script src="admin/js/core.js"></script>
- <script src="admin/js/stats.js"></script>
- <script src="admin/js/charts.js"></script>
- <script src="admin/js/orders.js"></script>
- <script src="admin/js/riders.js"></script>
- <script src="admin/js/admins.js"></script>
- <script src="admin/js/withdraw.js"></script>
- <script src="admin/js/ads.js"></script>
- <script src="admin/js/market.js"></script>
- <script src="admin/js/ai.js"></script>
- <script src="admin/js/pets.js"></script>
+ <script src="admin/js/core.js?v=202606082320"></script>
+ <script src="admin/js/stats.js?v=202606082310"></script>
+ <script src="admin/js/charts.js?v=202606082320"></script>
+ <script src="admin/js/orders.js?v=202606082320"></script>
+ <script src="admin/js/riders.js?v=202606082310"></script>
+ <script src="admin/js/admins.js?v=202606082310"></script>
+ <script src="admin/js/withdraw.js?v=202606082310"></script>
+ <script src="admin/js/ads.js?v=202606082310"></script>
+ <script src="admin/js/market.js?v=202606082310"></script>
+ <script src="admin/js/ai.js?v=202606082310"></script>
+ <script src="admin/js/pets.js?v=202606082310"></script>
+ <script src="admin/js/feedback.js?v=202606082310"></script>
+ <script src="admin/js/reports.js?v=20260609"></script>
 </body>
 </html>

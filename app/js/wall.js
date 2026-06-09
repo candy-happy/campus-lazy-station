@@ -57,13 +57,30 @@
     function switchWallTab(tab) {
       wallTab = tab;
       wallTagFilter = ''; // 切换tab时清空标签筛选
+      _wallPage = 1;
+      _wallHasMore = true;
       document.querySelectorAll('.wall-tab').forEach(t => t.classList.remove('active'));
-      const labels = { latest: '最新', hot: '热门', following: '关注', mine: '我的' };
+      const labels = { latest: '最新', hot: '热门', discover: '发现', following: '关注', mine: '我的' };
       document.querySelectorAll('.wall-tab').forEach(t => {
         if (t.textContent === labels[tab]) t.classList.add('active');
       });
-      loadWallFeed();
-      loadHotTags();
+
+      // 切换发现页/帖子流显示
+      const wallFeed = document.getElementById('wallFeed');
+      const discoverPage = document.getElementById('discoverPage');
+      const wallFab = document.getElementById('wallFab');
+      if (tab === 'discover') {
+        if (wallFeed) wallFeed.style.display = 'none';
+        if (discoverPage) discoverPage.style.display = '';
+        if (wallFab) wallFab.style.display = 'none';
+        initDiscoverPage();
+      } else {
+        if (wallFeed) wallFeed.style.display = '';
+        if (discoverPage) discoverPage.style.display = 'none';
+        if (wallFab) wallFab.style.display = '';
+        loadWallFeed();
+      }
+      renderWallChannels();
     }
 
 
@@ -82,12 +99,15 @@
 
     async function loadWallFeed() {
       if (!currentUser) return;
+      _wallPage = 1;
+      _wallHasMore = true;
       const params = { tab: wallTab === 'mine' ? 'latest' : wallTab, phone: currentUser.phone };
       if (wallTagFilter) params.tag = wallTagFilter;
       let data = await API.wallFeed(params);
       wallPosts = Array.isArray(data) ? data : [];
       if (wallTab === 'mine') wallPosts = wallPosts.filter(p => p.phone === currentUser.phone);
       renderWallFeed();
+      renderWallChannels();
     }
 
 
@@ -97,10 +117,10 @@
         const tags = await API.wallTagsHot(15);
         const el = document.getElementById('wallHotTags');
         if (!el || !Array.isArray(tags)) return;
-        let pillHtml = '<span class="wall-tag-pill ' + (!wallTagFilter ? 'active' : '') + '" onclick="filterByTag(\'\')" data-tag="">🔥 全部</span>';
+        let pillHtml = '<span class="wall-tag-pill ' + (!wallTagFilter ? 'active' : '') + '" onclick="filterByTag(\'\')" data-tag="">全部</span>';
         tags.forEach(t => {
           const cfg = TAG_CONFIG[t.name];
-          pillHtml += '<span class="wall-tag-pill ' + (wallTagFilter === t.name ? 'active' : '') + '" onclick="filterByTag(\''+escHtml(t.name)+'\')" data-tag="'+escHtml(t.name)+'">' + (cfg ? cfg.emoji : '🏷️') + ' ' + escHtml(t.name) + ' <small style="opacity:0.6">' + t.count + '</small></span>';
+          pillHtml += '<span class="wall-tag-pill ' + (wallTagFilter === t.name ? 'active' : '') + '" onclick="filterByTag(\''+escHtml(t.name)+'\')" data-tag="'+escHtml(t.name)+'">' + escHtml(t.name) + ' <small style="opacity:0.6">' + t.count + '</small></span>';
         });
         el.innerHTML = pillHtml;
       } catch(e) { console.error('热门标签加载失败:', e); }
@@ -136,29 +156,53 @@
     let _selectedTags = [];
 
     // 标签配置：emoji + 名称 + 颜色
-        const TAG_CONFIG = {
-      '日常': { emoji: '💬', color: '#3498DB' },
-      '求助': { emoji: '🙏', color: '#E67E22' },
-      '吐槽': { emoji: '😤', color: '#E74C3C' },
-      '美食': { emoji: '🍜', color: '#F39C12' },
-      '情感': { emoji: '💕', color: '#E91E63' },
-      '学习': { emoji: '📚', color: '#9B59B6' },
-      '考试': { emoji: '📝', color: '#C0392B' },
-      '闲置': { emoji: '🎁', color: '#1ABC9C' },
-      '活动': { emoji: '🎉', color: '#27AE60' },
-      '就业': { emoji: '💼', color: '#2C3E50' },
-      '升学': { emoji: '🎓', color: '#8E44AD' },
-      '生活': { emoji: '🏠', color: '#16A085' },
-      '运动': { emoji: '⚽', color: '#27AE60' },
-      '旅行': { emoji: '✈️', color: '#2980B9' },
-      '音乐': { emoji: '🎵', color: '#9B59B6' },
-      '游戏': { emoji: '🎮', color: '#E74C3C' },
-      '兼职': { emoji: '💰', color: '#F39C12' },
-      '租房': { emoji: '🏠', color: '#1ABC9C' },
-      '快递': { emoji: '📦', color: '#E67E22' },
-      '社交': { emoji: '🤝', color: '#3498DB' },
-      '兴趣': { emoji: '🎯', color: '#E91E63' }
-    };
+        // ══════ 层级标签系统：大分类 + 子标签 ══════
+        const _BASE_CATEGORIES = [
+          { key: '生活', emoji: '🏠', color: '#16A085', children: ['日常','美食','情感','树洞','打卡','穿搭','追剧'] },
+          { key: '学习', emoji: '📚', color: '#9B59B6', children: ['考试','考研','竞赛','读书'] },
+          { key: '求职', emoji: '💼', color: '#2C3E50', children: ['就业','实习','兼职'] },
+          { key: '交易', emoji: '♻️', color: '#1ABC9C', children: ['二手','闲置','拼单'] },
+          { key: '出行', emoji: '🚗', color: '#3498DB', children: ['拼车','快递','租房'] },
+          { key: '兴趣', emoji: '🎯', color: '#E91E63', children: ['运动','音乐','摄影','数码','健身','社团'] },
+          { key: '游戏', emoji: '🎮', color: '#E74C3C', children: ['手游','端游','主机','电竞','开黑','攻略','Steam'] },
+          { key: '社交', emoji: '🤝', color: '#E67E22', children: ['表白','活动','社交','志愿'] },
+          { key: '互助', emoji: '🔔', color: '#E74C3C', children: ['求助','吐槽','失物','招领'] },
+        ];
+
+        // 加载用户自定义子标签
+        function getCustomSubTags() {
+          try { return JSON.parse(localStorage.getItem('wallCustomSubTags') || '{}'); } catch(e) { return {}; }
+        }
+        function saveCustomSubTags(data) {
+          try { localStorage.setItem('wallCustomSubTags', JSON.stringify(data)); } catch(e) {}
+        }
+
+        // 合并默认+自定义，生成最终 TAG_CATEGORIES
+        function buildTagCategories() {
+          const custom = getCustomSubTags();
+          return _BASE_CATEGORIES.map(cat => {
+            const extra = custom[cat.key] || [];
+            return { ...cat, children: [...cat.children, ...extra] };
+          });
+        }
+        let TAG_CATEGORIES = buildTagCategories();
+
+        // 构建子标签→大分类的反向映射
+        const _subToCategory = {};
+        TAG_CATEGORIES.forEach(cat => cat.children.forEach(sub => { _subToCategory[sub] = cat.key; }));
+
+        // 兼容旧代码：TAG_CONFIG 仍提供每个标签的 emoji/color
+        const TAG_CONFIG = {};
+        TAG_CATEGORIES.forEach(cat => {
+          TAG_CONFIG[cat.key] = { emoji: cat.emoji, color: cat.color };
+          cat.children.forEach(sub => {
+            TAG_CONFIG[sub] = { emoji: _subEmoji(sub), color: cat.color };
+          });
+        });
+        function _subEmoji(name) {
+          const map = {'日常':'💬','求助':'🙏','吐槽':'😤','美食':'🍜','情感':'💕','考试':'📝','闲置':'🎁','活动':'🎉','就业':'💼','考研':'🎓','运动':'⚽','音乐':'🎵','游戏':'🎮','兼职':'💰','租房':'🏠','快递':'📦','社交':'🤝','失物':'🔍','招领':'🔔','二手':'♻️','拼车':'🚗','拼单':'🛍️','表白':'💌','树洞':'🌳','打卡':'📍','摄影':'📸','数码':'💻','穿搭':'👗','追剧':'📺','读书':'📖','实习':'🏢','社团':'🎭','志愿':'💛','竞赛':'🏆','健身':'💪','手游':'📱','端游':'🖥️','主机':'🕹️','电竞':'🏅','开黑':'👥','攻略':'📋','Steam':'🎮'};
+          return map[name] || '🏷️';
+        }
 
 
     function extractHashTags(text) {
@@ -188,18 +232,12 @@
       const len = textarea.value.length;
       const counter = document.getElementById('postCharCount');
       if (!counter) return;
-      counter.textContent = len + ' / 500';
+      counter.textContent = len + '/500';
       counter.className = 'post-char-count';
       if (len > 450) counter.classList.add('warn');
       if (len > 500) counter.classList.add('danger');
       // 截断超长内容
       if (len > 500) textarea.value = textarea.value.slice(0, 500);
-      // 提取 #话题# 实时预览
-      const hashTags = extractHashTags(textarea.value);
-      const preview = document.getElementById('hashTagPreview');
-      if (preview) {
-        preview.innerHTML = hashTags.map(t => '<span style="display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:10px;font-size:11px;background:#3498DB18;color:#3498DB">#' + escHtml(t) + '</span>').join('');
-      }
     }
 
 
@@ -234,12 +272,16 @@
       });
       // 添加按钮（不满9个时）
       if (wallSelectedFiles.length < 9) {
-        html += '<div class="post-media-add" onclick="document.getElementById(\'wallFileInput\').click()">';
+        html += '<label class="post-media-add">';
         html += '<span class="add-icon">+</span>';
         html += '<span class="add-text">添加</span>';
-        html += '</div>';
+        html += '<input type="file" accept="image/*,video/*" multiple style="display:none" onchange="previewWallFiles(this)" />';
+        html += '</label>';
       }
       container.innerHTML = html;
+      // 更新媒体计数提示
+      const hint = document.getElementById('mediaCountHint');
+      if (hint) hint.textContent = wallSelectedFiles.length > 0 ? wallSelectedFiles.length + '/9' : '最多9张';
     }
 
 
@@ -256,14 +298,121 @@
       document.getElementById('wallPostContent').value = '';
       wallSelectedFiles = [];
       _selectedTags = [];
-      document.getElementById('wallFilePreview').innerHTML = '';
-      if (document.getElementById('wallFileInput')) document.getElementById('wallFileInput').value = '';
-      // 清除话题选中状态
-      document.querySelectorAll('.post-topic-tag').forEach(t => t.classList.remove('selected'));
+      // 渲染标签选择按钮
+      renderPostTagGrid();
       // 重置字数
       const counter = document.getElementById('postCharCount');
-      if (counter) { counter.textContent = '0 / 500'; counter.className = 'post-char-count'; }
+      if (counter) { counter.textContent = '0/500'; counter.className = 'post-char-count'; }
+      // 重置媒体区
+      renderWallFilePreview();
+      // 展开标签区
+      const wrap = document.getElementById('postTagGridWrap');
+      const arrow = document.getElementById('tagSectionArrow');
+      if (wrap) wrap.classList.remove('collapsed');
+      if (arrow) arrow.classList.remove('collapsed');
       openSubPage('wallPostPage_sub');
+    }
+
+    function renderPostTagGrid() {
+      const grid = document.getElementById('postTagGrid');
+      if (!grid) return;
+      // 同步个人标签配置：只显示启用的分类和子标签
+      TAG_CATEGORIES = buildTagCategories();
+      Object.keys(_subToCategory).forEach(k => delete _subToCategory[k]);
+      TAG_CATEGORIES.forEach(c => c.children.forEach(sub => { _subToCategory[sub] = c.key; }));
+
+      const config = getUserTagConfig();
+      const disabledSet = new Set(config ? (config.disabled || []) : []);
+      const activeCats = config ? config.active : TAG_CATEGORIES.map(c => c.key);
+
+      let html = '';
+      TAG_CATEGORIES.forEach(cat => {
+        if (!activeCats.includes(cat.key) || disabledSet.has(cat.key)) return;
+        const visibleSubs = cat.children.filter(sub => !disabledSet.has(sub));
+        if (visibleSubs.length === 0) return;
+
+        html += `<div class="post-tag-category">`;
+        html += `<span class="post-tag-category-label" style="color:${cat.color}">${cat.key}</span>`;
+        html += `<div class="post-tag-category-tags">`;
+        visibleSubs.forEach(tag => {
+          const isSelected = _selectedTags.includes(tag);
+          html += '<span class="post-topic-tag' + (isSelected ? ' selected' : '') + '" data-topic="' + tag + '" onclick="togglePostTag(this)">' + tag + '</span>';
+        });
+        html += `</div></div>`;
+      });
+      grid.innerHTML = html;
+      updateSelectedTagPreview();
+    }
+
+    // 更新已选标签预览
+    function updateSelectedTagPreview() {
+      const el = document.getElementById('selectedTagPreview');
+      if (!el) return;
+      if (_selectedTags.length === 0) {
+        el.textContent = '最多5个';
+        el.style.color = 'var(--text-light)';
+      } else {
+        el.textContent = _selectedTags.map(t => '#' + t).join(' ');
+        el.style.color = 'var(--primary)';
+      }
+    }
+
+    // 折叠/展开标签区
+    function togglePostTagSection() {
+      const wrap = document.getElementById('postTagGridWrap');
+      const arrow = document.getElementById('tagSectionArrow');
+      if (!wrap) return;
+      wrap.classList.toggle('collapsed');
+      if (arrow) arrow.classList.toggle('collapsed');
+    }
+
+    function togglePostTag(el) {
+      const topic = el.dataset.topic;
+      const wasSelected = el.classList.contains('selected');
+      if (wasSelected) {
+        el.classList.remove('selected');
+        _selectedTags = _selectedTags.filter(t => t !== topic);
+        removeTagFromContent(topic);
+      } else {
+        if (_selectedTags.length >= 5) return showToast('最多选择5个标签');
+        el.classList.add('selected');
+        _selectedTags.push(topic);
+        appendTagToContent(topic);
+      }
+      updateSelectedTagPreview();
+    }
+
+    function appendTagToContent(tag) {
+      const textarea = document.getElementById('wallPostContent');
+      if (!textarea) return;
+      const tagStr = '#' + tag + '#';
+      let text = textarea.value;
+      if (text.includes(tagStr)) return;
+      text = text.trimEnd();
+      textarea.value = text + (text ? ' ' : '') + tagStr;
+      onPostContentInput(textarea);
+    }
+
+    function removeTagFromContent(tag) {
+      const textarea = document.getElementById('wallPostContent');
+      if (!textarea) return;
+      const tagStr = '#' + tag + '#';
+      textarea.value = textarea.value.replace(tagStr, '').replace(/\s{2,}/g, ' ').trim();
+      onPostContentInput(textarea);
+    }
+
+    function addCustomTag() {
+      const input = document.getElementById('customTagInput');
+      if (!input) return;
+      const tag = input.value.trim();
+      if (!tag || tag.length > 6) return showToast('标签名1-6个字');
+      if (_selectedTags.includes(tag)) return showToast('标签已选择');
+      if (_selectedTags.length >= 5) return showToast('最多选择5个标签');
+      _selectedTags.push(tag);
+      appendTagToContent(tag);
+      input.value = '';
+      renderPostTagGrid();
+      updateSelectedTagPreview();
     }
 
 
@@ -272,8 +421,8 @@
       const content = document.getElementById('wallPostContent').value.trim();
       if (!content) return showToast('请输入内容');
       if (content.length > 500) return showToast('内容不能超过500字');
-      // 从内容提取 #话题# 标签
-      const hashTags = extractHashTags(content);
+      // 从内容提取 #话题# 标签，合并手动选择的标签
+      const hashTags = [...new Set([...extractHashTags(content), ..._selectedTags])];
       const res = await API.wallPost({ phone: currentUser.phone, nickname: currentUser.name, avatar: currentUser.avatar || '', content: content, tags: hashTags.join(',') });
       if (res.error) return showToast(res.error);
       closeSubPage('wallPostPage_sub');
@@ -306,65 +455,149 @@
       const replies = comments.filter(c => c.parent_id);
       const replyMap = {};
       replies.forEach(r => { if (!replyMap[r.parent_id]) replyMap[r.parent_id] = []; replyMap[r.parent_id].push(r); });
+
+      // 渲染头像
+      function avatarHtml(avatar, nickname, size) {
+        const s = size || 36;
+        const fs = Math.round(s * 0.4);
+        if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
+          return `<div style="width:${s}px;height:${s}px;border-radius:50%;overflow:hidden;flex-shrink:0;cursor:pointer" onclick="showWallUser('${data.phone}')"><img src="${escHtml(avatar)}" style="width:100%;height:100%;object-fit:cover" /></div>`;
+        }
+        const letter = (avatar && /\p{Emoji}/u.test(avatar) && avatar.length<=2) ? avatar : (nickname||'匿')[0];
+        return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:#fff;display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;flex-shrink:0;cursor:pointer" onclick="showWallUser('${data.phone}')">${letter}</div>`;
+      }
+
+      // 渲染单条回复（楼中楼）
+      function renderReply(r, parentCommentId) {
+        return `
+          <div style="padding:10px 0 10px 16px;border-left:2px solid var(--border);margin-left:8px;transition:background 0.2s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">
+            <div style="display:flex;align-items:center;gap:6px">
+              ${avatarHtml(r.avatar, r.nickname, 24)}
+              <span style="font-size:13px;font-weight:600;color:var(--text)">${escHtml(r.nickname||'匿名')}</span>
+              ${r.reply_to_nickname ? `<span style="font-size:11px;color:var(--text-secondary)">回复</span><span style="font-size:13px;font-weight:600;color:#FF6B2B">${escHtml(r.reply_to_nickname)}</span>` : ''}
+            </div>
+            <div style="font-size:14px;line-height:1.6;margin:6px 0 4px 32px;color:var(--text)">${escHtml(r.content)}</div>
+            <div style="display:flex;align-items:center;gap:14px;margin-left:32px">
+              <span style="font-size:11px;color:var(--text-secondary)">${timeAgo(r.created_at)}</span>
+              <button onclick="doCommentLike(${r.id},this)" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:2px 4px;border-radius:8px;transition:all 0.15s" onmouseover="this.style.color='#E74C3C';this.style.background='rgba(231,76,60,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">❤️ ${r.like_count||0}</button>
+              <button onclick="replyToComment(${parentCommentId},'${escHtml(r.nickname||'匿名')}','${r.phone}')" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:2px 4px;border-radius:8px;transition:all 0.15s" onmouseover="this.style.color='#FF6B2B';this.style.background='rgba(255,107,43,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">💬 回复</button>
+              <button onclick="showReportMenu('comment',${r.id})" style="background:none;border:none;font-size:11px;color:var(--text-secondary);cursor:pointer;padding:2px 4px;border-radius:8px;margin-left:auto;opacity:0.5;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">🚫</button>
+            </div>
+          </div>`;
+      }
+
+      // 渲染顶级评论
+      function renderTopComment(c, idx) {
+        const replyList = replyMap[c.id] || [];
+        const replyCount = replyList.length;
+        return `
+          <div style="padding:16px 0;${idx < topLevel.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}animation:fadeIn 0.3s ease ${idx*0.05}s both">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              ${avatarHtml(c.avatar, c.nickname, 36)}
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span style="font-size:14px;font-weight:700;color:var(--text)">${escHtml(c.nickname||'匿名')}</span>
+                  <span style="font-size:11px;color:var(--text-secondary)">${timeAgo(c.created_at)}</span>
+                </div>
+                <div style="font-size:15px;line-height:1.7;margin:8px 0;color:var(--text)">${escHtml(c.content)}</div>
+                <div style="display:flex;align-items:center;gap:14px">
+                  <button onclick="doCommentLike(${c.id},this)" style="background:none;border:none;font-size:13px;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:12px;transition:all 0.15s" onmouseover="this.style.color='#E74C3C';this.style.background='rgba(231,76,60,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">❤️ ${c.like_count||0}</button>
+                  <button onclick="replyToComment(${c.id},'${escHtml(c.nickname||'匿名')}','${c.phone}')" style="background:none;border:none;font-size:13px;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:12px;transition:all 0.15s" onmouseover="this.style.color='#FF6B2B';this.style.background='rgba(255,107,43,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">💬 回复</button>
+                  <button onclick="showReportMenu('comment',${c.id})" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:12px;margin-left:auto;opacity:0.5;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">🚫</button>
+                </div>
+                ${replyCount > 0 ? `
+                  <div style="margin-top:8px;padding:8px 0 0;background:var(--bg);border-radius:12px;padding:10px 12px">
+                    ${replyList.map(r => renderReply(r, c.id)).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          </div>`;
+      }
+
+      // 图片渲染
+      let imagesHtml = '';
+      if (data.images && data.images.length) {
+        const imgs = Array.isArray(data.images) ? data.images : data.images.split(',').filter(Boolean);
+        const imgCount = imgs.length;
+        if (imgCount === 1) {
+          const url = typeof imgs[0] === 'object' ? imgs[0].url : imgs[0];
+          const isVid = typeof imgs[0] === 'object' ? imgs[0].isVideo : /\.mp4|\.mov|\.webm/i.test(url);
+          imagesHtml = isVid
+            ? `<video src="${url}" controls style="width:100%;border-radius:14px;margin-top:12px" muted></video>`
+            : `<img src="${url}" style="width:100%;max-height:400px;object-fit:cover;border-radius:14px;margin-top:12px;cursor:zoom-in" loading="lazy" onclick="window.open(this.src)" />`;
+        } else if (imgCount === 2) {
+          imagesHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px">${imgs.map(img => {
+            const url = typeof img === 'object' ? img.url : img;
+            const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
+            return isVid ? `<video src="${url}" style="width:100%;height:200px;object-fit:cover;border-radius:12px" muted></video>` : `<img src="${url}" style="width:100%;height:200px;object-fit:cover;border-radius:12px;cursor:zoom-in" loading="lazy" onclick="window.open(this.src)" />`;
+          }).join('')}</div>`;
+        } else {
+          imagesHtml = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px">${imgs.slice(0,9).map(img => {
+            const url = typeof img === 'object' ? img.url : img;
+            const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
+            return isVid ? `<video src="${url}" style="width:100%;height:120px;object-fit:cover;border-radius:10px" muted></video>` : `<img src="${url}" style="width:100%;height:120px;object-fit:cover;border-radius:10px;cursor:zoom-in" loading="lazy" onclick="window.open(this.src)" />`;
+          }).join('')}${imgCount > 9 ? `<div style="width:100%;height:120px;background:var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text-secondary)">+${imgCount-9}</div>` : ''}</div>`;
+        }
+      }
+
+      // 标签渲染
+      const tagsHtml = (data.tags && data.tags.length) ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">${data.tags.map(t => {
+        const cfg = TAG_CONFIG[t] || { emoji: '🏷️', color: '#95A5A6' };
+        return `<span onclick="filterByTag('${t}');closeSubPage('wallDetailPage_sub')" style="display:inline-flex;align-items:center;gap:3px;padding:4px 12px;border-radius:14px;font-size:12px;background:${cfg.color}15;color:${cfg.color};cursor:pointer;transition:all 0.2s;border:1px solid ${cfg.color}25" onmouseover="this.style.background='${cfg.color}25'" onmouseout="this.style.background='${cfg.color}15'">${t}</span>`;
+      }).join('')}</div>` : '';
+
+      const aiTagsHtml = (data.ai_tags && data.ai_tags.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${data.ai_tags.map(at => `<span onclick="filterByTag('${at}');closeSubPage('wallDetailPage_sub')" style="display:inline-flex;align-items:center;gap:2px;padding:3px 10px;border-radius:12px;font-size:11px;background:#8E44AD10;color:#8E44AD;cursor:pointer;border:1px solid #8E44AD20">🤖 ${escHtml(at)}</span>`).join('')}</div>` : '';
+
       const el = document.getElementById('wallDetailContent');
       el.innerHTML = `
-        <div class="wall-card" style="box-shadow:none;padding:0">
-          <div class="wall-card-header">
-            <div class="wall-avatar" style="${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? 'overflow:hidden' : ''}">${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? '<img src="'+escHtml(data.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />' : (data.avatar && /\p{Emoji}/u.test(data.avatar) && data.avatar.length<=2 ? data.avatar : (data.nickname||'匿')[0])}</div>
-            <div><div class="wall-nickname">${escHtml(data.nickname||'匿名')}</div><div class="wall-time">${timeAgo(data.created_at)}</div></div>
-          </div>
-          <div class="wall-content">${escHtml(data.content)}</div>
-          ${(data.tags && data.tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">' + data.tags.map(t => {
-            const cfg = TAG_CONFIG[t] || { emoji: '🏷️', color: '#95A5A6' };
-            return '<span onclick="filterByTag(\''+t+'\');closeSubPage(\'wallDetailPage_sub\')" style="display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:12px;font-size:12px;background:'+cfg.color+'18;color:'+cfg.color+';cursor:pointer">'+cfg.emoji+' '+t+'</span>';
-          }).join('') + '</div>' : ''}
-        ${(data.ai_tags && data.ai_tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' + data.ai_tags.map(at => '<span onclick="filterByTag(\''+at+'\');closeSubPage(\'wallDetailPage_sub\')" style="display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:10px;font-size:11px;background:#8E44AD12;color:#8E44AD;cursor:pointer">🤖 '+escHtml(at)+'</span>').join('') + '</div>' : ''}
-        ${data.images && data.images.length ? '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">' + (Array.isArray(data.images) ? data.images : data.images.split(',').filter(Boolean)).map(img => {
-          const url = typeof img === 'object' ? img.url : img;
-          const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
-          return isVid ? '<video src="' + url + '" controls style="width:100%;max-width:320px;border-radius:12px"></video>' : '<img src="' + url + '" style="width:100%;max-width:320px;border-radius:12px" loading="lazy" onclick="window.open(this.src)" />';
-        }).join('') + '</div>' : ''}
-          <div class="wall-actions"><button class="wall-action" onclick="event.stopPropagation();doWallLike(${data.id},this)">❤️ <span>${data.like_count||0}</span></button></div>
-        </div>
-        <div style="margin-top:16px">
-          <div style="font-weight:700;margin-bottom:8px">评论 (${comments.length})</div>
-          ${topLevel.length ? topLevel.map(c => `
-            <div class="comment-item">
-              <div style="display:flex;align-items:flex-start;gap:8px">
-                <div class="wall-avatar" style="width:28px;height:28px;font-size:12px;flex-shrink:0;${c.avatar && (c.avatar.startsWith('/') || c.avatar.startsWith('http')) ? 'overflow:hidden' : ''}">${c.avatar && (c.avatar.startsWith('/') || c.avatar.startsWith('http')) ? '<img src="'+escHtml(c.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />' : (c.avatar && /\p{Emoji}/u.test(c.avatar) && c.avatar.length<=2 ? c.avatar : (c.nickname||'匿')[0])}</div>
-                <div style="flex:1;min-width:0">
-                  <span class="comment-nickname">${escHtml(c.nickname||'匿名')}</span>
-              <div class="comment-text">${escHtml(c.content)}</div>
-              <div class="comment-actions">
-                <span class="comment-time">${timeAgo(c.created_at)}</span>
-                <button class="comment-action-btn" onclick="doCommentLike(${c.id},this)">❤️ <span>${c.like_count||0}</span></button>
-                <button class="comment-action-btn" onclick="replyToComment(${c.id},'${escHtml(c.nickname||'匿名')}','${c.phone}')" style="color:var(--text-secondary,#999)">💬 回复</button>
-              </div>
-              ${(replyMap[c.id]||[]).map(r => `
-                <div class="comment-reply-item">
-                  <span class="reply-tag">回复</span>
-                  <span class="comment-nickname">${escHtml(r.nickname||'匿名')}</span>
-                  ${r.reply_to_nickname ? '<span style="font-size:12px;color:var(--text-secondary)"> 回复 </span><span class="comment-nickname">' + escHtml(r.reply_to_nickname) + '</span>' : ''}
-                  <div class="comment-text">${escHtml(r.content)}</div>
-                  <div class="comment-actions">
-                    <span class="comment-time">${timeAgo(r.created_at)}</span>
-                    <button class="comment-action-btn" onclick="doCommentLike(${r.id},this)">❤️ <span>${r.like_count||0}</span></button>
-                    <button class="comment-action-btn" onclick="replyToComment(${c.id},'${escHtml(r.nickname||'匿名')}','${r.phone}')" style="color:var(--text-secondary,#999)">💬 回复</button>
-                  </div>
-                </div>
-              `).join('')}
-                </div><!-- /flex:1 -->
-              </div><!-- /flex row -->
+        <!-- 帖子主体 -->
+        <div style="padding:16px;background:var(--card);border-radius:0 0 16px 16px;margin-bottom:10px">
+          <!-- 作者信息 -->
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            ${avatarHtml(data.avatar, data.nickname, 44)}
+            <div style="flex:1;min-width:0">
+              <div style="font-size:16px;font-weight:700;color:var(--text)">${escHtml(data.nickname||'匿名')}</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${timeAgo(data.created_at)}</div>
             </div>
-          `).join('') : '<div style="color:var(--text-secondary);font-size:13px;padding:8px 0">暂无评论</div>'}
+            <button onclick="showReportMenu('post',${data.id})" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer;padding:6px 10px;border-radius:50%;transition:all 0.2s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">⋯</button>
+          </div>
+
+          <!-- 帖子内容 -->
+          <div style="font-size:16px;line-height:1.8;color:var(--text);word-break:break-word;white-space:pre-wrap">${escHtml(data.content)}</div>
+
+          <!-- 标签 -->
+          ${tagsHtml}${aiTagsHtml}
+
+          <!-- 图片 -->
+          ${imagesHtml}
+
+          <!-- 互动栏 -->
+          <div style="display:flex;align-items:center;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+            <button onclick="event.stopPropagation();doWallLike(${data.id},this)" style="display:flex;align-items:center;gap:5px;padding:8px 16px;border-radius:24px;border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);font-size:14px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='#E74C3C';this.style.color='#E74C3C';this.style.background='rgba(231,76,60,0.06)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)';this.style.background='var(--bg)'">❤️ <span>${data.like_count||0}</span></button>
+            <button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border-radius:24px;border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);font-size:14px;cursor:default">💬 <span>${comments.length}</span></button>
+            <div style="flex:1"></div>
+            <button onclick="showReportMenu('post',${data.id})" style="display:flex;align-items:center;gap:4px;padding:8px 14px;border-radius:24px;border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);font-size:13px;cursor:pointer;transition:all 0.2s;opacity:0.6" onmouseover="this.style.opacity='1';this.style.borderColor='#E74C3C';this.style.color='#E74C3C'" onmouseout="this.style.opacity='0.6';this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">🚫 举报</button>
+          </div>
         </div>
-        <div class="comment-input-bar">
-          <input id="wallCommentInput" placeholder="写评论..." />
-          <button id="wallCommentSendBtn" onclick="submitWallComment(${data.id})">发送</button>
+
+        <!-- 评论区 -->
+        <div style="background:var(--card);border-radius:16px;padding:16px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-size:17px;font-weight:800;color:var(--text)">💬 评论</span>
+            <span style="font-size:13px;color:var(--text-secondary);background:var(--border);padding:2px 10px;border-radius:12px">${comments.length}</span>
+          </div>
+          ${topLevel.length ? topLevel.map((c, i) => renderTopComment(c, i)).join('') : '<div style="text-align:center;padding:32px 0;color:var(--text-secondary)"><div style="font-size:40px;margin-bottom:8px">💭</div><div style="font-size:14px">暂无评论，来说两句吧~</div></div>'}
+        </div>
+
+        <!-- 评论输入框 -->
+        <div style="position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:10px;align-items:center;border-radius:16px 16px 0 0">
+          <div id="cancelReplyHint" style="display:none;font-size:11px;color:#FF6B2B;background:rgba(255,107,43,0.1);padding:3px 10px;border-radius:10px;white-space:nowrap;cursor:pointer" onclick="cancelReply()">✕ 取消回复</div>
+          <input id="wallCommentInput" placeholder="写评论..." style="flex:1;border:1px solid var(--border);border-radius:24px;padding:10px 18px;font-size:14px;outline:none;background:var(--bg);color:var(--text);transition:border-color 0.2s" onfocus="this.style.borderColor='#FF6B2B'" onblur="this.style.borderColor='var(--border)'" />
+          <button id="wallCommentSendBtn" onclick="submitWallComment(${data.id})" style="background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:#fff;border:none;border-radius:24px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.2s;box-shadow:0 2px 8px rgba(255,107,43,0.3)" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">发送</button>
         </div>
       `;
       openSubPage('wallDetailPage_sub');
-      /* overflow managed by sub-page */
     }
 
 
@@ -950,6 +1183,626 @@
       setTimeout(() => showSettings(), 200);
     }
 
+    // ══════ P0-1: 举报功能 ══════
+    function showReportMenu(targetType, targetId) {
+      const reasons = ['广告推广', '色情低俗', '诈骗信息', '人身攻击', '虚假信息', '侵权内容', '其他'];
+      const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super');
+      const overlay = document.createElement('div');
+      overlay.id = 'reportOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s';
+      overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+      const adminActions = (isAdmin && targetType === 'post') ? `
+        <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">管理操作</div>
+          <div style="display:flex;gap:8px">
+            <button onclick="togglePinPost(${targetId})" style="flex:1;padding:10px;background:#E74C3C12;border:1px solid #E74C3C30;border-radius:12px;cursor:pointer;font-size:13px;color:#E74C3C;font-weight:600">📌 置顶/取消</button>
+            <button onclick="toggleFeaturePost(${targetId})" style="flex:1;padding:10px;background:#F39C1212;border:1px solid #F39C1230;border-radius:12px;cursor:pointer;font-size:13px;color:#F39C12;font-weight:600">⭐ 精华/取消</button>
+          </div>
+        </div>` : '';
+      overlay.innerHTML = `
+        <div style="background:var(--card-bg);border-radius:16px 16px 0 0;width:100%;max-width:420px;padding:20px 16px 32px;animation:slideUp 0.3s">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:17px;font-weight:700">🚫 举报</div>
+            <button onclick="document.getElementById('reportOverlay').remove()" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer">✕</button>
+          </div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">请选择举报原因</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${reasons.map(r => `
+              <button onclick="doReport('${targetType}',${targetId},'${r}')" style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:12px;cursor:pointer;text-align:left;font-size:14px;color:var(--text);transition:all 0.15s" onmouseover="this.style.borderColor='#E74C3C';this.style.background='#E74C3C08'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
+                <span style="font-size:16px">${{ '广告推广': '📢', '色情低俗': '🔞', '诈骗信息': '🎣', '人身攻击': '👊', '虚假信息': '❌', '侵权内容': '⚖️', '其他': '📝' }[r]}</span>
+                ${r}
+              </button>
+            `).join('')}
+          </div>
+          ${adminActions}
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    async function togglePinPost(postId) {
+      const overlay = document.getElementById('reportOverlay');
+      if (overlay) overlay.remove();
+      try {
+        const res = await fetch('/api/wall/pin/' + postId, { method: 'POST', headers: API._headers() });
+        const data = await res.json();
+        showToast(data.is_pinned ? '已置顶' : '已取消置顶');
+        loadWallFeed();
+      } catch(e) { showToast('操作失败'); }
+    }
+
+    async function toggleFeaturePost(postId) {
+      const overlay = document.getElementById('reportOverlay');
+      if (overlay) overlay.remove();
+      try {
+        const res = await fetch('/api/wall/feature/' + postId, { method: 'POST', headers: API._headers() });
+        const data = await res.json();
+        showToast(data.is_featured ? '已标记精华' : '已取消精华');
+        loadWallFeed();
+      } catch(e) { showToast('操作失败'); }
+    }
+
+    async function doReport(targetType, targetId, reason) {
+      const overlay = document.getElementById('reportOverlay');
+      if (overlay) overlay.remove();
+      try {
+        const res = await API.wallReport(targetType, targetId, reason);
+        if (res.ok) showToast('举报成功，我们会尽快处理');
+        else showToast(res.error || '举报失败');
+      } catch(e) { showToast('举报失败，请稍后重试'); }
+    }
+
+    // ══════ P0-2: 无限滚动 ══════
+    let _wallPage = 1;
+    let _wallLoading = false;
+    let _wallHasMore = true;
+
+    function setupWallInfiniteScroll() {
+      const feedEl = document.getElementById('wallFeed');
+      if (!feedEl) return;
+      // 使用 IntersectionObserver 监听最后一个卡片
+      const lastCard = feedEl.querySelector('.wall-card:last-child');
+      if (!lastCard) return;
+      if (window._wallScrollObs) window._wallScrollObs.disconnect();
+      window._wallScrollObs = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !_wallLoading && _wallHasMore) {
+          loadMoreWallPosts();
+        }
+      }, { rootMargin: '200px' });
+      window._wallScrollObs.observe(lastCard);
+    }
+
+    async function loadMoreWallPosts() {
+      if (_wallLoading || !_wallHasMore || !currentUser) return;
+      _wallLoading = true;
+      _wallPage++;
+      try {
+        const params = { tab: wallTab === 'mine' ? 'latest' : wallTab, phone: currentUser.phone, page: _wallPage };
+        if (wallTagFilter) params.tag = wallTagFilter;
+        const data = await API.wallFeed(params);
+        const newPosts = Array.isArray(data) ? data : [];
+        if (newPosts.length === 0) {
+          _wallHasMore = false;
+        } else {
+          wallPosts = wallPosts.concat(newPosts);
+          if (wallTab === 'mine') wallPosts = wallPosts.filter(p => p.phone === currentUser.phone);
+          renderWallFeed();
+        }
+      } catch(e) { console.error('加载更多失败:', e); _wallPage--; }
+      _wallLoading = false;
+    }
+
+    // ══════ P0-4: 话题频道系统 ══════
+    const ALL_TAG_KEYS = Object.keys(TAG_CONFIG);
+
+    // 获取用户自定义的标签配置（从 localStorage）
+    function getUserTagConfig() {
+      try {
+        const saved = localStorage.getItem('wallTagConfig');
+        if (saved) return JSON.parse(saved);
+      } catch(e) {}
+      return null;
+    }
+
+    function saveUserTagConfig(config) {
+      try { localStorage.setItem('wallTagConfig', JSON.stringify(config)); } catch(e) {}
+    }
+
+    // 获取活跃标签列表（用于频道栏渲染）
+    function getActiveTags() {
+      const config = getUserTagConfig();
+      if (!config) return [...ALL_TAG_KEYS];
+      // active 中是用户启用的标签（有序），补充新增标签
+      const disabled = config.disabled || [];
+      const newTags = ALL_TAG_KEYS.filter(k => !config.active.includes(k) && !disabled.includes(k));
+      return [...config.active, ...newTags];
+    }
+
+    // 获取最终渲染顺序的频道列表
+    function getOrderedChannels() {
+      const orderedKeys = getActiveTags();
+      return [
+        { key: 'all', name: '全部', emoji: '🔥' },
+        ...orderedKeys.map(k => ({ key: k, name: k, emoji: TAG_CONFIG[k].emoji }))
+      ];
+    }
+
+    let _expandedCategory = null; // 当前展开的大分类
+
+    function renderWallChannels() {
+      const el = document.getElementById('wallChannels');
+      if (!el) return;
+      const config = getUserTagConfig();
+      const activeCategories = config ? config.active : TAG_CATEGORIES.map(c => c.key);
+      const disabledSet = new Set(config ? (config.disabled || []) : []);
+
+      let html = `<button onclick="filterByTag('')" style="display:inline-flex;align-items:center;gap:3px;padding:6px 12px;border-radius:20px;border:none;font-size:12px;font-weight:${!wallTagFilter?'700':'500'};cursor:pointer;transition:all 0.2s;flex-shrink:0;white-space:nowrap;background:${!wallTagFilter?'var(--gradient)':'var(--card)'};color:${!wallTagFilter?'#fff':'var(--text)'};box-shadow:${!wallTagFilter?'0 2px 8px #FF6B2B30':'0 1px 3px rgba(0,0,0,0.06)'}">全部</button>`;
+
+      activeCategories.forEach(catKey => {
+        if (disabledSet.has(catKey)) return;
+        const cat = TAG_CATEGORIES.find(c => c.key === catKey);
+        if (!cat) return;
+        const isExpanded = _expandedCategory === catKey;
+        const isCatActive = wallTagFilter === catKey;
+        const isSubActive = cat.children.some(sub => wallTagFilter === sub);
+
+        // 大分类按钮
+        html += `<button id="catBtn_${catKey}" onclick="toggleCategoryExpand('${catKey}')" style="display:inline-flex;align-items:center;gap:3px;padding:6px 12px;border-radius:20px;border:none;font-size:12px;font-weight:${isCatActive||isSubActive?'700':'500'};cursor:pointer;transition:all 0.2s;flex-shrink:0;white-space:nowrap;background:${isCatActive?'var(--gradient)':isSubActive?cat.color+'18':'var(--card)'};color:${isCatActive?'#fff':isSubActive?cat.color:'var(--text)'};box-shadow:${isCatActive?'0 2px 8px #FF6B2B30':'0 1px 3px rgba(0,0,0,0.06)'}">${cat.key} <span style="font-size:9px;transition:transform 0.2s;transform:rotate(${isExpanded?'180':'0'}deg);display:inline-block">▼</span></button>`;
+      });
+
+      el.innerHTML = html;
+      setTimeout(updateChannelArrows, 50);
+      el.onscroll = updateChannelArrows;
+    }
+
+    function toggleCategoryExpand(catKey) {
+      if (_expandedCategory === catKey) {
+        _expandedCategory = null;
+        hideSubTagDropdown();
+        // 取消筛选
+        wallTagFilter = '';
+        _wallPage = 1; _wallHasMore = true; wallPosts = [];
+        loadWallFeed();
+        renderWallChannels();
+        return;
+      }
+      _expandedCategory = catKey;
+      wallTagFilter = catKey;
+      _wallPage = 1; _wallHasMore = true; wallPosts = [];
+      loadWallFeed();
+      renderWallChannels();
+      // 延迟显示下拉面板（等按钮渲染完）
+      requestAnimationFrame(() => showSubTagDropdown(catKey));
+    }
+
+    function showSubTagDropdown(catKey) {
+      const btn = document.getElementById('catBtn_' + catKey);
+      if (!btn) return;
+      const cat = TAG_CATEGORIES.find(c => c.key === catKey);
+      if (!cat) return;
+      const config = getUserTagConfig();
+      const disabledSet = new Set(config ? (config.disabled || []) : []);
+
+      // 移除旧面板
+      hideSubTagDropdown();
+
+      const rect = btn.getBoundingClientRect();
+      const panel = document.createElement('div');
+      panel.id = 'subTagDropdownPanel';
+      panel.style.cssText = `position:fixed;top:${rect.bottom + 6}px;left:${rect.left}px;z-index:9999;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:10px;display:flex;flex-wrap:wrap;gap:6px;min-width:160px;max-width:300px;animation:subTagFadeIn 0.15s ease`;
+
+      cat.children.filter(sub => !disabledSet.has(sub)).forEach(sub => {
+        const isSubSel = wallTagFilter === sub;
+        const btnEl = document.createElement('button');
+        btnEl.textContent = sub;
+        btnEl.style.cssText = `display:inline-flex;align-items:center;gap:2px;padding:5px 12px;border-radius:14px;border:1px solid ${isSubSel?cat.color:'var(--border)'};font-size:12px;font-weight:${isSubSel?'600':'400'};cursor:pointer;transition:all 0.2s;white-space:nowrap;background:${isSubSel?cat.color+'18':'var(--card)'};color:${isSubSel?cat.color:'var(--text-secondary)'}`;
+        btnEl.onclick = function(e) {
+          e.stopPropagation();
+          wallTagFilter = sub;
+          _expandedCategory = null;
+          hideSubTagDropdown();
+          _wallPage = 1; _wallHasMore = true; wallPosts = [];
+          loadWallFeed();
+          renderWallChannels();
+        };
+        panel.appendChild(btnEl);
+      });
+
+      document.body.appendChild(panel);
+
+      // 如果面板超出右侧屏幕，调整位置
+      const panelRect = panel.getBoundingClientRect();
+      if (panelRect.right > window.innerWidth - 8) {
+        panel.style.left = (window.innerWidth - panelRect.width - 8) + 'px';
+      }
+    }
+
+    function hideSubTagDropdown() {
+      const old = document.getElementById('subTagDropdownPanel');
+      if (old) old.remove();
+    }
+
+    // 点击其他区域关闭下拉
+    document.addEventListener('click', function(e) {
+      if (_expandedCategory && !e.target.closest('#subTagDropdownPanel') && !e.target.closest('#wallChannels')) {
+        _expandedCategory = null;
+        hideSubTagDropdown();
+        renderWallChannels();
+      }
+    });
+
+    function updateChannelArrows() {
+      const el = document.getElementById('wallChannels');
+      const leftBtn = document.getElementById('wallChannelLeft');
+      const rightBtn = document.getElementById('wallChannelRight');
+      if (!el || !leftBtn || !rightBtn) return;
+      const hasOverflow = el.scrollWidth > el.clientWidth + 2;
+      const canScrollLeft = el.scrollLeft > 2;
+      const canScrollRight = el.scrollLeft < el.scrollWidth - el.clientWidth - 2;
+      leftBtn.style.opacity = (hasOverflow && canScrollLeft) ? '1' : '0';
+      leftBtn.style.pointerEvents = (hasOverflow && canScrollLeft) ? 'auto' : 'none';
+      rightBtn.style.opacity = (hasOverflow && canScrollRight) ? '1' : '0';
+      rightBtn.style.pointerEvents = (hasOverflow && canScrollRight) ? 'auto' : 'none';
+    }
+
+    function scrollWallChannels(dir) {
+      const el = document.getElementById('wallChannels');
+      if (!el) return;
+      el.scrollBy({ left: dir * 200, behavior: 'smooth' });
+    }
+
+    // ══════ 标签管理器（层级版） ══════
+    function openTagManager() {
+      // 重新构建标签（可能有自定义变更）
+      TAG_CATEGORIES = buildTagCategories();
+      // 重建反向映射
+      Object.keys(_subToCategory).forEach(k => delete _subToCategory[k]);
+      TAG_CATEGORIES.forEach(cat => cat.children.forEach(sub => { _subToCategory[sub] = cat.key; }));
+
+      let el = document.getElementById('tagManagerPage_sub');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'tagManagerPage_sub';
+        el.className = 'sub-page';
+        document.querySelector('.app').appendChild(el);
+      }
+      const config = getUserTagConfig();
+      const activeCats = config ? config.active : TAG_CATEGORIES.map(c => c.key);
+      const disabledSet = new Set(config ? (config.disabled || []) : []);
+      const customSubs = getCustomSubTags();
+      const baseSubs = {};
+      _BASE_CATEGORIES.forEach(c => baseSubs[c.key] = new Set(c.children));
+
+      // 按大分类渲染
+      let bodyHtml = '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">点击切换启用/禁用，可添加或删除自定义子标签</div>';
+
+      TAG_CATEGORIES.forEach(cat => {
+        const isCatActive = activeCats.includes(cat.key) && !disabledSet.has(cat.key);
+        const activeSubs = cat.children.filter(sub => !disabledSet.has(sub));
+
+        bodyHtml += `<div style="margin-bottom:16px;padding:12px;background:var(--card);border-radius:12px;border:1px solid var(--border)">`;
+        // 大分类头
+        bodyHtml += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span onclick="toggleCategoryInManager('${cat.key}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;border:1.5px solid ${isCatActive?cat.color:'var(--border)'};background:${isCatActive?cat.color+'18':'var(--bg)'};color:${isCatActive?cat.color:'var(--text-light)'};transition:all 0.2s">${cat.key}</span>
+          <span style="font-size:11px;color:var(--text-light)">${activeSubs.length}/${cat.children.length}</span>
+        </div>`;
+        // 子标签
+        bodyHtml += `<div style="display:flex;flex-wrap:wrap;gap:5px;padding-left:4px;align-items:center">`;
+        cat.children.forEach(sub => {
+          const isSubActive = !disabledSet.has(sub);
+          const isCustom = !baseSubs[cat.key]?.has(sub);
+          bodyHtml += `<span style="display:inline-flex;align-items:center;gap:2px;padding:3px 10px;border-radius:14px;font-size:11px;cursor:pointer;transition:all 0.2s;border:1px solid ${isSubActive?cat.color+'60':'var(--border)'};background:${isSubActive?cat.color+'10':'var(--bg)'};color:${isSubActive?cat.color:'var(--text-light)'};opacity:${isSubActive?'1':'0.5'}" onclick="toggleSubTagInManager('${sub}')">${sub}<span onclick="event.stopPropagation();deleteSubTag('${cat.key}','${sub}',${isCustom})" style="margin-left:3px;font-size:10px;color:${isCustom?'#E74C3C':'var(--text-light)'};font-weight:700;cursor:pointer;opacity:0.6" title="${isCustom?'删除自定义标签':'禁用标签'}" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">✕</span></span>`;
+        });
+        // 添加子标签按钮
+        bodyHtml += `<button onclick="promptAddSubTag('${cat.key}')" style="display:inline-flex;align-items:center;gap:2px;padding:3px 10px;border-radius:14px;font-size:11px;cursor:pointer;transition:all 0.2s;border:1px dashed var(--border);background:var(--bg);color:var(--text-light)">+ 添加</button>`;
+        bodyHtml += `</div></div>`;
+      });
+
+      el.innerHTML = `
+        <div class="sub-page-header">
+          <button class="sub-page-back" onclick="closeSubPage('tagManagerPage_sub')">←</button>
+          <span class="sub-page-title">管理标签</span>
+          <button onclick="resetTagOrder()" style="margin-left:auto;padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text-secondary);font-size:11px;cursor:pointer">恢复默认</button>
+        </div>
+        <div class="sub-page-body" style="padding:16px">${bodyHtml}</div>
+      `;
+      openSubPage('tagManagerPage_sub');
+    }
+
+    // 添加自定义子标签
+    function promptAddSubTag(catKey) {
+      const cat = TAG_CATEGORIES.find(c => c.key === catKey);
+      if (!cat) return;
+      // 弹窗形式
+      const overlay = document.createElement('div');
+      overlay.id = 'addSubTagModal';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:10000;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.15s ease';
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `width:300px;background:var(--card);border-radius:16px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,0.2);animation:subTagFadeIn 0.2s ease`;
+      dialog.innerHTML = `
+        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px">添加子标签到「${cat.key}」</div>
+        <input id="addSubTagInput" type="text" maxlength="6" placeholder="输入标签名（1-6个字）" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none;transition:border 0.2s;box-sizing:border-box" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'" />
+        <div id="addSubTagError" style="font-size:11px;color:#E74C3C;margin-top:6px;display:none"></div>
+        <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+          <button id="addSubTagCancel" style="padding:8px 18px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text-secondary);font-size:13px;cursor:pointer;transition:all 0.2s">取消</button>
+          <button id="addSubTagConfirm" style="padding:8px 18px;border-radius:10px;border:none;background:var(--gradient);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s">添加</button>
+        </div>
+      `;
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+
+      const input = document.getElementById('addSubTagInput');
+      const errEl = document.getElementById('addSubTagError');
+      input.focus();
+
+      function close() { document.getElementById('addSubTagModal')?.remove(); }
+
+      function confirm() {
+        const val = input.value.trim();
+        if (!val || val.length < 1 || val.length > 6) {
+          errEl.textContent = '标签名需1-6个字';
+          errEl.style.display = 'block';
+          return;
+        }
+        if (cat.children.includes(val)) {
+          errEl.textContent = '该标签已存在';
+          errEl.style.display = 'block';
+          return;
+        }
+        close();
+        // 执行添加
+        const custom = getCustomSubTags();
+        if (!custom[catKey]) custom[catKey] = [];
+        custom[catKey].push(val);
+        saveCustomSubTags(custom);
+        TAG_CATEGORIES = buildTagCategories();
+        Object.keys(_subToCategory).forEach(k => delete _subToCategory[k]);
+        TAG_CATEGORIES.forEach(c => c.children.forEach(sub => { _subToCategory[sub] = c.key; }));
+        const config = getUserTagConfig() || { active: TAG_CATEGORIES.map(c => c.key), disabled: [] };
+        config.disabled = config.disabled.filter(k => k !== val);
+        saveUserTagConfig(config);
+        syncCategoryMap();
+        openTagManager();
+        renderWallChannels();
+      }
+
+      document.getElementById('addSubTagCancel').onclick = close;
+      document.getElementById('addSubTagConfirm').onclick = confirm;
+      input.onkeydown = function(e) { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') close(); };
+      overlay.onclick = function(e) { if (e.target === overlay) close(); };
+    }
+
+    // 删除子标签（自定义标签彻底删除，默认标签禁用）
+    function deleteSubTag(catKey, sub, isCustom) {
+      if (isCustom) {
+        // 自定义标签：彻底删除
+        const custom = getCustomSubTags();
+        if (!custom[catKey]) return;
+        custom[catKey] = custom[catKey].filter(s => s !== sub);
+        if (custom[catKey].length === 0) delete custom[catKey];
+        saveCustomSubTags(custom);
+      }
+      // 无论是自定义还是默认标签，都从启用列表移除
+      const config = getUserTagConfig() || { active: TAG_CATEGORIES.map(c => c.key), disabled: [] };
+      if (!config.disabled.includes(sub)) config.disabled.push(sub);
+      saveUserTagConfig(config);
+      // 重建
+      TAG_CATEGORIES = buildTagCategories();
+      Object.keys(_subToCategory).forEach(k => delete _subToCategory[k]);
+      TAG_CATEGORIES.forEach(c => c.children.forEach(s => { _subToCategory[s] = c.key; }));
+      syncCategoryMap();
+      openTagManager();
+      renderWallChannels();
+    }
+
+    // 删除自定义子标签（旧接口，保留兼容）
+    function removeCustomSubTag(catKey, sub) {
+      const custom = getCustomSubTags();
+      if (!custom[catKey]) return;
+      custom[catKey] = custom[catKey].filter(s => s !== sub);
+      if (custom[catKey].length === 0) delete custom[catKey];
+      saveCustomSubTags(custom);
+      // 从 disabled 中也移除
+      const config = getUserTagConfig() || { active: TAG_CATEGORIES.map(c => c.key), disabled: [] };
+      config.disabled = config.disabled.filter(k => k !== sub);
+      saveUserTagConfig(config);
+      // 重建
+      TAG_CATEGORIES = buildTagCategories();
+      Object.keys(_subToCategory).forEach(k => delete _subToCategory[k]);
+      TAG_CATEGORIES.forEach(c => c.children.forEach(s => { _subToCategory[s] = c.key; }));
+      syncCategoryMap();
+      openTagManager();
+      renderWallChannels();
+    }
+
+    // 同步后端 CATEGORY_MAP
+    function syncCategoryMap() {
+      // 将自定义标签同步到后端
+      const map = {};
+      TAG_CATEGORIES.forEach(cat => { map[cat.key] = cat.children; });
+      try { fetch('/api/wall/category-map', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(map) }); } catch(e) {}
+    }
+
+    // 切换大分类启用/禁用（影响其所有子标签）
+    function toggleCategoryInManager(catKey) {
+      const config = getUserTagConfig() || { active: TAG_CATEGORIES.map(c => c.key), disabled: [] };
+      const cat = TAG_CATEGORIES.find(c => c.key === catKey);
+      if (!cat) return;
+      const isCatActive = config.active.includes(catKey) && !config.disabled.includes(catKey);
+      if (isCatActive) {
+        // 禁用整个分类
+        config.active = config.active.filter(k => k !== catKey);
+        if (!config.disabled.includes(catKey)) config.disabled.push(catKey);
+        cat.children.forEach(sub => { if (!config.disabled.includes(sub)) config.disabled.push(sub); });
+      } else {
+        // 启用整个分类
+        config.disabled = config.disabled.filter(k => k !== catKey && !cat.children.includes(k));
+        if (!config.active.includes(catKey)) config.active.push(catKey);
+      }
+      saveUserTagConfig(config);
+      openTagManager();
+      renderWallChannels();
+    }
+
+    // 切换子标签启用/禁用
+    function toggleSubTagInManager(sub) {
+      const config = getUserTagConfig() || { active: TAG_CATEGORIES.map(c => c.key), disabled: [] };
+      const catKey = _subToCategory[sub];
+      const cat = TAG_CATEGORIES.find(c => c.key === catKey);
+      if (!cat) return;
+      if (config.disabled.includes(sub)) {
+        // 启用子标签
+        config.disabled = config.disabled.filter(k => k !== sub);
+        // 确保大分类也启用
+        if (!config.active.includes(catKey)) config.active.push(catKey);
+        if (config.disabled.includes(catKey)) config.disabled = config.disabled.filter(k => k !== catKey);
+      } else {
+        // 禁用子标签
+        config.disabled.push(sub);
+        // 如果所有子标签都禁用了，大分类也禁用
+        const allSubsDisabled = cat.children.every(c => config.disabled.includes(c));
+        if (allSubsDisabled) {
+          config.active = config.active.filter(k => k !== catKey);
+          if (!config.disabled.includes(catKey)) config.disabled.push(catKey);
+        }
+      }
+      saveUserTagConfig(config);
+      openTagManager();
+      renderWallChannels();
+    }
+
+    function renderTagPill(tag, active, index) {
+      const cfg = TAG_CONFIG[tag];
+      return `<span class="tag-pill" draggable="true" data-tag="${tag}" data-active="${active}"
+        onclick="toggleTagPill('${tag}')"
+        ondragstart="onTagPillDragStart(event)"
+        ondragend="onTagPillDragEnd(event)"
+        style="display:inline-flex;align-items:center;gap:3px;padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;transition:all 0.2s;user-select:none;
+        border:1.5px solid ${active ? cfg.color : 'var(--border)'};
+        background:${active ? cfg.color + '18' : 'var(--bg)'};
+        color:${active ? cfg.color : 'var(--text-light)'};
+        font-weight:${active ? '600' : '400'};
+        opacity:${active ? '1' : '0.7'}">${tag}</span>`;
+    }
+
+    // 点击切换标签使用状态
+    function toggleTagPill(tag) {
+      const config = getUserTagConfig() || { active: [...ALL_TAG_KEYS], disabled: [] };
+      const activeIdx = config.active.indexOf(tag);
+      const disabledIdx = config.disabled.indexOf(tag);
+
+      if (activeIdx >= 0) {
+        // 从使用中移除到未使用
+        config.active.splice(activeIdx, 1);
+        if (disabledIdx < 0) config.disabled.push(tag);
+      } else if (disabledIdx >= 0) {
+        // 从未使用移到使用中
+        config.disabled.splice(disabledIdx, 1);
+        config.active.push(tag);
+      }
+      saveUserTagConfig(config);
+      openTagManager();
+      renderWallChannels();
+    }
+
+    // 小按钮拖拽
+    let _dragPillTag = null;
+    let _dragPillFrom = null;
+    function onTagPillDragStart(e) {
+      _dragPillTag = e.currentTarget.dataset.tag;
+      _dragPillFrom = e.currentTarget.dataset.active === 'true' ? 'active' : 'inactive';
+      e.currentTarget.style.opacity = '0.3';
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', _dragPillTag);
+    }
+    function onTagPillDragEnd(e) {
+      e.currentTarget.style.opacity = '';
+      document.querySelectorAll('#tagActiveZone,#tagInactiveZone').forEach(z => {
+        z.style.borderColor = 'var(--border)';
+        z.style.background = 'var(--card)';
+      });
+    }
+    function onTagPillDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const zone = e.currentTarget;
+      zone.style.borderColor = 'var(--primary)';
+      zone.style.background = 'var(--primary)08';
+    }
+    function onTagPillDrop(e, targetZone) {
+      e.preventDefault();
+      const tag = _dragPillTag;
+      if (!tag) return;
+      const config = getUserTagConfig() || { active: [...ALL_TAG_KEYS], disabled: [] };
+
+      if (targetZone === 'active') {
+        // 拖到使用区
+        // 先从 disabled 移除
+        const di = config.disabled.indexOf(tag);
+        if (di >= 0) config.disabled.splice(di, 1);
+        // 如果不在 active 中，插入
+        if (!config.active.includes(tag)) {
+          const activeZone = document.getElementById('tagActiveZone');
+          const pills = activeZone.querySelectorAll('.tag-pill');
+          let insertIdx = config.active.length;
+          for (const pill of pills) {
+            const rect = pill.getBoundingClientRect();
+            const midX = rect.left + rect.width / 2;
+            if (e.clientX < midX) {
+              const ti = config.active.indexOf(pill.dataset.tag);
+              if (ti >= 0) { insertIdx = ti; break; }
+            }
+          }
+          config.active.splice(insertIdx, 0, tag);
+        } else {
+          // 已在使用中，调整顺序
+          const fromIdx = config.active.indexOf(tag);
+          config.active.splice(fromIdx, 1);
+          const activeZone = document.getElementById('tagActiveZone');
+          const pills = activeZone.querySelectorAll('.tag-pill');
+          let insertIdx = config.active.length;
+          for (const pill of pills) {
+            const rect = pill.getBoundingClientRect();
+            const midX = rect.left + rect.width / 2;
+            if (e.clientX < midX) {
+              const ti = config.active.indexOf(pill.dataset.tag);
+              if (ti >= 0) { insertIdx = ti; break; }
+            }
+          }
+          config.active.splice(insertIdx, 0, tag);
+        }
+      } else {
+        // 拖到未使用区：从 active 移到 disabled
+        const ai = config.active.indexOf(tag);
+        if (ai >= 0) config.active.splice(ai, 1);
+        if (!config.disabled.includes(tag)) config.disabled.push(tag);
+      }
+
+      saveUserTagConfig(config);
+      openTagManager();
+      renderWallChannels();
+    }
+
+    function resetTagOrder() {
+      localStorage.removeItem('wallTagConfig');
+      openTagManager();
+      renderWallChannels();
+    }
+
+    // 重写 filterByTag 以支持频道和重置分页
+    const _origFilterByTag = window.filterByTag;
+    window.filterByTag = function(tag) {
+      wallTagFilter = tag;
+      _wallPage = 1;
+      _wallHasMore = true;
+      wallPosts = [];
+      loadWallFeed();
+      renderWallChannels();
+    };
+
+    // ══════ P0-5: 评论楼中楼优化 ══════
+    // 在 showWallDetail 中已支持嵌套，这里优化评论区的视觉样式
+
 // ── Window exports ──
 window.replyToComment = replyToComment;
 window.toggleCommentEmoji = toggleCommentEmoji;
@@ -994,3 +1847,24 @@ window.userChatUpload = userChatUpload;
 window.openChatFromOrder = openChatFromOrder;
 window.showChatPrivacyOptions = showChatPrivacyOptions;
 window.setChatPrivacy = setChatPrivacy;
+window.showReportMenu = showReportMenu;
+window.doReport = doReport;
+window.loadMoreWallPosts = loadMoreWallPosts;
+window.renderWallChannels = renderWallChannels;
+window.togglePostTag = togglePostTag;
+window.renderPostTagGrid = renderPostTagGrid;
+window.openTagManager = openTagManager;
+window.toggleTagPill = toggleTagPill;
+window.toggleCategoryInManager = toggleCategoryInManager;
+window.toggleSubTagInManager = toggleSubTagInManager;
+window.toggleCategoryExpand = toggleCategoryExpand;
+window.promptAddSubTag = promptAddSubTag;
+window.removeCustomSubTag = removeCustomSubTag;
+window.deleteSubTag = deleteSubTag;
+window.togglePostTagSection = togglePostTagSection;
+window.onTagPillDragStart = onTagPillDragStart;
+window.onTagPillDragEnd = onTagPillDragEnd;
+window.onTagPillDragOver = onTagPillDragOver;
+window.onTagPillDrop = onTagPillDrop;
+window.resetTagOrder = resetTagOrder;
+window.scrollWallChannels = scrollWallChannels;
