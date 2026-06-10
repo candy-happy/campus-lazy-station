@@ -1098,11 +1098,20 @@
     // 发送分享消息到指定会话
     async function sendShareMessageToConv(convId, postId) {
       try {
-        const msgText = '[分享了一条帖子] #' + postId;
+        // 获取帖子详情构建分享内容
+        let shareContent;
+        try {
+          const post = await API.wallPostDetail(postId);
+          if (post && !post.error) {
+            shareContent = buildShareContent(post);
+          }
+        } catch(e) {}
+        if (!shareContent) shareContent = '[SHARE_POST]{"id":' + postId + ',"content":"","author":"","images":[],"time":""}';
+
         const res = await API.chatSend({
           conversation_id: convId,
           sender_phone: currentUser.phone,
-          content: msgText,
+          content: shareContent,
           type: 'share_post'
         });
         if (res.error) {
@@ -1114,6 +1123,20 @@
       } catch(e) {
         showToast('分享失败，请重试');
       }
+    }
+
+    // 构建分享消息内容
+    function buildShareContent(post) {
+      const data = {
+        id: post.id,
+        content: (post.content || '').replace(/\s+/g, ' ').trim().substring(0, 80),
+        author: post.nickname || '',
+        images: (post.images || []).slice(0, 3).map(function(img) {
+          return typeof img === 'string' ? img : (img.url || '');
+        }),
+        time: post.created_at || ''
+      };
+      return '[SHARE_POST]' + JSON.stringify(data);
     }
 
     function backToChatList() {
@@ -1141,6 +1164,8 @@
           content = '<img src="'+escHtml(c)+'" style="max-width:100%;border-radius:8px;display:block;cursor:pointer" onclick="window.open(this.src)" />';
         } else if (m.type === 'video') {
           content = '<video src="'+escHtml(c)+'" style="max-width:100%;border-radius:8px;display:block" controls preload="metadata"></video>';
+        } else if (m.type === 'share_post') {
+          content = renderSharePostCard(c);
         } else if (c.startsWith('[ANIM:')) {
           const p=c.slice(6,c.length-1).split(':');
           content = '<span class="anim-'+p[1]+'" style="font-size:36px;display:inline-block">'+p[0]+'</span>';
@@ -1156,6 +1181,39 @@
         `;
       }).join('');
       el.scrollTop = el.scrollHeight;
+    }
+
+    // 渲染分享帖子卡片
+    function renderSharePostCard(content) {
+      // 兼容旧的分享格式 [分享了一条帖子] #44
+      if (content.indexOf('[SHARE_POST]') !== 0) {
+        var oldMatch = content.match(/#(\d+)/);
+        if (oldMatch) {
+          return '<div style="background:var(--bg);border-radius:12px;padding:12px;border:1px solid var(--border)"><div style="font-size:13px;color:var(--text-muted);margin-bottom:6px">📤 分享了一条帖子</div><div style="font-size:14px">' + escHtml(content) + '</div><button onclick="showWallDetail(' + oldMatch[1] + ')" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:var(--primary);color:#fff;border:none;font-size:13px;cursor:pointer">查看帖子</button></div>';
+        }
+        return escHtml(content);
+      }
+      try {
+        var data = JSON.parse(content.substring(12));
+        var preview = data.content || '';
+        var author = data.author || '';
+        var time = data.time ? data.time.substring(0, 16) : '';
+        var images = (data.images || []).filter(function(u) { return u; });
+        var imgsHtml = images.length > 0
+          ? '<div style="display:flex;gap:4px;margin-top:8px">' + images.map(function(u) {
+              return '<img src="' + u + '" style="width:56px;height:56px;border-radius:8px;object-fit:cover" />';
+            }).join('') + '</div>'
+          : '';
+        return '<div style="background:var(--bg);border-radius:12px;padding:12px;border:1px solid var(--border);max-width:280px">' +
+          '<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">📤 分享了一条校园墙帖子</div>' +
+          (preview ? '<div style="font-size:14px;line-height:1.5;margin-bottom:4px">' + escHtml(preview) + '</div>' : '') +
+          (author ? '<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">——' + escHtml(author) + (time ? ' · ' + time : '') + '</div>' : '') +
+          imgsHtml +
+          '<button onclick="showWallDetail(' + data.id + ')" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:var(--primary);color:#fff;border:none;font-size:13px;cursor:pointer">查看帖子</button>' +
+          '</div>';
+      } catch(e) {
+        return escHtml(content);
+      }
     }
 
 
@@ -1547,6 +1605,15 @@
           btn.style.background = 'linear-gradient(135deg,#FF6B2B,#FF8F5E)';
           btn.style.opacity = '0.7';
           btn.style.cursor = 'default';
+
+          // 先获取帖子详情
+          var shareContent;
+          try {
+            var post = await API.wallPostDetail(postId);
+            if (post && !post.error) shareContent = buildShareContent(post);
+          } catch(e) {}
+          if (!shareContent) shareContent = '[SHARE_POST]{"id":' + postId + ',"content":"","author":"","images":[],"time":""}';
+
           var targets = Array.from(selected);
           var success = 0;
           var fail = 0;
@@ -1561,7 +1628,7 @@
                 await API.chatSend({
                   conversation_id: convRes.id,
                   sender_phone: currentUser.phone,
-                  content: '[分享了一条帖子] #' + postId,
+                  content: shareContent,
                   type: 'share_post'
                 });
                 success++;
