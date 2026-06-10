@@ -119,7 +119,7 @@
                 <div id="discoverHotActivities" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none"></div>
               </div>
               <!-- 分类筛选 -->
-              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
                 <span class="discover-act-cat-chip active" data-cat="" onclick="filterActCategory('')">全部</span>
                 <span class="discover-act-cat-chip" data-cat="讲座" onclick="filterActCategory('讲座')">🎤 讲座</span>
                 <span class="discover-act-cat-chip" data-cat="比赛" onclick="filterActCategory('比赛')">🏆 比赛</span>
@@ -127,6 +127,17 @@
                 <span class="discover-act-cat-chip" data-cat="志愿" onclick="filterActCategory('志愿')">💛 志愿</span>
                 <span class="discover-act-cat-chip" data-cat="演出" onclick="filterActCategory('演出')">🎭 演出</span>
                 <span class="discover-act-cat-chip" data-cat="运动" onclick="filterActCategory('运动')">⚽ 运动</span>
+                <span class="discover-act-view-toggle" id="discoverActViewToggle" onclick="toggleActView()" style="margin-left:auto;padding:6px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:13px;cursor:pointer">📅 日历</span>
+              </div>
+              <!-- 日历视图 -->
+              <div id="discoverCalendarView" style="display:none;margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                  <button onclick="calendarPrevMonth()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px">◀</button>
+                  <span id="calendarMonthLabel" style="font-size:15px;font-weight:700"></span>
+                  <button onclick="calendarNextMonth()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px">▶</button>
+                </div>
+                <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center"></div>
+                <div id="calendarDateActivities" style="margin-top:12px"></div>
               </div>
               <!-- 活动列表 -->
               <div id="discoverActivityList"></div>

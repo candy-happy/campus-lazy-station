@@ -95,7 +95,7 @@ router.post('/', requireAuth, actUpload.single('cover'), async (req, res) => JSO
 
 // ─── 活动列表（公开可访问） ─────────────────────────────────────────────
 router.get('/', (req, res) => JSON_RES(res, () => {
-  const { category, publisher_type, publisher_id, status, search, page = 1, limit = 20 } = req.query;
+  const { category, publisher_type, publisher_id, status, search, start_date, end_date, page = 1, limit = 20 } = req.query;
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 20));
   const offset = (pageNum - 1) * limitNum;
@@ -109,6 +109,8 @@ router.get('/', (req, res) => JSON_RES(res, () => {
   if (status) { sql += ' AND status = ?'; params.push(status); }
   else { sql += " AND status != 'cancelled'"; }
   if (search) { sql += ' AND (title LIKE ? OR description LIKE ?)'; params.push('%' + search + '%', '%' + search + '%'); }
+  if (start_date) { sql += " AND start_time >= ?"; params.push(start_date); }
+  if (end_date) { sql += " AND start_time <= ?"; params.push(end_date + ' 23:59:59'); }
 
   const countSql = sql.replace('SELECT *', 'SELECT COUNT(*) as cnt');
   const total = db.prepare(countSql).get(...params).cnt;

@@ -10,6 +10,11 @@
   let discoverActCategory = '';
   let discoverClubCategory = '';
   let discoverSearch = '';
+  let _actViewMode = 'list'; // 'list' | 'calendar'
+  let _calendarYear = new Date().getFullYear();
+  let _calendarMonth = new Date().getMonth() + 1;
+  let _calendarActivities = [];
+  let _calendarSelectedDate = null;
 
 // ─── 切换发现页Tab ──────────────────────────────────────
 function switchDiscoverTab(tab) {
@@ -166,7 +171,149 @@ function filterActCategory(cat) {
   document.querySelectorAll('.discover-act-cat-chip').forEach(c => {
     c.classList.toggle('active', c.dataset.cat === discoverActCategory);
   });
-  loadDiscoverActivities();
+  if (_actViewMode === 'calendar') {
+    loadCalendarActivities();
+  } else {
+    loadDiscoverActivities();
+  }
+}
+
+// ─── 日历视图 ──────────────────────────────────────────
+function toggleActView() {
+  _actViewMode = _actViewMode === 'list' ? 'calendar' : 'list';
+  const toggle = document.getElementById('discoverActViewToggle');
+  const calView = document.getElementById('discoverCalendarView');
+  const listView = document.getElementById('discoverActivityList');
+  const pubBtn = document.querySelector('#discoverActivitiesSection > button');
+
+  if (_actViewMode === 'calendar') {
+    if (toggle) toggle.textContent = '📋 列表';
+    if (calView) calView.style.display = 'block';
+    if (listView) listView.style.display = 'none';
+    if (pubBtn) pubBtn.style.display = 'none';
+    const now = new Date();
+    _calendarYear = now.getFullYear();
+    _calendarMonth = now.getMonth() + 1;
+    loadCalendarActivities();
+  } else {
+    if (toggle) toggle.textContent = '📅 日历';
+    if (calView) calView.style.display = 'none';
+    if (listView) listView.style.display = 'block';
+    if (pubBtn) pubBtn.style.display = 'block';
+    loadDiscoverActivities();
+  }
+}
+
+async function loadCalendarActivities() {
+  const y = _calendarYear, m = _calendarMonth;
+  const startDate = `${y}-${String(m).padStart(2,'0')}-01`;
+  const endDate = `${y}-${String(m).padStart(2,'0')}-${new Date(y, m, 0).getDate()}`;
+  try {
+    const params = { start_date: startDate, end_date: endDate, limit: 100 };
+    if (discoverActCategory) params.category = discoverActCategory;
+    if (discoverSearch) params.search = discoverSearch;
+    const res = await API.getActivities(params);
+    _calendarActivities = res.list || [];
+  } catch(e) { _calendarActivities = []; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const label = document.getElementById('calendarMonthLabel');
+  if (label) label.textContent = `${_calendarYear}年${_calendarMonth}月`;
+
+  const grid = document.getElementById('calendarGrid');
+  if (!grid) return;
+
+  const days = ['日','一','二','三','四','五','六'];
+  let html = days.map(d => `<div style="font-size:11px;color:var(--text-muted);padding:4px 0">${d}</div>`).join('');
+
+  const firstDay = new Date(_calendarYear, _calendarMonth - 1, 1).getDay();
+  const daysInMonth = new Date(_calendarYear, _calendarMonth, 0).getDate();
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  // 活动按日期分组
+  const dateMap = {};
+  _calendarActivities.forEach(a => {
+    const d = a.start_time ? a.start_time.substring(0, 10) : '';
+    if (!dateMap[d]) dateMap[d] = [];
+    dateMap[d].push(a);
+  });
+
+  for (let i = 0; i < firstDay; i++) html += '<div></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${_calendarYear}-${String(_calendarMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const acts = dateMap[dateStr] || [];
+    const isToday = dateStr === todayStr;
+    const isSelected = dateStr === _calendarSelectedDate;
+    const hasActs = acts.length > 0;
+
+    let bg = 'var(--bg)';
+    if (isSelected) bg = 'var(--gradient-start)';
+    else if (isToday) bg = 'rgba(52,152,219,0.15)';
+
+    html += `<div onclick="calendarSelectDate('${dateStr}')" style="padding:6px 2px;border-radius:8px;cursor:pointer;background:${bg};${isSelected ? 'color:#fff' : ''};min-height:36px">
+      <div style="font-size:13px;${isToday && !isSelected ? 'font-weight:700;color:#3498DB' : ''}">${d}</div>
+      ${hasActs ? `<div style="display:flex;gap:1px;justify-content:center;margin-top:2px">${acts.slice(0,3).map(() => '<span style="width:4px;height:4px;border-radius:50%;background:' + (isSelected ? '#fff' : 'var(--gradient-start)') + ';display:inline-block"></span>').join('')}</div>` : ''}
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+
+  // 如果已选日期，显示该日活动
+  if (_calendarSelectedDate) {
+    showCalendarDateActivities(_calendarSelectedDate);
+  }
+}
+
+function calendarSelectDate(dateStr) {
+  _calendarSelectedDate = _calendarSelectedDate === dateStr ? null : dateStr;
+  renderCalendar();
+  if (_calendarSelectedDate) {
+    showCalendarDateActivities(_calendarSelectedDate);
+  } else {
+    const container = document.getElementById('calendarDateActivities');
+    if (container) container.innerHTML = '';
+  }
+}
+
+function showCalendarDateActivities(dateStr) {
+  const container = document.getElementById('calendarDateActivities');
+  if (!container) return;
+  const acts = _calendarActivities.filter(a => a.start_time && a.start_time.substring(0, 10) === dateStr);
+  if (acts.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">这天没有活动</div>`;
+    return;
+  }
+  container.innerHTML = `<div style="font-size:14px;font-weight:600;margin-bottom:8px">📅 ${dateStr} 的活动 (${acts.length})</div>` +
+    acts.map(a => {
+      const timeStr = a.start_time ? a.start_time.substring(11, 16) : '';
+      const catColors = { '讲座':'#3498DB','比赛':'#E74C3C','聚会':'#F39C12','志愿':'#2ECC71','演出':'#9B59B6','运动':'#1ABC9C' };
+      const catColor = catColors[a.category] || '#95A5A6';
+      return `<div onclick="showActivityDetail(${a.id})" style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:10px">
+        <div style="background:${catColor};color:#fff;border-radius:8px;padding:4px 8px;font-size:11px;white-space:nowrap">${a.category || '活动'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(a.title)}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${timeStr} · ${a.location || '待定'}</div>
+        </div>
+        <span style="font-size:12px;color:var(--text-muted)">${a.current_count || 0}/${a.max_participants || '∞'}</span>
+      </div>`;
+    }).join('');
+}
+
+function calendarPrevMonth() {
+  if (_calendarMonth === 1) { _calendarMonth = 12; _calendarYear--; }
+  else _calendarMonth--;
+  _calendarSelectedDate = null;
+  loadCalendarActivities();
+}
+function calendarNextMonth() {
+  if (_calendarMonth === 12) { _calendarMonth = 1; _calendarYear++; }
+  else _calendarMonth++;
+  _calendarSelectedDate = null;
+  loadCalendarActivities();
 }
 
 // ─── 社团模块 ──────────────────────────────────────────
@@ -852,5 +999,9 @@ function initDiscoverPage() {
   window.closeClubTransferModal = closeClubTransferModal;
   window.confirmTransferClub = confirmTransferClub;
   window.dissolveClub = dissolveClub;
+  window.toggleActView = toggleActView;
+  window.calendarPrevMonth = calendarPrevMonth;
+  window.calendarNextMonth = calendarNextMonth;
+  window.calendarSelectDate = calendarSelectDate;
   window.initDiscoverPage = initDiscoverPage;
 })();
