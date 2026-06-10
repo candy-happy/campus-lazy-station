@@ -160,42 +160,23 @@ async function showPetDetail(id) {
   // 目击记录
   try {
     const sightings = await API.getPetSightings(id);
-    if (sightings && sightings.length > 0) {
-      var sightHtml = '<div style="padding:0 16px 12px"><div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:8px">\u{1F4CD} 最近目击 (' + sightings.length + ')</div>';
-      sightings.slice(0, 10).forEach(function(s) {
-        var sAvatar = (s.user_avatar && s.user_avatar.startsWith('/')) ? '<img src="' + escHtml(s.user_avatar) + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover">' : '<span style="font-size:1rem">\u{1F464}</span>';
-        var sName = escHtml(s.user_nickname || s.nickname || '匿名');
-        var sLoc = s.location ? ' \u{1F4CD}' + escHtml(s.location) : '';
-        var sNote = s.note ? '<span style="color:#666;font-size:12px"> - ' + escHtml(s.note) + '</span>' : '';
-        var sPhoto = s.photo ? '<div style="margin-top:4px"><img src="' + escHtml(s.photo) + '" style="max-width:80px;max-height:60px;border-radius:6px;object-fit:cover" onclick="previewImage(this.src)"></div>' : '';
-        sightHtml += '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5">' +
-          sAvatar +
-          '<div style="flex:1;font-size:13px"><div><strong>' + sName + '</strong>' + sLoc + sNote + '</div>' + sPhoto + '</div>' +
-          '<span style="font-size:11px;color:#aaa;white-space:nowrap">' + fmtTime(s.created_at) + '</span></div>';
-      });
-      sightHtml += '</div>';
-      document.getElementById('petProfileCard').innerHTML += sightHtml;
-    }
+    window._petSightingsAll = sightings || [];
+    renderPetSightings('init');
   } catch(e) {}
 
   // 相关校园墙
+  window._petRelatedAll = data.relatedPosts || [];
   const relatedDiv = document.getElementById('petRelatedPosts');
-  if (data.relatedPosts && data.relatedPosts.length) {
+  if (window._petRelatedAll.length) {
     relatedDiv.style.display = 'block';
-    document.getElementById('petRelatedPostList').innerHTML = data.relatedPosts.map(p => {
-      const imgs = (p.images || []).slice(0, 3).map(img => '<img src="' + escHtml(img) + '">').join('');
-      return '<div class="pet-related-post" onclick="closeSubPage(\'petDetailPage_sub\');setTimeout(()=>showWallDetail(' + p.id + '),100)">' +
-        '<div class="author">' + escHtml(p.nickname || '匿名') + ' · ' + fmtTime(p.created_at) + '</div>' +
-        '<div class="content">' + escHtml(p.content) + '</div>' +
-        (imgs ? '<div class="images">' + imgs + '</div>' : '') +
-      '</div>';
-    }).join('');
+    renderPetRelatedPosts('init');
   } else {
     relatedDiv.style.display = 'none';
   }
 
   // 留言列表
-  renderPetComments(data.comments || []);
+  window._petCommentsAll = data.comments || [];
+  renderPetComments('init');
 
   // emoji面板
   const emojiPanel = document.getElementById('petEmojiPanel');
@@ -206,31 +187,91 @@ async function showPetDetail(id) {
 
 
 
-function renderPetComments(comments) {
-  const container = document.getElementById('petCommentList');
-  if (!comments.length) {
+
+// ─── 分页展开状态 ──────────────────────────────────────
+var _petSightingsPage = 0;
+var _petRelatedPage = 0;
+var _petCommentsPage = 0;
+var _PET_PAGE_INIT = { sightings: 5, related: 3, comments: 5 };
+
+function renderSightingItem(s) {
+  var sAvatar = (s.user_avatar && s.user_avatar.startsWith('/')) ? '<img src="' + escHtml(s.user_avatar) + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover">' : '<span style="font-size:1rem">\u{1F464}</span>';
+  var sName = escHtml(s.user_nickname || s.nickname || '匿名');
+  var sLoc = s.location ? ' \u{1F4CD}' + escHtml(s.location) : '';
+  var sNote = s.note ? '<span style="color:#666;font-size:12px"> - ' + escHtml(s.note) + '</span>' : '';
+  var sPhoto = s.photo ? '<div style="margin-top:4px"><img src="' + escHtml(s.photo) + '" style="max-width:80px;max-height:60px;border-radius:6px;object-fit:cover" onclick="previewImage(this.src)"></div>' : '';
+  return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5">' +
+    sAvatar + '<div style="flex:1;font-size:13px"><div><strong>' + sName + '</strong>' + sLoc + sNote + '</div>' + sPhoto + '</div>' +
+    '<span style="font-size:11px;color:#aaa;white-space:nowrap">' + fmtTime(s.created_at) + '</span></div>';
+}
+
+function renderPetSightings(mode) {
+  var all = window._petSightingsAll || [];
+  if (!all.length) return;
+  if (mode === 'init') _petSightingsPage = 0;
+  var limit = _petSightingsPage === 0 ? _PET_PAGE_INIT.sightings : 999;
+  var shown = all.slice(0, limit);
+  var more = all.length > shown.length;
+  var sightHtml = '<div id="petSightingsBlock" style="padding:0 16px 12px"><div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:8px">\u{1F4CD} 最近目击 (' + all.length + ')</div>';
+  shown.forEach(function(s) { sightHtml += renderSightingItem(s); });
+  if (more) sightHtml += '<div onclick="renderPetSightings(\'expand\')" style="text-align:center;padding:8px;color:var(--primary,#ff6a88);font-size:13px;cursor:pointer;font-weight:600">展开更多目击 (' + (all.length - shown.length) + '条) ▾</div>';
+  sightHtml += '</div>';
+  var existing = document.getElementById('petSightingsBlock');
+  if (existing) existing.outerHTML = sightHtml;
+  else document.getElementById('petProfileCard').innerHTML += sightHtml;
+  if (mode === 'expand') _petSightingsPage = 1;
+}
+
+function renderPetRelatedPosts(mode) {
+  var all = window._petRelatedAll || [];
+  if (!all.length) return;
+  if (mode === 'init') _petRelatedPage = 0;
+  var limit = _petRelatedPage === 0 ? _PET_PAGE_INIT.related : 999;
+  var shown = all.slice(0, limit);
+  var more = all.length > shown.length;
+  var html = shown.map(function(p) {
+    var imgs = (p.images || []).slice(0, 3).map(function(img) { return '<img src="' + escHtml(img) + '">'; }).join('');
+    return '<div class="pet-related-post" onclick="closeSubPage(\'petDetailPage_sub\');setTimeout(function(){showWallDetail(' + p.id + ')},100)">' +
+      '<div class="author">' + escHtml(p.nickname || '匿名') + ' · ' + fmtTime(p.created_at) + '</div>' +
+      '<div class="content">' + escHtml(p.content) + '</div>' +
+      (imgs ? '<div class="images">' + imgs + '</div>' : '') + '</div>';
+  }).join('');
+  if (more) html += '<div onclick="renderPetRelatedPosts(\'expand\')" style="text-align:center;padding:8px;color:var(--primary,#ff6a88);font-size:13px;cursor:pointer;font-weight:600">展开更多动态 (' + (all.length - shown.length) + '条) ▾</div>';
+  document.getElementById('petRelatedPostList').innerHTML = html;
+  if (mode === 'expand') _petRelatedPage = 1;
+}
+
+function renderPetComments(mode) {
+  var all = window._petCommentsAll || [];
+  var container = document.getElementById('petCommentList');
+  if (!all.length) {
     container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary)">还没有留言，来说点什么吧~</div>';
     return;
   }
-  const myPhone = _phone() || '';
-  container.innerHTML = comments.map(c => {
-    const avatar = c.avatar && (c.avatar.startsWith('/') || c.avatar.startsWith('http'))
+  if (mode === 'init') _petCommentsPage = 0;
+  var limit = _petCommentsPage === 0 ? _PET_PAGE_INIT.comments : 999;
+  var shown = all.slice(0, limit);
+  var more = all.length > shown.length;
+  var myPhone = _phone() || '';
+  var html = shown.map(function(c) {
+    var avatar = c.avatar && (c.avatar.startsWith('/') || c.avatar.startsWith('http'))
       ? '<img class="pet-comment-avatar" src="' + escHtml(c.avatar) + '" onclick="showWallUser(\'' + c.phone + '\')">'
       : '<div class="pet-comment-avatar-ph" onclick="showWallUser(\'' + c.phone + '\')">👤</div>';
-    const images = (c.images || []).map(img => '<img src="' + escHtml(img) + '" onclick="previewImage(\'' + escHtml(img) + '\')">').join('');
-    const deleteBtn = c.phone === myPhone ? '<span style="color:var(--danger);font-size:11px;cursor:pointer;margin-left:8px" onclick="event.stopPropagation();deletePetComment(' + c.id + ')">删除</span>' : '';
-    return '<div class="pet-comment-item">' +
-      '<div class="pet-comment-header">' +
-        avatar +
-        '<div style="flex:1">' +
-          '<span class="pet-comment-name" onclick="showWallUser(\'' + c.phone + '\')">' + escHtml(c.nickname || '匿名') + '</span>' +
-          '<span class="pet-comment-time"> · ' + fmtTime(c.created_at) + '</span>' + deleteBtn +
-        '</div>' +
-      '</div>' +
+    var images = (c.images||[]).map(function(i){ return '<img src="'+escHtml(i)+'" onclick="previewImage(this.src)">'; }).join('');
+    var deleteBtn = c.phone === myPhone ? '<span style="color:var(--danger);font-size:11px;cursor:pointer;margin-left:8px" onclick="event.stopPropagation();deletePetComment('+c.id+')">删除</span>' : '';
+    return '<div class="pet-comment-item"><div class="pet-comment-header">' +
+      avatar +
+      '<div style="display:flex;flex-direction:column;flex:1">' +
+        '<span class="pet-comment-name" onclick="showWallUser(\'' + c.phone + '\')">' + escHtml(c.nickname || '匿名') + '</span>' +
+        '<span class="pet-comment-time"> · ' + fmtTime(c.created_at) + '</span>' + deleteBtn +
+      '</div></div>' +
       '<div class="pet-comment-content">' + escHtml(c.content) + '</div>' +
       (images ? '<div class="pet-comment-media">' + images + '</div>' : '') +
     '</div>';
   }).join('');
+  if (more) html += '<div onclick="renderPetComments(\'expand\')" style="text-align:center;padding:8px;color:var(--primary,#ff6a88);font-size:13px;cursor:pointer;font-weight:600">展开更多留言 (' + (all.length - shown.length) + '条) ▾</div>';
+  container.innerHTML = html;
+  if (mode === 'expand') _petCommentsPage = 1;
 }
 
 
@@ -250,8 +291,8 @@ async function doPetLike(id) {
       btn.textContent = prevText;
       return showToast(data.error);
     }
-    btn.textContent = '❤️ 已赞 (' + data.like_count + ')';
-    btn.style.background = 'linear-gradient(135deg,#ff6a88,#ff4466)';
+    btn.textContent = data.liked ? '❤️ 已赞 (' + data.like_count + ')' : '❤️ 点赞 (' + data.like_count + ')';
+    btn.style.background = data.liked ? 'linear-gradient(135deg,#ff6a88,#ff4466)' : 'linear-gradient(135deg,#ff9a56,#ff6a88)';
   } catch(e) {
     btn.textContent = prevText;
     showToast('网络错误，请重试');
@@ -556,3 +597,5 @@ window.petToggleMediaUpload = petToggleMediaUpload;
 window.petPreviewMedia = petPreviewMedia;
 window.submitPetComment = submitPetComment;
 window.deletePetComment = deletePetComment;
+window.renderPetSightings = renderPetSightings;
+window.renderPetRelatedPosts = renderPetRelatedPosts;

@@ -205,19 +205,25 @@ router.get('/detail/:id', (req, res) => JSON_RES(res, () => {
   };
 }));
 
-// ─── 点赞猫狗（每天限1次） ──────────────────────────────────
+// ─── 点赞猫狗（当天可切换赞/取消） ─────────────────────
 router.post('/like/:id', requireAuth, (req, res) => JSON_RES(res, () => {
   const { phone } = req.body;
   if (!phone) return makeError('请先登录', ErrorCode.AUTH_001, 401);
   const pet = db.prepare('SELECT id FROM pets WHERE id = ?').get(req.params.id);
   if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
 
-  // 检查今天是否已点赞
+  // 今天是否已点赞（当天内可切换）
   const todayLike = db.prepare(
     "SELECT id FROM pet_likes WHERE pet_id = ? AND phone = ? AND date(created_at) = date('now','localtime')"
   ).get(req.params.id, phone);
-  if (todayLike) return makeError('今天已经点过赞了，明天再来吧~', ErrorCode.PARAM_001);
-
+  if (todayLike) {
+    // 当天已赞 → 取消
+    db.prepare('DELETE FROM pet_likes WHERE id = ?').run(todayLike.id);
+    db.prepare('UPDATE pets SET like_count = like_count - 1 WHERE id = ?').run(req.params.id);
+    const cnt = db.prepare('SELECT like_count FROM pets WHERE id = ?').get(req.params.id).like_count;
+    return { liked: false, like_count: cnt };
+  }
+  // 当天未赞 → 点赞
   db.prepare('INSERT INTO pet_likes (pet_id, phone) VALUES (?, ?)').run(req.params.id, phone);
   db.prepare("UPDATE pets SET like_count = like_count + 1, updated_at = datetime('now','localtime') WHERE id = ?").run(req.params.id);
   const cnt = db.prepare('SELECT like_count FROM pets WHERE id = ?').get(req.params.id).like_count;
