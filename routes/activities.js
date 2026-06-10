@@ -90,6 +90,13 @@ router.post('/', requireAuth, actUpload.single('cover'), async (req, res) => JSO
       max_participants || 0, category || '其他', pType, pId, pName, phone);
 
   logAiReview('activity', info.lastInsertRowid, phone, reviewContent, aiResult, 'pass');
+
+  // 社团活动：更新社团 activity_count
+  if (pType === 'club' && pId) {
+    db.prepare('UPDATE clubs SET activity_count = (SELECT COUNT(*) FROM activities WHERE publisher_type=? AND publisher_id=? AND status!=?) WHERE id = ?')
+      .run('club', pId, 'cancelled', pId);
+  }
+
   return { ok: true, activity_id: info.lastInsertRowid };
 }));
 
@@ -265,6 +272,13 @@ router.delete('/:id', requireAuth, (req, res) => JSON_RES(res, () => {
   if (activity.phone !== phone && req.user.type !== 'admin') return makeError('无权操作', ErrorCode.FORBIDDEN);
 
   db.prepare("UPDATE activities SET status = 'cancelled' WHERE id = ?").run(req.params.id);
+
+  // 社团活动：更新社团 activity_count
+  if (activity.publisher_type === 'club' && activity.publisher_id) {
+    db.prepare('UPDATE clubs SET activity_count = (SELECT COUNT(*) FROM activities WHERE publisher_type=? AND publisher_id=? AND status!=?) WHERE id = ?')
+      .run('club', activity.publisher_id, 'cancelled', activity.publisher_id);
+  }
+
   return { ok: true };
 }));
 
