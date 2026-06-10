@@ -245,8 +245,8 @@ async function doPetLike(id) {
   btn.textContent = '⏳...';
   const data = await API.likePet(id, phone);
   if (data.error) return showToast(data.error);
-  btn.textContent = data.liked ? '❤️ 已赞 (' + data.like_count + ')' : '🤍 点赞 (' + data.like_count + ')';
-  btn.style.background = data.liked ? 'linear-gradient(135deg,#ff6a88,#ff4466)' : 'linear-gradient(135deg,#ff9a56,#ff6a88)';
+  btn.textContent = '❤️ 已赞 (' + data.like_count + ')';
+  btn.style.background = 'linear-gradient(135deg,#ff6a88,#ff4466)';
 }
 
 

@@ -176,7 +176,7 @@ router.get('/detail/:id', (req, res) => JSON_RES(res, () => {
     }
   }
 
-  // 检查当前用户是否已点赞
+  // 检查今日是否已点赞
   let userLiked = false;
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -184,7 +184,9 @@ router.get('/detail/:id', (req, res) => JSON_RES(res, () => {
       const { verifyToken } = require('../utils/jwt');
       const decoded = verifyToken(authHeader.slice(7));
       if (decoded && decoded.phone) {
-        const likeRow = db.prepare('SELECT id FROM pet_likes WHERE pet_id = ? AND phone = ?').get(req.params.id, decoded.phone);
+        const likeRow = db.prepare(
+          "SELECT id FROM pet_likes WHERE pet_id = ? AND phone = ? AND date(created_at) = date('now','localtime')"
+        ).get(req.params.id, decoded.phone);
         userLiked = !!likeRow;
       }
     } catch (e) { /* token无效忽略 */ }
@@ -203,22 +205,23 @@ router.get('/detail/:id', (req, res) => JSON_RES(res, () => {
   };
 }));
 
-// ─── 点赞猫狗 ────────────────────────────────────────────
+// ─── 点赞猫狗（每天限1次） ──────────────────────────────────
 router.post('/like/:id', requireAuth, (req, res) => JSON_RES(res, () => {
   const { phone } = req.body;
   if (!phone) return makeError('请先登录', ErrorCode.AUTH_001, 401);
   const pet = db.prepare('SELECT id FROM pets WHERE id = ?').get(req.params.id);
   if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
-  const existing = db.prepare('SELECT id FROM pet_likes WHERE pet_id = ? AND phone = ?').get(req.params.id, phone);
-  if (existing) {
-    db.prepare('DELETE FROM pet_likes WHERE id = ?').run(existing.id);
-    db.prepare('UPDATE pets SET like_count = like_count - 1 WHERE id = ?').run(req.params.id);
-    return { liked: false, like_count: db.prepare('SELECT like_count FROM pets WHERE id = ?').get(req.params.id).like_count };
-  } else {
-    db.prepare("INSERT INTO pet_likes (pet_id, phone) VALUES (?, ?)").run(req.params.id, phone);
-    db.prepare(`UPDATE pets SET like_count = like_count + 1, updated_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
-    return { liked: true, like_count: db.prepare('SELECT like_count FROM pets WHERE id = ?').get(req.params.id).like_count };
-  }
+
+  // 检查今天是否已点赞
+  const todayLike = db.prepare(
+    "SELECT id FROM pet_likes WHERE pet_id = ? AND phone = ? AND date(created_at) = date('now','localtime')"
+  ).get(req.params.id, phone);
+  if (todayLike) return makeError('今天已经点过赞了，明天再来吧~', ErrorCode.PARAM_001);
+
+  db.prepare('INSERT INTO pet_likes (pet_id, phone) VALUES (?, ?)').run(req.params.id, phone);
+  db.prepare("UPDATE pets SET like_count = like_count + 1, updated_at = datetime('now','localtime') WHERE id = ?").run(req.params.id);
+  const cnt = db.prepare('SELECT like_count FROM pets WHERE id = ?').get(req.params.id).like_count;
+  return { liked: true, like_count: cnt };
 }));
 
 // ─── 留言 ────────────────────────────────────────────────
