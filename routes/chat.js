@@ -58,9 +58,17 @@ router.post('/conversation', requireAuth, (req, res) => JSON_RES(res, () => {
   if (authPhone !== user_phone && authPhone !== rider_phone) {
     return makeError('无权创建此会话', ErrorCode.PARAM_INVALID);
   }
-  let conv = db.prepare(
-    "SELECT * FROM conversations WHERE ((user1_phone=? AND user2_phone=?) OR (user1_phone=? AND user2_phone=?)) AND (item_id=? OR 0=?)"
-  ).get(user_phone, rider_phone, rider_phone, user_phone, order_id || 0, order_id ? 0 : 1);
+  // 查询已有会话：order_id有值时按item_id精确匹配，无值(null/0)时忽略item_id
+  let conv;
+  if (order_id) {
+    conv = db.prepare(
+      "SELECT * FROM conversations WHERE ((user1_phone=? AND user2_phone=?) OR (user1_phone=? AND user2_phone=?)) AND item_id=?"
+    ).get(user_phone, rider_phone, rider_phone, user_phone, order_id);
+  } else {
+    conv = db.prepare(
+      "SELECT * FROM conversations WHERE ((user1_phone=? AND user2_phone=?) OR (user1_phone=? AND user2_phone=?)) AND item_id IS NULL"
+    ).get(user_phone, rider_phone, rider_phone, user_phone);
+  }
   if (!conv) {
     const r = db.prepare(
       "INSERT INTO conversations (user1_phone,user2_phone,item_id,item_title,created_at) VALUES (?,?,?,?,datetime('now','localtime'))"
