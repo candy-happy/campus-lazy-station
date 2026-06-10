@@ -242,11 +242,20 @@ async function doPetLike(id) {
   const phone = _phone();
   if (!phone) { showToast('⚠️ 请重新登录'); return; }
   const btn = document.getElementById('petLikeBtn');
+  const prevText = btn.textContent;
   btn.textContent = '⏳...';
-  const data = await API.likePet(id, phone);
-  if (data.error) return showToast(data.error);
-  btn.textContent = '❤️ 已赞 (' + data.like_count + ')';
-  btn.style.background = 'linear-gradient(135deg,#ff6a88,#ff4466)';
+  try {
+    const data = await API.likePet(id, phone);
+    if (data.error) {
+      btn.textContent = prevText;
+      return showToast(data.error);
+    }
+    btn.textContent = '❤️ 已赞 (' + data.like_count + ')';
+    btn.style.background = 'linear-gradient(135deg,#ff6a88,#ff4466)';
+  } catch(e) {
+    btn.textContent = prevText;
+    showToast('网络错误，请重试');
+  }
 }
 
 
