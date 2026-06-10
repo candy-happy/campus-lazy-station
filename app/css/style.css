@@ -3094,10 +3094,11 @@
       position: relative;
     }
     .message-bubble.me .message-content {
-      background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
-      color: white;
+      background: #fff;
+      color: #333;
       border-radius: 20px 20px 6px 20px;
-      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border: 1px solid #e0e0e0;
     }
     .message-bubble.other .message-content {
       background: var(--card);
@@ -3113,7 +3114,7 @@
       bottom: 0;
       width: 0;
       height: 0;
-      border-left: 10px solid #FF8C5A;
+      border-left: 10px solid #fff;
       border-top: 10px solid transparent;
       border-bottom: 10px solid transparent;
     }
@@ -3135,7 +3136,7 @@
       text-align: right;
     }
     .message-bubble.me .message-time {
-      color: rgba(255,255,255,0.8);
+      color: #999;
       padding-right: 8px;
     }
     .message-bubble.other .message-time {
