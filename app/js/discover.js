@@ -95,6 +95,7 @@ async function showActivityDetail(id) {
   try {
     const a = await API.getActivity(id);
     if (a.error) return showToast(a.error);
+    _currentActivityDetail = a;
     const statusMap = { open: '报名中', closed: '已截止', cancelled: '已取消', ended: '已结束' };
     const statusColor = { open: '#2ECC71', closed: '#95A5A6', cancelled: '#E74C3C', ended: '#95A5A6' };
     const publisher = a.publisher_type === 'club' ? '🎭 ' + escHtml(a.publisher_name || '社团') : '👤 个人';
@@ -129,6 +130,7 @@ async function showActivityDetail(id) {
         </div>
         ${a.description ? '<div class="discover-detail-desc"><div class="discover-detail-section-title">活动详情</div><div class="discover-detail-text">' + escHtml(a.description).replace(/\\n/g, '<br>') + '</div></div>' : ''}
         <div class="discover-detail-actions">${actionBtn}</div>
+        <button onclick="openActivityPoster()" style="width:100%;padding:10px;border-radius:10px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;cursor:pointer;margin-top:8px">📤 分享海报</button>
       </div>
     `;
     openSubPage('discoverDetail_sub');
@@ -417,13 +419,16 @@ function renderClubCard(c) {
   </div>`;
 }
 
-let _currentClubId = null; // 当前查看的社团ID
+let _currentClubId = null;
+let _currentClubDetail = null; // 用于海报生成
+let _currentActivityDetail = null; // 用于活动海报 // 当前查看的社团ID
 
 async function showClubDetail(id) {
   try {
     const c = await API.getClub(id);
     if (c.error) return showToast(c.error);
     _currentClubId = id;
+    _currentClubDetail = c;
     const phone = currentUser.phone;
     const myRole = c.my_role;
     const myAppStatus = c.my_app_status;
@@ -505,6 +510,7 @@ async function showClubDetail(id) {
         <div class="discover-detail-section-title">社团成员 (${c.members ? c.members.length : 0})</div>
         <div class="discover-members-list">${membersHtml}</div>
         <div class="discover-detail-actions">${actionBtn}</div>
+        <button onclick="openClubPoster()" style="width:100%;padding:10px;border-radius:10px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;cursor:pointer;margin-top:8px">📤 分享海报</button>
       </div>
     `;
     openSubPage('discoverDetail_sub');
@@ -893,6 +899,222 @@ async function dissolveClub() {
   } catch(e) { showToast(e.message || '操作失败'); }
 }
 
+// ─── 海报生成 ──────────────────────────────────────────
+let _posterData = null; // { type:'club'|'activity', data }
+
+function openClubPoster() {
+  const club = _currentClubDetail;
+  if (!club) return;
+  _posterData = { type: 'club', data: club };
+  document.getElementById('posterModal').style.display = 'flex';
+  setTimeout(() => drawClubPoster(club), 100);
+}
+
+function openActivityPoster() {
+  const act = _currentActivityDetail;
+  if (!act) return;
+  _posterData = { type: 'activity', data: act };
+  document.getElementById('posterModal').style.display = 'flex';
+  setTimeout(() => drawActivityPoster(act), 100);
+}
+
+function closePosterModal() {
+  document.getElementById('posterModal').style.display = 'none';
+}
+
+function drawClubPoster(c) {
+  const canvas = document.getElementById('posterCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 300, H = 450;
+  canvas.width = W; canvas.height = H;
+
+  // 背景渐变
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#667eea');
+  grad.addColorStop(0.5, '#764ba2');
+  grad.addColorStop(1, '#f093fb');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // 装饰圆
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.beginPath(); ctx.arc(W-30, 50, 80, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(40, H-60, 60, 0, Math.PI*2); ctx.fill();
+
+  // 标题
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 22px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('校园社团', W/2, 60);
+
+  // 分隔线
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(50, 80); ctx.lineTo(W-50, 80); ctx.stroke();
+
+  // 社团名
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText(c.name || '未命名社团', W/2, 120);
+
+  // 分类
+  ctx.font = '14px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillText((c.category || '其他') + ' · ' + (c.member_count || 0) + '人', W/2, 148);
+
+  // 白色卡片区域
+  ctx.fillStyle = '#fff';
+  roundRect(ctx, 20, 170, W-40, 200, 14);
+  ctx.fill();
+
+  // 简介
+  ctx.fillStyle = '#333';
+  ctx.font = '14px sans-serif';
+  ctx.textAlign = 'left';
+  const desc = c.description || '欢迎加入我们的社团！';
+  wrapText(ctx, desc, 36, 200, W-72, 22);
+
+  // 底部信息
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('扫码加入 · 校园懒人效率站', W/2, 400);
+  ctx.fillText('campus-lazy-station', W/2, 420);
+
+  // 底部装饰线
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.beginPath(); ctx.moveTo(60, 435); ctx.lineTo(W-60, 435); ctx.stroke();
+}
+
+function drawActivityPoster(a) {
+  const canvas = document.getElementById('posterCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 300, H = 450;
+  canvas.width = W; canvas.height = H;
+
+  // 背景渐变（暖色系）
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#f12711');
+  grad.addColorStop(1, '#f5af19');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // 装饰
+  ctx.fillStyle = 'rgba(255,255,255,0.1)';
+  ctx.beginPath(); ctx.arc(W-20, 40, 70, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(30, H-40, 50, 0, Math.PI*2); ctx.fill();
+
+  // 标题
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 22px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('校园活动', W/2, 55);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.beginPath(); ctx.moveTo(50, 72); ctx.lineTo(W-50, 72); ctx.stroke();
+
+  // 活动名
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillText(a.title || '未命名活动', W/2, 110);
+
+  // 分类标签
+  ctx.font = '13px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillText((a.category || '活动') + ' · ' + (a.location || '待定'), W/2, 135);
+
+  // 白色卡片
+  ctx.fillStyle = '#fff';
+  roundRect(ctx, 20, 155, W-40, 180, 14);
+  ctx.fill();
+
+  // 时间
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 15px sans-serif';
+  ctx.textAlign = 'left';
+  const timeStr = a.start_time ? a.start_time.replace('T', ' ').substring(0, 16) : '待定';
+  ctx.fillText('📅 ' + timeStr, 36, 185);
+
+  // 地点
+  ctx.font = '14px sans-serif';
+  ctx.fillText('📍 ' + (a.location || '待定'), 36, 212);
+
+  // 人数
+  ctx.fillText('👥 ' + (a.current_count || 0) + '/' + (a.max_participants || '∞') + '人', 36, 239);
+
+  // 简介
+  ctx.font = '13px sans-serif';
+  ctx.fillStyle = '#555';
+  const desc = a.description || '快来参加吧！';
+  wrapText(ctx, desc, 36, 270, W-72, 20);
+
+  // 底部
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('扫码报名 · 校园懒人效率站', W/2, 400);
+  ctx.fillText('campus-lazy-station', W/2, 420);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.beginPath(); ctx.moveTo(60, 435); ctx.lineTo(W-60, 435); ctx.stroke();
+}
+
+// Canvas 辅助函数
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split('');
+  let line = '';
+  let cy = y;
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line + words[i];
+    if (ctx.measureText(testLine).width > maxWidth && line.length > 0) {
+      ctx.fillText(line, x, cy);
+      line = words[i];
+      cy += lineHeight;
+      if (cy > y + lineHeight * 5) break; // 最多5行
+    } else {
+      line = testLine;
+    }
+  }
+  if (line) ctx.fillText(line, x, cy);
+}
+
+function downloadPoster() {
+  const canvas = document.getElementById('posterCanvas');
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.download = 'poster_' + Date.now() + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('海报已保存');
+}
+
+async function sharePoster() {
+  const canvas = document.getElementById('posterCanvas');
+  if (!canvas) return;
+  try {
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if (navigator.share) {
+      await navigator.share({ files: [new File([blob], 'poster.png', { type: 'image/png' })] });
+    } else {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      showToast('海报已复制到剪贴板');
+    }
+  } catch(e) {
+    // fallback: download
+    downloadPoster();
+  }
+}
+
 // ═══════════════════════════════════════════════════════
 // ─── 创建活动弹窗 ──────────────────────────────────────
 function openCreateActivityModal() {
@@ -1045,6 +1267,11 @@ function initDiscoverPage() {
   window.closeClubTransferModal = closeClubTransferModal;
   window.confirmTransferClub = confirmTransferClub;
   window.dissolveClub = dissolveClub;
+  window.openClubPoster = openClubPoster;
+  window.openActivityPoster = openActivityPoster;
+  window.closePosterModal = closePosterModal;
+  window.downloadPoster = downloadPoster;
+  window.sharePoster = sharePoster;
   window.toggleActView = toggleActView;
   window.calendarPrevMonth = calendarPrevMonth;
   window.calendarNextMonth = calendarNextMonth;

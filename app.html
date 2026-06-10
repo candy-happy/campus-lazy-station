@@ -1026,6 +1026,21 @@
       </div>
     </div>
 
+    <!-- 海报生成弹窗 -->
+    <div id="posterModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:210;align-items:center;justify-content:center">
+      <div style="background:var(--card);border-radius:16px;width:90%;max-width:340px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:16px;font-weight:700">📤 分享海报</div>
+          <button onclick="closePosterModal()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
+        </div>
+        <canvas id="posterCanvas" width="300" height="450" style="width:100%;border-radius:12px;margin-bottom:12px"></canvas>
+        <div style="display:flex;gap:8px">
+          <button onclick="downloadPoster()" style="flex:1;padding:10px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">💾 保存图片</button>
+          <button onclick="sharePoster()" style="flex:1;padding:10px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--border);font-size:14px;cursor:pointer">📋 复制</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 社团管理子页面 -->
     <div class="sub-page" id="clubManageSub">
       <div class="sub-page-header">
