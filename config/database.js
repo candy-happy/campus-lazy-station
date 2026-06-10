@@ -196,6 +196,14 @@ db.exec(`
     UNIQUE(post_id, phone)
   );
 
+  CREATE TABLE IF NOT EXISTS wall_blocks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    blocker_phone TEXT NOT NULL,
+    blocked_phone TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(blocker_phone, blocked_phone)
+  );
+
   CREATE TABLE IF NOT EXISTS wall_reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     target_type TEXT NOT NULL DEFAULT 'post',

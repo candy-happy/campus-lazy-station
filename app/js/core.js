@@ -1,4 +1,4 @@
-// core.js - 核心工具/全局/初始化
+﻿// core.js - 核心工具/全局/初始化
 // 包含: 全局变量、i18n、工具函数、页面切换、子页面、初始化
 // 新功能请添加为独立JS模块，不要在此骨架文件中添加代码
 
@@ -8,7 +8,7 @@
     // ═══════════════════════════════════════════════════════
     const I18N = {
       zh: {
-        appName: '懒人效率站',
+        appName: '校园圈',
         campusEdition: '校园版',
         searchPlaceholder: '搜索服务、订单...',
         serviceDelivery: '代取外卖',
@@ -52,7 +52,7 @@
         langEn: 'English',
         logoutBtn: '退出登录',
         logoutConfirm: '确定退出登录？',
-        versionText: '校园懒人效率站 v3.0',
+        versionText: '校园圈 v3.0',
         moreServiceSoon: '更多服务开发中...',
         loginFirst: '请先登录',
         // ─── 订单页 ───
@@ -454,11 +454,11 @@
       setTimeout(() => d.remove(), 8000);
     };
 
-    // ═══════════════════════════════════════════════════════    // 🚀 校园懒人效率站 - 数据库版 (API驱动)
+    // ═══════════════════════════════════════════════════════    // 🚀 校园圈 - 数据库版 (API驱动)
     // ═══════════════════════════════════════════════════════
     // ══════ 状态══════
     // JS加载成功标记（页面加载后会在控制台输出）
-    console.log('[校园懒人效率站] JS加载成功 v2.1-' + new Date().toISOString().slice(0,10));
+    console.log('[校园圈] JS加载成功 v2.1-' + new Date().toISOString().slice(0,10));
     let currentUser = null;
     let orders = [];
     let coupons = [];
@@ -717,11 +717,79 @@
         const tag = pill.dataset.tag;
         pill.classList.toggle('active', tag === wallTagFilter);
       });
-      if (!wallPosts.length) {
+      
+      // 全站搜索模式：在顶部展示社团/活动结果
+      let searchExtraHtml = '';
+      if (_wallSearchMode && _globalSearchQuery) {
+        const clubs = _globalSearchClubs || [];
+        const acts = _globalSearchActs || [];
+        const pets = _globalSearchPets || [];
+        const teachers = _globalSearchTeachers || [];
+        const marketItems = _globalSearchMarket || [];
+        if (clubs.length > 0) {
+          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">🏘️ 相关社团 (' + (clubs.length) + '条)</div>';
+          clubs.forEach(c => {
+            searchExtraHtml += '<div class="wall-post" style="padding:12px;cursor:pointer;border:1px solid var(--border)" onclick="switchPage(\'discoverPage\');switchDiscoverTab(\'clubs\')">' +
+              '<div style="font-weight:600;font-size:14px">🏘️ ' + escHtml(c.name) + '</div>' +
+              '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(c.description||'') + ' · ' + (c.member_count||0) + ' 人</div>' +
+              '</div>';
+          });
+          if (clubs.length >= 50) { searchExtraHtml += '<a onclick="switchPage(\'discoverPage\');switchDiscoverTab(\'clubs\')" style="display:block;padding:8px 12px;text-align:center;font-size:12px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部社团 →</a>'; }
+        }
+        if (acts.length > 0) {
+          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">🎯 相关活动 (' + (acts.length) + '条)</div>';
+          acts.forEach(a => {
+            searchExtraHtml += '<div class="wall-post" style="padding:12px;cursor:pointer;border:1px solid var(--border)" onclick="switchPage(\'discoverPage\');switchDiscoverTab(\'activities\')">' +
+              '<div style="font-weight:600;font-size:14px">🎯 ' + escHtml(a.title) + '</div>' +
+              '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(a.location||'未知地点') + ' · ' + (a.signup_count||0) + '/' + (a.max_participants||'∞') + ' 人</div>' +
+              '</div>';
+          });
+          if (acts.length >= 50) { searchExtraHtml += '<a onclick="switchPage(\'discoverPage\');switchDiscoverTab(\'activities\')" style="display:block;padding:8px 12px;text-align:center;font-size:12px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部活动 →</a>'; }
+        }
+        if (pets.length > 0) {
+          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">🐱 相关猫狗 (' + (pets.length) + '条)</div>';
+          pets.forEach(p => {
+            const statusMap = { healthy: '😊健康', sick: '🤒生病', injured: '🤕受伤', pregnant: '🤰孕期', nursing: '🍼哺乳', quarantine: '🔒隔离', other: '❓其他' };
+            const statusText = statusMap[p.status] || '';
+            searchExtraHtml += '<div class="wall-post" style="padding:12px;cursor:pointer;border:1px solid var(--border)" onclick="switchPage(\'petPage\');showPetDetail(' + p.id + ')">' +
+              '<div style="font-weight:600;font-size:14px">🐾 ' + escHtml(p.code_name || p.name) + ' <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">' + escHtml(p.species||'') + '</span>' + (statusText ? ' · ' + statusText : '') + '</div>' +
+              '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(p.bio||p.personality||'') + ' · ' + escHtml(p.location||'') + '</div>' +
+              '</div>';
+          });
+          if (pets.length >= 50) { searchExtraHtml += '<a onclick="switchPage(\'petPage\')" style="display:block;padding:8px 12px;text-align:center;font-size:12px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部猫狗 →</a>'; }
+        }
+        if (teachers.length > 0) {
+          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">👨‍🏫 相关师说 (' + (teachers.length) + '条)</div>';
+          teachers.forEach(t => {
+            searchExtraHtml += '<div class="wall-post" style="padding:12px;cursor:pointer;border:1px solid var(--border)" onclick="switchPage(\'teacherPage\');openTeacherDetail(' + t.id + ')">' +
+              '<div style="font-weight:600;font-size:14px">👨‍🏫 ' + escHtml(t.name) + ' <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">' + escHtml(t.title||'') + '</span></div>' +
+              '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(t.college||'未知学院') + ' · ' + (t.like_count||0) + ' 👍' + '</div>' +
+              '</div>';
+          });
+          if (teachers.length >= 50) { searchExtraHtml += '<a onclick="switchPage(\'teacherPage\')" style="display:block;padding:8px 12px;text-align:center;font-size:12px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部教师 →</a>'; }
+        }
+        if (marketItems.length > 0) {
+          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">🛒 相关二手 (' + (marketItems.length) + '条)</div>';
+          marketItems.forEach(m => {
+            const priceText = m.price ? '¥' + m.price : '免费';
+            searchExtraHtml += '<div class="wall-post" style="padding:12px;cursor:pointer;border:1px solid var(--border)" onclick="switchPage(\'marketPage\');openItemDetail(' + m.id + ')">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:600;font-size:14px">🛒 ' + escHtml(m.title) + '</div><div style="font-weight:600;color:#E74C3C;font-size:14px">' + escHtml(priceText) + '</div></div>' +
+              '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(m.description||'').substring(0, 50) + ' · ' + (m.views||0) + ' 次浏览</div>' +
+              '</div>';
+          });
+          if (marketItems.length >= 50) { searchExtraHtml += '<a onclick="switchPage(\'marketPage\')" style="display:block;padding:8px 12px;text-align:center;font-size:12px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部二手 →</a>'; }
+        }
+        if (searchExtraHtml && wallPosts.length > 0) {
+          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">📱 相关帖子</div>';
+        }
+      }
+      
+      const hasSearchExtra = !!searchExtraHtml;
+      if (!wallPosts.length && !hasSearchExtra) {
         el.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-text">还没有帖子，来发第一条吧！</div></div>';
         return;
       }
-      el.innerHTML = wallPosts.map(p => {
+      el.innerHTML = searchExtraHtml + wallPosts.map(p => {
         const avatarHtml = p.avatar && (p.avatar.startsWith('/') || p.avatar.startsWith('http'))
           ? '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="'+escHtml(p.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" /></div>'
           : '<div class="wall-avatar" style="cursor:pointer" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页">'+(p.avatar && /\p{Emoji}/u.test(p.avatar) && p.avatar.length<=2 ? p.avatar : (p.nickname||'匿')[0])+'</div>';
@@ -758,9 +826,15 @@
         }).join('') + '</div>' : '';
         const aiTagsHtml = (p.ai_tags && p.ai_tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' + p.ai_tags.map(at => '<span onclick="event.stopPropagation();filterByTag(\''+at+'\')" style="display:inline-flex;align-items:center;gap:2px;padding:1px 7px;border-radius:9px;font-size:10px;background:#8E44AD12;color:#8E44AD;cursor:pointer">🤖 '+escHtml(at)+'</span>').join('') + '</div>' : '';
         const badgeHtml = (p.is_pinned ? '<span style="display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:8px;font-size:10px;background:#E74C3C18;color:#E74C3C;font-weight:600;margin-right:4px">📌 置顶</span>' : '') + (p.is_featured ? '<span style="display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:8px;font-size:10px;background:#F39C1218;color:#F39C12;font-weight:600">⭐ 精华</span>' : '');
+        // 内联操作按钮（分享/举报/拉黑/删除）
+        const actionShareBtn = '<button onclick="event.stopPropagation();doSharePost('+p.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">📤 分享</button>';
+        const actionReportBtn = '<button onclick="event.stopPropagation();showReportMenu(\'post\','+p.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">🚫 举报</button>';
+        const actionBlockBtn = (currentUser && p.phone !== currentUser.phone) ? '<button onclick="event.stopPropagation();doBlockUser(\''+escHtml(p.phone)+'\')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🚷 拉黑</button>' : '';
+        const actionDeleteBtn = ((currentUser && p.phone === currentUser.phone) || (currentUser && (currentUser.role==='admin'||currentUser.role==='super'))) ? '<button onclick="event.stopPropagation();doDeletePost('+p.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🗑️ 删除</button>' : '';
+        const inlineActionsHtml = actionShareBtn + actionReportBtn + actionBlockBtn + actionDeleteBtn;
         return `
         <div class="wall-card" style="border-radius:14px;overflow:hidden;${p.is_pinned ? 'border-left:3px solid #E74C3C' : ''}${p.is_featured ? 'border-left:3px solid #F39C12' : ''}">
-          <div class="wall-card-header">
+          <div class="wall-card-header" style="position:relative">
             ${avatarHtml}
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -769,7 +843,7 @@
               </div>
               <div class="wall-time">${timeAgo(p.created_at)}</div>
             </div>
-            <button onclick="event.stopPropagation();showReportMenu('post',${p.id})" style="background:none;border:none;font-size:18px;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:50%;transition:background 0.2s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">⋯</button>
+            <span style="position:relative;flex-shrink:0"><button class="wall-more-btn" onclick="event.stopPropagation();toggleInlineActions(this,${p.id},'${escHtml(p.phone)}',event)" title="更多" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:8px;line-height:1;transition:all 0.15s" onmouseover="this.style.background='var(--border)';this.style.color='var(--text)'" onmouseout="this.style.background='none';this.style.color='var(--text-secondary)'">⋯</button><span class="wall-inline-actions" style="display:none;position:absolute;right:0;top:100%;background:var(--card);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:6px;z-index:50;min-width:120px;margin-top:4px" onmouseleave="this.classList.remove('open')">${inlineActionsHtml}</span></span>
           </div>
           <div class="wall-content" onclick="showWallDetail(${p.id})" style="cursor:pointer;font-size:15px;line-height:1.6">${escHtml(p.content)}</div>
           ${tagsHtml}${aiTagsHtml}
@@ -777,16 +851,38 @@
           <div class="wall-actions" style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px">
             <button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button>
             <button class="wall-action" onclick="showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button>
-            <button class="wall-action" onclick="event.stopPropagation();showReportMenu('post',${p.id})" style="margin-left:auto;color:var(--text-secondary)">🚫</button>
+            <button class="wall-action" onclick="event.stopPropagation();var s=this.parentElement.parentElement.querySelector('.wall-more-btn');s&&s.click()" title="更多">⋯</button>
           </div>
         </div>
       `;
       }).join('');
+      // 底部状态：加载中 / 到底了 / 继续滚动触发
+      let html = el.innerHTML;
+      if (_wallLoading) {
+        html += '<div class="wall-loading"><div class="wall-spinner"></div><span>加载中...</span></div>';
+      } else if (!_wallHasMore) {
+        html += '<div class="wall-end">— 已经到底了 —</div>';
+      } else {
+        html += '<div class="wall-load-more-sentinel"></div>';
+      }
+      el.innerHTML = html;
       // 触发无限滚动观察
       setupWallInfiniteScroll();
     }
 
-
+    // ══════ 内联操作按钮（展开/收起） ══════
+    function toggleInlineActions(btn, postId, postPhone, ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      const wrapper = btn.parentNode;
+      // 关闭其他已展开的
+      document.querySelectorAll('.wall-inline-actions.open').forEach(el => {
+        if (el.parentNode !== wrapper) el.classList.remove('open');
+      });
+      // 切换当前
+      const actions = wrapper.querySelector('.wall-inline-actions');
+      if (actions) actions.classList.toggle('open');
+    }
+    window.toggleInlineActions = toggleInlineActions;
 
     function _avatarColor(i) {
       const colors = ['#FF6B6B,#FF8E8E','#4ECDC4,#6EE7DE','#45B7D1,#6DD5ED','#F7DC6F,#F9E894','#BB8FCE,#D2B4E0','#E59866,#F0B27A','#58D68D,#82E0AA','#5DADE2,#85C1E9'];
@@ -863,7 +959,7 @@
         const nameEl = document.getElementById('meName');
         const phoneEl = document.getElementById('mePhone');
         const avatarEl = document.getElementById('meAvatar');
-        if (nameEl) nameEl.textContent = pdata?.nickname || pdata?.name || '校园懒人';
+        if (nameEl) nameEl.textContent = pdata?.nickname || pdata?.name || '校园圈用户';
         if (phoneEl) phoneEl.textContent = fmtPhone(currentUser.phone);
         if (avatarEl) {
           const av = pdata?.avatar || avatars[parseInt(currentUser.phone.slice(-2)) % avatars.length];
@@ -876,6 +972,18 @@
         }
         const bioEl = document.getElementById('meBio');
         if (bioEl) bioEl.textContent = pdata?.bio || '';
+        // 更新资料卡背景
+        const cardEl = document.querySelector('.me-profile-card');
+        if (cardEl) {
+          if (pdata?.bg_image) {
+            cardEl.style.backgroundImage = 'url(' + pdata.bg_image + ')';
+            cardEl.style.backgroundSize = 'cover';
+            cardEl.style.backgroundPosition = 'center';
+          } else if (pdata?.bg_color) {
+            cardEl.style.backgroundImage = '';
+            cardEl.style.background = pdata.bg_color;
+          }
+        }
       } catch(e) {
         console.error('updateMePage error:', e);
       }
@@ -1185,21 +1293,39 @@ window.showToast = showToast;
       const q = document.getElementById('globalSearchInput').value.trim();
       if (!q) return;
       document.getElementById('globalSearchClear').style.display = '';
-      // 搜索校园墙帖子
+      // 并行搜索：帖子+社团+活动+猫狗+师说+二手
+      let posts = [], clubs = [], acts = [], pets = [], teachers = [], marketItems = [];
       try {
-        const data = await API.wallSearch(q, currentUser.phone);
-        const posts = Array.isArray(data) ? data : [];
-        if (posts.length > 0) {
-          wallPosts = posts;
-          _wallSearchMode = true;
-          switchPage('wallPage');
-          renderWallFeed();
-          hideGlobalSearchHints();
-          return;
-        }
+        const [wallRes, clubRes, actRes, petRes, teacherRes, marketRes] = await Promise.allSettled([
+          API.wallSearch(q, currentUser.phone),
+          API.getClubs({ search: q, limit: 50 }),
+          API.getActivities({ search: q, limit: 50 }),
+          API.getPets({ search: q, limit: 50 }),
+          API.getTeachers({ search: q, limit: 50 }),
+          API.getMarketItems({ search: q, limit: 50 })
+        ]);
+        if (wallRes.status === 'fulfilled') posts = Array.isArray(wallRes.value) ? wallRes.value : (wallRes.value && wallRes.value.value || []);
+        if (clubRes.status === 'fulfilled') clubs = Array.isArray(clubRes.value) ? clubRes.value : (clubRes.value && clubRes.value.list || []); _globalSearchClubsTotal = (clubRes.value && clubRes.value.total) || clubs.length;
+        if (actRes.status === 'fulfilled') acts = Array.isArray(actRes.value) ? actRes.value : (actRes.value && actRes.value.list || []); _globalSearchActsTotal = (actRes.value && actRes.value.total) || acts.length;
+        if (petRes.status === 'fulfilled') pets = Array.isArray(petRes.value) ? petRes.value : []; _globalSearchPetsCount = pets.length;
+        if (teacherRes.status === 'fulfilled') teachers = Array.isArray(teacherRes.value) ? teacherRes.value : (teacherRes.value && teacherRes.value.teachers || []); _globalSearchTeachersTotal = (teacherRes.value && teacherRes.value.total) || teachers.length;
+        if (marketRes.status === 'fulfilled') marketItems = Array.isArray(marketRes.value) ? marketRes.value : (marketRes.value && marketRes.value.items || []); _globalSearchMarketTotal = (marketRes.value && marketRes.value.total) || marketItems.length;
       } catch(e) {}
-      // 无结果提示
-      showToast('未找到相关内容');
+      if (posts.length === 0 && clubs.length === 0 && acts.length === 0 && pets.length === 0 && teachers.length === 0 && marketItems.length === 0) {
+        showToast('未找到相关内容');
+        hideGlobalSearchHints();
+        return;
+      }
+      wallPosts = posts;
+      _wallSearchMode = true;
+      _globalSearchClubs = clubs;
+      _globalSearchActs = acts;
+      _globalSearchPets = pets;
+      _globalSearchTeachers = teachers;
+      _globalSearchMarket = marketItems;
+      _globalSearchQuery = q;
+      switchPage('wallPage');
+      renderWallFeed();
       hideGlobalSearchHints();
     }
 
@@ -1208,6 +1334,17 @@ window.showToast = showToast;
       if (input) input.value = '';
       document.getElementById('globalSearchClear').style.display = 'none';
       _wallSearchMode = false;
+      _globalSearchClubs = [];
+      _globalSearchActs = [];
+      _globalSearchPets = [];
+      _globalSearchTeachers = [];
+      _globalSearchMarket = [];
+      _globalSearchClubsTotal = 0;
+      _globalSearchActsTotal = 0;
+      _globalSearchPetsCount = 0;
+      _globalSearchTeachersTotal = 0;
+      _globalSearchMarketTotal = 0;
+      _globalSearchQuery = '';
       hideGlobalSearchHints();
       if (typeof loadWallFeed === 'function') loadWallFeed();
     }
@@ -1218,31 +1355,98 @@ window.showToast = showToast;
       if (!q) { hints.style.display = 'none'; return; }
       clearTimeout(_globalSearchTimer);
       _globalSearchTimer = setTimeout(async () => {
+        let html = '';
         try {
+          // 1. 搜索校园墙用户
+          const users = await API.wallUsers(q);
+          const userList = Array.isArray(users) ? users : [];
+          if (userList.length > 0) {
+            html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">👤 用户</div>';
+            userList.slice(0, 5).forEach(u => {
+              html += '<div onclick="showWallUser(\'' + escHtml(u.phone) + '\');hideGlobalSearchHints()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">' +
+                '<span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">' + escHtml((u.nickname||'?')[0]) + '</span>' +
+                '<span>' + escHtml(u.nickname||u.phone) + '</span></div>';
+            });
+          }
+        } catch(e) {}
+        try {
+          // 2. 搜索校园墙帖子
           const data = await API.wallSearch(q, currentUser.phone);
-          const posts = Array.isArray(data) ? data : [];
-          let html = '';
+          const posts = Array.isArray(data) ? data : (data && data.value || []);
           if (posts.length > 0) {
             html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">📱 校园墙</div>';
             posts.slice(0, 5).forEach(p => {
               html += '<div onclick="doGlobalSearch()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">' + escHtml((p.content||'').slice(0,60)) + '</div>';
             });
           }
-          // 搜索服务关键词
-          const serviceKeywords = { '外卖': 'delivery', '快递': 'express', '打印': 'print', '跑腿': 'errand', '代买': 'purchase', '洗衣': 'laundry' };
-          const matchedServices = Object.entries(serviceKeywords).filter(([k]) => k.includes(q) || q.includes(k));
-          if (matchedServices.length > 0) {
-            html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">🛎️ 服务</div>';
-            matchedServices.forEach(([name, key]) => {
-              html += '<div onclick="showErrandServices()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">🏃 ' + name + '服务</div>';
+        } catch(e) {}
+        try {
+          // 3. 搜索社团
+          const clubData = await API.getClubs({ search: q, limit: 10 });
+          const clubs = Array.isArray(clubData) ? clubData : (clubData && clubData.list || []);
+          if (clubs.length > 0) {
+            html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">🏘️ 社团</div>';
+            clubs.slice(0, 5).forEach(c => {
+              html += '<div onclick="switchPage(\'discoverPage\');switchDiscoverTab(\'clubs\');hideGlobalSearchHints()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">🏘️ ' + escHtml(c.name) + ' <span style="font-size:10px;color:var(--text-secondary);opacity:0.6">' + (c.member_count||0) + ' 人</span></div>';
             });
           }
-          if (!html) html = '<div style="padding:12px;font-size:13px;color:var(--text-secondary);text-align:center">无搜索结果</div>';
-          hints.innerHTML = html;
-          hints.style.display = 'block';
-        } catch(e) {
-          hints.style.display = 'none';
+        } catch(e) {}
+        try {
+          // 4. 搜索活动
+          const actData = await API.getActivities({ search: q, limit: 10 });
+          const acts = Array.isArray(actData) ? actData : (actData && actData.list || []);
+          if (acts.length > 0) {
+            html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">🎯 活动</div>';
+            acts.slice(0, 5).forEach(a => {
+              html += '<div onclick="switchPage(\'discoverPage\');switchDiscoverTab(\'activities\');hideGlobalSearchHints()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">🎯 ' + escHtml(a.title) + ' <span style="font-size:10px;color:var(--text-secondary);opacity:0.6">' + (a.signup_count||0) + '/' + (a.max_participants||'∞') + '</span></div>';
+            });
+          }
+        } catch(e) {}
+        try {
+          // 5. 搜索猫狗日记
+          const petData = await API.getPets({ search: q, limit: 10 });
+          const pets = Array.isArray(petData) ? petData : [];
+          if (pets.length > 0) {
+            html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">🐱 猫狗</div>';
+            pets.slice(0, 5).forEach(p => {
+              html += '<div onclick="switchPage(\'petPage\');showPetDetail(' + p.id + ');hideGlobalSearchHints()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">🐾 ' + escHtml(p.code_name||p.name) + ' <span style="font-size:10px;color:var(--text-secondary);opacity:0.6">' + escHtml(p.species||'') + '</span></div>';
+            });
+          }
+        } catch(e) {}
+        try {
+          // 6. 搜索师说
+          const teacherData = await API.getTeachers({ search: q, limit: 10 });
+          const teachers = Array.isArray(teacherData) ? teacherData : (teacherData && teacherData.teachers || []);
+          if (teachers.length > 0) {
+            html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">👨‍🏫 师说</div>';
+            teachers.slice(0, 5).forEach(t => {
+              html += '<div onclick="switchPage(\'teacherPage\');openTeacherDetail(' + t.id + ');hideGlobalSearchHints()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">👨‍🏫 ' + escHtml(t.name) + ' <span style="font-size:10px;color:var(--text-secondary);opacity:0.6">' + escHtml(t.college||'') + '</span></div>';
+            });
+          }
+        } catch(e) {}
+        try {
+          // 7. 搜索二手市场
+          const marketData = await API.getMarketItems({ search: q, limit: 10 });
+          const items = Array.isArray(marketData) ? marketData : (marketData && marketData.items || []);
+          if (items.length > 0) {
+            html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">🛒 二手</div>';
+            items.slice(0, 5).forEach(m => {
+              html += '<div onclick="switchPage(\'marketPage\');openItemDetail(' + m.id + ');hideGlobalSearchHints()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">🛒 ' + escHtml(m.title) + '</span><span style="font-size:12px;color:#E74C3C;font-weight:600;flex-shrink:0;margin-left:8px">' + (m.price ? '¥' + m.price : '免费') + '</span></div>';
+            });
+          }
+        } catch(e) {}
+        // 8. 搜索服务关键词
+        const serviceKeywords = { '外卖': 'delivery', '快递': 'express', '打印': 'print', '跑腿': 'errand', '代买': 'purchase', '洗衣': 'laundry' };
+        const matchedServices = Object.entries(serviceKeywords).filter(([k]) => k.includes(q) || q.includes(k));
+        if (matchedServices.length > 0) {
+          html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">🛎️ 服务</div>';
+          matchedServices.forEach(([name, key]) => {
+            html += '<div onclick="showErrandServices()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">🏃 ' + name + '服务</div>';
+          });
         }
+        if (!html) html = '<div style="padding:12px;font-size:13px;color:var(--text-secondary);text-align:center">无搜索结果</div>';
+        hints.innerHTML = html;
+        hints.style.display = 'block';
       }, 300);
     }
 
@@ -1251,9 +1455,12 @@ window.showToast = showToast;
       if (hints) hints.style.display = 'none';
     }
 
-    // 点击外部关闭搜索提示
+    // 点击外部关闭搜索提示 & 内联操作按钮
     document.addEventListener('click', e => {
       if (!e.target.closest('.search-bar')) hideGlobalSearchHints();
+      if (!e.target.closest('.wall-more-btn')) {
+        document.querySelectorAll('.wall-inline-actions.open').forEach(el => el.classList.remove('open'));
+      }
     });
 
     window.doGlobalSearch = doGlobalSearch;

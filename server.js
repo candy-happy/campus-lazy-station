@@ -1,4 +1,4 @@
-// server.js - 校园懒人效率站 v3.0 (模块化架构)
+﻿// server.js - 校园圈 v3.0 (模块化架构)
 // 本文件只负责启动，所有业务逻辑在 routes/ 目录下
 const express = require('express');
 const path = require('path');
@@ -24,9 +24,11 @@ const corsOptions = {
           'http://127.0.0.1:3000',
           'http://localhost',
           'http://campus-lazy-station.local',
-          undefined // 允许无 origin 的请求（如 curl）
+          null, // 允许 file:// 等无 origin 的请求
+          undefined
         ];
-    if (allowedOrigins.includes(origin) || !origin) {
+    // 开发环境允许所有来源
+    if (config.NODE_ENV === 'development' || !origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -38,7 +40,8 @@ const corsOptions = {
   exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
 };
 app.use(require('cors')(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ limit: '1mb', extended: false }));
 app.use(rateLimit());
 
 // ─── 静态文件服务（禁用缓存） ────────────────────────────
@@ -53,17 +56,11 @@ app.use(express.static(path.join(__dirname), {
 }));
 
 // ─── uploads 目录静态服务 ────────────────────────────────
-// 禁用目录浏览，防止文件枚举遍历
 // 先添加路径遍历防护中间件
 app.use('/uploads', (req, res, next) => {
   // 防止路径遍历攻击
   if (req.url.includes('..') || req.url.includes('%2e%2e') || req.url.includes('%252e')) {
     return res.status(403).json({ error: '非法路径' });
-  }
-  // 只允许访问子目录中的文件，不允许直接列出目录
-  const parts = req.url.split('/').filter(Boolean);
-  if (parts.length === 0 || (parts.length === 1 && !parts[0].includes('.'))) {
-    return res.status(403).json({ error: '禁止目录浏览' });
   }
   next();
 });
@@ -85,8 +82,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 // ─── 认证中间件（可选，全局挂载） ──────────────────────────
 app.use(optionalAuth);
 
-// ─── 根路径重定向 ────────────────────────────────────────
-app.get('/', (req, res) => res.redirect('/app.html'));
+// ─── 根路径返回宣传页面 ──────────────────────────────────
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // ─── API 路由挂载 ────────────────────────────────────────
 // 认证
@@ -161,9 +158,18 @@ app.use('/api/clubs', require('./routes/clubs'));
 // 活动
 app.use('/api/activities', require('./routes/activities'));
 
-// ─── 404 处理 ────────────────────────────────────────────
+// ─── 404 + SPA 兜底 ───────────────────────────────────
 app.use('/api', (req, res) => {
   res.status(404).json({ error: '接口不存在', code: 'SYS_004' });
+});
+// SPA 兜底：非 API 路径的 GET 请求返回对应 HTML
+app.get('*', (req, res) => {
+  const fallbacks = { rider: 'rider.html', admin: 'admin.html' };
+  for (const [prefix, file] of Object.entries(fallbacks)) {
+    if (req.path.startsWith(`/${prefix}`)) return res.sendFile(path.join(__dirname, file));
+  }
+  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
+  res.sendFile(path.join(__dirname, 'app.html'));
 });
 
 // ─── 全局错误处理 ────────────────────────────────────────
@@ -195,15 +201,59 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ─── 启动 ────────────────────────────────────────────────
+// ─── 数据库优雅关闭 ─────────────────────────────────────
+const db = require('./config/database');
+function gracefulShutdown(signal) {
+  console.log(`\n${signal} 收到信号，正在关闭服务器...`);
+  db.close();
+  console.log('数据库连接已关闭');
+  process.exit(0);
+}
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+// ─── 未捕获异常处理（防止静默崩溃） ────────────────
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] uncaughtException:', err.message);
+  console.error(err.stack);
+  // 记录后优雅退出，让 PM2 重启
+  gracefulShutdown(err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] unhandledRejection:', reason);
+  // 不立即退出，但记录以便排查
+});
+
+// ─── 启动 ───────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`\n🦥 校园懒人效率站 v3.0 已启动！`);
+  console.log(`\n🦥 校园圈 v3.0 已启动！`);
   console.log(`🌐 http://localhost:${PORT}`);
   console.log(`📱 用户端: http://localhost:${PORT}/app.html`);
   console.log(`🚴 骑手端: http://localhost:${PORT}/rider.html`);
   console.log(`🔒 管理端: http://localhost:${PORT}/admin.html`);
-  console.log(`👤 总管理员: admin / admin123`);
   console.log(`📦 架构: 模块化 (${require('fs').readdirSync(path.join(__dirname, 'routes')).length} 个路由模块)\n`);
+  console.log('💡 提示: 使用 Ctrl+C 优雅关闭服务器，避免数据库锁问题\n');
 });
+
+// ─── uploads 定期清理（每天一次，删除30天前的文件） ─────
+(function cleanupUploads() {
+  const fs = require('fs');
+  const uploadsDir = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(uploadsDir)) return;
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  let cleaned = 0;
+  const walk = (dir) => {
+    try {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) { walk(full); try { fs.rmdirSync(full); } catch(_){} }
+        else if (fs.statSync(full).mtimeMs < cutoff) { fs.unlinkSync(full); cleaned++; }
+      }
+    } catch(_) {}
+  };
+  walk(uploadsDir);
+  if (cleaned > 0) console.log(`[uploads] 清理了 ${cleaned} 个过期文件`);
+  setTimeout(cleanupUploads, 24 * 60 * 60 * 1000);
+})();
 
 module.exports = app;

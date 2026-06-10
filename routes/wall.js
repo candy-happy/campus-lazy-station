@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const router = express.Router();
 const db = require('../config/database');
-const { requireAuth } = require('../middleware/auth');
+const { optionalAuth, requireAuth } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { safeJSON, parseImageUrls, validateUploadFile } = require('../utils/helpers');
 const aiChecker = require('./ai');
@@ -183,13 +183,22 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
   } else {
     posts = db.prepare(`SELECT * FROM wall_posts ORDER BY is_pinned DESC, exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
   }
+  // 屏蔽过滤：排除被当前用户屏蔽的用户的帖子
+  if (phone) {
+    const blockedPhones = new Set(
+      db.prepare('SELECT blocked_phone FROM wall_blocks WHERE blocker_phone = ?').all(phone).map(r => r.blocked_phone)
+    );
+    if (blockedPhones.size > 0) {
+      posts = posts.filter(p => !blockedPhones.has(p.phone));
+    }
+  }
   // 注意：浏览量只在点开帖子详情时计数（见 GET /posts/:id），feed列表不计数
   // 关注状态
   const followSet = new Set();
   if (phone) {
     db.prepare('SELECT following_phone FROM wall_follows WHERE follower_phone = ?').all(phone).forEach(f => followSet.add(f.following_phone));
   }
-  return posts.map(p => {
+  const resultPosts = posts.map(p => {
     // 如果帖子头像是旧emoji/空，尝试从用户表同步最新头像
     let avatar = p.avatar;
     if (!avatar || (!avatar.startsWith('/') && !avatar.startsWith('http'))) {
@@ -207,6 +216,7 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
       isFollowing: followSet.has(p.phone)
     };
   });
+  return { posts: resultPosts, hasMore: resultPosts.length >= l };
 }));
 
 // ─── 帖子详情 ────────────────────────────────────────────
@@ -364,18 +374,55 @@ router.post('/follow', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 用户主页 ────────────────────────────────────────────
-router.get('/user/:phone', (req, res) => JSON_RES(res, () => {
+router.get('/user/:phone', optionalAuth, (req, res) => JSON_RES(res, () => {
   const phone = req.params.phone;
   const posts = db.prepare('SELECT * FROM wall_posts WHERE phone = ? ORDER BY created_at DESC LIMIT 20').all(phone);
   const followers = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE following_phone = ?').get(phone).n;
   const following = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE follower_phone = ?').get(phone).n;
-  const user = db.prepare('SELECT name,phone,avatar FROM users WHERE phone = ?').get(phone)
+  const user = db.prepare('SELECT name,phone,avatar,bio,bg_image,bg_color,wechat,qq,dormitory,room,nickname,wall_privacy FROM users WHERE phone = ?').get(phone)
     || db.prepare('SELECT name,phone,avatar FROM riders WHERE phone = ?').get(phone)
     || { name: '匿名', phone, avatar: '' };
+
+  // 隐私检查：判断查看者与目标用户的关系
+  const viewer = req.user ? req.user.phone : null;
+  const isSelf = viewer === phone;
+  let viewerFollowsTarget = false;
+  let targetFollowsViewer = false;
+  if (viewer && !isSelf) {
+    viewerFollowsTarget = !!db.prepare('SELECT 1 FROM wall_follows WHERE follower_phone=? AND following_phone=?').get(viewer, phone);
+    targetFollowsViewer = !!db.prepare('SELECT 1 FROM wall_follows WHERE follower_phone=? AND following_phone=?').get(phone, viewer);
+  }
+  // 关系级别: 0=无关系, 1=我关注了他(他是我的粉丝), 2=他关注了我(他是我关注的), 3=互关
+  const relLevel = (viewerFollowsTarget ? 1 : 0) + (targetFollowsViewer ? 2 : 0);
+  // 判断某个隐私等级是否对当前查看者放行
+  function canSee(privacyLevel) {
+    if (isSelf) return true;                    // 自己永远可见
+    if (privacyLevel === 0) return true;         // 所有人可见
+    if (privacyLevel === 4) return false;        // 禁止所有人
+    if (privacyLevel === 1 && (relLevel & 1)) return true;  // 仅关注可见(他是我的粉丝)
+    if (privacyLevel === 2 && (relLevel & 2)) return true;  // 关注我才可见(我关注了他)
+    if (privacyLevel === 3 && relLevel === 3) return true;  // 互相关注
+    return false;
+  }
+
+  // 解析用户隐私设置
+  let wp = {};
+  try { if (user.wall_privacy) wp = JSON.parse(user.wall_privacy); } catch(e) {}
+
   return {
-    nickname: user.name,
+    nickname: user.nickname || user.name,
+    name: user.name || '',
     avatar: user.avatar || '',
+    bio: user.bio || '',
+    bg_image: user.bg_image || '',
+    bg_color: user.bg_color || '',
     phone,
+    phoneDisplay: canSee(wp.phone != null ? wp.phone : 0) ? phone : (phone ? phone.slice(0,3)+'****'+phone.slice(-4) : ''),
+    showName: canSee(wp.name != null ? wp.name : 0),
+    wechat: canSee(wp.wechat != null ? wp.wechat : 0) ? (user.wechat || '') : '',
+    qq: canSee(wp.qq != null ? wp.qq : 0) ? (user.qq || '') : '',
+    dormitory: canSee(wp.dorm != null ? wp.dorm : 0) ? (user.dormitory || '') : '',
+    room: canSee(wp.dorm != null ? wp.dorm : 0) ? (user.room || '') : '',
     followers,
     following,
     postCount: posts.length,
@@ -423,6 +470,10 @@ router.get('/followers/:phone', (req, res) => JSON_RES(res, () => {
 
 // ─── 删除帖子 ────────────────────────────────────────────
 router.delete('/posts/:id', requireAuth, (req, res) => JSON_RES(res, () => {
+  const post = db.prepare('SELECT phone FROM wall_posts WHERE id = ?').get(req.params.id);
+  if (!post) return makeError('帖子不存在', ErrorCode.NOT_FOUND);
+  // 仅允许帖主删除（管理员可通过举报管理台处理）
+  if (post.phone !== req.user.phone) return makeError('只能删除自己的帖子', ErrorCode.FORBIDDEN);
   db.prepare('DELETE FROM wall_posts WHERE id = ?').run(req.params.id);
   db.prepare('DELETE FROM wall_comments WHERE post_id = ?').run(req.params.id);
   db.prepare('DELETE FROM wall_likes WHERE post_id = ?').run(req.params.id);
@@ -466,6 +517,73 @@ router.get('/search', (req, res) => JSON_RES(res, () => {
       isFollowing: followSet.has(p.phone)
     };
   });
+}));
+
+// ─── 搜索用户（按昵称）─────────────────────────────────
+router.get('/users', (req, res) => JSON_RES(res, () => {
+  const { q } = req.query;
+  if (!q || !q.trim()) return makeError('缺少搜索关键词', ErrorCode.PARAM_MISSING);
+  const keyword = '%' + q.trim() + '%';
+  // 从 wall_posts 中按手机号去重搜索发帖过的人，同时查 users 表的 name
+  const users = db.prepare(
+    `SELECT DISTINCT wp.phone, wp.nickname, wp.avatar, COUNT(wp.id) as post_count
+     FROM wall_posts wp
+     WHERE wp.nickname LIKE ?
+     GROUP BY wp.phone
+     ORDER BY post_count DESC
+     LIMIT 20`
+  ).all(keyword);
+  // 也查 users 表
+  const usersFromUsers = db.prepare(
+    `SELECT phone, name as nickname, avatar, 0 as post_count
+     FROM users WHERE name LIKE ?
+     LIMIT 10`
+  ).all(keyword);
+  // 合并去重（按phone）
+  const seen = new Set();
+  const merged = [];
+  for (const u of [...users, ...usersFromUsers]) {
+    if (!seen.has(u.phone) && u.nickname) {
+      seen.add(u.phone);
+      merged.push(u);
+    }
+  }
+  return merged.slice(0, 20);
+}));
+
+// ─── 屏蔽用户 ──────────────────────────────────────────
+router.post('/users/block', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { blockedPhone } = req.body;
+  const blockerPhone = req.user.phone;
+  if (!blockedPhone) return makeError('缺少被屏蔽用户手机号', ErrorCode.PARAM_MISSING);
+  if (blockerPhone === blockedPhone) return makeError('不能屏蔽自己', ErrorCode.PARAM_INVALID);
+  const existing = db.prepare('SELECT id FROM wall_blocks WHERE blocker_phone = ? AND blocked_phone = ?').get(blockerPhone, blockedPhone);
+  if (!existing) {
+    db.prepare('INSERT INTO wall_blocks (blocker_phone, blocked_phone) VALUES (?, ?)').run(blockerPhone, blockedPhone);
+  }
+  return { ok: true, blocked: true };
+}));
+
+router.delete('/users/block/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
+  const blockerPhone = req.user.phone;
+  const blockedPhone = req.params.phone;
+  db.prepare('DELETE FROM wall_blocks WHERE blocker_phone = ? AND blocked_phone = ?').run(blockerPhone, blockedPhone);
+  return { ok: true, blocked: false };
+}));
+
+router.get('/users/blocks', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const blocks = db.prepare(
+    `SELECT wb.id, wb.blocked_phone, wb.created_at,
+            COALESCE(u.nickname, u.name, wp.nickname, '未知用户') as nickname,
+            u.avatar
+     FROM wall_blocks wb
+     LEFT JOIN users u ON wb.blocked_phone = u.phone
+     LEFT JOIN (SELECT DISTINCT phone, nickname FROM wall_posts) wp ON wb.blocked_phone = wp.phone
+     WHERE wb.blocker_phone = ?
+     ORDER BY wb.created_at DESC`
+  ).all(phone);
+  return blocks;
 }));
 
 // ─── 热门标签 ──────────────────────────────────────────
@@ -678,6 +796,36 @@ function getCategoryMap() {
     '互助': ['求助','吐槽','失物','招领'],
   };
 }
+
+// ─── 获取可分享的用户列表（关注+粉丝） ─────────────────
+router.get('/users', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const mode = req.query.mode || 'shareable'; // shareable | all
+  if (mode !== 'shareable') {
+    // 返回所有用户（用于搜索等）
+    const q = req.query.q || '';
+    const users = db.prepare(`SELECT phone, nickname, avatar FROM users WHERE phone != ? AND (nickname LIKE ? OR phone LIKE ?) LIMIT 20`)
+      .all(phone, `%${q}%`, `%${q}%`);
+    return users;
+  }
+  // shareable 模式：返回关注我的人 + 我关注的人
+  const followers = db.prepare('SELECT follower_phone as phone FROM wall_follows WHERE following_phone = ?').all(phone).map(r => r.phone);
+  const following = db.prepare('SELECT following_phone as phone FROM wall_follows WHERE follower_phone = ?').all(phone).map(r => r.phone);
+  const allPhones = [...new Set([...followers, ...following])];
+  if (allPhones.length === 0) return [];
+  const placeholders = allPhones.map(() => '?').join(',');
+  const users = db.prepare(`SELECT phone, nickname, avatar FROM users WHERE phone IN (${placeholders})`).all(...allPhones);
+  // 添加关系标签
+  return users.map(u => {
+    const isFollower = followers.includes(u.phone);
+    const isFollowing = following.includes(u.phone);
+    let relation = '';
+    if (isFollower && isFollowing) relation = '互相关注';
+    else if (isFollower) relation = '关注你';
+    else if (isFollowing) relation = '已关注';
+    return { ...u, relation };
+  });
+}));
 
 module.exports = router;
 module.exports.classifyTags = classifyTags;

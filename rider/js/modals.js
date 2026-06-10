@@ -1,4 +1,4 @@
-// modals.js - 弹窗/设置/帮助
+﻿// modals.js - 弹窗/设置/帮助
 
  function closeModal(id) { $(id).classList.remove('active'); document.body.style.overflow = ''; }
 
@@ -233,11 +233,11 @@
      '<div class="sp-card">' +
        '<div class="sp-card-title">关于</div>' +
        '<div class="settings-info-row"><span class="settings-info-label">版本</span><span class="settings-info-value">v3.0.0</span></div>' +
-       '<div class="settings-info-row"><span class="settings-info-label">平台</span><span class="settings-info-value">校园懒人效率站</span></div>' +
+       '<div class="settings-info-row"><span class="settings-info-label">平台</span><span class="settings-info-value">校园圈</span></div>' +
      '</div>' +
      // Logout
      '<button onclick="if(confirm(\'确定退出登录？\')){localStorage.removeItem(\'lazyRider\');localStorage.removeItem(\'lazy_rider_token\');localStorage.removeItem(\'lazy_session\');location.reload()}" class="settings-logout-btn">🚪 退出登录</button>' +
-     '<div class="settings-version">校园懒人效率站 v3.0 骑手端</div>' +
+     '<div class="settings-version">校园圈 v3.0 骑手端</div>' +
      '</div>';
    document.body.appendChild(el);
    openSubPage(id);

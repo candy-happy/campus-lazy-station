@@ -100,12 +100,14 @@ const upload = multer({
 
 // ─── 猫狗列表 ────────────────────────────────────────────
 router.get('/list', (req, res) => JSON_RES(res, () => {
-  const { species, status } = req.query;
+  const { species, status, search, limit } = req.query;
   let sql = 'SELECT * FROM pets WHERE 1=1';
   const params = [];
   if (species && species !== 'all') { sql += ' AND species = ?'; params.push(species); }
   if (status) { sql += ' AND status = ?'; params.push(status); }
+  if (search) { sql += ' AND (code_name LIKE ? OR species LIKE ? OR bio LIKE ? OR location LIKE ? OR personality LIKE ? OR breed LIKE ?)'; const kw = '%' + search + '%'; params.push(kw, kw, kw, kw, kw, kw); }
   sql += ` ORDER BY CASE WHEN alert_level = 'critical' THEN 0 WHEN alert_level = 'urgent' THEN 1 WHEN alert_level = 'warning' THEN 2 ELSE 3 END, updated_at DESC`;
+  if (limit) { sql += ' LIMIT ?'; params.push(parseInt(limit)); }
   const pets = db.prepare(sql).all(...params);
   const now = Date.now();
   return pets.map(p => {

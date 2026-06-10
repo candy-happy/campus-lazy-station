@@ -60,8 +60,9 @@ function verifyToken(token) {
       // 验证过期时间
       if (data.exp && data.exp < Date.now()) return null;
 
-      // 验证必要字段
-      if (!data.phone || !data.type) return null;
+      // 验证必要字段（管理员token没有phone字段）
+      if (!data.type) return null;
+      if (data.type !== 'admin' && !data.phone) return null;
 
       return data;
     }

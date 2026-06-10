@@ -29,7 +29,7 @@ const marketOrderStatusMap = {
 };
 
  async function fetchMarketAPI(path) {
-   const res = await fetch('/api/market/admin/' + path, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') } });
+   const res = await fetch('/api/market/admin/' + path, { headers: API._headers() });
    const data = await res.json();
    if (!res.ok) { showToast(data.error || '请求失败(' + res.status + ')'); return {}; }
    return data;
@@ -95,13 +95,13 @@ const marketOrderStatusMap = {
 
  async function offlineMarketItem(id) {
    const reason = prompt('请输入下架原因（可选）') || '';
-   const res = await fetch('/api/market/admin/items/' + id + '/offline', { method:'PUT', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||''),'Content-Type':'application/json'}, body:JSON.stringify({reason}) }).then(r=>r.json());
+   const res = await fetch('/api/market/admin/items/' + id + '/offline', { method:'PUT', headers:{...API._headers(),'Content-Type':'application/json'}, body:JSON.stringify({reason}) }).then(r=>r.json());
    if (res.ok) { showToast('已下架'); loadMarketItems(); } else showToast(res.error||'操作失败');
  }
 
  async function deleteMarketItem(id) {
    if (!confirm('确定删除此商品？')) return;
-   const res = await fetch('/api/market/admin/items/' + id, { method:'DELETE', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||'')} }).then(r=>r.json());
+   const res = await fetch('/api/market/admin/items/' + id, { method:'DELETE', headers:API._headers() }).then(r=>r.json());
    if (res.ok) { showToast('已删除'); loadMarketItems(); } else showToast(res.error||'操作失败');
  }
 
@@ -112,7 +112,7 @@ const marketOrderStatusMap = {
    const reason = prompt('请输入下架原因（可选）') || '';
    let ok = 0;
    for (const id of ids) {
-     const res = await fetch('/api/market/admin/items/' + id + '/offline', { method:'PUT', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||''),'Content-Type':'application/json'}, body:JSON.stringify({reason}) }).then(r=>r.json());
+     const res = await fetch('/api/market/admin/items/' + id + '/offline', { method:'PUT', headers:{...API._headers(),'Content-Type':'application/json'}, body:JSON.stringify({reason}) }).then(r=>r.json());
      if (res.ok) ok++;
    }
    showToast('已下架 ' + ok + ' 个商品'); loadMarketItems();
@@ -152,7 +152,7 @@ const marketOrderStatusMap = {
    const label = action === 'complete' ? '确认完成' : '取消';
    if (!confirm('确定' + label + '此订单？')) return;
    const reason = prompt('请输入原因（可选）') || '';
-   const res = await fetch('/api/market/admin/orders/' + id + '/resolve', { method:'PUT', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||''),'Content-Type':'application/json'}, body:JSON.stringify({action,reason}) }).then(r=>r.json());
+   const res = await fetch('/api/market/admin/orders/' + id + '/resolve', { method:'PUT', headers:{...API._headers(),'Content-Type':'application/json'}, body:JSON.stringify({action,reason}) }).then(r=>r.json());
    if (res.ok) { showToast('已' + label); loadMarketOrders(); } else showToast(res.error||'操作失败');
  }
 
@@ -192,7 +192,7 @@ const marketOrderStatusMap = {
 
  async function deleteMarketComment(id) {
    if (!confirm('确定删除此留言？')) return;
-   const res = await fetch('/api/market/admin/comments/' + id, { method:'DELETE', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||'')} }).then(r=>r.json());
+   const res = await fetch('/api/market/admin/comments/' + id, { method:'DELETE', headers:API._headers() }).then(r=>r.json());
    if (res.ok) { showToast('已删除'); loadMarketComments(); } else showToast(res.error||'操作失败');
  }
 
@@ -202,7 +202,7 @@ const marketOrderStatusMap = {
    if (!confirm('确定批量删除 ' + ids.length + ' 条留言？')) return;
    let ok = 0;
    for (const id of ids) {
-     const res = await fetch('/api/market/admin/comments/' + id, { method:'DELETE', headers:{'Authorization':'Bearer '+(localStorage.getItem('lazy_admin_token')||'')} }).then(r=>r.json());
+     const res = await fetch('/api/market/admin/comments/' + id, { method:'DELETE', headers:API._headers() }).then(r=>r.json());
      if (res.ok) ok++;
    }
    showToast('已删除 ' + ok + ' 条留言'); loadMarketComments();

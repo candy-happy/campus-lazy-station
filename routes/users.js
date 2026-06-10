@@ -60,7 +60,7 @@ router.put('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
     return makeError('无权修改他人资料', 'FORBIDDEN');
   }
 
-  const { nickname, name, avatar, bio, dormitory, room } = req.body;
+  const { nickname, name, avatar, bio, dormitory, room, bg_image, bg_color, wechat, qq, show_phone_on_wall, show_wechat_on_wall, show_qq_on_wall, wall_privacy } = req.body;
   const sets = [];
   const vals = [];
   if (nickname !== undefined) { sets.push('nickname=?'); vals.push(String(nickname).slice(0, 50)); }
@@ -69,6 +69,14 @@ router.put('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
   if (bio !== undefined) { sets.push('bio=?'); vals.push(String(bio).slice(0, 500)); }
   if (dormitory !== undefined) { sets.push('dormitory=?'); vals.push(String(dormitory).slice(0, 100)); }
   if (room !== undefined) { sets.push('room=?'); vals.push(String(room).slice(0, 20)); }
+  if (bg_image !== undefined) { sets.push('bg_image=?'); vals.push(String(bg_image).slice(0, 500)); }
+  if (bg_color !== undefined) { sets.push('bg_color=?'); vals.push(String(bg_color).slice(0, 20)); }
+  if (wechat !== undefined) { sets.push('wechat=?'); vals.push(String(wechat).slice(0, 50)); }
+  if (qq !== undefined) { sets.push('qq=?'); vals.push(String(qq).slice(0, 20)); }
+  if (show_phone_on_wall !== undefined) { sets.push('show_phone_on_wall=?'); vals.push(show_phone_on_wall ? 1 : 0); }
+  if (show_wechat_on_wall !== undefined) { sets.push('show_wechat_on_wall=?'); vals.push(show_wechat_on_wall ? 1 : 0); }
+  if (show_qq_on_wall !== undefined) { sets.push('show_qq_on_wall=?'); vals.push(show_qq_on_wall ? 1 : 0); }
+  if (wall_privacy !== undefined) { sets.push('wall_privacy=?'); vals.push(typeof wall_privacy === 'string' ? wall_privacy : JSON.stringify(wall_privacy)); }
   if (!sets.length) return makeError('无更新内容', ErrorCode.USER_NO_UPDATE);
 
   vals.push(req.params.phone);
@@ -88,6 +96,38 @@ router.post('/:phone/avatar', requireAuth, avatarUpload.single('avatar'), (req, 
   db.prepare('UPDATE users SET avatar = ? WHERE phone = ?').run(url, req.params.phone);
   const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(req.params.phone);
   return { ...user, phone: user.phone, phoneDisplay: fmtPhone(user.phone), avatarUrl: url };
+}));
+
+// ─── 封面图上传配置 ──────────────────────────────────────
+const BG_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'covers');
+if (!fs.existsSync(BG_UPLOAD_DIR)) fs.mkdirSync(BG_UPLOAD_DIR, { recursive: true });
+
+const bgStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, BG_UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, 'cover-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + ext);
+  }
+});
+const bgUpload = multer({
+  storage: bgStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('仅支持图片文件'));
+  }
+});
+
+// ─── 封面图上传 ──────────────────────────────────────────
+router.post('/:phone/cover', requireAuth, bgUpload.single('cover'), (req, res) => JSON_RES(res, () => {
+  if (req.user.type !== 'admin' && req.user.phone !== req.params.phone) {
+    return makeError('无权修改他人资料', 'FORBIDDEN');
+  }
+  if (!req.file) return makeError('请选择图片', 'PARAM_001');
+  const url = '/uploads/covers/' + req.file.filename;
+  db.prepare('UPDATE users SET bg_image = ? WHERE phone = ?').run(url, req.params.phone);
+  const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(req.params.phone);
+  return { ...user, phone: user.phone, bgImageUrl: url };
 }));
 
 module.exports = router;

@@ -27,9 +27,14 @@ module.exports = {
   MAX_FILE_SIZE: 20 * 1024 * 1024, // 20MB
   ALLOWED_FILE_TYPES: ['image/', 'video/'],
 
-  // 限速
-  RATE_LIMIT_MAX: 200,
-  RATE_LIMIT_WINDOW_MS: 60000,
+  // 限速（分类限流，可在 .env 中覆盖）
+  RATE_LIMIT_CATEGORIES: {
+    login:  { windowMs: 15 * 60 * 1000, max: parseInt(process.env.RATE_LOGIN_MAX)  || 10 },
+    post:   { windowMs: 1 * 60 * 1000,  max: parseInt(process.env.RATE_POST_MAX)   || 20 },
+    upload: { windowMs: 1 * 60 * 1000,  max: parseInt(process.env.RATE_UPLOAD_MAX) || 10 },
+    admin:  { windowMs: 1 * 60 * 1000,  max: parseInt(process.env.RATE_ADMIN_MAX)  || 60 },
+    browse: { windowMs: 1 * 60 * 1000,  max: parseInt(process.env.RATE_BROWSE_MAX) || 300 },
+  },
 
   // 上传子目录
   WALL_UPLOAD_DIR: 'wall',

@@ -29,7 +29,7 @@ const _petEmojis = ['😊','😂','🥰','😍','😘','🤗','😎','🤩','�
 
 
 async function loadPets(species = 'all') {
-  const data = await API.getPets(species);
+  const data = await API.getPets({ species });
   if (data.error) return showToast(data.error);
   const container = document.getElementById('petListContainer');
   if (!data.length) {
@@ -257,9 +257,9 @@ async function openSightPage(id) {
   if (old) { old.remove(); }
   if (!API._token) { showToast('⚠️ 请先登录'); return; }
   showToast('📋 正在打开上报页面...');
-  const petData = await API.getPet(id);
+  const petData = await API.getPetDetail(id);
   if (!petData || petData.error) { showToast('获取宠物信息失败'); return; }
-  const petName = petData.name || '未知小动物';
+  const petName = petData.code_name || '未知小动物';
   
   var wrap = document.createElement('div');
   wrap.id = 'sightPage_sub';

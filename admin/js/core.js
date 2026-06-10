@@ -25,13 +25,83 @@ let riders = [];
 let admins = [];
 let ordersChart, servicesChart;
 
+// ─── 数据库连接状态管理 ───
+function updateDbStatus(connected) {
+  const indicator = document.getElementById('dbStatusIndicator');
+  const icon = document.getElementById('dbStatusIcon');
+  const text = document.getElementById('dbStatusText');
+  
+  if (connected) {
+    indicator.style.background = 'rgba(46,204,113,0.15)';
+    indicator.style.color = '#27ae60';
+    icon.textContent = '🟢';
+    text.textContent = '数据库连接正常';
+  } else {
+    indicator.style.background = 'rgba(231,76,60,0.15)';
+    indicator.style.color = '#c0392b';
+    icon.textContent = '🔴';
+    text.textContent = '数据库连接断开';
+  }
+}
+
+function setupDbConnectionMonitor() {
+  // 初始检查
+  API.checkConnection();
+  
+  // 监听连接状态变化
+  window.addEventListener('db-connection-change', (e) => {
+    updateDbStatus(e.detail.connected);
+    
+    // 如果连接断开，显示提示并尝试自动重连
+    if (!e.detail.connected) {
+      showToast('⚠️ 数据库连接断开，正在尝试重新连接...');
+      attemptReconnect();
+    }
+  });
+  
+  // 启动定期检查（每30秒）
+  API.startConnectionCheck(30000);
+}
+
+let reconnectAttempts = 0;
+let reconnectTimer = null;
+
+async function attemptReconnect() {
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  
+  reconnectAttempts++;
+  const maxAttempts = 5;
+  
+  if (reconnectAttempts > maxAttempts) {
+    showToast('❌ 数据库连接失败，请手动检查服务器');
+    reconnectAttempts = 0;
+    return;
+  }
+  
+  const delay = Math.min(2000 * Math.pow(2, reconnectAttempts - 1), 30000); // 指数退避，最大30秒
+  
+  reconnectTimer = setTimeout(async () => {
+    const reconnected = await API.checkConnection();
+    if (reconnected) {
+      showToast('✅ 数据库连接已恢复');
+      reconnectAttempts = 0;
+      // 重新加载当前页面数据
+      if (currentAdmin) {
+        refreshData();
+      }
+    } else {
+      attemptReconnect();
+    }
+  }, delay);
+}
+
 // ─── 工具函数 ───
 function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function safeObj(o) {
   return Object.fromEntries(Object.entries(o).map(([k,v]) => [k, typeof v === 'string' ? escHtml(v) : v]));
 }
-function TK() { return localStorage.getItem('lazy_admin_token') || ''; }
-function AUTH() { return { 'Authorization': 'Bearer ' + TK() }; }
+function TK() { return API._token || ''; }
+function AUTH() { return API._authHeaders(); }
 
 function switchPage(page) {
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
@@ -66,6 +136,15 @@ async function login(e) {
   e.preventDefault();
   const username = document.getElementById('loginUsername').value;
   const password = document.getElementById('loginPassword').value;
+  
+  // 检查数据库连接
+  const isConnected = await API.checkConnection();
+  if (!isConnected) {
+    document.getElementById('loginError').textContent = '数据库连接失败，请检查服务器状态';
+    document.getElementById('loginError').style.display = 'block';
+    return;
+  }
+  
   try {
     const admin = await API.adminLogin(username, password);
     currentAdmin = admin;
@@ -161,12 +240,17 @@ function exportData() {
   const data = { orders, riders, admins, exportTime: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `懒人效率站数据_${new Date().toISOString().slice(0,10)}.json`; a.click();
+  a.download = `校园圈数据_${new Date().toISOString().slice(0,10)}.json`; a.click();
   showToast('数据导出成功');
 }
 
 // ─── 初始化 ───
 document.addEventListener('DOMContentLoaded', async () => {
+  // API._init() 已在 api.js 加载时自动调用，无需重复
+  
+  // 启动数据库连接监控
+  setupDbConnectionMonitor();
+  
   const saved = API.restoreSession();
   if (saved && saved.role === 'admin') {
     currentAdmin = { username: saved.username, role: saved.role };

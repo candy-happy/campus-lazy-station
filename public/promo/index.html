@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校园墙 · 池州学院专属生活平台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@300;400;500;600&family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0a0b;
+    --ink-rgb:10,10,11;
+    --paper:#f1efea;
+    --paper-rgb:241,239,234;
+    --paper-tint:#e8e5de;
+    --ink-tint:#18181a;
+
+    /* 校园主题色 - 蓝瓷 */
+    --accent:#2563eb;
+    --accent-rgb:37,99,235;
+    --accent-light:#3b82f6;
+    --accent-dark:#1d4ed8;
+
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+    --serif-en:"Playfair Display","Source Serif 4",Georgia,serif;
+    --serif-body-en:"Source Serif 4",Georgia,serif;
+    --serif-zh:"Noto Serif SC",source-han-serif-sc,serif;
+    --sans-zh:"Noto Sans SC",source-han-sans-sc,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);color:var(--paper);font-family:var(--sans-zh);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+  canvas.bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block;transition:opacity 1.2s ease}
+  canvas#bg-light{opacity:0}
+  canvas#bg-dark{opacity:1}
+  body.light-bg canvas#bg-light{opacity:1}
+  body.light-bg canvas#bg-dark{opacity:0}
+  body.low-power canvas.bg{display:none!important}
+
+  #deck{position:fixed;inset:0;width:10000vw;height:100vh;display:flex;flex-wrap:nowrap;transition:transform .9s cubic-bezier(.77,0,.175,1);z-index:10;will-change:transform}
+  .slide{width:100vw;height:100vh;flex:0 0 100vw;position:relative;padding:5vh 5vw 8vh 5vw;display:flex;flex-direction:column;overflow:hidden}
+  .slide.light{color:var(--ink);background:var(--paper)}
+  .slide.dark{color:var(--paper);background:var(--ink)}
+
+  .slide::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;transition:background .7s ease}
+  .slide.light::before{background:rgba(var(--paper-rgb),.82);backdrop-filter:blur(3px)}
+  .slide.dark::before{background:rgba(var(--ink-rgb),.82);backdrop-filter:blur(3px)}
+  .slide.hero.light::before{background:rgba(var(--paper-rgb),.12);backdrop-filter:none}
+  .slide.hero.dark::before{background:rgba(var(--ink-rgb),.1);backdrop-filter:none}
+  .slide.hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+  .slide.hero.light::after{background:linear-gradient(180deg,rgba(var(--paper-rgb),.25) 0%,rgba(var(--paper-rgb),0) 12%,rgba(var(--paper-rgb),0) 88%,rgba(var(--paper-rgb),.25) 100%)}
+  .slide.hero.dark::after{background:linear-gradient(180deg,rgba(var(--ink-rgb),.3) 0%,rgba(var(--ink-rgb),0) 12%,rgba(var(--ink-rgb),0) 88%,rgba(var(--ink-rgb),.3) 100%)}
+
+  .chrome{display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.65}
+  .chrome .left,.chrome .right{display:flex;gap:2em;align-items:center}
+  .chrome .sep{width:30px;height:1px;background:currentColor;opacity:.35}
+  .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.5}
+  .foot .title{font-family:var(--serif-zh);font-weight:400;letter-spacing:.04em;text-transform:none;opacity:.7;font-size:12px}
+
+  .tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;padding:5px 12px;border:1px solid currentColor;opacity:.8}
+  .rule{width:100%;height:1px;background:currentColor;opacity:.2;margin:2.5vh 0}
+
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;opacity:.55;margin-bottom:2vh}
+  .display{font-family:var(--serif-en);font-weight:700;font-size:11vw;line-height:.92;letter-spacing:-.025em}
+  .display-zh{font-family:var(--serif-zh);font-weight:700;font-size:min(8vw,13vh);line-height:1.05;letter-spacing:-.005em}
+  .h1-zh{font-family:var(--serif-zh);font-weight:700;font-size:min(4.5vw,7.5vh);line-height:1.12;letter-spacing:-.005em}
+  .h2-zh{font-family:var(--serif-zh);font-weight:600;font-size:min(3vw,5vh);line-height:1.2;letter-spacing:0}
+  .h3-zh{font-family:var(--serif-zh);font-weight:500;font-size:min(1.8vw,3vh);line-height:1.35}
+  .body-zh{font-family:var(--sans-zh);font-weight:400;font-size:max(14px,1.15vw);line-height:1.75;opacity:.8;letter-spacing:.01em}
+  .lead{font-family:var(--serif-zh);font-weight:400;font-size:min(1.8vw,3vh);line-height:1.45;opacity:.85}
+  .meta{font-family:var(--mono);font-size:max(10px,.82vw);letter-spacing:.14em;text-transform:uppercase;opacity:.55}
+  em{font-style:italic;font-family:var(--serif-en)}
+  .en{font-family:var(--serif-en);font-style:italic;font-weight:500}
+
+  .col{display:flex;flex-direction:column;gap:2vh}
+  .row{display:flex;align-items:center;gap:2.5vw}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:4vw;flex:1;align-items:center}
+  .split-4-6{display:grid;grid-template-columns:4fr 6fr;gap:4vw;flex:1;align-items:center}
+  .split-6-4{display:grid;grid-template-columns:6fr 4fr;gap:4vw;flex:1;align-items:center}
+
+  /* 图片容器 */
+  .img-frame{
+    position:relative;
+    overflow:hidden;
+    border-radius:8px;
+  }
+  .img-frame img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  /* 占位图样式 */
+  .img-placeholder{
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg,var(--paper-tint) 0%,rgba(var(--ink-rgb),.08) 100%);
+    border:2px dashed rgba(var(--ink-rgb),.2);
+    border-radius:8px;
+    color:rgba(var(--ink-rgb),.4);
+    font-family:var(--sans-zh);
+    font-size:max(12px,.9vw);
+    text-align:center;
+    padding:2vh;
+    gap:1.5vh;
+  }
+  .img-placeholder .icon{font-size:max(24px,4vw)}
+  .img-placeholder .tip{font-size:max(10px,.75vw);opacity:.6}
+
+  /* 功能卡片 */
+  .feature-card{
+    background:rgba(var(--accent-rgb),.06);
+    border:1px solid rgba(var(--accent-rgb),.15);
+    border-radius:10px;
+    padding:2.5vh 1.8vw;
+    display:flex;
+    flex-direction:column;
+    gap:1.2vh;
+    transition:transform .3s ease,box-shadow .3s ease;
+  }
+  .feature-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 6px 24px rgba(var(--accent-rgb),.12);
+  }
+  .feature-icon{font-size:min(2.5vw,3.5vh);line-height:1;margin-bottom:.5vh}
+  .feature-title{font-family:var(--serif-zh);font-weight:600;font-size:min(1.5vw,2.5vh);color:var(--accent)}
+  .feature-desc{font-family:var(--sans-zh);font-size:max(12px,.9vw);line-height:1.55;opacity:.72}
+
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:2vw}
+  .grid-4{display:grid;grid-template-columns:repeat(2,1fr);gap:2vw 3vw}
+
+  .campus-badge{
+    display:inline-flex;align-items:center;gap:8px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+    color:white;padding:10px 24px;border-radius:24px;
+    font-family:var(--sans-zh);font-weight:500;font-size:14px;letter-spacing:.04em;
+  }
+
+  .stat-row{display:flex;gap:4vw;align-items:center}
+  .stat-item{text-align:center}
+  .stat-number{font-family:var(--serif-en);font-weight:800;font-size:min(4vw,6vh);color:var(--accent);line-height:1}
+  .stat-label{font-family:var(--sans-zh);font-size:max(11px,.85vw);opacity:.55;margin-top:.5vh}
+
+  .quote-block{border-left:3px solid var(--accent);padding-left:1.8vw;margin:1.5vh 0}
+  .quote-text{font-family:var(--serif-zh);font-size:min(1.5vw,2.5vh);font-weight:400;line-height:1.5;font-style:italic}
+
+  .accent-text{color:var(--accent)}
+  .text-center{text-align:center}
+  .mt-2{margin-top:2vh}.mt-3{margin-top:3vh}.mt-4{margin-top:4vh}
+  .mb-2{margin-bottom:2vh}.mb-3{margin-bottom:3vh}.mb-4{margin-bottom:4vh}
+
+  .nav-hint{position:fixed;bottom:1.5vh;right:2.5vw;font-family:var(--mono);font-size:10px;opacity:.35;z-index:100;display:flex;gap:10px;align-items:center}
+  .nav-hint kbd{background:rgba(var(--paper-rgb),.12);padding:2px 6px;border-radius:3px;font-size:9px}
+</style>
+</head>
+<body>
+<canvas class="bg" id="bg-dark"></canvas>
+<canvas class="bg" id="bg-light"></canvas>
+
+<div id="deck">
+  <!-- ═══════════════════════════════════════════════════════
+       Slide 1: 封面 - 校园风景
+  ═══════════════════════════════════════════════════════ -->
+  <section class="slide hero dark" data-anim="fade-up">
+    <div class="chrome">
+      <div class="left"><span>池州学院</span><span class="sep"></span><span>2026</span></div>
+      <div class="right"><span>校园生活平台</span></div>
+    </div>
+
+    <!-- 替换为池州学院校园风景照片 -->
+    <div class="img-frame" style="position:absolute;inset:0;z-index:-1;border-radius:0">
+      <div class="img-placeholder" style="border-radius:0;border:none;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)">
+        <div class="icon"></div>
+        <div>插入校园风景照片<br><span class="tip">建议：校门、教学楼、图书馆等标志性建筑</span></div>
+      </div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:3vh;position:relative;z-index:1">
+      <div class="campus-badge mb-3">
+        <span></span><span>专属于池州学院学子</span>
+      </div>
+      <h1 class="display-zh">校园墙</h1>
+      <p class="lead" style="max-width:55vw;text-align:center;opacity:.75">
+        让校园生活更便捷，让信息流通更自由<br>
+        没有外来干扰，只有同窗情谊
+      </p>
+      <div class="stat-row mt-3">
+        <div class="stat-item"><div class="stat-number">100%</div><div class="stat-label">校内认证</div></div>
+        <div class="stat-item"><div class="stat-number">0</div><div class="stat-label">外来干扰</div></div>
+        <div class="stat-item"><div class="stat-number">24h</div><div class="stat-label">信息直达</div></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span>← → 翻页</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Slide 2: 校园生活场景
+  ═══════════════════════════════════════════════════════ -->
+  <section class="slide light" data-anim="fade-up">
+    <div class="chrome">
+      <div class="left"><span>01</span><span class="sep"></span><span>校园生活</span></div>
+      <div class="right"><span>SCENES</span></div>
+    </div>
+
+    <div class="split" style="flex:1">
+      <div class="col" style="justify-content:center">
+        <div class="kicker">DAILY LIFE</div>
+        <h2 class="h1-zh" style="font-size:min(4vw,6.5vh)">
+          校园生活<br><span class="accent-text">无处不在</span>
+        </h2>
+        <p class="body-zh mt-3" style="max-width:35vw">
+          从清晨的图书馆到傍晚的操场，从食堂的热闹到宿舍的温馨
+          校园墙记录着每一个珍贵的校园瞬间
+        </p>
+        <div class="campus-badge mt-4"><span></span><span>真实校园生活</span></div>
+      </div>
+      <div class="col" style="gap:1.5vh">
+        <!-- 插入校园生活场景照片 -->
+        <div class="img-frame" style="flex:1;border-radius:10px">
+          <div class="img-placeholder">
+            <div class="icon"></div>
+            <div>插入校园生活场景1<br><span class="tip">建议：图书馆学习、操场运动、社团活动</span></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5vh;flex:0 0 auto">
+          <div class="img-frame" style="height:min(12vh,120px);border-radius:8px">
+            <div class="img-placeholder">
+              <div class="icon"></div>
+              <div>插入场景2</div>
+            </div>
+          </div>
+          <div class="img-frame" style="height:min(12vh,120px);border-radius:8px">
+            <div class="img-placeholder">
+              <div class="icon"></div>
+              <div>插入场景3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span>02 / 08</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Slide 3: 核心功能
+  ═══════════════════════════════════════════════════════ -->
+  <section class="slide dark" data-anim="fade-up">
+    <div class="chrome">
+      <div class="left"><span>02</span><span class="sep"></span><span>核心功能</span></div>
+      <div class="right"><span>FEATURES</span></div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;gap:2.5vh">
+      <div class="kicker">WHAT WE OFFER</div>
+      <h2 class="h1-zh">六大核心功能</h2>
+
+      <div class="grid-3" style="flex:1;align-content:start;gap:1.8vh">
+        <div class="feature-card">
+          <div class="feature-icon"></div>
+          <div class="feature-title">校园墙</div>
+          <div class="feature-desc">信息发布、失物招领、急事求助，精准触达校内同学</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"></div>
+          <div class="feature-title">二手交易</div>
+          <div class="feature-desc">教材、电子产品、生活用品，校内面对面交易</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"></div>
+          <div class="feature-title">精准定位</div>
+          <div class="feature-desc">急事找人、社团招新、活动通知，快速触达目标</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"></div>
+          <div class="feature-title">表白墙</div>
+          <div class="feature-desc">匿名表白、情感分享，校园浪漫故事</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"></div>
+          <div class="feature-title">社团活动</div>
+          <div class="feature-desc">社团招新、活动发布、报名参与</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"></div>
+          <div class="feature-title">广告快传</div>
+          <div class="feature-desc">急事广告、重要通知，快速全校传播</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span>03 / 08</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Slide 4: 社团活动
+  ═══════════════════════════════════════════════════════ -->
+  <section class="slide light" data-anim="fade-up">
+    <div class="chrome">
+      <div class="left"><span>03</span><span class="sep"></span><span>社团生态</span></div>
+      <div class="right"><span>CLUBS</span></div>
+    </div>
+
+    <div class="split-6-4" style="flex:1">
+      <!-- 插入社团活动照片 -->
+      <div class="img-frame" style="height:100%;border-radius:12px">
+        <div class="img-placeholder">
+          <div class="icon"></div>
+          <div>插入社团活动照片<br><span class="tip">建议：招新现场、社团演出、比赛合影</span></div>
+        </div>
+      </div>
+      <div class="col" style="justify-content:center">
+        <div class="kicker">CLUB LIFE</div>
+        <h2 class="h1-zh">
+          社团<span class="accent-text">招新</span><br>与<span class="accent-text">活动</span>
+        </h2>
+        <p class="body-zh mt-3">
+          社团招新季，精准推送给感兴趣的同学<br>
+          社团活动、比赛讲座，一键发布全校可见
+        </p>
+        <div class="grid-4 mt-4">
+          <div class="feature-card">
+            <div class="feature-icon"></div>
+            <div class="feature-title">社团主页</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon"></div>
+            <div class="feature-title">招新宣传</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon"></div>
+            <div class="feature-title">活动发布</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon"></div>
+            <div class="feature-title">在线报名</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span>04 / 08</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Slide 5: 校内认证
+  ═══════════════════════════════════════════════════════ -->
+  <section class="slide hero dark" data-anim="fade-up">
+    <div class="chrome">
+      <div class="left"><span>04</span><span class="sep"></span><span>安全认证</span></div>
+      <div class="right"><span>SECURITY</span></div>
+    </div>
+
+    <!-- 插入校园标志性建筑照片 -->
+    <div class="img-frame" style="position:absolute;inset:0;z-index:-1;border-radius:0">
+      <div class="img-placeholder" style="border-radius:0;border:none;background:linear-gradient(to right,rgba(10,10,11,.85) 0%,rgba(10,10,11,.6) 50%,rgba(10,10,11,.85) 100%)">
+        <div class="icon"></div>
+        <div>插入校园标志性建筑<br><span class="tip">建议：图书馆、行政楼、校训石</span></div>
+      </div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:3vh;position:relative;z-index:1">
+      <div class="kicker">100% CAMPUS VERIFIED</div>
+      <h2 class="display-zh" style="font-size:min(6.5vw,11vh)">
+        <span class="accent-text">100% 校内认证</span><br>零外来干扰
+      </h2>
+      <p class="lead" style="max-width:50vw;opacity:.75">
+        所有用户必须通过池州学院学生身份认证<br>
+        确保每一位用户都是本校同学
+      </p>
+      <div class="stat-row mt-4">
+        <div class="stat-item"><div class="stat-number" style="font-size:min(3.5vw,5.5vh)"></div><div class="stat-label">实名认证</div></div>
+        <div class="stat-item"><div class="stat-number" style="font-size:min(3.5vw,5.5vh)"></div><div class="stat-label">隐私保护</div></div>
+        <div class="stat-item"><div class="stat-number" style="font-size:min(3.5vw,5.5vh)"></div><div class="stat-label">安全交易</div></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span>05 / 08</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Slide 6: 校园风景
+  ═══════════════════════════════════════════════════════ -->
+  <section class="slide light" data-anim="fade-up">
+    <div class="chrome">
+      <div class="left"><span>05</span><span class="sep"></span><span>校园风光</span></div>
+      <div class="right"><span>CAMPUS</span></div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;gap:2vh">
+      <div class="kicker">BEAUTIFUL CAMPUS</div>
+      <h2 class="h1-zh">池州学院<span class="accent-text">美丽风光</span></h2>
+
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:1.5vw;flex:1;align-content:start">
+        <!-- 插入校园风景大图 -->
+        <div class="img-frame" style="height:100%;border-radius:10px">
+          <div class="img-placeholder">
+            <div class="icon"></div>
+            <div>插入校园全景/主风景<br><span class="tip">建议：校园全景、湖景、林荫道</span></div>
+          </div>
+        </div>
+        <div class="col" style="gap:1.5vh">
+          <!-- 插入校园风景小图 -->
+          <div class="img-frame" style="flex:1;border-radius:8px">
+            <div class="img-placeholder">
+              <div class="icon"></div>
+              <div>插入风景2</div>
+            </div>
+          </div>
+          <div class="img-frame" style="flex:1;border-radius:8px">
+            <div class="img-placeholder">
+              <div class="icon"></div>
+              <div>插入风景3</div>
+            </div>
+          </div>
+          <div class="img-frame" style="flex:1;border-radius:8px">
+            <div class="img-placeholder">
+              <div class="icon"></div>
+              <div>插入风景4</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span>06 / 08</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Slide 7: 愿景
+  ═══════════════════════════════════════════════════════ -->
+  <section class="slide hero dark" data-anim="fade-up">
+    <div class="chrome">
+      <div class="left"><span>06</span><span class="sep"></span><span>愿景</span></div>
+      <div class="right"><span>VISION</span></div>
+    </div>
+
+    <!-- 插入校园黄昏/夜景照片 -->
+    <div class="img-frame" style="position:absolute;inset:0;z-index:-1;border-radius:0">
+      <div class="img-placeholder" style="border-radius:0;border:none;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)">
+        <div class="icon"></div>
+        <div>插入校园黄昏/夜景<br><span class="tip">建议：夕阳校园、灯光夜景、星空校园</span></div>
+      </div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:3vh;position:relative;z-index:1">
+      <div class="kicker">OUR VISION</div>
+      <h2 class="display-zh" style="font-size:min(6vw,10vh)">
+        让校园生活<br><span class="accent-text">更美好</span>
+      </h2>
+      <div class="stat-row mt-4">
+        <div class="stat-item"><div class="stat-number"></div><div class="stat-label">信息自由流通</div></div>
+        <div class="stat-item"><div class="stat-number">0</div><div class="stat-label">外来干扰</div></div>
+        <div class="stat-item"><div class="stat-number">100%</div><div class="stat-label">校内专属</div></div>
+      </div>
+      <p class="lead mt-3" style="max-width:50vw;opacity:.75">
+        我们不只是做一个平台<br>
+        我们是在构建池州学院的数字校园生态
+      </p>
+      <div class="campus-badge mt-4"><span></span><span>专属于池州学院学子的数字家园</span></div>
+    </div>
+
+    <div class="foot">
+      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span>07 / 08</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Slide 8: 结尾
+  ═══════════════════════════════════════════════════════ -->
+  <section class="slide light" data-anim="fade-up">
+    <div class="chrome">
+      <div class="left"><span>07</span><span class="sep"></span><span>加入我们</span></div>
+      <div class="right"><span>JOIN US</span></div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:3.5vh">
+      <div class="kicker">GET STARTED</div>
+      <h2 class="display-zh" style="font-size:min(6vw,10vh)">
+        校园墙<br><span class="accent-text">等你加入</span>
+      </h2>
+
+      <p class="lead" style="max-width:45vw;opacity:.75">
+        无论你是想发布二手、寻找失物<br>
+        还是参与社团活动、表白心仪的同学<br>
+        校园墙都是你最好的选择
+      </p>
+
+      <div class="grid-3 mt-4" style="max-width:50vw">
+        <div class="text-center">
+          <div class="h1-zh accent-text"></div>
+          <div class="body-zh mt-2">扫码注册</div>
+        </div>
+        <div class="text-center">
+          <div class="h1-zh accent-text"></div>
+          <div class="body-zh mt-2">学生认证</div>
+        </div>
+        <div class="text-center">
+          <div class="h1-zh accent-text"></div>
+          <div class="body-zh mt-2">开始使用</div>
+        </div>
+      </div>
+
+      <div class="campus-badge mt-4">
+        <span></span>
+        <span>专属于池州学院学子 · 欢迎加入</span>
+      </div>
+
+      <!-- 插入二维码/联系方式图片 -->
+      <div class="img-frame mt-4" style="width:min(15vw,140px);height:min(15vw,140px);border-radius:12px">
+        <div class="img-placeholder">
+          <div class="icon"></div>
+          <div>二维码</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span>08 / 08</span>
+    </div>
+  </section>
+</div>
+
+<div class="nav-hint">
+  <kbd>←</kbd> <kbd>→</kbd> 翻页 · <kbd>ESC</kbd> 索引
+</div>
+
+<script>
+// ============ WebGL 背景 ============
+(function(){
+  const canvas = document.getElementById('bg-dark');
+  const ctx = canvas.getContext('2d');
+  let w, h, time = 0;
+  function resize(){w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight;}
+  resize(); window.addEventListener('resize', resize);
+  function draw(){
+    if(document.body.classList.contains('low-power')) return;
+    time += 0.003;
+    ctx.fillStyle = 'rgba(10,10,11,0.12)';
+    ctx.fillRect(0,0,w,h);
+    for(let i=0;i<3;i++){
+      const x = w/2 + Math.sin(time*(0.3+i*0.2))*w*0.3;
+      const y = h/2 + Math.cos(time*(0.2+i*0.15))*h*0.3;
+      const r = 150 + Math.sin(time+i)*50;
+      const grad = ctx.createRadialGradient(x,y,0,x,y,r);
+      grad.addColorStop(0,`rgba(37,99,235,${0.06-i*0.015})`);
+      grad.addColorStop(1,'rgba(37,99,235,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ============ 翻页 ============
+(function(){
+  const deck = document.getElementById('deck');
+  const slides = deck.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0, animating = false;
+
+  function goTo(idx){
+    if(animating || idx < 0 || idx >= total) return;
+    animating = true; current = idx;
+    deck.style.transform = `translateX(-${current*100}vw)`;
+    document.body.classList.toggle('light-bg', slides[current].classList.contains('light'));
+    setTimeout(() => animating = false, 900);
+  }
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current+1); }
+    if(e.key === 'ArrowLeft') { e.preventDefault(); goTo(current-1); }
+  });
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
+  document.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if(Math.abs(diff) > 50) goTo(diff > 0 ? current+1 : current-1);
+  });
+  let wheelTimeout;
+  document.addEventListener('wheel', e => {
+    if(wheelTimeout) return; wheelTimeout = setTimeout(() => wheelTimeout = null, 1000);
+    goTo(e.deltaY > 0 ? current+1 : current-1);
+  }, {passive:true});
+  goTo(0);
+})();
+</script>
+</body>
+</html>

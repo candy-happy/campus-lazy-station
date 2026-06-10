@@ -71,7 +71,7 @@
       try {
         const resp = await fetch('/api/ai/market/batch', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') },
+          headers: { 'Content-Type': 'application/json', ...API._headers() },
           body: JSON.stringify({ status, limit })
         });
         const data = await resp.json();
@@ -112,7 +112,7 @@
       try {
         const resp = await fetch('/api/ai/wall/batch', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') },
+          headers: { 'Content-Type': 'application/json', ...API._headers() },
           body: JSON.stringify({ limit })
         });
         const data = await resp.json();
@@ -153,7 +153,7 @@
       try {
         const resp = await fetch('/api/ai/wall/comments/batch', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') },
+          headers: { 'Content-Type': 'application/json', ...API._headers() },
           body: JSON.stringify({ limit })
         });
         const data = await resp.json();

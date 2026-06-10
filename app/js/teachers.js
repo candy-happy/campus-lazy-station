@@ -1,10 +1,9 @@
-// teachers.js - 教师评价
+// teachers.js - 教师留言
 // 依赖: core.js (需先加载)
 // 新功能请添加为独立JS模块，不要在骨架文件中添加代码
 
 
-
-// ═══ 教师评价系统 ═══
+// ═══ 教师留言系统 ═══
 let _teacherPage = 1;
 let _teacherCollege = '全部';
 let _teacherSearch = '';
@@ -79,14 +78,14 @@ async function loadTeachers(reset = true) {
     if (res.teachers && res.teachers.length > 0) {
       res.teachers.forEach(t => {
         const ratingClass = t.avg_rating >= 4 ? 'teacher-rating-high' : t.avg_rating >= 3 ? 'teacher-rating-mid' : 'teacher-rating-low';
-        const titleTag = t.title ? '<span style="font-size:11px;color:#1976D2;background:#E3F2FD;padding:1px 6px;border-radius:4px;margin-left:6px">' + t.title + '</span>' : '';
+        const titleTag = t.title ? '<span style="font-size:11px;color:#FF6B35;background:#FFF3E0;padding:1px 6px;border-radius:4px;margin-left:6px">' + t.title + '</span>' : '';
         const gradTag = t.graduate ? '<span style="font-size:10px;color:#7B1FA2;background:#F3E5F5;padding:1px 6px;border-radius:4px;margin-left:4px">' + (t.graduate.includes('博士') ? '博士' : '硕士') + '</span>' : (t.education && t.education.includes('博士') ? '<span style="font-size:10px;color:#7B1FA2;background:#F3E5F5;padding:1px 6px;border-radius:4px;margin-left:4px">博士</span>' : '');
         // 课程标签（最多3个）
         let courseTags = '';
         if (t.courses) {
           const cList = t.courses.split(/[，,、；;]/).filter(c => c.trim()).slice(0, 3);
           courseTags = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' +
-            cList.map(c => '<span style="font-size:10px;color:#1565C0;background:#E3F2FD;padding:1px 6px;border-radius:4px">' + c.trim() + '</span>').join('') + '</div>';
+            cList.map(c => '<span style="font-size:10px;color:#FF6B35;background:#FFF3E0;padding:1px 6px;border-radius:4px">' + c.trim() + '</span>').join('') + '</div>';
         }
         container.innerHTML += '<div class="teacher-card" onclick="openTeacherDetail(' + t.id + ')">' +
           '<div class="teacher-avatar-lg">' + t.name.charAt(0) + '</div>' +
@@ -98,7 +97,6 @@ async function loadTeachers(reset = true) {
             '<div class="teacher-stats">' +
               '<span class="teacher-stat">👍 ' + (t.like_count||0) + '</span>' +
               '<span class="teacher-stat">💬 ' + (t.review_count||0) + '</span>' +
-              '<span class="teacher-rating-badge ' + ratingClass + '">⭐ ' + (t.avg_rating||0).toFixed(1) + '</span>' +
             '</div>' +
           '</div>' +
         '</div>';
@@ -121,7 +119,6 @@ async function openTeacherDetail(id) {
     const res = await API.getTeacherDetail(id);
     const t = res.teacher;
     if (!t) return showToast('教师不存在');
-    document.getElementById('teacherDetailTitle').textContent = t.name;
 
     // ── 教师信息头部卡片（渐变背景） ──
     const researchTags = t.research
@@ -131,7 +128,7 @@ async function openTeacherDetail(id) {
       : '';
 
     document.getElementById('teacherInfoHeader').innerHTML =
-      '<div style="background:linear-gradient(135deg,#1565C0,#42A5F5);padding:28px 16px 22px;color:#fff;text-align:center">' +
+      '<div style="background:linear-gradient(135deg,#FF6B35,#FF8C5A);padding:28px 16px 22px;color:#fff;text-align:center">' +
         '<div style="width:76px;height:76px;font-size:32px;margin:0 auto 12px;background:rgba(255,255,255,.2);color:#fff;border:3px solid rgba(255,255,255,.4);border-radius:50%;display:flex;align-items:center;justify-content:center">' + t.name.charAt(0) + '</div>' +
         '<div style="font-size:22px;font-weight:700">' + t.name + '</div>' +
         '<div style="font-size:13px;opacity:.85;margin-top:6px">' + t.college + (t.title ? ' · ' + t.title : '') + '</div>' +
@@ -139,9 +136,7 @@ async function openTeacherDetail(id) {
         '<div style="display:flex;gap:24px;justify-content:center;margin-top:16px">' +
           '<div style="text-align:center"><div style="font-size:22px;font-weight:700">' + (t.like_count||0) + '</div><div style="font-size:10px;opacity:.7">点赞</div></div>' +
           '<div style="width:1px;height:30px;background:rgba(255,255,255,.3)"></div>' +
-          '<div style="text-align:center"><div style="font-size:22px;font-weight:700">' + (t.review_count||0) + '</div><div style="font-size:10px;opacity:.7">评价</div></div>' +
-          '<div style="width:1px;height:30px;background:rgba(255,255,255,.3)"></div>' +
-          '<div style="text-align:center"><div style="font-size:22px;font-weight:700">⭐ ' + (t.avg_rating||0).toFixed(1) + '</div><div style="font-size:10px;opacity:.7">评分</div></div>' +
+          '<div style="text-align:center"><div style="font-size:22px;font-weight:700">' + (t.review_count||0) + '</div><div style="font-size:10px;opacity:.7">留言</div></div>' +
         '</div>' +
       '</div>';
 
@@ -226,17 +221,16 @@ async function openTeacherDetail(id) {
     const reviewDisabled = res.todayReviewed ? 'opacity:.5;pointer-events:none' : '';
     document.getElementById('teacherActionArea').innerHTML =
       '<div style="display:flex;gap:12px;justify-content:center">' +
-        '<button onclick="likeTeacher(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#E3F2FD;color:#1565C0;font-size:14px;font-weight:600;cursor:pointer;' + likeDisabled + '">👍 ' + likeText + '</button>' +
-        '<button onclick="showTeacherReviewForm(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#FFF8E1;color:#F57F17;font-size:14px;font-weight:600;cursor:pointer;' + reviewDisabled + '">✍️ ' + (res.todayReviewed ? _t('teacherReviewed') : _t('teacherWriteReview')) + '</button>' +
+        '<button onclick="likeTeacher(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#FFF3E0;color:#FF6B35;font-size:14px;font-weight:600;cursor:pointer;' + likeDisabled + '">👍 ' + likeText + '</button>' +
+        '<button onclick="showTeacherReviewForm(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#FFF8E1;color:#F57F17;font-size:14px;font-weight:600;cursor:pointer;' + reviewDisabled + '">✍️ ' + (res.todayReviewed ? '已留言' : '写留言') + '</button>' +
       '</div>' +
       (res.todayLiked ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">✅ 今天已给这位老师点赞</div>' : '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">💡 每位老师每天可点赞一次</div>') +
-      (res.todayReviewed ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">✅ 今天已评价这位老师</div>' : '');
+      (res.todayReviewed ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">✅ 今天已给这位老师留言</div>' : '');
     
-    // 评价列表
+    // 留言列表
     const reviewList = document.getElementById('teacherReviewList');
     if (res.reviews && res.reviews.length > 0) {
       reviewList.innerHTML = res.reviews.map(r => {
-        const stars = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
         const displayName = r.is_anonymous ? '匿名' : (r.nickname || '匿名');
         const avatarHtml = r.is_anonymous
           ? '<div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999">🕵</div>'
@@ -264,13 +258,13 @@ async function openTeacherDetail(id) {
           }
         }
         return '<div class="teacher-review-card">' +
-          '<div class="teacher-review-header">' + avatarHtml + '<span class="teacher-review-user">' + displayName + '</span><span class="teacher-review-stars">' + stars + '</span><span class="teacher-review-date">' + (r.created_at||'').slice(0,10) + '</span></div>' +
+          '<div class="teacher-review-header">' + avatarHtml + '<span class="teacher-review-user">' + displayName + '</span><span class="teacher-review-date">' + (r.created_at||'').slice(0,10) + '</span></div>' +
           '<div class="teacher-review-content">' + r.content + '</div>' +
           mediaHtml +
         '</div>';
       }).join('');
     } else {
-      reviewList.innerHTML = '<div style="text-align:center;padding:20px;color:#999;font-size:13px">暂无评价，来做第一个评价者吧！</div>';
+      reviewList.innerHTML = '<div style="text-align:center;padding:20px;color:#999;font-size:13px">暂无留言，来做第一个留言者吧！</div>';
     }
     
     openSubPage('teacherDetailPage_sub');

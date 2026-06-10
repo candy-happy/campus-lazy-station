@@ -7,7 +7,7 @@ let _fbPage = 1;
 const _fbPageSize = 15;
 
 // 管理端统一认证头
-function _fbAuth() { return { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token') || '') }; }
+function _fbAuth() { return API._authHeaders(); }
 
 async function loadFeedbackList(page) {
   if (page) _fbPage = page;

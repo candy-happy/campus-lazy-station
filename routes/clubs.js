@@ -8,7 +8,7 @@ const db = require('../config/database');
 const { requireAuth } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { fmtPhone, validateUploadFile } = require('../utils/helpers');
-const aiChecker = require('../utils/aiChecker');
+const aiChecker = require('./ai');
 
 // ─── 社团logo上传配置 ──────────────────────────────────
 const CLUB_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'clubs');

@@ -1,4 +1,4 @@
-// scripts/security-check.js - 安全检查脚本
+﻿// scripts/security-check.js - 安全检查脚本
 // 用于验证生产环境的安全配置是否正确
 
 const fs = require('fs');
@@ -35,7 +35,7 @@ function check(condition, msg, type = 'pass') {
   }
 }
 
-console.log('\n🔒 校园懒人效率站 - 安全检查报告\n');
+console.log('\n🔒 校园圈 - 安全检查报告\n');
 console.log('=' .repeat(50));
 
 // 1. 检查环境变量

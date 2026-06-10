@@ -103,8 +103,9 @@
       _wallHasMore = true;
       const params = { tab: wallTab === 'mine' ? 'latest' : wallTab, phone: currentUser.phone };
       if (wallTagFilter) params.tag = wallTagFilter;
-      let data = await API.wallFeed(params);
-      wallPosts = Array.isArray(data) ? data : [];
+      const res = await API.wallFeed(params);
+      wallPosts = Array.isArray(res.posts) ? res.posts : [];
+      _wallHasMore = res.hasMore !== false;
       if (wallTab === 'mine') wallPosts = wallPosts.filter(p => p.phone === currentUser.phone);
       renderWallFeed();
       renderWallChannels();
@@ -135,8 +136,8 @@
       _wallSearchMode = true;
       document.getElementById('wallSearchClear').style.display = '';
       try {
-        const data = await API.wallSearch(q, currentUser.phone);
-        wallPosts = Array.isArray(data) ? data : [];
+        const res = await API.wallSearch(q, currentUser.phone);
+        wallPosts = Array.isArray(res.value) ? res.value : (Array.isArray(res) ? res : []);
       } catch(e) { wallPosts = []; }
       renderWallFeed();
     }
@@ -549,6 +550,13 @@
 
       const aiTagsHtml = (data.ai_tags && data.ai_tags.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${data.ai_tags.map(at => `<span onclick="filterByTag('${at}');closeSubPage('wallDetailPage_sub')" style="display:inline-flex;align-items:center;gap:2px;padding:3px 10px;border-radius:12px;font-size:11px;background:#8E44AD10;color:#8E44AD;cursor:pointer;border:1px solid #8E44AD20">🤖 ${escHtml(at)}</span>`).join('')}</div>` : '';
 
+      // 内联操作按钮（分享/举报/拉黑/删除）
+      var detailShareBtn = '<button onclick="event.stopPropagation();doSharePost('+data.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">📤 分享</button>';
+      var detailReportBtn = '<button onclick="event.stopPropagation();showReportMenu(\''+('post')+'\','+data.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">🚫 举报</button>';
+      var detailBlockBtn = (currentUser && data.phone !== currentUser.phone) ? '<button onclick="event.stopPropagation();doBlockUser(\''+escHtml(data.phone)+'\')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🚷 拉黑</button>' : '';
+      var detailDeleteBtn = ((currentUser && data.phone === currentUser.phone) || (currentUser && (currentUser.role==='admin'||currentUser.role==='super'))) ? '<button onclick="event.stopPropagation();doDeletePost('+data.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🗑️ 删除</button>' : '';
+      var detailInlineActions = detailShareBtn + detailReportBtn + detailBlockBtn + detailDeleteBtn;
+
       const el = document.getElementById('wallDetailContent');
       el.innerHTML = `
         <!-- 帖子主体 -->
@@ -560,7 +568,7 @@
               <div style="font-size:16px;font-weight:700;color:var(--text)">${escHtml(data.nickname||'匿名')}</div>
               <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${timeAgo(data.created_at)}</div>
             </div>
-            <button onclick="showReportMenu('post',${data.id})" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer;padding:6px 10px;border-radius:50%;transition:all 0.2s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">⋯</button>
+            <span style="position:relative;flex-shrink:0"><button onclick="event.stopPropagation();toggleInlineActions(this,${data.id},'${escHtml(data.phone)}',event)" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer;padding:6px 10px;border-radius:50%;transition:all 0.2s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">⋯</button><span class="wall-inline-actions" style="display:none;position:absolute;right:0;top:100%;background:var(--card);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:6px;z-index:50;min-width:120px;margin-top:4px" onmouseleave="this.classList.remove('open')">${detailInlineActions}</span></span>
           </div>
 
           <!-- 帖子内容 -->
@@ -684,18 +692,48 @@
       if (data.error) return showToast(data.error);
       const posts = data.posts || [];
       const isMe = phone === currentUser.phone;
+      var bgStyle = '';
+      if (data.bg_image) {
+        bgStyle = 'background-image:url(' + escHtml(data.bg_image) + ');background-size:cover;background-position:center';
+      } else {
+        bgStyle = 'background:' + (data.bg_color || '#FF6B2B');
+      }
+      var contactHtml = '';
+      if (data.name && data.showName) {
+        contactHtml += '<div style="display:inline-flex;align-items:center;gap:4px;margin:6px 6px 0;font-size:12px;color:rgba(255,255,255,0.85);text-shadow:0 1px 2px rgba(0,0,0,0.2)">👤 ' + escHtml(data.name) + '</div>';
+      }
+      if (data.dormitory) {
+        var dormInfo = data.dormitory + (data.room ? ' ' + data.room : '');
+        contactHtml += '<div style="display:inline-flex;align-items:center;gap:4px;margin:6px 6px 0;font-size:12px;color:rgba(255,255,255,0.85);text-shadow:0 1px 2px rgba(0,0,0,0.2)">🏠 ' + escHtml(dormInfo) + '</div>';
+      }
+      if (data.wechat) {
+        contactHtml += '<div style="display:inline-flex;align-items:center;gap:4px;margin:6px 6px 0;font-size:12px;color:rgba(255,255,255,0.85);text-shadow:0 1px 2px rgba(0,0,0,0.2)">💬 微信: ' + escHtml(data.wechat) + '</div>';
+      }
+      if (data.qq) {
+        contactHtml += '<div style="display:inline-flex;align-items:center;gap:4px;margin:6px 6px 0;font-size:12px;color:rgba(255,255,255,0.85);text-shadow:0 1px 2px rgba(0,0,0,0.2)">🐧 QQ: ' + escHtml(data.qq) + '</div>';
+      }
+      if (data.phoneDisplay && data.phoneDisplay !== phone && data.phoneDisplay.indexOf('****') === -1) {
+        contactHtml += '<div style="display:inline-flex;align-items:center;gap:4px;margin:6px 6px 0;font-size:12px;color:rgba(255,255,255,0.85);text-shadow:0 1px 2px rgba(0,0,0,0.2)">📱 ' + escHtml(data.phoneDisplay) + '</div>';
+      }
+      if (data.bio && data.bio !== 'null') {
+        contactHtml = '<div style="font-size:13px;color:rgba(255,255,255,0.9);margin-top:8px;padding:0 20px;text-shadow:0 1px 2px rgba(0,0,0,0.2)">' + escHtml(data.bio) + '</div>' + contactHtml;
+      }
       const el = document.getElementById('wallDetailContent');
       el.innerHTML = `
-        <div style="text-align:center;padding:20px 0;border-bottom:1px solid var(--border,#eee);margin-bottom:16px">
-          <div class="wall-avatar" style="width:64px;height:64px;${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? 'overflow:hidden' : 'font-size:28px'};margin:0 auto 12px">${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? '<img src="'+escHtml(data.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />' : (data.avatar && /\p{Emoji}/u.test(data.avatar) && data.avatar.length<=2 ? data.avatar : (data.nickname||'匿')[0])}</div>
-          <div style="font-size:18px;font-weight:700">${escHtml(data.nickname)}</div>
-          <div style="display:flex;justify-content:center;gap:24px;margin-top:12px">
-            <div style="cursor:pointer" onclick="showFollowList('${phone}','followers')" title="查看粉丝列表"><div style="font-size:18px;font-weight:900">${data.followers}</div><div style="font-size:12px;color:var(--text-secondary,#888)">粉丝</div></div>
-            <div style="cursor:pointer" onclick="showFollowList('${phone}','following')" title="查看关注列表"><div style="font-size:18px;font-weight:900">${data.following}</div><div style="font-size:12px;color:var(--text-secondary,#888)">关注</div></div>
-            <div><div style="font-size:18px;font-weight:900">${data.postCount}</div><div style="font-size:12px;color:var(--text-secondary,#888)">帖子</div></div>
+        <div style="text-align:center;padding:32px 0 20px;position:relative;overflow:hidden;border-radius:16px 16px 0 0;margin-bottom:16px;${bgStyle}">
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.05),rgba(0,0,0,0.4));z-index:0"></div>
+          <div style="position:relative;z-index:1">
+            <div class="wall-avatar" style="width:64px;height:64px;${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? 'overflow:hidden' : 'font-size:28px'};margin:0 auto 12px;border:3px solid rgba(255,255,255,0.6);box-shadow:0 2px 8px rgba(0,0,0,0.2)">${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? '<img src="'+escHtml(data.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />' : (data.avatar && /\p{Emoji}/u.test(data.avatar) && data.avatar.length<=2 ? data.avatar : (data.nickname||'匿')[0])}</div>
+            <div style="font-size:18px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.3)">${escHtml(data.nickname)}</div>
+            ${contactHtml}
           </div>
-          ${!isMe ? '<div style="display:flex;gap:10px;margin-top:16px;justify-content:center"><button onclick="doWallFollow(\''+phone+'\')" class="submit-btn" style="padding:10px 24px">' + (data.isFollowing ? '已关注' : '+ 关注') + '</button><button onclick="tryWallChat(\''+phone+'\')" class="submit-btn" style="padding:10px 24px;background:linear-gradient(135deg,#45B7D1,#6DD5ED);color:#fff">💬 私信</button></div>' : ''}
         </div>
+        <div style="display:flex;justify-content:center;gap:24px;margin-bottom:16px">
+          <div style="cursor:pointer" onclick="showFollowList('${phone}','followers')" title="查看粉丝列表"><div style="font-size:18px;font-weight:900">${data.followers}</div><div style="font-size:12px;color:var(--text-secondary,#888)">粉丝</div></div>
+          <div style="cursor:pointer" onclick="showFollowList('${phone}','following')" title="查看关注列表"><div style="font-size:18px;font-weight:900">${data.following}</div><div style="font-size:12px;color:var(--text-secondary,#888)">关注</div></div>
+          <div><div style="font-size:18px;font-weight:900">${data.postCount}</div><div style="font-size:12px;color:var(--text-secondary,#888)">帖子</div></div>
+        </div>
+        ${!isMe ? '<div style="display:flex;gap:10px;margin-bottom:16px;justify-content:center"><button onclick="doWallFollow(\''+phone+'\')" class="submit-btn" style="padding:10px 24px">' + (data.isFollowing ? '已关注' : '+ 关注') + '</button><button onclick="tryWallChat(\''+phone+'\')" class="submit-btn" style="padding:10px 24px;background:linear-gradient(135deg,#45B7D1,#6DD5ED);color:#fff">💬 私信</button></div>' : ''}
         <div style="font-weight:700;margin-bottom:12px">📝 ${isMe ? '我的' : 'TA的'}帖子</div>
         ${posts.length ? posts.map(p => `
           <div class="wall-card" style="margin-bottom:12px">
@@ -1010,12 +1048,17 @@
     async function loadChatList() {
       const list = await API.chatConversations(currentUser.phone);
       const el = document.getElementById('chatListBody');
+      // 分享横幅（内嵌在列表顶部，不是弹窗）
+      var shareBanner = '';
+      if (window._pendingSharePostId) {
+        shareBanner = '<div id="shareHint" style="background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:white;padding:10px 16px;margin-bottom:8px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;font-size:14px"><span>📤 点击下方好友分享帖子</span><button onclick="window._pendingSharePostId=null;loadChatList()" style="background:rgba(255,255,255,0.25);border:none;color:white;padding:3px 10px;border-radius:10px;cursor:pointer;font-size:12px">取消</button></div>';
+      }
       if (!list || !list.length) {
-        el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary)">暂无消息</div>';
+        el.innerHTML = shareBanner + '<div style="padding:40px;text-align:center;color:var(--text-secondary)">暂无消息</div>';
         return;
       }
-      el.innerHTML = list.map(c => `
-        <div class="chat-item" onclick="openChatConv(${c.id},'${escHtml(c.other_phone)}','${escHtml(c.other_name)}')">
+      el.innerHTML = shareBanner + list.map(c => `
+        <div class="chat-item" onclick="${window._pendingSharePostId ? 'window.shareAndOpenConv' : 'openChatConv'}(${c.id},'${escHtml(c.other_phone)}','${escHtml(c.other_name)}')">
           <div class="chat-item-avatar">${(c.other_name||'?')[0]}</div>
           <div class="chat-item-info">
             <div class="chat-item-top">
@@ -1029,6 +1072,15 @@
           </div>
         </div>
       `).join('');
+      // 导出分享+打开会话的组合函数
+      window.shareAndOpenConv = function(convId, otherPhone, otherName) {
+        if (window._pendingSharePostId) {
+          var postId = window._pendingSharePostId;
+          window._pendingSharePostId = null;
+          openChatConv(convId, otherPhone, otherName);
+          sendShareMessageToConv(convId, postId);
+        }
+      };
     }
 
 
@@ -1037,12 +1089,31 @@
       currentConvId = convId;
       currentConvPhone = otherPhone;
       document.getElementById('chatConvTitle').textContent = otherName || otherPhone;
-      // 显示聊天对话，隐藏消息列表
       document.getElementById('chatConversation').style.display = 'flex';
       await loadChatMessages();
-      // 自动刷新
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
       chatRefreshTimer = setInterval(loadChatMessages, 5000);
+    }
+
+    // 发送分享消息到指定会话
+    async function sendShareMessageToConv(convId, postId) {
+      try {
+        const msgText = '[分享了一条帖子] #' + postId;
+        const res = await API.chatSend({
+          conversation_id: convId,
+          sender_phone: currentUser.phone,
+          content: msgText,
+          type: 'share_post'
+        });
+        if (res.error) {
+          showToast(res.error);
+        } else {
+          showToast('📤 已分享');
+          await loadChatMessages();
+        }
+      } catch(e) {
+        showToast('分享失败，请重试');
+      }
     }
 
     function backToChatList() {
@@ -1183,6 +1254,345 @@
       setTimeout(() => showSettings(), 200);
     }
 
+    // ══════ 更多菜单（分享/举报/拉黑/删除） ══════
+    function showPostMoreMenu(postId, postPhone, ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      const isOwn = currentUser && currentUser.phone === postPhone;
+      const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super');
+      const ov = document.createElement('div');
+      ov.id = 'postMoreOverlay';
+      ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:10001;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s';
+      ov.onclick = function(ev) { if (ev.target === ov) ov.remove(); };
+      // 删除按钮：自己或管理员可见
+      const deleteBtn = (isOwn || isAdmin) ? `<button onclick="doDeletePost(${postId})" style="display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--bg);border:none;border-top:1px solid var(--border);cursor:pointer;font-size:15px;color:#E74C3C;text-align:left;width:100%">🗑️ 删除帖子</button>` : '';
+      // 拉黑按钮：非自己可见
+      const blockBtn = (!isOwn) ? `<button onclick="doBlockUser('${postPhone}')" style="display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--bg);border:none;border-top:1px solid var(--border);cursor:pointer;font-size:15px;color:#E74C3C;text-align:left;width:100%">🚷 拉黑该用户</button>` : '';
+      ov.innerHTML = `
+        <div style="background:var(--card-bg);border-radius:16px 16px 0 0;width:100%;max-width:420px;animation:slideUp 0.25s;padding-bottom:env(safe-area-inset-bottom)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px">
+            <div style="font-size:17px;font-weight:700">更多操作</div>
+            <button onclick="document.getElementById('postMoreOverlay').remove()" style="background:none;border:none;font-size:22px;color:var(--text-secondary);cursor:pointer">✕</button>
+          </div>
+          <button onclick="doSharePost(${postId})" style="display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--bg);border:none;cursor:pointer;font-size:15px;color:var(--text);text-align:left;width:100%" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='var(--bg)'">📤 分享</button>
+          <button onclick="document.getElementById('postMoreOverlay').remove();showReportMenu('post',${postId})" style="display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--bg);border:none;cursor:pointer;font-size:15px;color:var(--text);text-align:left;width:100%" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='var(--bg)'">🚫 举报</button>
+          ${blockBtn}
+          ${deleteBtn}
+          <button onclick="document.getElementById('postMoreOverlay').remove()" style="display:block;width:100%;padding:16px;background:var(--bg);border:none;border-top:1px solid var(--border);margin-top:8px;cursor:pointer;font-size:15px;color:var(--text-secondary);text-align:center;border-radius:0">取消</button>
+        </div>
+      `;
+      document.body.appendChild(ov);
+    }
+
+    // ══════ 分享帖子（跳转到消息页面） ══════
+    async function doSharePost(postId) {
+      const ov = document.getElementById('postMoreOverlay');
+      if (ov) ov.remove();
+      // 关闭内联操作
+      document.querySelectorAll('.wall-inline-actions.open').forEach(el => el.classList.remove('open'));
+
+      var phone = currentUser && currentUser.phone;
+      if (!phone) { showToast('请先登录'); return; }
+
+      // 加载中遮罩
+      var overlay = document.createElement('div');
+      overlay.id = 'shareOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10001;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s';
+      overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+      overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:16px 16px 0 0;width:100%;max-width:420px;padding:20px 16px 32px;animation:slideUp 0.3s"><div style="text-align:center;padding:40px 0;color:var(--text-secondary)"><div style="font-size:32px;margin-bottom:12px">⏳</div><div>加载好友列表...</div></div></div>';
+      document.body.appendChild(overlay);
+
+      // 并行拉取关注列表和粉丝列表
+      var followers = [];
+      var following = [];
+      try {
+        [followers, following] = await Promise.all([
+          API.wallFollowers(phone),
+          API.wallFollowing(phone)
+        ]);
+      } catch(e) {
+        overlay.remove();
+        showToast('加载好友失败，请重试');
+        return;
+      }
+
+      // 合并去重，按关系分组
+      var fSet = new Set(followers.map(u => u.phone));
+      var gSet = new Set(following.map(u => u.phone));
+      var allPhones = new Set([...fSet, ...gSet]);
+
+      var users = []; // {phone, nickname, avatar, relation}
+      allPhones.forEach(function(p) {
+        var isF = fSet.has(p);
+        var isG = gSet.has(p);
+        var rel = (isF && isG) ? '互相关注' : (isF ? '关注我' : '已关注');
+        var u = followers.find(function(x){return x.phone===p;}) || following.find(function(x){return x.phone===p;});
+        users.push({ phone: p, nickname: u.nickname || p, avatar: u.avatar || '', relation: rel });
+      });
+
+      // 按关系排序：互相关注 > 关注我 > 已关注
+      var relOrder = { '互相关注':0, '关注我':1, '已关注':2 };
+      users.sort(function(a,b){ return relOrder[a.relation] - relOrder[b.relation] || a.nickname.localeCompare(b.nickname); });
+
+      // 选中的集合
+      var selected = new Set();
+      var selectAll = false;
+
+      // 头像颜色池
+      var avatarColors = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD','#98D8C8','#F7DC6F','#BB8FCE','#85C1E9'];
+
+      function avatarHTML(u) {
+        var initial = u.nickname.charAt(0).toUpperCase();
+        var color = avatarColors[u.phone.split('').reduce(function(a,c){return a+c.charCodeAt(0);},0) % avatarColors.length];
+        var style = 'width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;background:' + color + ';';
+        return u.avatar
+          ? '<div style="width:44px;height:44px;border-radius:50%;flex-shrink:0;overflow:hidden;background:' + color + '"><img src="' + escHtml(u.avatar) + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" /><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff">' + initial + '</span></div>'
+          : '<span style="' + style + '">' + initial + '</span>';
+      }
+
+      // 按关系分组
+      var groups = [
+        { label: '🤝 互相关注', relation: '互相关注', users: [] },
+        { label: '💚 关注我的人', relation: '关注我', users: [] },
+        { label: '👀 我关注的人', relation: '已关注', users: [] }
+      ];
+      users.forEach(function(u) {
+        var g = groups.find(function(g){return g.relation===u.relation;});
+        if (g) g.users.push(u);
+      });
+      groups = groups.filter(function(g){return g.users.length > 0;});
+
+      function renderUserList(filteredUsers) {
+        var list = filteredUsers || users;
+        // 如果用搜索过滤，不分段
+        if (filteredUsers) {
+          return '<div style="display:flex;flex-direction:column;gap:2px">' + list.map(renderUserItem).join('') + '</div>';
+        }
+        // 分组渲染
+        return groups.map(function(g) {
+          if (g.users.length === 0) return '';
+          return '<div style="margin-bottom:8px">'
+            + '<div style="font-size:11px;font-weight:600;color:var(--text-secondary);padding:6px 4px 2px;text-transform:uppercase;letter-spacing:0.5px">' + g.label + ' <span style="font-weight:400;opacity:0.7">' + g.users.length + '</span></div>'
+            + '<div style="display:flex;flex-direction:column;gap:2px">' + g.users.map(renderUserItem).join('') + '</div>'
+            + '</div>';
+        }).join('');
+      }
+
+      function renderUserItem(u) {
+        var checked = selected.has(u.phone);
+        var initials = u.nickname.charAt(0).toUpperCase();
+        var color = avatarColors[u.phone.split('').reduce(function(a,c){return a+c.charCodeAt(0);},0) % avatarColors.length];
+        var checkStyle = checked
+          ? 'background:' + color + ';border-color:' + color + ';transform:scale(1)'
+          : 'border-color:var(--border);transform:scale(0.9)';
+        return '<div class="share-user-item" data-phone="' + escHtml(u.phone) + '" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:14px;cursor:pointer;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);background:' + (checked?'var(--primary)08':'transparent') + ';border:1.5px solid ' + (checked?'var(--primary)20':'transparent') + '" onmouseenter="this.style.background=\'var(--bg)\'" onmouseleave="if(!' + checked + ')this.style.background=\'transparent\';this.style.borderColor=\'' + (checked?'var(--primary)20':'transparent') + '\'">'
+          // 圆形checkbox
+          + '<div style="width:22px;height:22px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.25s cubic-bezier(0.4,0,0.2,1);' + checkStyle + '">'
+          + (checked ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '')
+          + '</div>'
+          // 头像
+          + avatarHTML(u)
+          // 信息
+          + '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3">' + escHtml(u.nickname) + '</div><div style="font-size:11px;color:var(--text-secondary);margin-top:2px">' + escHtml(u.phone) + '</div></div>'
+          + '</div>';
+      }
+
+      function renderModal() {
+        overlay.innerHTML = '';
+        var sheet = document.createElement('div');
+        sheet.style.cssText = 'background:var(--card-bg);border-radius:20px 20px 0 0;width:100%;max-width:440px;animation:slideUp 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;max-height:88vh;box-shadow:0 -8px 32px rgba(0,0,0,0.12)';
+        overlay.appendChild(sheet);
+
+        // === 顶部拖拽条 ===
+        var dragBar = document.createElement('div');
+        dragBar.style.cssText = 'width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 8px;flex-shrink:0';
+        sheet.appendChild(dragBar);
+
+        // === 标题栏 ===
+        var titleBar = document.createElement('div');
+        titleBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:4px 20px 12px;flex-shrink:0';
+        titleBar.innerHTML = '<div style="display:flex;align-items:center;gap:10px"><div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#FF6B2B,#FF8F5E);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 12px rgba(255,107,43,0.25)">📤</div><div><div style="font-size:17px;font-weight:700;color:var(--text);line-height:1.2">分享帖子</div><div style="font-size:12px;color:var(--text-secondary)">选择好友，一键群发</div></div></div><button id="shareCloseBtn" style="width:32px;height:32px;border-radius:50%;background:var(--bg);border:none;font-size:16px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0" onmouseenter="this.style.background=\'var(--border)\'" onmouseleave="this.style.background=\'var(--bg)\'">✕</button>';
+        sheet.appendChild(titleBar);
+
+        // === 分隔线 ===
+        var divider = document.createElement('div');
+        divider.style.cssText = 'height:1px;background:var(--border);margin:0 20px;flex-shrink:0;opacity:0.5';
+        sheet.appendChild(divider);
+
+        // === 搜索框 ===
+        var searchWrap = document.createElement('div');
+        searchWrap.style.cssText = 'padding:12px 20px 8px;flex-shrink:0;position:relative';
+        searchWrap.innerHTML = '<div style="position:relative;display:flex;align-items:center"><svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-secondary);pointer-events:none;opacity:0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input id="shareSearchInput" type="text" placeholder="搜索好友..." style="width:100%;padding:12px 40px 12px 40px;border:2px solid var(--border);border-radius:14px;font-size:14px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box;transition:border-color 0.2s" onfocus="this.style.borderColor=\'var(--primary)\'" onblur="this.style.borderColor=\'var(--border)\'" /><button id="shareSearchClear" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:none;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:14px;display:none;align-items:center;justify-content:center" onmouseenter="this.style.background=\'var(--border)\'" onmouseleave="this.style.background=\'transparent\'">✕</button></div>';
+        sheet.appendChild(searchWrap);
+
+        // === 操作栏 ===
+        var actionBar = document.createElement('div');
+        actionBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:4px 20px 8px;flex-shrink:0';
+        actionBar.innerHTML = '<button id="shareSelectAllBtn" style="display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--text);cursor:pointer;font-weight:500;transition:all 0.15s" onmouseenter="this.style.borderColor=\'var(--primary)\';this.style.color=\'var(--primary)\'" onmouseleave="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text)\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> 全选</button><span id="shareSelectedCount" style="font-size:12px;font-weight:600;color:var(--primary);background:var(--primary)10;padding:4px 12px;border-radius:20px;display:none">0</span>';
+        sheet.appendChild(actionBar);
+
+        // === 用户列表 ===
+        var listContainer = document.createElement('div');
+        listContainer.id = 'shareUserList';
+        listContainer.style.cssText = 'overflow-y:auto;flex:1;min-height:0;padding:0 12px 8px;';
+        listContainer.innerHTML = '<div style="padding:0 8px">' + renderUserList() + '</div>';
+        sheet.appendChild(listContainer);
+
+        // === 底部发送栏 ===
+        var bottomBar = document.createElement('div');
+        bottomBar.style.cssText = 'flex-shrink:0;padding:12px 20px 20px;display:flex;gap:10px;align-items:center;background:linear-gradient(180deg,transparent 0%,var(--card-bg) 20%);border-top:1px solid var(--border)';
+        bottomBar.innerHTML = '<button id="shareSendBtn" style="flex:1;padding:15px;background:linear-gradient(135deg,#E0E0E0,#D0D0D0);color:#999;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:default;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);letter-spacing:0.5px" disabled><span id="shareSendText">选择好友发送</span></button>';
+        sheet.appendChild(bottomBar);
+
+        // === 空状态 ===
+        if (users.length === 0) {
+          overlay.innerHTML = '';
+          var emptySheet = document.createElement('div');
+          emptySheet.style.cssText = 'background:var(--card-bg);border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:32px 20px 40px;animation:slideUp 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;align-items:center;text-align:center';
+          emptySheet.innerHTML = '<div style="width:72px;height:72px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:16px">👥</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)">还没有好友</div><div style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;line-height:1.5">关注别人或被关注后<br/>即可分享帖子给好友</div><button onclick="document.getElementById(\'shareOverlay\').remove()" style="padding:12px 36px;background:var(--primary);color:white;border:none;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer">知道了</button>';
+          overlay.appendChild(emptySheet);
+          return;
+        }
+
+        // 事件绑定
+        document.getElementById('shareCloseBtn').onclick = function() { overlay.remove(); };
+
+        var searchInput = document.getElementById('shareSearchInput');
+        var searchClear = document.getElementById('shareSearchClear');
+        searchInput.oninput = function() {
+          var q = this.value.toLowerCase().trim();
+          searchClear.style.display = q ? 'flex' : 'none';
+          var filtered = q ? users.filter(function(u) {
+            return u.nickname.toLowerCase().includes(q) || u.phone.includes(q);
+          }) : null;
+          document.getElementById('shareUserList').innerHTML = '<div style="padding:0 8px">' + renderUserList(filtered) + '</div>';
+          // 重新绑定用户点击
+          bindUserClicks();
+        };
+        searchClear.onclick = function() { searchInput.value = ''; searchInput.oninput(); searchInput.focus(); };
+
+        function updateUI() {
+          var selCount = selected.size;
+          var badge = document.getElementById('shareSelectedCount');
+          badge.textContent = '已选 ' + selCount + '/' + users.length;
+          badge.style.display = selCount > 0 ? 'inline' : 'none';
+
+          var allBtn = document.getElementById('shareSelectAllBtn');
+          allBtn.innerHTML = selectAll
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> 取消'
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> 全选';
+
+          // 更新列表中的 checkbox
+          document.querySelectorAll('#shareUserList .share-user-item').forEach(function(item) {
+            var phone = item.dataset.phone;
+            var checked = selected.has(phone);
+            item.style.background = checked ? 'var(--primary)08' : '';
+            item.style.borderColor = checked ? 'var(--primary)20' : 'transparent';
+            var circle = item.querySelector('div:first-child');
+            if (circle) {
+              var color = avatarColors[phone.split('').reduce(function(a,c){return a+c.charCodeAt(0);},0) % avatarColors.length];
+              circle.style.background = checked ? color : '';
+              circle.style.borderColor = checked ? color : 'var(--border)';
+              circle.style.transform = checked ? 'scale(1)' : 'scale(0.9)';
+              circle.innerHTML = checked ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+            }
+          });
+
+          // 更新发送按钮
+          var btn = document.getElementById('shareSendBtn');
+          var btnText = document.getElementById('shareSendText');
+          if (selCount > 0) {
+            btn.style.background = 'linear-gradient(135deg,#FF6B2B,#FF8F5E)';
+            btn.style.color = '#fff';
+            btn.style.cursor = 'pointer';
+            btn.style.boxShadow = '0 4px 16px rgba(255,107,43,0.3)';
+            btn.disabled = false;
+            btnText.textContent = '📤 发送给 ' + selCount + ' 人';
+          } else {
+            btn.style.background = 'linear-gradient(135deg,#E0E0E0,#D0D0D0)';
+            btn.style.color = '#999';
+            btn.style.cursor = 'default';
+            btn.style.boxShadow = 'none';
+            btn.disabled = true;
+            btnText.textContent = '选择好友发送';
+          }
+        }
+
+        function bindUserClicks() {
+          document.querySelectorAll('#shareUserList .share-user-item').forEach(function(item) {
+            item.onclick = function() {
+              var phone = this.dataset.phone;
+              if (selected.has(phone)) { selected.delete(phone); }
+              else { selected.add(phone); }
+              selectAll = (selected.size === users.length);
+              updateUI();
+            };
+          });
+        }
+        bindUserClicks();
+
+        // 全选/取消
+        document.getElementById('shareSelectAllBtn').onclick = function() {
+          selectAll = !selectAll;
+          if (selectAll) { users.forEach(function(u){ selected.add(u.phone); }); }
+          else { selected.clear(); }
+          updateUI();
+        };
+
+        // 发送
+        document.getElementById('shareSendBtn').onclick = async function() {
+          if (selected.size === 0) return;
+          var btn = this;
+          var btnText = document.getElementById('shareSendText');
+          btn.disabled = true;
+          btn.style.background = 'linear-gradient(135deg,#FF6B2B,#FF8F5E)';
+          btn.style.opacity = '0.7';
+          btn.style.cursor = 'default';
+          var targets = Array.from(selected);
+          var success = 0;
+          var fail = 0;
+          for (var i = 0; i < targets.length; i++) {
+            btnText.textContent = '发送中 ' + (i + 1) + '/' + targets.length + '...';
+            try {
+              var convRes = await API.chatGetOrCreateConversation({
+                user_phone: currentUser.phone,
+                rider_phone: targets[i]
+              });
+              if (convRes.id) {
+                await API.chatSend({
+                  conversation_id: convRes.id,
+                  sender_phone: currentUser.phone,
+                  content: '[分享了一条帖子] #' + postId,
+                  type: 'share_post'
+                });
+                success++;
+              } else { fail++; }
+            } catch(e) { fail++; }
+          }
+          overlay.remove();
+          showToast(success > 0 ? '✅ 已分享给 ' + success + ' 人' + (fail > 0 ? '（' + fail + ' 人失败）' : '') : '❌ 发送失败');
+        };
+      }
+
+      if (users.length === 0) {
+        overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:16px 16px 0 0;width:100%;max-width:420px;padding:20px 16px 32px;animation:slideUp 0.3s"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div style="font-size:17px;font-weight:700">📤 分享帖子给好友</div><button onclick="document.getElementById(\'shareOverlay\').remove()" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer">✕</button></div><div style="text-align:center;padding:40px 0;color:var(--text-secondary)"><div style="font-size:32px;margin-bottom:12px">😢</div><div>还没有好友</div><div style="font-size:12px;margin-top:4px">关注别人或被关注后即可分享</div></div></div>';
+        return;
+      }
+
+      renderModal();
+    }
+
+    async function doDeletePost(postId) {
+      const ov = document.getElementById('postMoreOverlay');
+      if (ov) ov.remove();
+      if (!confirm('确定要删除这条帖子吗？删除后不可恢复。')) return;
+      try {
+        const res = await fetch('/api/wall/posts/' + postId, { method: 'DELETE', headers: API._headers() });
+        const data = await res.json();
+        if (data.ok) { showToast('已删除'); loadWallFeed(); }
+        else { showToast(data.error || '删除失败'); }
+      } catch(e) { showToast('删除失败，请重试'); }
+    }
+
     // ══════ P0-1: 举报功能 ══════
     function showReportMenu(targetType, targetId) {
       const reasons = ['广告推广', '色情低俗', '诈骗信息', '人身攻击', '虚假信息', '侵权内容', '其他'];
@@ -1252,6 +1662,32 @@
       } catch(e) { showToast('举报失败，请稍后重试'); }
     }
 
+    // ══════ 拉黑用户 ══════
+    async function doBlockUser(targetPhone) {
+      const ov = document.getElementById('postMoreOverlay');
+      if (ov) ov.remove();
+      if (!currentUser || currentUser.phone === targetPhone) {
+        showToast('不能拉黑自己');
+        return;
+      }
+      if (!confirm('确定要拉黑该用户吗？拉黑后你将看不到TA的帖子。')) return;
+      try {
+        const res = await fetch('/api/wall/block', {
+          method: 'POST',
+          headers: API._headers(),
+          body: JSON.stringify({ target_phone: targetPhone })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast('已拉黑');
+          // 刷新Feed，过滤掉被拉黑用户的帖子
+          loadWallFeed();
+        } else {
+          showToast(data.error || '拉黑失败');
+        }
+      } catch(e) { showToast('拉黑失败，请稍后重试'); }
+    }
+
     // ══════ P0-2: 无限滚动 ══════
     let _wallPage = 1;
     let _wallLoading = false;
@@ -1279,8 +1715,8 @@
       try {
         const params = { tab: wallTab === 'mine' ? 'latest' : wallTab, phone: currentUser.phone, page: _wallPage };
         if (wallTagFilter) params.tag = wallTagFilter;
-        const data = await API.wallFeed(params);
-        const newPosts = Array.isArray(data) ? data : [];
+        const res = await API.wallFeed(params);
+        const newPosts = Array.isArray(res.posts) ? res.posts : [];
         if (newPosts.length === 0) {
           _wallHasMore = false;
         } else {
@@ -1848,8 +2284,14 @@ window.openChatFromOrder = openChatFromOrder;
 window.showChatPrivacyOptions = showChatPrivacyOptions;
 window.setChatPrivacy = setChatPrivacy;
 window.showReportMenu = showReportMenu;
+window.showPostMoreMenu = showPostMoreMenu;
+window.doSharePost = doSharePost;
+window.sendShareMessage = sendShareMessage;
+window.doDeletePost = doDeletePost;
+window.doBlockUser = doBlockUser;
 window.doReport = doReport;
 window.loadMoreWallPosts = loadMoreWallPosts;
+window.sendShareMessageToConv = sendShareMessageToConv;
 window.renderWallChannels = renderWallChannels;
 window.togglePostTag = togglePostTag;
 window.renderPostTagGrid = renderPostTagGrid;

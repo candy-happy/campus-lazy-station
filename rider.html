@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
  <meta charset="UTF-8" />
@@ -6,7 +6,7 @@
  <meta http-equiv="Pragma" content="no-cache" />
  <meta http-equiv="Expires" content="0" />
  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
- <title>校园懒人效率站 - 骑手端</title>
+ <title>校园圈 - 骑手端</title>
  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="rider/css/rider.css">
 </head>
@@ -182,7 +182,7 @@
             <button type="submit" class="btn btn-success">立即登录</button>
           </form>
         </div>
-        <div style="text-align:center;padding:16px 0;color:var(--text-muted);font-size:12px;opacity:.6">校园懒人效率站 v3.0</div>
+        <div style="text-align:center;padding:16px 0;color:var(--text-muted);font-size:12px;opacity:.6">校园圈 v3.0</div>
       </div>
     </div>
 
@@ -247,13 +247,72 @@
       </div>
     </div>
 
-<script src="api.js?v=3.0.10"></script>
-<script src="rider/js/core.js?v=3.0.10"></script>
-<script src="rider/js/orders.js?v=3.0.10"></script>
-<script src="rider/js/wallet.js?v=3.0.10"></script>
-<script src="rider/js/chat.js?v=3.0.10"></script>
-<script src="rider/js/modals.js?v=3.0.10"></script>
-<script src="rider/js/avatar.js?v=3.0.10"></script>
+<script src="api.js?v=3.0.34"></script>
+<script src="rider/js/core.js?v=3.0.34"></script>
+<script src="rider/js/orders.js?v=3.0.34"></script>
+<script src="rider/js/wallet.js?v=3.0.34"></script>
+<script src="rider/js/chat.js?v=3.0.34"></script>
+<script src="rider/js/modals.js?v=3.0.34"></script>
+<script src="rider/js/avatar.js?v=3.0.34"></script>
+<script>
+// 全局错误捕获 → toast 显示
+window.addEventListener('error', function(e) {
+  var t = document.getElementById('toast');
+  if (t) { t.textContent = 'JS错误: ' + (e.message||e); t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); }, 5000); }
+});
+
+// 等待 DOM + 所有同步脚本就绪后初始化
+(function() {
+  var steps = [];
+  function log(s) { steps.push(s); console.log('[init]', s); }
+  
+  (async function initRider() {
+    try {
+      log('1. _init begin, token=' + (API._token ? 'set' : 'null'));
+      API._init();
+      log('2. _init done, token=' + (API._token ? 'set' : 'null'));
+      
+      var saved = localStorage.getItem('lazyRider');
+      log('3. lazyRider=' + (saved ? 'exists' : 'null'));
+      if (saved) {
+        try { currentRider = JSON.parse(saved); } catch(e) { localStorage.removeItem('lazyRider'); }
+      }
+      log('4. currentRider=' + (currentRider ? 'set(phone=' + currentRider.phone + ')' : 'null'));
+      
+      if (!currentRider) {
+        log('5. no rider → login page');
+        openSubPage('loginPage_sub');
+        return;
+      }
+      
+      log('5. refreshOrders type=' + typeof refreshOrders);
+      await refreshOrders();
+      log('6. orders loaded, len=' + (riderAllOrders ? riderAllOrders.length : 'undefined'));
+      
+      updateProfile();
+      log('7. profile updated');
+      
+      // orderSection already display:block in HTML, no need to switch tab
+      log('8. init complete');
+    } catch(e) {
+      log('ERROR: ' + (e.message||e));
+      console.error('[initRider]', e);
+      var t = document.getElementById('toast');
+      if (t) { t.textContent = '初始化失败: ' + e.message; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); }, 5000); }
+    }
+    
+    // 主题 / 状态
+    var theme = localStorage.getItem('lazyTheme');
+    if (theme === 'dark') document.body.classList.add('dark');
+    var sw = document.getElementById('statusSwitch');
+    if (sw) { sw.classList.add('online'); }
+    if (currentRider && typeof startFrozenCheck === 'function') startFrozenCheck();
+    
+    console.log('[initRider steps]', steps.join(' → '));
+  })();
+})();
+</script>
   <div class="toast" id="toast"></div>
+  </div>
 </body>
 </html>

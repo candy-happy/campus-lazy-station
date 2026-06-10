@@ -1,4 +1,4 @@
-// 校园懒人效率站 - 数据库初始化
+﻿// 校园圈 - 数据库初始化
 const Database = require('better-sqlite3');
 const path = require('path');
 

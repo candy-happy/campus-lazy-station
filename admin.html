@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
  <meta charset="UTF-8" />
@@ -6,17 +6,17 @@
  <meta http-equiv="Pragma" content="no-cache" />
  <meta http-equiv="Expires" content="0" />
  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
- <title>校园懒人效率站 - 管理后台</title>
+ <title>校园圈 - 管理后台</title>
  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
- <script src="api.js"></script>
- <link rel="stylesheet" href="admin/css/style.css" />
+ <script src="admin/js/chart.min.js"></script>
+<script src="api.js"></script>
+<link rel="stylesheet" href="admin/css/style.css" />
 </head>
 <body>
  <div class="login-container" id="loginScreen">
  <div class="login-card">
  <div class="login-logo">🦥</div>
- <div class="login-title">校园懒人效率站</div>
+ <div class="login-title">校园圈</div>
  <div class="login-subtitle">管理后台 · 安全登录</div>
  <form onsubmit="login(event)">
  <div class="form-group"><input type="text" class="form-input" id="loginUsername" placeholder="👤 用户名" required></div>
@@ -30,8 +30,13 @@
  <div class="admin-layout" id="adminDashboard" style="display: none;">
  <aside class="sidebar">
  <div class="sidebar-header">
- <div class="sidebar-logo"><div class="logo-icon">🦥</div>懒人效率站</div>
+ <div class="sidebar-logo"><div class="logo-icon">🦥</div>校园圈</div>
  <div class="sidebar-subtitle">管理后台</div>
+ <!-- 数据库连接状态指示器 -->
+ <div id="dbStatusIndicator" style="margin-top:8px;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;background:rgba(46,204,113,0.15);color:#27ae60">
+   <span id="dbStatusIcon">🟢</span>
+   <span id="dbStatusText">数据库连接正常</span>
+ </div>
  <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.08);border-radius:8px">
   <span style="font-size:12px;opacity:0.8">🌙 深色模式</span>
   <label style="position:relative;width:42px;height:22px;display:inline-block;cursor:pointer">
@@ -222,15 +227,15 @@
      <button class="range-btn order-range" data-range="14" onclick="switchOrderTrend(14,this)">14天</button>
      <button class="range-btn order-range" data-range="30" onclick="switchOrderTrend(30,this)">30天</button>
    </div>
- </div><div class="chart-container"><canvas id="ordersChart"></canvas></div></div>
+ </div><div class="chart-container" style="height:260px"><canvas id="ordersChart"></canvas></div></div>
  <div class="chart-card"><div class="chart-header"><span class="chart-title">👥 用户增长</span>
    <div style="display:flex;gap:4px">
      <button class="range-btn user-range active" data-range="7" onclick="switchUserTrend(7,this)">7天</button>
      <button class="range-btn user-range" data-range="14" onclick="switchUserTrend(14,this)">14天</button>
      <button class="range-btn user-range" data-range="30" onclick="switchUserTrend(30,this)">30天</button>
    </div>
- </div><div class="chart-container"><canvas id="usersChart"></canvas></div></div>
- <div class="chart-card"><div class="chart-header"><span class="chart-title">🥧 服务分布</span></div><div class="chart-container"><canvas id="servicesChart"></canvas></div></div>
+ </div><div class="chart-container" style="height:260px"><canvas id="usersChart"></canvas></div></div>
+ <div class="chart-card"><div class="chart-header"><span class="chart-title">🥧 服务分布</span></div><div class="chart-container" style="height:260px"><canvas id="servicesChart"></canvas></div></div>
  </div>
 
 

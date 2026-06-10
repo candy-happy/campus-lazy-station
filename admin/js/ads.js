@@ -130,7 +130,7 @@ let adsList = [];
   try {
    const res = await fetch('/api/ads/admin/upload', {
     method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token') || '') },
+    headers: API._authHeaders(),
     body: fd
    }).then(r => r.json());
    if (res.error) return showToast(res.error);

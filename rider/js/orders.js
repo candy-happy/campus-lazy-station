@@ -1,5 +1,14 @@
 // orders.js - 订单管理
 
+// ─── 共享常量 ─────────────────────────────────────────
+// fmtTime 已在 core.js 中定义，此处不再重复声明
+// riderAllOrders/newOrders/myOrders 已在 core.js 中声明，此处不再重复
+const statusColor = { pending: '#F39C12', accepted: '#3498DB', running: '#E74C3C', completed: '#2ECC71', cancelled: '#95A5A6' };
+const statusIcon = { pending: '⏳', accepted: '🛵', running: '🚀', completed: '✅', cancelled: '❌' };
+const statusLabel = { pending: '等待接单', accepted: '已接单', running: '配送中', completed: '已完成', cancelled: '已取消' };
+const typeEmoji = { delivery: '📦', food: '🍜', errand: '🏃', other: '📋' };
+const serviceNames = { delivery: '快递配送', food: '餐饮外卖', errand: '跑腿代办', other: '其他服务' };
+
  function showOrderDetail(orderNo, mode) {
    const o = (myOrders || []).find(x => x.order_no === orderNo);
    if (!o) return showToast('订单不存在');

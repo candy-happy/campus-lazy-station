@@ -1,4 +1,4 @@
-// 校园懒人效率站 - 前端API桥接层
+﻿// 校园圈 - 前端API桥接层
 // 所有前端页面引入此文件后，自动从localStorage模式切换为数据库模式
 
 const API = {
@@ -7,8 +7,56 @@ const API = {
   _admin: null,
   _role: 'user', // 'user' | 'rider' | 'admin'
   _token: null,
+  _dbConnected: true, // 数据库连接状态
+  _connectionCheckInterval: null,
   _headers() { const h = { 'Content-Type': 'application/json' }; if (this._token) h['Authorization'] = 'Bearer ' + this._token; return h; },
   _authHeaders() { const h = {}; if (this._token) h['Authorization'] = 'Bearer ' + this._token; return h; },
+
+  // ─── 数据库连接状态检测 ──────────────────────────────────────
+  async checkConnection() {
+    try {
+      // 使用不需要认证的公共接口检测连接
+      const res = await fetch('/api/services', { headers: this._headers() });
+      if (res.ok) {
+        this._dbConnected = true;
+        this._notifyConnectionStatus(true);
+        return true;
+      } else {
+        this._dbConnected = false;
+        this._notifyConnectionStatus(false);
+        return false;
+      }
+    } catch (e) {
+      this._dbConnected = false;
+      this._notifyConnectionStatus(false);
+      return false;
+    }
+  },
+
+  _notifyConnectionStatus(connected) {
+    const event = new CustomEvent('db-connection-change', { detail: { connected } });
+    window.dispatchEvent(event);
+  },
+
+  startConnectionCheck(interval = 30000) {
+    if (this._connectionCheckInterval) {
+      clearInterval(this._connectionCheckInterval);
+    }
+    this._connectionCheckInterval = setInterval(() => {
+      this.checkConnection();
+    }, interval);
+  },
+
+  stopConnectionCheck() {
+    if (this._connectionCheckInterval) {
+      clearInterval(this._connectionCheckInterval);
+      this._connectionCheckInterval = null;
+    }
+  },
+
+  isDbConnected() {
+    return this._dbConnected;
+  },
 
   // ─── 简易内存缓存 ──────────────────────────────────────
   _cache: {},
@@ -163,6 +211,15 @@ const API = {
     }).then(r => r.json());
   },
 
+  // 上传用户封面图
+  async uploadUserCover(phone, file) {
+    const fd = new FormData(); fd.append('cover', file);
+    const headers = this._authHeaders();
+    return fetch('/api/users/' + phone + '/cover', {
+      method: 'POST', headers, body: fd
+    }).then(r => r.json());
+  },
+
   // ─── 优惠券 ───
   async getCoupons() { return this._cachedFetch('coupons', '/api/coupons', 60000); },
   async claimCoupon(phone, coupon_id) {
@@ -266,6 +323,7 @@ const API = {
   },
   async wallPostDetail(id) { const phone = (JSON.parse(localStorage.getItem('lazy_session')||'{}')).phone || ''; return fetch('/api/wall/posts/' + id + (phone ? '?phone=' + encodeURIComponent(phone) : ''), { headers: this._headers() }).then(r => r.json()); },
   async wallSearch(q, phone) { return fetch('/api/wall/search?q=' + encodeURIComponent(q) + (phone ? '&phone=' + phone : ''), { headers: this._headers() }).then(r => r.json()); },
+  async wallUsers(q) { return fetch('/api/wall/users?q=' + encodeURIComponent(q), { headers: this._headers() }).then(r => r.json()); },
   async wallTagsHot(limit) { return fetch('/api/wall/tags/hot' + (limit ? '?limit=' + limit : ''), { headers: this._headers() }).then(r => r.json()); },
   async wallLike(postId, phone) { return fetch('/api/wall/posts/' + postId + '/like', {
     method: 'POST', headers: this._headers(), body: JSON.stringify({ phone })
@@ -281,6 +339,9 @@ const API = {
     method: 'POST', headers: this._headers(), body: JSON.stringify({ phone })
   }).then(r => r.json()); },
   async wallDeletePost(id) { return fetch('/api/wall/posts/' + id, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
+  async wallBlockUser(blockedPhone) { return fetch('/api/wall/users/block', { method: 'POST', headers: this._headers(), body: JSON.stringify({ blockedPhone }) }).then(r => r.json()); },
+  async wallUnblockUser(phone) { return fetch('/api/wall/users/block/' + phone, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
+  async wallGetBlocks() { return fetch('/api/wall/users/blocks', { headers: this._headers() }).then(r => r.json()); },
   async wallFollowing(phone) { return fetch('/api/wall/following/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async wallFollowers(phone) { return fetch('/api/wall/followers/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async wallMyStats(phone) { return fetch('/api/wall/my-stats/' + phone, { headers: this._headers() }).then(r => r.json()); },
@@ -389,10 +450,10 @@ const API = {
   async getHotTeachers() { return fetch('/api/teachers/hot', { headers: this._headers() }).then(r => r.json()); },
 
   // ─── 猫狗日记 ───
-  async getPets(species = '') { return fetch('/api/pets/list' + (species ? '?species=' + species : ''), { headers: this._headers() }).then(r => r.json()); },
+  async getPets(params = {}) { const qs = new URLSearchParams(params).toString(); return fetch('/api/pets/list' + (qs ? '?' + qs : ''), { headers: this._headers() }).then(r => r.json()); },
   async getPetDetail(id) { return fetch('/api/pets/detail/' + id, { headers: this._headers() }).then(r => r.json()); },
   async likePet(id, phone) { return fetch('/api/pets/like/' + id, { method: 'POST', headers: { ...this._headers(), 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) }).then(r => r.json()); },
-  async commentPet(id, data) { return fetch('/api/pets/comment/' + id, { method: 'POST', body: data }).then(r => r.json()); },
+  async commentPet(id, data) { return fetch('/api/pets/comment/' + id, { method: 'POST', headers: this._authHeaders(), body: data }).then(r => r.json()); },
   async deletePetComment(commentId, phone) { return fetch('/api/pets/comment/' + commentId, { method: 'DELETE', headers: { ...this._headers(), 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) }).then(r => r.json()); },
   async sightPet(id, phone, location, note) { return fetch('/api/pets/sight/' + id, { method: 'POST', headers: { ...this._headers(), 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, location: location || '', note: note || '' }) }).then(r => r.json()); },
   async petAlertCheck() { return fetch('/api/pets/alert-check').then(r => r.json()); },
@@ -510,4 +571,8 @@ window.lazyServices = {
   errand: { name: '跑腿办事', icon: '🏃', price: 5 },
   other: { name: '其他服务', icon: '💡', price: 3 }
 };
+
+// 自动初始化：恢复token（确保在任何API调用前token已就绪）
+API._init();
+
 console.log('✅ API桥接层已加载，数据库模式');

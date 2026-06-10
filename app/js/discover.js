@@ -34,7 +34,6 @@ async function loadDiscoverActivities() {
   try {
     const params = { status: 'open', page: 1, limit: 20 };
     if (discoverActCategory) params.category = discoverActCategory;
-    if (discoverSearch) params.search = discoverSearch;
     const res = await API.getActivities(params);
     const list = Array.isArray(res) ? res : (res && res.list || []);
 
@@ -180,7 +179,6 @@ async function loadDiscoverClubs() {
   try {
     const params = { page: 1, limit: 20 };
     if (discoverClubCategory) params.category = discoverClubCategory;
-    if (discoverSearch) params.search = discoverSearch;
     const res = await API.getClubs(params);
     const list = Array.isArray(res) ? res : (res && res.list || []);
 
@@ -307,20 +305,7 @@ function filterClubCategory(cat) {
   loadDiscoverClubs();
 }
 
-// ─── 搜索 ──────────────────────────────────────────────
-function doDiscoverSearch() {
-  discoverSearch = document.getElementById('discoverSearchInput').value.trim();
-  if (discoverTab === 'activities') loadDiscoverActivities();
-  else loadDiscoverClubs();
-}
-
-function clearDiscoverSearch() {
-  document.getElementById('discoverSearchInput').value = '';
-  discoverSearch = '';
-  if (discoverTab === 'activities') loadDiscoverActivities();
-  else loadDiscoverClubs();
-}
-
+// ═══════════════════════════════════════════════════════
 // ─── 创建活动弹窗 ──────────────────────────────────────
 function openCreateActivityModal() {
   if (!currentUser) return showToast('请先登录');
@@ -447,8 +432,6 @@ function initDiscoverPage() {
   window.leaveClub = leaveClub;
   window.filterActCategory = filterActCategory;
   window.filterClubCategory = filterClubCategory;
-  window.doDiscoverSearch = doDiscoverSearch;
-  window.clearDiscoverSearch = clearDiscoverSearch;
   window.openCreateActivityModal = openCreateActivityModal;
   window.closeCreateActivityModal = closeCreateActivityModal;
   window.submitCreateActivity = submitCreateActivity;

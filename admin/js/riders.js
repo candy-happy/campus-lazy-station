@@ -44,7 +44,7 @@
    try {
      const res = await fetch('/api/riders/' + freezeTargetId + '/freeze', {
        method: 'PUT',
-       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') },
+       headers: { 'Content-Type': 'application/json', ...API._headers() },
        body: JSON.stringify({ reason })
      }).then(r => r.json());
      if (res.ok) {
@@ -60,7 +60,7 @@
    try {
      const res = await fetch('/api/riders/' + id + '/unfreeze', {
        method: 'PUT',
-       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') }
+       headers: { 'Content-Type': 'application/json', ...API._headers() }
      }).then(r => r.json());
      if (res.ok) {
        riders = riders.map(r => r.id === id ? { ...r, frozen: 0, frozen_reason: null, status: 'offline' } : r);
@@ -92,7 +92,7 @@
    try {
      const res = await fetch('/api/riders', {
        method: 'POST',
-       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') },
+       headers: { 'Content-Type': 'application/json', ...API._headers() },
        body: JSON.stringify({ name, student_id, phone, dormitory })
      }).then(r => r.json());
      if (res.ok) {
@@ -108,7 +108,7 @@
  async function removeRider(id) {
  if (confirm('确定移除该骑手？')) {
  try {
- await fetch('/api/riders/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_admin_token')||'') } }).then(r=>r.json());
+ await fetch('/api/riders/' + id, { method: 'DELETE', headers: API._headers() }).then(r=>r.json());
  riders = riders.filter(r => r.id !== id);
  renderRidersTable();
  updateStats();

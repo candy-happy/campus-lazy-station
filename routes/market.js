@@ -4,6 +4,7 @@ const router = express.Router();
 const db = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError, notFound } = require('../utils/response');
+const { fmtPhone } = require('../utils/helpers');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
@@ -107,7 +108,7 @@ router.get('/items', (req, res) => JSON_RES(res, () => {
 
   const countRow = db.prepare('SELECT COUNT(*) as cnt FROM market_items mi ' + where).get(...params);
   const items = db.prepare(
-    'SELECT mi.id, mi.title, mi.description, mi.price, mi.category, mi.condition, mi.images, mi.seller_name, mi.seller_phone, mi.status, mi.views, mi.like_count, mi.created_at, u.name as seller_display_name, u.avatar as seller_avatar FROM market_items mi ' +
+    'SELECT mi.id, mi.title, mi.description, mi.price, mi.category, mi.condition_level, mi.images, mi.seller_phone, mi.status, mi.views, mi.created_at, u.name as seller_display_name, u.avatar as seller_avatar FROM market_items mi ' +
     'LEFT JOIN users u ON mi.seller_phone = u.phone ' +
     where + ' ORDER BY ' + orderBy + ' LIMIT ? OFFSET ?'
   ).all(...params, l, offset);

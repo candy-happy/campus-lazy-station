@@ -1,5 +1,20 @@
 // core.js - 核心工具/全局/初始化
 
+// ====== 全局状态 ======
+var currentRider = null;
+var riderStatusFilter = 'all';
+var riderTimeFilter = 'all';
+var riderDateFrom = null;
+var riderDateTo = null;
+var riderAllOrders = [];
+var newOrders = [];
+var myOrders = [];
+var riderConvId = null;
+var riderConvPhone = null;
+var riderChatTimer = null;
+var riderEmojiInited = false;
+var frozenCheckInterval = null;
+var isOnline = true;
 
  // ====== 工具函数 ======
  const $ = (id) => document.getElementById(id);
@@ -156,7 +171,7 @@ function timeAgo(ts) { if (!ts) return ''; const diff=Date.now()-new Date(ts).ge
      localStorage.setItem('lazyRider', JSON.stringify(currentRider));
      closeSubPage('loginPage_sub');
      showToast('登录成功！🛵');
-     refreshOrders();
+     await refreshOrders();
      updateProfile();
      startFrozenCheck(); // 启动冻结状态轮询
    } catch (err) {
@@ -192,39 +207,4 @@ window.login = login;
 window.toggleOnlineStatus = toggleOnlineStatus;
 
 
-// Postamble
-
- window.login = login;
- window.toggleOnlineStatus = toggleOnlineStatus;
- window.switchTab = switchTab;
- window.showOrderDetail = showOrderDetail;
-window.openSubPage = openSubPage;
-window.closeSubPage = closeSubPage;
-window.goBack = goBack;
- window.acceptOrder = acceptOrder;
- window.startDelivery = startDelivery;
- window.completeOrder = completeOrder;
- window.closeModal = closeModal;
- window.showProfile = showProfile;
- window.showSettings = showSettings;
- window.showWithdrawModal = showWithdrawModal;
- window.showEarningsDetail = showEarningsDetail;
- window.showActivityModal = showActivityModal;
- window.showOrderHistory = showOrderHistory;
- window.showReviewsModal = showReviewsModal;
- window.showRankModal = showRankModal;
- window.showHelpModal = showHelpModal;
- window.showFeedbackModal = showFeedbackModal;
- window.showSettingsModal = showSettingsModal;
- window.uploadRiderAvatar = uploadRiderAvatar;
- window.selectFbType = selectFbType;
- window.updateFbCount = updateFbCount;
- window.openRiderChatList = openRiderChatList;
- window.openRiderConv = openRiderConv;
- window.sendChatMsg = sendChatMsg;
- window.openChatFromOrder = openChatFromOrder;
- window.loadWalletInfo = loadWalletInfo;
- window.doWithdraw = doWithdraw;
- window.showEarningsDetail = showEarningsDetail;
- window.loadEarningsDetail = loadEarningsDetail;
- window.logout = logout;
+// ─── 页面初始化（由 rider.html 底部内联脚本调用，确保所有模块已加载） ───

@@ -17,3 +17,4 @@ _clear*.js
 _migrate*.js
 _schema*.js
 _patch*.js
+.env
