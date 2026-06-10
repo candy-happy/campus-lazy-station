@@ -1147,13 +1147,20 @@
         clearInterval(chatRefreshTimer);
         chatRefreshTimer = null;
       }
+      _chatMessagesFingerprint = '';
     }
 
 
+    let _chatMessagesFingerprint = '';
 
     async function loadChatMessages() {
       if (!currentConvId) return;
       const msgs = await API.chatMessages(currentConvId, currentUser.phone);
+      // 指纹比较：只在消息内容变化时才重渲染，避免闪烁
+      const fp = msgs.length + ':' + (msgs.length > 0 ? msgs[msgs.length-1].id + ':' + msgs[msgs.length-1].content : '');
+      if (fp === _chatMessagesFingerprint) return;
+      _chatMessagesFingerprint = fp;
+
       const el = document.getElementById('chatMessages');
       el.innerHTML = msgs.map(m => {
         const isMe = m.sender_phone === currentUser.phone;
