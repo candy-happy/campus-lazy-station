@@ -224,23 +224,35 @@ function renderClubCard(c) {
   </div>`;
 }
 
+let _currentClubId = null; // 当前查看的社团ID
+
 async function showClubDetail(id) {
   try {
     const c = await API.getClub(id);
     if (c.error) return showToast(c.error);
+    _currentClubId = id;
     const phone = currentUser.phone;
-    const isMember = c.members && c.members.some(m => m.phone === phone);
-    const myRole = isMember ? c.members.find(m => m.phone === phone).role : null;
+    const myRole = c.my_role;
+    const myAppStatus = c.my_app_status;
 
     let actionBtn = '';
-    if (isMember) {
+    if (myRole) {
       if (myRole === 'owner') {
-        actionBtn = '<div class="discover-detail-badge">社长</div>';
+        actionBtn = '<div class="discover-detail-badge">👑 社长</div>';
+        // 社长可见管理入口
+        actionBtn += '<button onclick="showClubManagePanel()" class="discover-btn" style="background:var(--gradient);color:#fff">⚙️ 社团管理</button>';
+      } else if (myRole === 'admin') {
+        actionBtn = '<div class="discover-detail-badge">⭐ 管理员</div>';
+        actionBtn += '<button onclick="showClubManagePanel()" class="discover-btn" style="background:var(--gradient);color:#fff">⚙️ 社团管理</button>';
       } else {
         actionBtn = '<button onclick="leaveClub(' + c.id + ')" class="discover-btn discover-btn-cancel">退出社团</button>';
       }
+    } else if (myAppStatus === 'pending') {
+      actionBtn = '<button class="discover-btn" style="background:#95A5A6;color:#fff;cursor:default" disabled>⏳ 审批中...</button>';
+    } else if (myAppStatus === 'rejected') {
+      actionBtn = '<button onclick="applyJoinClub(' + c.id + ')" class="discover-btn discover-btn-primary">📝 重新申请</button>';
     } else {
-      actionBtn = '<button onclick="joinClub(' + c.id + ')" class="discover-btn discover-btn-primary">加入社团</button>';
+      actionBtn = '<button onclick="applyJoinClub(' + c.id + ')" class="discover-btn discover-btn-primary">📝 申请加入</button>';
     }
 
     const membersHtml = (c.members || []).slice(0, 20).map(m => {
@@ -276,14 +288,34 @@ async function showClubDetail(id) {
   } catch(e) { showToast('加载失败'); }
 }
 
-async function joinClub(id) {
+// ─── 申请加入弹窗 ──────────────────────────────────────
+function applyJoinClub(id) {
+  if (!currentUser) return showToast('请先登录');
+  const modal = document.getElementById('clubApplyModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  const input = document.getElementById('clubApplyReason');
+  if (input) input.value = '';
+  _currentClubId = id;
+}
+
+function closeClubApplyModal() {
+  const modal = document.getElementById('clubApplyModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function submitClubApply() {
+  const input = document.getElementById('clubApplyReason');
+  const reason = input ? input.value.trim() : '';
   try {
-    const res = await API.joinClub(id);
+    const res = await API.joinClub(_currentClubId, reason);
     if (res.error) return showToast(res.error);
-    showToast('加入成功！');
-    closeSubPage('discoverDetail_sub');
+    showToast(res.message || '申请已提交');
+    closeClubApplyModal();
+    // 重新加载社团详情和列表
+    showClubDetail(_currentClubId);
     loadDiscoverClubs();
-  } catch(e) { showToast(e.message || '加入失败'); }
+  } catch(e) { showToast(e.message || '申请失败'); }
 }
 
 async function leaveClub(id) {
@@ -303,6 +335,159 @@ function filterClubCategory(cat) {
     c.classList.toggle('active', c.dataset.cat === discoverClubCategory);
   });
   loadDiscoverClubs();
+}
+
+// ─── 社团管理面板 ──────────────────────────────────────
+let _clubManageTab = 'applications'; // applications | members
+let _clubManageApps = [];
+let _clubManageMembers = [];
+
+async function showClubManagePanel() {
+  if (!_currentClubId || !currentUser) return;
+  const panel = document.getElementById('clubManageSub');
+  if (!panel) return;
+
+  try {
+    const c = await API.getClub(_currentClubId);
+    if (c.error) return showToast(c.error);
+
+    _clubManageTab = 'applications';
+    _clubManageMembers = c.members || [];
+
+    // 获取待审批列表
+    try {
+      _clubManageApps = await API.getClubApplications(_currentClubId, 'pending');
+      if (!Array.isArray(_clubManageApps)) _clubManageApps = [];
+    } catch(e) { _clubManageApps = []; }
+
+    renderClubManagePanel(c);
+    openSubPage('clubManageSub');
+  } catch(e) { showToast('加载失败'); }
+}
+
+function renderClubManagePanel(c) {
+  const content = document.getElementById('clubManageContent');
+  if (!content) return;
+
+  const tabHtml = `
+    <div style="display:flex;gap:4px;margin-bottom:16px;background:var(--bg);border-radius:10px;padding:4px">
+      <div class="club-mgmt-tab ${_clubManageTab === 'applications' ? 'active' : ''}" onclick="switchClubManageTab('applications')" style="flex:1;text-align:center;padding:8px;border-radius:8px;font-size:14px;cursor:pointer;${_clubManageTab === 'applications' ? 'background:var(--card);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.1)' : 'color:var(--text-secondary)'}">
+        📋 入社申请${_clubManageApps.length > 0 ? '<span style="background:#E74C3C;color:#fff;border-radius:50%;padding:1px 6px;font-size:11px;margin-left:4px">' + _clubManageApps.length + '</span>' : ''}
+      </div>
+      <div class="club-mgmt-tab ${_clubManageTab === 'members' ? 'active' : ''}" onclick="switchClubManageTab('members')" style="flex:1;text-align:center;padding:8px;border-radius:8px;font-size:14px;cursor:pointer;${_clubManageTab === 'members' ? 'background:var(--card);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.1)' : 'color:var(--text-secondary)'}">
+        👥 成员管理
+      </div>
+    </div>
+  `;
+
+  let bodyHtml = '';
+  if (_clubManageTab === 'applications') {
+    bodyHtml = renderClubApplications();
+  } else {
+    bodyHtml = renderClubMembersManage(c);
+  }
+
+  content.innerHTML = tabHtml + bodyHtml;
+}
+
+function switchClubManageTab(tab) {
+  _clubManageTab = tab;
+  const panels = document.querySelectorAll('.club-mgmt-tab');
+  panels.forEach(p => {
+    const isActive = (p.textContent.includes(tab === 'applications' ? '入社申请' : '成员管理'));
+    p.classList.toggle('active', isActive);
+  });
+  // 简单重渲染
+  showClubManagePanel();
+}
+
+function renderClubApplications() {
+  if (_clubManageApps.length === 0) {
+    return '<div style="text-align:center;padding:32px;color:var(--text-muted)">📭 暂无待审批的申请</div>';
+  }
+  return _clubManageApps.map(app => `
+    <div style="background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600">${escHtml(app.name || app.phone)}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${fmtPhone(app.phone)} · ${fmtTime(app.created_at)}</div>
+        ${app.reason ? '<div style="font-size:13px;color:var(--text);margin-top:6px;background:var(--bg);padding:8px;border-radius:8px">💬 ' + escHtml(app.reason) + '</div>' : ''}
+      </div>
+      <div style="display:flex;gap:6px;margin-left:12px;flex-shrink:0">
+        <button onclick="approveClubApp(${app.id}, ${_currentClubId})" style="padding:6px 14px;border-radius:8px;background:#2ECC71;color:#fff;border:none;font-size:13px;cursor:pointer;white-space:nowrap">✓ 通过</button>
+        <button onclick="rejectClubApp(${app.id}, ${_currentClubId})" style="padding:6px 14px;border-radius:8px;background:#E74C3C;color:#fff;border:none;font-size:13px;cursor:pointer;white-space:nowrap">✕ 拒绝</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderClubMembersManage(c) {
+  return _clubManageMembers.map(m => {
+    const phone = (currentUser && currentUser.phone) || '';
+    const isMe = m.phone === phone;
+    let actions = '';
+    if (m.role !== 'owner' && !isMe) {
+      actions = `
+        <button onclick="kickClubMember(${_currentClubId}, '${m.phone}')" style="padding:4px 10px;border-radius:6px;background:#E74C3C;color:#fff;border:none;font-size:12px;cursor:pointer">踢出</button>
+      `;
+      // 社长可以升降管理员
+      if (currentUser && c.members.some(x => x.phone === phone && x.role === 'owner')) {
+        if (m.role === 'admin') {
+          actions += `<button onclick="setMemberRole(${_currentClubId}, '${m.phone}', 'member')" style="padding:4px 10px;border-radius:6px;background:#F39C12;color:#fff;border:none;font-size:12px;cursor:pointer;margin-left:4px">降级</button>`;
+        } else {
+          actions += `<button onclick="setMemberRole(${_currentClubId}, '${m.phone}', 'admin')" style="padding:4px 10px;border-radius:6px;background:#3498DB;color:#fff;border:none;font-size:12px;cursor:pointer;margin-left:4px">设为管理</button>`;
+        }
+      }
+    }
+    const roleLabel = m.role === 'owner' ? '👑 社长' : m.role === 'admin' ? '⭐ 管理员' : '成员';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <span style="font-size:14px;font-weight:500">${escHtml(m.name || m.phone)}</span>
+        <span style="font-size:12px;color:var(--text-muted);margin-left:8px">${roleLabel}</span>
+        ${isMe ? '<span style="font-size:11px;color:var(--text-muted);margin-left:4px">(我)</span>' : ''}
+      </div>
+      <div>${actions}</div>
+    </div>`;
+  }).join('');
+}
+
+async function approveClubApp(appId, clubId) {
+  try {
+    const res = await API.approveClubApplication(clubId, appId);
+    if (res.error) return showToast(res.error);
+    showToast('已通过申请');
+    showClubManagePanel();
+  } catch(e) { showToast(e.message || '操作失败'); }
+}
+
+async function rejectClubApp(appId, clubId) {
+  if (!confirm('确定拒绝该申请？')) return;
+  try {
+    const res = await API.rejectClubApplication(clubId, appId);
+    if (res.error) return showToast(res.error);
+    showToast('已拒绝');
+    showClubManagePanel();
+  } catch(e) { showToast(e.message || '操作失败'); }
+}
+
+async function kickClubMember(clubId, phone) {
+  if (!confirm('确定踢出该成员？')) return;
+  try {
+    const res = await API.kickClubMember(clubId, phone);
+    if (res.error) return showToast(res.error);
+    showToast('已踢出');
+    showClubManagePanel();
+  } catch(e) { showToast(e.message || '操作失败'); }
+}
+
+async function setMemberRole(clubId, phone, role) {
+  const label = role === 'admin' ? '设为管理员' : '降为普通成员';
+  if (!confirm(`确定${label}？`)) return;
+  try {
+    const res = await API.updateMemberRole(clubId, phone, role);
+    if (res.error) return showToast(res.error);
+    showToast('已更新');
+    showClubManagePanel();
+  } catch(e) { showToast(e.message || '操作失败'); }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -428,7 +613,9 @@ function initDiscoverPage() {
   window.signupActivity = signupActivity;
   window.cancelActivitySignup = cancelActivitySignup;
   window.checkinActivity = checkinActivity;
-  window.joinClub = joinClub;
+  window.applyJoinClub = applyJoinClub;
+  window.closeClubApplyModal = closeClubApplyModal;
+  window.submitClubApply = submitClubApply;
   window.leaveClub = leaveClub;
   window.filterActCategory = filterActCategory;
   window.filterClubCategory = filterClubCategory;
@@ -438,5 +625,11 @@ function initDiscoverPage() {
   window.openCreateClubModal = openCreateClubModal;
   window.closeCreateClubModal = closeCreateClubModal;
   window.submitCreateClub = submitCreateClub;
+  window.showClubManagePanel = showClubManagePanel;
+  window.switchClubManageTab = switchClubManageTab;
+  window.approveClubApp = approveClubApp;
+  window.rejectClubApp = rejectClubApp;
+  window.kickClubMember = kickClubMember;
+  window.setMemberRole = setMemberRole;
   window.initDiscoverPage = initDiscoverPage;
 })();

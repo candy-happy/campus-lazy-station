@@ -945,6 +945,28 @@
       </div>
     </div>
 
+    <!-- 社团申请加入弹窗 -->
+    <div id="clubApplyModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center">
+      <div style="background:var(--card);border-radius:16px;width:90%;max-width:380px;padding:20px">
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px">📝 申请加入</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">向社长介绍自己，提高通过率</div>
+        <textarea id="clubApplyReason" placeholder="你好，我是...（选填）" rows="3" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:14px;resize:none;box-sizing:border-box"></textarea>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button onclick="closeClubApplyModal()" style="flex:1;padding:10px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--border);font-size:14px;cursor:pointer">取消</button>
+          <button onclick="submitClubApply()" style="flex:1;padding:10px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">提交申请</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 社团管理子页面 -->
+    <div class="sub-page" id="clubManageSub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('clubManageSub')">←</button>
+        <span class="sub-page-title">社团管理</span>
+      </div>
+      <div class="sub-page-body" id="clubManageContent"></div>
+    </div>
+
     <!-- 底部导航 -->
     <div class="bottom-nav">
       <div class="nav-item active" onclick="switchPage('home')">

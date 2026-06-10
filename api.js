@@ -513,7 +513,7 @@ const API = {
     }
     return fetch('/api/clubs', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
   },
-  async joinClub(id) { return fetch('/api/clubs/' + id + '/join', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
+  async joinClub(id, reason) { return fetch('/api/clubs/' + id + '/join', { method: 'POST', headers: this._headers(), body: JSON.stringify({ reason: reason || '' }) }).then(r => r.json()); },
   async leaveClub(id) { return fetch('/api/clubs/' + id + '/leave', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
   async updateClub(id, data, file) {
     if (file) {
@@ -525,6 +525,11 @@ const API = {
     return fetch('/api/clubs/' + id, { method: 'PUT', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
   },
   async getClubCategories() { return fetch('/api/clubs/meta/categories', { headers: this._headers() }).then(r => r.json()); },
+  async getClubApplications(id, status) { return fetch('/api/clubs/' + id + '/applications' + (status ? '?status=' + status : ''), { headers: this._headers() }).then(r => r.json()); },
+  async approveClubApplication(clubId, appId) { return fetch('/api/clubs/' + clubId + '/applications/' + appId + '/approve', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
+  async rejectClubApplication(clubId, appId) { return fetch('/api/clubs/' + clubId + '/applications/' + appId + '/reject', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
+  async kickClubMember(clubId, phone) { return fetch('/api/clubs/' + clubId + '/members/' + phone, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
+  async updateMemberRole(clubId, phone, role) { return fetch('/api/clubs/' + clubId + '/members/' + phone + '/role', { method: 'PUT', headers: this._headers(), body: JSON.stringify({ role }) }).then(r => r.json()); },
 
   // ─── 活动 ───
   async getActivities(params = {}) {

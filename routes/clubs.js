@@ -130,20 +130,123 @@ router.get('/:id', requireAuth, (req, res) => JSON_RES(res, () => {
     phone: isOwner ? m.phone : fmtPhone(m.phone)
   }));
 
-  return { ...club, members: maskedMembers, activities };
+  // 当前用户在该社团的角色
+  const myMember = members.find(m => m.phone === requesterPhone);
+  const myRole = myMember ? myMember.role : null;
+
+  // 当前用户的申请状态
+  const myApp = db.prepare('SELECT status FROM club_applications WHERE club_id = ? AND phone = ?').get(req.params.id, requesterPhone);
+  const myAppStatus = myApp ? myApp.status : null;
+
+  return { ...club, members: maskedMembers, activities, my_role: myRole, my_app_status: myAppStatus };
 }));
 
-// ─── 加入社团 ─────────────────────────────────────────────
+// ─── 申请加入社团 ─────────────────────────────────────────────
 router.post('/:id/join', requireAuth, (req, res) => JSON_RES(res, () => {
   const phone = req.user.phone;
+  const reason = req.body.reason || '';
   const club = db.prepare('SELECT * FROM clubs WHERE id = ? AND status = ?').get(req.params.id, 'active');
   if (!club) return makeError('社团不存在或已冻结');
 
-  const existing = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(req.params.id, phone);
-  if (existing) return makeError('已加入该社团');
+  const existingMember = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(req.params.id, phone);
+  if (existingMember) return makeError('已加入该社团');
 
-  db.prepare('INSERT INTO club_members (club_id, phone, role) VALUES (?,?,?)').run(req.params.id, phone, 'member');
-  db.prepare('UPDATE clubs SET member_count = member_count + 1 WHERE id = ?').run(req.params.id);
+  const existingApp = db.prepare('SELECT * FROM club_applications WHERE club_id = ? AND phone = ?').get(req.params.id, phone);
+  if (existingApp) {
+    if (existingApp.status === 'pending') return makeError('已提交申请，等待审批中');
+    if (existingApp.status === 'approved') return makeError('申请已通过，请刷新页面');
+    // 之前被拒绝，允许重新申请
+    db.prepare("UPDATE club_applications SET reason = ?, status = 'pending', reviewed_by = NULL, reviewed_at = NULL, created_at = datetime('now','localtime') WHERE id = ?").run(reason, existingApp.id);
+    return { ok: true, status: 'pending', message: '申请已重新提交' };
+  }
+
+  db.prepare('INSERT INTO club_applications (club_id, phone, reason) VALUES (?,?,?)').run(req.params.id, phone, reason);
+
+  // 通知社长有新申请（追加到notifications表）
+  try {
+    const owner = db.prepare('SELECT phone FROM club_members WHERE club_id = ? AND role = ?').get(req.params.id, 'owner');
+    if (owner) {
+      db.prepare('INSERT INTO notifications (phone, title, content, type, related_id) VALUES (?,?,?,?,?)')
+        .run(owner.phone, '新入社申请', `有人申请加入「${club.name}」`, 'club_apply', req.params.id);
+    }
+  } catch(e) { console.error('[社团] 通知社长失败:', e.message); }
+
+  return { ok: true, status: 'pending', message: '申请已提交，等待社长审批' };
+}));
+
+// ─── 获取入社申请列表（社长/管理员） ──────────────────────────
+router.get('/:id/applications', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const { status } = req.query;
+
+  // 权限检查
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, phone, 'owner', 'admin');
+  if (!member) return makeError('无权查看申请列表', ErrorCode.FORBIDDEN);
+
+  let sql = `SELECT ca.*, u.name, u.avatar FROM club_applications ca LEFT JOIN users u ON ca.phone = u.phone WHERE ca.club_id = ?`;
+  const params = [req.params.id];
+  if (status) { sql += ' AND ca.status = ?'; params.push(status); }
+  sql += ' ORDER BY ca.created_at DESC';
+
+  return db.prepare(sql).all(...params);
+}));
+
+// ─── 审批入社申请 ─────────────────────────────────────────────
+router.post('/:id/applications/:appId/approve', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+
+  // 权限检查
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, phone, 'owner', 'admin');
+  if (!member) return makeError('无权审批', ErrorCode.FORBIDDEN);
+
+  const app = db.prepare('SELECT * FROM club_applications WHERE id = ? AND club_id = ?').get(req.params.appId, req.params.id);
+  if (!app) return makeError('申请不存在');
+  if (app.status !== 'pending') return makeError('该申请已被处理');
+
+  // 检查是否已经是成员（防止重复）
+  const existing = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(req.params.id, app.phone);
+  if (existing) {
+    // 已经是成员了，直接标记申请为approved
+    db.prepare("UPDATE club_applications SET status = 'approved', reviewed_by = ?, reviewed_at = datetime('now','localtime') WHERE id = ?").run(phone, req.params.appId);
+    return { ok: true, message: '该用户已是社团成员' };
+  }
+
+  const tx = db.transaction(() => {
+    db.prepare("UPDATE club_applications SET status = 'approved', reviewed_by = ?, reviewed_at = datetime('now','localtime') WHERE id = ?").run(phone, req.params.appId);
+    db.prepare('INSERT INTO club_members (club_id, phone, role) VALUES (?,?,?)').run(req.params.id, app.phone, 'member');
+    db.prepare('UPDATE clubs SET member_count = member_count + 1 WHERE id = ?').run(req.params.id);
+  });
+  tx();
+
+  // 通知申请人
+  try {
+    const club = db.prepare('SELECT name FROM clubs WHERE id = ?').get(req.params.id);
+    db.prepare('INSERT INTO notifications (phone, title, content, type, related_id) VALUES (?,?,?,?,?)')
+      .run(app.phone, '入社申请已通过', `你已成功加入「${club.name}」`, 'club_approved', req.params.id);
+  } catch(e) { console.error('[社团] 通知申请人失败:', e.message); }
+
+  return { ok: true };
+}));
+
+// ─── 拒绝入社申请 ─────────────────────────────────────────────
+router.post('/:id/applications/:appId/reject', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, phone, 'owner', 'admin');
+  if (!member) return makeError('无权审批', ErrorCode.FORBIDDEN);
+
+  const app = db.prepare('SELECT * FROM club_applications WHERE id = ? AND club_id = ?').get(req.params.appId, req.params.id);
+  if (!app) return makeError('申请不存在');
+  if (app.status !== 'pending') return makeError('该申请已被处理');
+
+  db.prepare("UPDATE club_applications SET status = 'rejected', reviewed_by = ?, reviewed_at = datetime('now','localtime') WHERE id = ?").run(phone, req.params.appId);
+
+  // 通知申请人
+  try {
+    const club = db.prepare('SELECT name FROM clubs WHERE id = ?').get(req.params.id);
+    db.prepare('INSERT INTO notifications (phone, title, content, type, related_id) VALUES (?,?,?,?,?)')
+      .run(app.phone, '入社申请未通过', `你申请加入「${club.name}」未通过审批`, 'club_rejected', req.params.id);
+  } catch(e) { console.error('[社团] 通知申请人失败:', e.message); }
 
   return { ok: true };
 }));
@@ -183,6 +286,47 @@ router.put('/:id', requireAuth, clubUpload.single('logo'), (req, res) => JSON_RE
   params.push(req.params.id);
   db.prepare(sql).run(...params);
 
+  return { ok: true };
+}));
+
+// ─── 踢出社团成员（社长/admin） ──────────────────────────
+router.delete('/:id/members/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
+  const myPhone = req.user.phone;
+  const targetPhone = req.params.phone;
+
+  const me = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, myPhone, 'owner', 'admin');
+  if (!me) return makeError('无权管理成员', ErrorCode.FORBIDDEN);
+
+  const target = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(req.params.id, targetPhone);
+  if (!target) return makeError('该成员不在社团中');
+  if (target.role === 'owner') return makeError('不能踢出社长');
+
+  // admin不能踢admin
+  if (me.role === 'admin' && target.role === 'admin') return makeError('管理员不能踢出其他管理员');
+
+  db.prepare('DELETE FROM club_members WHERE club_id = ? AND phone = ?').run(req.params.id, targetPhone);
+  db.prepare('UPDATE clubs SET member_count = MAX(0, member_count - 1) WHERE id = ?').run(req.params.id);
+
+  return { ok: true };
+}));
+
+// ─── 修改成员角色 ─────────────────────────────────────────
+router.put('/:id/members/:phone/role', requireAuth, (req, res) => JSON_RES(res, () => {
+  const myPhone = req.user.phone;
+  const targetPhone = req.params.phone;
+  const { role } = req.body;
+
+  if (!role || !['admin', 'member'].includes(role)) return makeError('无效的角色', ErrorCode.PARAM_INVALID);
+
+  // 只能社长改角色
+  const me = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role = ?').get(req.params.id, myPhone, 'owner');
+  if (!me) return makeError('只有社长可以修改成员角色', ErrorCode.FORBIDDEN);
+
+  const target = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(req.params.id, targetPhone);
+  if (!target) return makeError('该成员不在社团中');
+  if (target.role === 'owner') return makeError('不能修改社长的角色');
+
+  db.prepare('UPDATE club_members SET role = ? WHERE club_id = ? AND phone = ?').run(role, req.params.id, targetPhone);
   return { ok: true };
 }));
 
