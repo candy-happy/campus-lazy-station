@@ -120,6 +120,13 @@ router.get('/:id', requireAuth, (req, res) => JSON_RES(res, () => {
     "SELECT * FROM activities WHERE publisher_type = 'club' AND publisher_id = ? AND status != 'cancelled' ORDER BY created_at DESC LIMIT 10"
   ).all(req.params.id);
 
+  // 获取社团公告（最新5条）
+  const posts = db.prepare('SELECT * FROM club_posts WHERE club_id = ? ORDER BY pinned DESC, created_at DESC LIMIT 5').all(req.params.id);
+  const postsWithAuthors = posts.map(p => {
+    const author = db.prepare('SELECT name FROM users WHERE phone = ?').get(p.phone);
+    return Object.assign({}, p, { images: JSON.parse(p.images || '[]'), author_name: author ? author.name : '' });
+  });
+
   // 手机号脱敏：仅社长可见完整手机号，其他成员仅见脱敏版本
   const requesterPhone = req.user.phone;
   const isOwner = members.some(m => m.phone === requesterPhone && m.role === 'owner');
@@ -138,7 +145,7 @@ router.get('/:id', requireAuth, (req, res) => JSON_RES(res, () => {
   const myApp = db.prepare('SELECT status FROM club_applications WHERE club_id = ? AND phone = ?').get(req.params.id, requesterPhone);
   const myAppStatus = myApp ? myApp.status : null;
 
-  return { ...club, members: maskedMembers, activities, my_role: myRole, my_app_status: myAppStatus };
+  return { ...club, members: maskedMembers, activities, posts: postsWithAuthors, my_role: myRole, my_app_status: myAppStatus };
 }));
 
 // ─── 申请加入社团 ─────────────────────────────────────────────
@@ -328,6 +335,64 @@ router.put('/:id/members/:phone/role', requireAuth, (req, res) => JSON_RES(res, 
 
   db.prepare('UPDATE club_members SET role = ? WHERE club_id = ? AND phone = ?').run(role, req.params.id, targetPhone);
   return { ok: true };
+}));
+
+// ─── 社团公告/动态 ──────────────────────────────────────
+const MAX_POST_PHOTOS = 4;
+
+// 发公告（owner/admin）
+router.post('/:id/posts', requireAuth, clubUpload.array('photos', MAX_POST_PHOTOS), (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, phone, 'owner', 'admin');
+  if (!member) return makeError('只有社长或管理员可以发布公告', ErrorCode.FORBIDDEN);
+
+  const { content } = req.body;
+  if (!content || !content.trim()) return makeError('公告内容不能为空', ErrorCode.PARAM_INVALID);
+
+  const images = (req.files || []).map(f => '/uploads/clubs/' + f.filename);
+  db.prepare('INSERT INTO club_posts (club_id, phone, content, images) VALUES (?,?,?,?)').run(
+    req.params.id, phone, content.trim(), JSON.stringify(images)
+  );
+
+  return { ok: true };
+}));
+
+// 获取公告列表
+router.get('/:id/posts', requireAuth, (req, res) => JSON_RES(res, () => {
+  const posts = db.prepare('SELECT * FROM club_posts WHERE club_id = ? ORDER BY pinned DESC, created_at DESC').all(req.params.id);
+  // 关联用户信息
+  return posts.map(p => {
+    const author = db.prepare('SELECT name FROM users WHERE phone = ?').get(p.phone);
+    return { ...p, images: JSON.parse(p.images || '[]'), author_name: author ? author.name : '' };
+  });
+}));
+
+// 删除公告（owner/admin 或本人）
+router.delete('/:id/posts/:postId', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const post = db.prepare('SELECT * FROM club_posts WHERE id = ? AND club_id = ?').get(req.params.postId, req.params.id);
+  if (!post) return makeError('公告不存在');
+
+  if (post.phone !== phone) {
+    const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, phone, 'owner', 'admin');
+    if (!member) return makeError('无权删除', ErrorCode.FORBIDDEN);
+  }
+
+  db.prepare('DELETE FROM club_posts WHERE id = ?').run(req.params.postId);
+  return { ok: true };
+}));
+
+// 置顶/取消置顶公告
+router.put('/:id/posts/:postId/pin', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, phone, 'owner', 'admin');
+  if (!member) return makeError('只有社长或管理员可以置顶', ErrorCode.FORBIDDEN);
+
+  const post = db.prepare('SELECT * FROM club_posts WHERE id = ? AND club_id = ?').get(req.params.postId, req.params.id);
+  if (!post) return makeError('公告不存在');
+
+  db.prepare('UPDATE club_posts SET pinned = ? WHERE id = ?').run(post.pinned ? 0 : 1, req.params.postId);
+  return { ok: true, pinned: post.pinned ? 0 : 1 };
 }));
 
 // ─── 社团分类列表 ─────────────────────────────────────────

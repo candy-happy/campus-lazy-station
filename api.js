@@ -530,6 +530,19 @@ const API = {
   async rejectClubApplication(clubId, appId) { return fetch('/api/clubs/' + clubId + '/applications/' + appId + '/reject', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
   async kickClubMember(clubId, phone) { return fetch('/api/clubs/' + clubId + '/members/' + phone, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
   async updateMemberRole(clubId, phone, role) { return fetch('/api/clubs/' + clubId + '/members/' + phone + '/role', { method: 'PUT', headers: this._headers(), body: JSON.stringify({ role }) }).then(r => r.json()); },
+  // 社团公告
+  async getClubPosts(clubId) { return fetch('/api/clubs/' + clubId + '/posts', { headers: this._headers() }).then(r => r.json()); },
+  async createClubPost(clubId, content, files) {
+    if (files && files.length) {
+      const fd = new FormData();
+      fd.append('content', content);
+      Array.from(files).forEach(f => fd.append('photos', f));
+      return fetch('/api/clubs/' + clubId + '/posts', { method: 'POST', headers: this._authHeaders(), body: fd }).then(r => r.json());
+    }
+    return fetch('/api/clubs/' + clubId + '/posts', { method: 'POST', headers: this._headers(), body: JSON.stringify({ content }) }).then(r => r.json());
+  },
+  async deleteClubPost(clubId, postId) { return fetch('/api/clubs/' + clubId + '/posts/' + postId, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
+  async pinClubPost(clubId, postId) { return fetch('/api/clubs/' + clubId + '/posts/' + postId + '/pin', { method: 'PUT', headers: this._headers() }).then(r => r.json()); },
 
   // ─── 活动 ───
   async getActivities(params = {}) {

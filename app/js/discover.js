@@ -267,6 +267,33 @@ async function showClubDetail(id) {
       </div>`;
     }).join('') || '<div style="color:var(--text-muted);font-size:13px;padding:8px 0">暂无活动</div>';
 
+    // 社团公告/动态
+    let postsHtml = '';
+    if (c.posts && c.posts.length > 0) {
+      postsHtml = c.posts.map(p => {
+        const pinnedBadge = p.pinned ? '<span style="color:#F39C12;font-size:11px">📌置顶</span> ' : '';
+        const imgsHtml = (p.images && p.images.length > 0)
+          ? '<div style="display:flex;gap:4px;margin-top:6px">' + p.images.map(img => `<img src="${img}" style="width:60px;height:60px;border-radius:6px;object-fit:cover" onclick="window.open('${img}')" />`).join('') + '</div>'
+          : '';
+        const canDelete = (myRole === 'owner' || myRole === 'admin' || p.phone === phone);
+        const deleteBtn = canDelete ? `<button onclick="event.stopPropagation();deleteClubPost(${c.id},${p.id})" style="background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:2px 4px">🗑️</button>` : '';
+        return `<div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="font-size:13px;font-weight:600">${escHtml(p.author_name || p.phone)}</div>
+            <div style="display:flex;align-items:center;gap:4px">${pinnedBadge}<span style="font-size:11px;color:var(--text-muted)">${fmtTime(p.created_at)}</span>${deleteBtn}</div>
+          </div>
+          <div style="font-size:14px;margin-top:4px;line-height:1.5">${escHtml(p.content).replace(/\n/g, '<br>')}</div>
+          ${imgsHtml}
+        </div>`;
+      }).join('');
+    } else {
+      postsHtml = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0">暂无公告</div>';
+    }
+
+    // 社长/管理员可发公告
+    const canPost = myRole === 'owner' || myRole === 'admin';
+    const postBtnHtml = canPost ? `<button onclick="openClubPostModal()" style="width:100%;padding:10px;border-radius:10px;background:var(--bg);border:1px dashed var(--border);color:var(--text);font-size:14px;cursor:pointer;margin-top:8px">✏️ 发布公告</button>` : '';
+
     const content = document.getElementById('discoverDetailContent');
     if (!content) return;
     content.innerHTML = `
@@ -277,7 +304,10 @@ async function showClubDetail(id) {
       </div>
       <div class="discover-detail-body">
         ${c.description ? '<div class="discover-detail-desc"><div class="discover-detail-section-title">社团简介</div><div class="discover-detail-text">' + escHtml(c.description).replace(/\\n/g, '<br>') + '</div></div>' : ''}
-        <div class="discover-detail-section-title">社团活动</div>
+        <div class="discover-detail-section-title">📢 社团公告</div>
+        <div class="discover-club-posts">${postsHtml}</div>
+        ${postBtnHtml}
+        <div class="discover-detail-section-title" style="margin-top:16px">社团活动</div>
         <div class="discover-club-activities">${activitiesHtml}</div>
         <div class="discover-detail-section-title">社团成员 (${c.members ? c.members.length : 0})</div>
         <div class="discover-members-list">${membersHtml}</div>
@@ -327,6 +357,44 @@ async function leaveClub(id) {
     closeSubPage('discoverDetail_sub');
     loadDiscoverClubs();
   } catch(e) { showToast(e.message || '操作失败'); }
+}
+
+// ─── 社团公告发布 ──────────────────────────────────────
+function openClubPostModal() {
+  const modal = document.getElementById('clubPostModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  const input = document.getElementById('clubPostContent');
+  if (input) input.value = '';
+  const fileInput = document.getElementById('clubPostPhotos');
+  if (fileInput) fileInput.value = '';
+}
+function closeClubPostModal() {
+  const modal = document.getElementById('clubPostModal');
+  if (modal) modal.style.display = 'none';
+}
+async function submitClubPost() {
+  const input = document.getElementById('clubPostContent');
+  const content = input ? input.value.trim() : '';
+  if (!content) return showToast('请输入公告内容');
+  const fileInput = document.getElementById('clubPostPhotos');
+  const files = fileInput ? fileInput.files : null;
+  try {
+    const res = await API.createClubPost(_currentClubId, content, files);
+    if (res.error) return showToast(res.error);
+    showToast('发布成功');
+    closeClubPostModal();
+    showClubDetail(_currentClubId);
+  } catch(e) { showToast(e.message || '发布失败'); }
+}
+async function deleteClubPost(clubId, postId) {
+  if (!confirm('确定删除这条公告？')) return;
+  try {
+    const res = await API.deleteClubPost(clubId, postId);
+    if (res.error) return showToast(res.error);
+    showToast('已删除');
+    showClubDetail(clubId);
+  } catch(e) { showToast(e.message || '删除失败'); }
 }
 
 function filterClubCategory(cat) {
@@ -617,6 +685,10 @@ function initDiscoverPage() {
   window.closeClubApplyModal = closeClubApplyModal;
   window.submitClubApply = submitClubApply;
   window.leaveClub = leaveClub;
+  window.openClubPostModal = openClubPostModal;
+  window.closeClubPostModal = closeClubPostModal;
+  window.submitClubPost = submitClubPost;
+  window.deleteClubPost = deleteClubPost;
   window.filterActCategory = filterActCategory;
   window.filterClubCategory = filterClubCategory;
   window.openCreateActivityModal = openCreateActivityModal;

@@ -958,6 +958,23 @@
       </div>
     </div>
 
+    </div>
+
+    <!-- 社团发布公告弹窗 -->
+    <div id="clubPostModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center">
+      <div style="background:var(--card);border-radius:16px;width:90%;max-width:380px;padding:20px">
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px">✏️ 发布公告</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">向社团成员发布重要信息或动态</div>
+        <textarea id="clubPostContent" placeholder="通知全体成员..." rows="4" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:14px;resize:none;box-sizing:border-box"></textarea>
+        <input type="file" id="clubPostPhotos" accept="image/*" multiple style="margin-top:8px;font-size:13px" />
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">最多4张图片</div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button onclick="closeClubPostModal()" style="flex:1;padding:10px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--border);font-size:14px;cursor:pointer">取消</button>
+          <button onclick="submitClubPost()" style="flex:1;padding:10px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">发布</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 社团管理子页面 -->
     <div class="sub-page" id="clubManageSub">
       <div class="sub-page-header">
