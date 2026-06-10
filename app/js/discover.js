@@ -406,9 +406,10 @@ function filterClubCategory(cat) {
 }
 
 // ─── 社团管理面板 ──────────────────────────────────────
-let _clubManageTab = 'applications'; // applications | members
+let _clubManageTab = 'applications'; // applications | members | settings
 let _clubManageApps = [];
 let _clubManageMembers = [];
+let _clubManageStats = null;
 
 async function showClubManagePanel() {
   if (!_currentClubId || !currentUser) return;
@@ -421,8 +422,8 @@ async function showClubManagePanel() {
 
     _clubManageTab = 'applications';
     _clubManageMembers = c.members || [];
+    _clubManageStats = null;
 
-    // 获取待审批列表
     try {
       _clubManageApps = await API.getClubApplications(_currentClubId, 'pending');
       if (!Array.isArray(_clubManageApps)) _clubManageApps = [];
@@ -437,22 +438,29 @@ function renderClubManagePanel(c) {
   const content = document.getElementById('clubManageContent');
   if (!content) return;
 
+  const isOwner = currentUser && c.members && c.members.some(m => m.phone === currentUser.phone && m.role === 'owner');
+
   const tabHtml = `
-    <div style="display:flex;gap:4px;margin-bottom:16px;background:var(--bg);border-radius:10px;padding:4px">
-      <div class="club-mgmt-tab ${_clubManageTab === 'applications' ? 'active' : ''}" onclick="switchClubManageTab('applications')" style="flex:1;text-align:center;padding:8px;border-radius:8px;font-size:14px;cursor:pointer;${_clubManageTab === 'applications' ? 'background:var(--card);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.1)' : 'color:var(--text-secondary)'}">
+    <div style="display:flex;gap:4px;margin-bottom:16px;background:var(--bg);border-radius:10px;padding:4px;overflow-x:auto">
+      <div class="club-mgmt-tab ${_clubManageTab === 'applications' ? 'active' : ''}" onclick="switchClubManageTab('applications')" style="flex:1;text-align:center;padding:8px;border-radius:8px;font-size:13px;cursor:pointer;white-space:nowrap;${_clubManageTab === 'applications' ? 'background:var(--card);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.1)' : 'color:var(--text-secondary)'}">
         📋 入社申请${_clubManageApps.length > 0 ? '<span style="background:#E74C3C;color:#fff;border-radius:50%;padding:1px 6px;font-size:11px;margin-left:4px">' + _clubManageApps.length + '</span>' : ''}
       </div>
-      <div class="club-mgmt-tab ${_clubManageTab === 'members' ? 'active' : ''}" onclick="switchClubManageTab('members')" style="flex:1;text-align:center;padding:8px;border-radius:8px;font-size:14px;cursor:pointer;${_clubManageTab === 'members' ? 'background:var(--card);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.1)' : 'color:var(--text-secondary)'}">
+      <div class="club-mgmt-tab ${_clubManageTab === 'members' ? 'active' : ''}" onclick="switchClubManageTab('members')" style="flex:1;text-align:center;padding:8px;border-radius:8px;font-size:13px;cursor:pointer;white-space:nowrap;${_clubManageTab === 'members' ? 'background:var(--card);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.1)' : 'color:var(--text-secondary)'}">
         👥 成员管理
       </div>
+      ${isOwner ? `<div class="club-mgmt-tab ${_clubManageTab === 'settings' ? 'active' : ''}" onclick="switchClubManageTab('settings')" style="flex:1;text-align:center;padding:8px;border-radius:8px;font-size:13px;cursor:pointer;white-space:nowrap;${_clubManageTab === 'settings' ? 'background:var(--card);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.1)' : 'color:var(--text-secondary)'}">
+        ⚙️ 社团设置
+      </div>` : ''}
     </div>
   `;
 
   let bodyHtml = '';
   if (_clubManageTab === 'applications') {
     bodyHtml = renderClubApplications();
-  } else {
+  } else if (_clubManageTab === 'members') {
     bodyHtml = renderClubMembersManage(c);
+  } else if (_clubManageTab === 'settings') {
+    bodyHtml = renderClubSettings(c);
   }
 
   content.innerHTML = tabHtml + bodyHtml;
@@ -460,12 +468,9 @@ function renderClubManagePanel(c) {
 
 function switchClubManageTab(tab) {
   _clubManageTab = tab;
-  const panels = document.querySelectorAll('.club-mgmt-tab');
-  panels.forEach(p => {
-    const isActive = (p.textContent.includes(tab === 'applications' ? '入社申请' : '成员管理'));
-    p.classList.toggle('active', isActive);
-  });
-  // 简单重渲染
+  if (tab === 'settings' && !_clubManageStats) {
+    loadClubStats();
+  }
   showClubManagePanel();
 }
 
@@ -555,6 +560,143 @@ async function setMemberRole(clubId, phone, role) {
     if (res.error) return showToast(res.error);
     showToast('已更新');
     showClubManagePanel();
+  } catch(e) { showToast(e.message || '操作失败'); }
+}
+
+// ─── 社团设置面板 ──────────────────────────────────────
+async function loadClubStats() {
+  try {
+    _clubManageStats = await API.getClubStats(_currentClubId);
+  } catch(e) { _clubManageStats = { member_count: 0, post_count: 0, activity_count: 0, pending_apps: 0, today_new: 0, week_new: 0 }; }
+}
+
+function renderClubSettings(c) {
+  const stats = _clubManageStats || {};
+  const statsHtml = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:var(--gradient-start)">${stats.member_count || 0}</div>
+        <div style="font-size:11px;color:var(--text-muted)">成员总数</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#2ECC71">${stats.post_count || 0}</div>
+        <div style="font-size:11px;color:var(--text-muted)">公告数</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#3498DB">${stats.activity_count || 0}</div>
+        <div style="font-size:11px;color:var(--text-muted)">活动数</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <div style="flex:1;background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:16px;font-weight:600;color:#F39C12">${stats.pending_apps || 0}</div>
+        <div style="font-size:11px;color:var(--text-muted)">待审批</div>
+      </div>
+      <div style="flex:1;background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:16px;font-weight:600">+${stats.today_new || 0}</div>
+        <div style="font-size:11px;color:var(--text-muted)">今日新增</div>
+      </div>
+      <div style="flex:1;background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:16px;font-weight:600">+${stats.week_new || 0}</div>
+        <div style="font-size:11px;color:var(--text-muted)">本周新增</div>
+      </div>
+    </div>
+  `;
+
+  const actionsHtml = `
+    <div class="discover-detail-section-title">社团信息</div>
+    <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="discover-detail-row"><span>社团名称</span><span>${escHtml(c.name)}</span></div>
+      <div class="discover-detail-row"><span>分类</span><span>${escHtml(c.category || '未设置')}</span></div>
+      <div class="discover-detail-row"><span>创建时间</span><span>${fmtTime(c.created_at)}</span></div>
+    </div>
+    <button onclick="openEditClubModal()" style="width:100%;padding:12px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">✏️ 编辑社团信息</button>
+    <div class="discover-detail-section-title" style="margin-top:16px">危险操作</div>
+    <button onclick="transferClubOwner()" style="width:100%;padding:12px;border-radius:10px;background:#F39C12;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">🔄 转让社长</button>
+    <button onclick="dissolveClub()" style="width:100%;padding:12px;border-radius:10px;background:#E74C3C;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">💀 解散社团</button>
+  `;
+
+  return statsHtml + actionsHtml;
+}
+
+// ─── 编辑社团信息弹窗 ──────────────────────────────────
+function openEditClubModal() {
+  const modal = document.getElementById('clubEditModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+}
+function closeEditClubModal() {
+  const modal = document.getElementById('clubEditModal');
+  if (modal) modal.style.display = 'none';
+}
+async function submitEditClub() {
+  const nameEl = document.getElementById('clubEditName');
+  const catEl = document.getElementById('clubEditCategory');
+  const descEl = document.getElementById('clubEditDesc');
+  const logoEl = document.getElementById('clubEditLogo');
+  const data = {};
+  if (nameEl && nameEl.value.trim()) data.name = nameEl.value.trim();
+  if (catEl && catEl.value) data.category = catEl.value;
+  if (descEl) data.description = descEl.value;
+  const file = logoEl && logoEl.files.length > 0 ? logoEl.files[0] : null;
+  if (!data.name && !data.category && data.description === undefined && !file) return showToast('没有需要更新的内容');
+  try {
+    const res = await API.updateClub(_currentClubId, data, file);
+    if (res.error) return showToast(res.error);
+    showToast('更新成功');
+    closeEditClubModal();
+    showClubManagePanel();
+  } catch(e) { showToast(e.message || '更新失败'); }
+}
+
+// ─── 转让社长 ─────────────────────────────────────────
+function transferClubOwner() {
+  if (!_clubManageMembers || _clubManageMembers.length < 2) return showToast('没有其他成员可转让');
+  const others = _clubManageMembers.filter(m => m.phone !== (currentUser && currentUser.phone));
+  if (others.length === 0) return showToast('没有其他成员可转让');
+  // 弹窗选择转让对象
+  const modal = document.getElementById('clubTransferModal');
+  if (!modal) return;
+  const list = document.getElementById('clubTransferList');
+  if (list) {
+    list.innerHTML = others.map(m => `
+      <div onclick="confirmTransferClub('${m.phone}')" style="padding:12px;border-radius:10px;background:var(--bg);margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:8px">
+        <span style="font-size:15px;font-weight:500">${escHtml(m.name || m.phone)}</span>
+        <span style="font-size:12px;color:var(--text-muted)">${m.role === 'admin' ? '⭐ 管理员' : '成员'}</span>
+      </div>
+    `).join('');
+  }
+  modal.style.display = 'flex';
+}
+function closeClubTransferModal() {
+  const modal = document.getElementById('clubTransferModal');
+  if (modal) modal.style.display = 'none';
+}
+async function confirmTransferClub(targetPhone) {
+  if (!confirm('转让后你将变为普通成员，确定继续？')) return;
+  try {
+    const res = await API.transferClub(_currentClubId, targetPhone);
+    if (res.error) return showToast(res.error);
+    showToast('转让成功');
+    closeClubTransferModal();
+    closeSubPage('clubManageSub');
+    showClubDetail(_currentClubId);
+    loadDiscoverClubs();
+  } catch(e) { showToast(e.message || '转让失败'); }
+}
+
+// ─── 解散社团 ─────────────────────────────────────────
+async function dissolveClub() {
+  const clubName = document.querySelector('#clubManageContent .discover-detail-row span:last-child');
+  if (!confirm('确定解散该社团？此操作不可恢复！\n\n所有成员、公告、活动将被清除。')) return;
+  if (!confirm('再次确认：真的要解散吗？')) return;
+  try {
+    const res = await API.dissolveClub(_currentClubId);
+    if (res.error) return showToast(res.error);
+    showToast('社团已解散');
+    closeSubPage('clubManageSub');
+    closeSubPage('discoverDetail_sub');
+    loadDiscoverClubs();
   } catch(e) { showToast(e.message || '操作失败'); }
 }
 
@@ -703,5 +845,12 @@ function initDiscoverPage() {
   window.rejectClubApp = rejectClubApp;
   window.kickClubMember = kickClubMember;
   window.setMemberRole = setMemberRole;
+  window.openEditClubModal = openEditClubModal;
+  window.closeEditClubModal = closeEditClubModal;
+  window.submitEditClub = submitEditClub;
+  window.transferClubOwner = transferClubOwner;
+  window.closeClubTransferModal = closeClubTransferModal;
+  window.confirmTransferClub = confirmTransferClub;
+  window.dissolveClub = dissolveClub;
   window.initDiscoverPage = initDiscoverPage;
 })();

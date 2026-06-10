@@ -543,6 +543,10 @@ const API = {
   },
   async deleteClubPost(clubId, postId) { return fetch('/api/clubs/' + clubId + '/posts/' + postId, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
   async pinClubPost(clubId, postId) { return fetch('/api/clubs/' + clubId + '/posts/' + postId + '/pin', { method: 'PUT', headers: this._headers() }).then(r => r.json()); },
+  // 社团管理
+  async getClubStats(clubId) { return fetch('/api/clubs/' + clubId + '/stats', { headers: this._headers() }).then(r => r.json()); },
+  async transferClub(clubId, targetPhone) { return fetch('/api/clubs/' + clubId + '/transfer', { method: 'POST', headers: this._headers(), body: JSON.stringify({ target_phone: targetPhone }) }).then(r => r.json()); },
+  async dissolveClub(clubId) { return fetch('/api/clubs/' + clubId, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
 
   // ─── 活动 ───
   async getActivities(params = {}) {

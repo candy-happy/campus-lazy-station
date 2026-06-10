@@ -395,6 +395,63 @@ router.put('/:id/posts/:postId/pin', requireAuth, (req, res) => JSON_RES(res, ()
   return { ok: true, pinned: post.pinned ? 0 : 1 };
 }));
 
+// ─── 社团统计 ─────────────────────────────────────────
+router.get('/:id/stats', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, phone, 'owner', 'admin');
+  if (!member) return makeError('无权查看统计', ErrorCode.FORBIDDEN);
+
+  const memberCount = db.prepare('SELECT COUNT(*) as cnt FROM club_members WHERE club_id = ?').get(req.params.id).cnt;
+  const postCount = db.prepare('SELECT COUNT(*) as cnt FROM club_posts WHERE club_id = ?').get(req.params.id).cnt;
+  const activityCount = db.prepare("SELECT COUNT(*) as cnt FROM activities WHERE publisher_type='club' AND publisher_id=? AND status!='cancelled'").get(req.params.id).cnt;
+  const pendingApps = db.prepare("SELECT COUNT(*) as cnt FROM club_applications WHERE club_id=? AND status='pending'").get(req.params.id).cnt;
+  const todayNew = db.prepare("SELECT COUNT(*) as cnt FROM club_members WHERE club_id=? AND date(joined_at)=date('now','localtime')").get(req.params.id).cnt;
+  const weekNew = db.prepare("SELECT COUNT(*) as cnt FROM club_members WHERE club_id=? AND joined_at >= datetime('now','-7 days','localtime')").get(req.params.id).cnt;
+
+  return { member_count: memberCount, post_count: postCount, activity_count: activityCount, pending_apps: pendingApps, today_new: todayNew, week_new: weekNew };
+}));
+
+// ─── 转让社长 ─────────────────────────────────────────
+router.post('/:id/transfer', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const { target_phone } = req.body;
+  if (!target_phone) return makeError('请指定转让对象', ErrorCode.PARAM_INVALID);
+
+  const me = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role = ?').get(req.params.id, phone, 'owner');
+  if (!me) return makeError('只有社长可以转让', ErrorCode.FORBIDDEN);
+
+  const target = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(req.params.id, target_phone);
+  if (!target) return makeError('该用户不是社团成员');
+  if (target.phone === phone) return makeError('不能转让给自己');
+
+  const tx = db.transaction(() => {
+    db.prepare('UPDATE club_members SET role = ? WHERE club_id = ? AND phone = ?').run('member', req.params.id, phone);
+    db.prepare('UPDATE club_members SET role = ? WHERE club_id = ? AND phone = ?').run('owner', req.params.id, target_phone);
+    db.prepare('UPDATE clubs SET president_phone = ? WHERE id = ?').run(target_phone, req.params.id);
+  });
+  tx();
+
+  return { ok: true };
+}));
+
+// ─── 解散社团 ─────────────────────────────────────────
+router.delete('/:id', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role = ?').get(req.params.id, phone, 'owner');
+  if (!member) return makeError('只有社长可以解散社团', ErrorCode.FORBIDDEN);
+
+  const tx = db.transaction(() => {
+    db.prepare('DELETE FROM club_members WHERE club_id = ?').run(req.params.id);
+    db.prepare('DELETE FROM club_applications WHERE club_id = ?').run(req.params.id);
+    db.prepare('DELETE FROM club_posts WHERE club_id = ?').run(req.params.id);
+    db.prepare('UPDATE activities SET status = ? WHERE publisher_type = ? AND publisher_id = ?').run('cancelled', 'club', req.params.id);
+    db.prepare('DELETE FROM clubs WHERE id = ?').run(req.params.id);
+  });
+  tx();
+
+  return { ok: true };
+}));
+
 // ─── 社团分类列表 ─────────────────────────────────────────
 router.get('/meta/categories', requireAuth, (req, res) => JSON_RES(res, () => {
   const categories = [
