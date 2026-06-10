@@ -152,14 +152,27 @@
                 <div style="font-size:15px;font-weight:700;margin-bottom:8px">⭐ 推荐社团</div>
                 <div id="discoverHotClubs" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none"></div>
               </div>
+              <!-- 社团排行 -->
+              <div style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <div style="font-size:15px;font-weight:700">🏆 社团排行</div>
+                  <span onclick="toggleClubRanking()" id="clubRankingToggle" style="font-size:12px;color:var(--text-muted);cursor:pointer">展开 ▼</span>
+                </div>
+                <div id="discoverClubRanking" style="display:none"></div>
+              </div>
               <!-- 分类筛选 -->
-              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
                 <span class="discover-club-cat-chip active" data-cat="" onclick="filterClubCategory('')">全部</span>
                 <span class="discover-club-cat-chip" data-cat="文艺" onclick="filterClubCategory('文艺')">🎨 文艺</span>
                 <span class="discover-club-cat-chip" data-cat="体育" onclick="filterClubCategory('体育')">⚽ 体育</span>
                 <span class="discover-club-cat-chip" data-cat="学术" onclick="filterClubCategory('学术')">📚 学术</span>
                 <span class="discover-club-cat-chip" data-cat="科技" onclick="filterClubCategory('科技')">💻 科技</span>
                 <span class="discover-club-cat-chip" data-cat="音乐" onclick="filterClubCategory('音乐')">🎵 音乐</span>
+                <select id="discoverClubSort" onchange="onClubSortChange()" style="margin-left:auto;padding:6px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:12px;color:var(--text)">
+                  <option value="hot">🔥 最热</option>
+                  <option value="new">🆕 最新</option>
+                  <option value="active">📢 最活跃</option>
+                </select>
               </div>
               <!-- 社团列表 -->
               <div id="discoverClubList"></div>

@@ -324,7 +324,9 @@ async function loadDiscoverClubs() {
   container.innerHTML = '<div class="discover-loading">加载中...</div>';
 
   try {
-    const params = { page: 1, limit: 20 };
+    const sortEl = document.getElementById('discoverClubSort');
+    const sort = sortEl ? sortEl.value : 'hot';
+    const params = { page: 1, limit: 20, sort };
     if (discoverClubCategory) params.category = discoverClubCategory;
     const res = await API.getClubs(params);
     const list = Array.isArray(res) ? res : (res && res.list || []);
@@ -340,6 +342,50 @@ async function loadDiscoverClubs() {
   } catch(e) {
     container.innerHTML = '<div class="discover-empty"><p>加载失败</p></div>';
     console.error('loadDiscoverClubs error:', e);
+  }
+}
+
+function onClubSortChange() {
+  loadDiscoverClubs();
+}
+
+async function toggleClubRanking() {
+  const el = document.getElementById('discoverClubRanking');
+  const toggle = document.getElementById('clubRankingToggle');
+  if (!el || !toggle) return;
+
+  if (el.style.display === 'block') {
+    el.style.display = 'none';
+    toggle.textContent = '展开 ▼';
+    return;
+  }
+
+  el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:13px">加载中...</div>';
+  el.style.display = 'block';
+  toggle.textContent = '收起 ▲';
+
+  try {
+    const res = await API.getClubRanking(10);
+    const list = res.list || [];
+    if (!list.length) {
+      el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:13px">暂无社团</div>';
+      return;
+    }
+    const medals = ['🥇','🥈','🥉'];
+    el.innerHTML = list.map((c, i) => {
+      const medal = i < 3 ? medals[i] : `<span style="color:var(--text-muted);font-size:12px">${i+1}</span>`;
+      return `<div onclick="showClubDetail(${c.id})" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer;${i%2===0?'background:var(--bg)':''}">
+        <span style="font-size:18px;width:24px;text-align:center">${medal}</span>
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${c.logo ? '<img src="'+c.logo+'" style="width:100%;height:100%;object-fit:cover" />' : '🎭'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(c.name)}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${c.category || ''} · ${c.activity_count || 0}活动</div>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--gradient-start)">${c.member_count || 0}人</span>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:13px">加载失败</div>';
   }
 }
 
@@ -1003,5 +1049,7 @@ function initDiscoverPage() {
   window.calendarPrevMonth = calendarPrevMonth;
   window.calendarNextMonth = calendarNextMonth;
   window.calendarSelectDate = calendarSelectDate;
+  window.onClubSortChange = onClubSortChange;
+  window.toggleClubRanking = toggleClubRanking;
   window.initDiscoverPage = initDiscoverPage;
 })();

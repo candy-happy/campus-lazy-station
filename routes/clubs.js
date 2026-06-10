@@ -83,7 +83,7 @@ router.post('/', requireAuth, clubUpload.single('logo'), async (req, res) => JSO
 
 // ─── 社团列表（公开可访问） ─────────────────────────────────────────────
 router.get('/', (req, res) => JSON_RES(res, () => {
-  const { category, search, page = 1, limit = 20 } = req.query;
+  const { category, search, sort = 'hot', page = 1, limit = 20 } = req.query;
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 20));
   const offset = (pageNum - 1) * limitNum;
@@ -96,11 +96,20 @@ router.get('/', (req, res) => JSON_RES(res, () => {
   const countSql = sql.replace('SELECT *', 'SELECT COUNT(*) as cnt');
   const total = db.prepare(countSql).get(...params).cnt;
 
-  sql += ' ORDER BY member_count DESC, created_at DESC LIMIT ? OFFSET ?';
+  const orderMap = { hot: 'member_count DESC, created_at DESC', new: 'created_at DESC', active: 'activity_count DESC, member_count DESC' };
+  sql += ' ORDER BY ' + (orderMap[sort] || orderMap.hot) + ' LIMIT ? OFFSET ?';
   params.push(limitNum, offset);
 
   const clubs = db.prepare(sql).all(...params);
   return { total, page: pageNum, limit: limitNum, list: clubs };
+}));
+
+// ─── 社团排行 ─────────────────────────────────────────────
+router.get('/ranking', (req, res) => JSON_RES(res, () => {
+  const { top = 10 } = req.query;
+  const limitNum = Math.min(50, Math.max(1, parseInt(top) || 10));
+  const clubs = db.prepare("SELECT id, name, logo, category, member_count, activity_count FROM clubs WHERE status='active' ORDER BY member_count DESC LIMIT ?").all(limitNum);
+  return { list: clubs };
 }));
 
 // ─── 社团详情 ─────────────────────────────────────────────
