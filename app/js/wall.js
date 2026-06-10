@@ -1189,7 +1189,7 @@
       if (content.indexOf('[SHARE_POST]') !== 0) {
         var oldMatch = content.match(/#(\d+)/);
         if (oldMatch) {
-          return '<div style="background:var(--bg);border-radius:12px;padding:12px;border:1px solid var(--border)"><div style="font-size:13px;color:var(--text-muted);margin-bottom:6px">📤 分享了一条帖子</div><div style="font-size:14px">' + escHtml(content) + '</div><button onclick="showWallDetail(' + oldMatch[1] + ')" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:var(--primary);color:#fff;border:none;font-size:13px;cursor:pointer">查看帖子</button></div>';
+          return '<div style="background:#fff;border-radius:12px;padding:12px;border:1px solid #e0e0e0"><div style="font-size:13px;color:#999;margin-bottom:6px">📤 分享了一条帖子</div><div style="font-size:14px;color:#333">' + escHtml(content) + '</div><button onclick="showWallDetail(' + oldMatch[1] + ')" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:var(--primary);color:#fff;border:none;font-size:13px;cursor:pointer">查看帖子</button></div>';
         }
         return escHtml(content);
       }
@@ -1204,10 +1204,10 @@
               return '<img src="' + u + '" style="width:56px;height:56px;border-radius:8px;object-fit:cover" />';
             }).join('') + '</div>'
           : '';
-        return '<div style="background:var(--bg);border-radius:12px;padding:12px;border:1px solid var(--border);max-width:280px">' +
-          '<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">📤 分享了一条校园墙帖子</div>' +
-          (preview ? '<div style="font-size:14px;line-height:1.5;margin-bottom:4px">' + escHtml(preview) + '</div>' : '') +
-          (author ? '<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">——' + escHtml(author) + (time ? ' · ' + time : '') + '</div>' : '') +
+        return '<div style="background:#fff;border-radius:12px;padding:12px;border:1px solid #e0e0e0;max-width:280px">' +
+          '<div style="font-size:12px;color:#999;margin-bottom:6px">📤 分享了一条校园墙帖子</div>' +
+          (preview ? '<div style="font-size:14px;line-height:1.5;margin-bottom:4px;color:#333">' + escHtml(preview) + '</div>' : '') +
+          (author ? '<div style="font-size:12px;color:#999;margin-bottom:4px">——' + escHtml(author) + (time ? ' · ' + time : '') + '</div>' : '') +
           imgsHtml +
           '<button onclick="showWallDetail(' + data.id + ')" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:var(--primary);color:#fff;border:none;font-size:13px;cursor:pointer">查看帖子</button>' +
           '</div>';
