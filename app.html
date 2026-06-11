@@ -188,13 +188,13 @@
     <!-- ═══════════════════════════════════════════════════════
          📋 订单页
     ═══════════════════════════════════════════════════════ -->
-    <div class="page" id="orderPage">
-      <div class="header">
-        <div class="header-top">
-          <div class="logo"><span class="logo-text" data-i18n="orderPageTitle">我的订单</span></div>
-        </div>
+    <div class="sub-page" id="orderPage">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('orderPage')">←</button>
+        <span class="sub-page-title" data-i18n="orderPageTitle">我的订单</span>
+        <span style="width:32px"></span>
       </div>
-      <div class="content-area" style="padding:12px 16px">
+      <div class="sub-page-body" style="padding:12px 16px">
         <!-- 状态分类标签 -->
         <div class="order-section" style="margin-bottom:12px">
           <div class="order-tabs" style="margin:-16px -16px 0;padding:0 8px">
@@ -293,7 +293,7 @@
             <span class="me-menu-text" data-i18n="menuListings">我的在售</span>
             <span class="me-menu-arrow">›</span>
           </div>
-          <div class="me-menu-item" onclick="switchPage('order')">
+          <div class="me-menu-item" onclick="openSubPage('orderPage')">
             <span class="me-menu-icon">📋</span>
             <span class="me-menu-text" data-i18n="menuOrders">我的订单</span>
             <span class="me-menu-arrow">›</span>
