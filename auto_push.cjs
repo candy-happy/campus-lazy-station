@@ -31,16 +31,15 @@ console.log(`[auto-push] 检测到 ${changedFiles} 个文件变更`);
 // 提交（只添加源代码文件，排除敏感文件）
 const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
 const commitMsg = `auto-save: ${now}`;
-// 只添加源代码文件，避免提交数据库、上传文件、配置文件等敏感内容
-const addResult = run(`git add \
-  -- '*.js' '*.cjs' '*.html' '*.css' '*.json' '*.md' \
-  -- 'routes/' 'middleware/' 'utils/' 'config/' \
-  -- 'app/' 'rider/' 'admin/' \
-  -- ':!*.db' ':!uploads/' ':!.env' ':!node_modules/'`);
-if (addResult && addResult.startsWith('ERROR')) {
-  console.log(`[auto-push] add failed: ${addResult}`);
-  process.exit(1);
-}
+
+// 先添加所有变更，再撤销敏感文件的暂存
+// 这种方式比用 :! 排除模式更可靠，避免 Windows shell 解析和 exit code 问题
+run('git add -A');
+
+// 撤销 .db / uploads / .env 的暂存（防止误提交敏感文件）
+const resetResult = run('git reset -- "*.db" "uploads/" ".env"');
+console.log(`[auto-push] reset excluded: ${resetResult}`);
+
 const commitResult = run(`git commit -m "${commitMsg}"`);
 console.log(`[auto-push] commit: ${commitResult.split('\n')[0]}`);
 

@@ -5,7 +5,9 @@ const { ADMIN_ENTRY_PATH } = require('../config');
 // ─── 安全响应头 ───────────────────────────────────────────
 function securityHeaders(req, res, next) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
+  // 条款页面允许同源iframe嵌入（登录页需iframe展示）
+  const isTerms = req.path === '/public/terms.html';
+  res.setHeader('X-Frame-Options', isTerms ? 'SAMEORIGIN' : 'DENY');
   res.setHeader('X-XSS-Protection', '0'); // 现代浏览器已移除该功能，设为0避免兼容模式
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.removeHeader('X-Powered-By'); // 隐藏服务器信息
@@ -16,6 +18,7 @@ function securityHeaders(req, res, next) {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
   // 内容安全策略（CSP）
+  const frameSrc = isTerms ? "frame-src 'self'; " : "frame-src 'none'; ";
   res.setHeader('Content-Security-Policy',
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline'; " +
@@ -25,7 +28,7 @@ function securityHeaders(req, res, next) {
     "connect-src 'self' http://localhost:* http://127.0.0.1:*; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "object-src 'none'; " +
-    "frame-src 'none'; " +
+    frameSrc +
     "base-uri 'self'; " +
     "form-action 'self'"
   );

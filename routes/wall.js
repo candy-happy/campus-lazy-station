@@ -141,7 +141,7 @@ router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res
 
 // ─── 信息流 ──────────────────────────────────────────────
 router.get('/feed', (req, res) => JSON_RES(res, () => {
-  const { tab, phone, page, limit, tag } = req.query;
+  const { tab, phone, page, limit, tag, author_phone } = req.query;
   const p = Math.max(1, parseInt(page) || 1);
   const l = Math.min(50, parseInt(limit) || 20);
   const offset = (p - 1) * l;
@@ -191,6 +191,10 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
     if (blockedPhones.size > 0) {
       posts = posts.filter(p => !blockedPhones.has(p.phone));
     }
+  }
+  // 按作者筛选（用于卖家校园墙等场景）
+  if (author_phone) {
+    posts = posts.filter(p => p.phone === author_phone);
   }
   // 注意：浏览量只在点开帖子详情时计数（见 GET /posts/:id），feed列表不计数
   // 关注状态

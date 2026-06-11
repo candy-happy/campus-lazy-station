@@ -462,27 +462,27 @@
         const s = size || 36;
         const fs = Math.round(s * 0.4);
         if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
-          return `<div style="width:${s}px;height:${s}px;border-radius:50%;overflow:hidden;flex-shrink:0;cursor:pointer" onclick="showWallUser('${data.phone}')"><img src="${escHtml(avatar)}" style="width:100%;height:100%;object-fit:cover" /></div>`;
+          return `<div style="width:${s}px;height:${s}px;border-radius:50%;overflow:hidden;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:2px solid rgba(255,255,255,0.8)" onclick="showWallUser('${data.phone}')"><img src="${escHtml(avatar)}" style="width:100%;height:100%;object-fit:cover" /></div>`;
         }
         const letter = (avatar && /\p{Emoji}/u.test(avatar) && avatar.length<=2) ? avatar : (nickname||'匿')[0];
-        return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:#fff;display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;flex-shrink:0;cursor:pointer" onclick="showWallUser('${data.phone}')">${letter}</div>`;
+        return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:#fff;display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(255,107,43,0.2)" onclick="showWallUser('${data.phone}')">${letter}</div>`;
       }
 
       // 渲染单条回复（楼中楼）
       function renderReply(r, parentCommentId) {
         return `
-          <div style="padding:10px 0 10px 16px;border-left:2px solid var(--border);margin-left:8px;transition:background 0.2s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">
+          <div style="padding:12px 0 10px 14px;border-left:3px solid rgba(255,107,43,0.25);margin-left:8px;border-radius:0 8px 8px 0;transition:all 0.2s" onmouseover="this.style.background='rgba(255,107,43,0.03)';this.style.borderLeftColor='rgba(255,107,43,0.5)'" onmouseout="this.style.background='transparent';this.style.borderLeftColor='rgba(255,107,43,0.25)'">
             <div style="display:flex;align-items:center;gap:6px">
               ${avatarHtml(r.avatar, r.nickname, 24)}
-              <span style="font-size:13px;font-weight:600;color:var(--text)">${escHtml(r.nickname||'匿名')}</span>
-              ${r.reply_to_nickname ? `<span style="font-size:11px;color:var(--text-secondary)">回复</span><span style="font-size:13px;font-weight:600;color:#FF6B2B">${escHtml(r.reply_to_nickname)}</span>` : ''}
+              <span style="font-size:13px;font-weight:700;color:var(--text)">${escHtml(r.nickname||'匿名')}</span>
+              ${r.reply_to_nickname ? `<span style="font-size:11px;color:var(--text-secondary)">回复</span><span style="font-size:13px;font-weight:700;color:#FF6B2B">${escHtml(r.reply_to_nickname)}</span>` : ''}
             </div>
-            <div style="font-size:14px;line-height:1.6;margin:6px 0 4px 32px;color:var(--text)">${escHtml(r.content)}</div>
-            <div style="display:flex;align-items:center;gap:14px;margin-left:32px">
+            <div style="font-size:14px;line-height:1.7;margin:6px 0 6px 32px;color:var(--text)">${escHtml(r.content)}</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-left:32px">
               <span style="font-size:11px;color:var(--text-secondary)">${timeAgo(r.created_at)}</span>
-              <button onclick="doCommentLike(${r.id},this)" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:2px 4px;border-radius:8px;transition:all 0.15s" onmouseover="this.style.color='#E74C3C';this.style.background='rgba(231,76,60,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">❤️ ${r.like_count||0}</button>
-              <button onclick="replyToComment(${parentCommentId},'${escHtml(r.nickname||'匿名')}','${r.phone}')" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:2px 4px;border-radius:8px;transition:all 0.15s" onmouseover="this.style.color='#FF6B2B';this.style.background='rgba(255,107,43,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">💬 回复</button>
-              <button onclick="showReportMenu('comment',${r.id})" style="background:none;border:none;font-size:11px;color:var(--text-secondary);cursor:pointer;padding:2px 4px;border-radius:8px;margin-left:auto;opacity:0.5;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">🚫</button>
+              <button onclick="doCommentLike(${r.id},this)" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:3px 6px;border-radius:10px;transition:all 0.15s" onmouseover="this.style.color='#E74C3C';this.style.background='rgba(231,76,60,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">❤️ ${r.like_count||0}</button>
+              <button onclick="replyToComment(${parentCommentId},'${escHtml(r.nickname||'匿名')}','${r.phone}')" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:3px 6px;border-radius:10px;transition:all 0.15s" onmouseover="this.style.color='#FF6B2B';this.style.background='rgba(255,107,43,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">💬 回复</button>
+              <button onclick="showReportMenu('comment',${r.id})" style="background:none;border:none;font-size:11px;color:var(--text-secondary);cursor:pointer;padding:3px 6px;border-radius:10px;margin-left:auto;opacity:0.5;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">🚫</button>
             </div>
           </div>`;
       }
@@ -492,22 +492,24 @@
         const replyList = replyMap[c.id] || [];
         const replyCount = replyList.length;
         return `
-          <div style="padding:16px 0;${idx < topLevel.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}animation:fadeIn 0.3s ease ${idx*0.05}s both">
+          <div style="padding:16px 0;${idx < topLevel.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}animation:fadeIn 0.35s ease ${idx*0.06}s both">
             <div style="display:flex;align-items:flex-start;gap:10px">
-              ${avatarHtml(c.avatar, c.nickname, 36)}
+              <div style="position:relative;flex-shrink:0">
+                ${avatarHtml(c.avatar, c.nickname, 38)}
+              </div>
               <div style="flex:1;min-width:0">
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                  <span style="font-size:14px;font-weight:700;color:var(--text)">${escHtml(c.nickname||'匿名')}</span>
-                  <span style="font-size:11px;color:var(--text-secondary)">${timeAgo(c.created_at)}</span>
+                  <span style="font-size:14px;font-weight:800;color:var(--text)">${escHtml(c.nickname||'匿名')}</span>
+                  <span style="font-size:11px;color:var(--text-secondary);opacity:0.7">${timeAgo(c.created_at)}</span>
                 </div>
-                <div style="font-size:15px;line-height:1.7;margin:8px 0;color:var(--text)">${escHtml(c.content)}</div>
-                <div style="display:flex;align-items:center;gap:14px">
-                  <button onclick="doCommentLike(${c.id},this)" style="background:none;border:none;font-size:13px;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:12px;transition:all 0.15s" onmouseover="this.style.color='#E74C3C';this.style.background='rgba(231,76,60,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">❤️ ${c.like_count||0}</button>
-                  <button onclick="replyToComment(${c.id},'${escHtml(c.nickname||'匿名')}','${c.phone}')" style="background:none;border:none;font-size:13px;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:12px;transition:all 0.15s" onmouseover="this.style.color='#FF6B2B';this.style.background='rgba(255,107,43,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">💬 回复</button>
-                  <button onclick="showReportMenu('comment',${c.id})" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:4px 8px;border-radius:12px;margin-left:auto;opacity:0.5;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">🚫</button>
+                <div style="font-size:15px;line-height:1.75;margin:8px 0;color:var(--text)">${escHtml(c.content)}</div>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <button onclick="doCommentLike(${c.id},this)" style="background:none;border:none;font-size:13px;color:var(--text-secondary);cursor:pointer;padding:5px 10px;border-radius:14px;transition:all 0.15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.color='#E74C3C';this.style.background='rgba(231,76,60,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">❤️ <span>${c.like_count||0}</span></button>
+                  <button onclick="replyToComment(${c.id},'${escHtml(c.nickname||'匿名')}','${c.phone}')" style="background:none;border:none;font-size:13px;color:var(--text-secondary);cursor:pointer;padding:5px 10px;border-radius:14px;transition:all 0.15s;display:flex;align-items:center;gap:4px" onmouseover="this.style.color='#FF6B2B';this.style.background='rgba(255,107,43,0.08)'" onmouseout="this.style.color='var(--text-secondary)';this.style.background='transparent'">💬 回复</button>
+                  <button onclick="showReportMenu('comment',${c.id})" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:5px 10px;border-radius:14px;margin-left:auto;opacity:0.45;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.45'">🚫</button>
                 </div>
                 ${replyCount > 0 ? `
-                  <div style="margin-top:8px;padding:8px 0 0;background:var(--bg);border-radius:12px;padding:10px 12px">
+                  <div style="margin-top:10px;background:linear-gradient(135deg,rgba(255,107,43,0.03),rgba(255,107,43,0.06));border-radius:14px;padding:4px 12px 8px;border:1px solid rgba(255,107,43,0.08)">
                     ${replyList.map(r => renderReply(r, c.id)).join('')}
                   </div>
                 ` : ''}
@@ -525,54 +527,60 @@
           const url = typeof imgs[0] === 'object' ? imgs[0].url : imgs[0];
           const isVid = typeof imgs[0] === 'object' ? imgs[0].isVideo : /\.mp4|\.mov|\.webm/i.test(url);
           imagesHtml = isVid
-            ? `<video src="${url}" controls style="width:100%;border-radius:14px;margin-top:12px" muted></video>`
-            : `<img src="${url}" style="width:100%;max-height:400px;object-fit:cover;border-radius:14px;margin-top:12px;cursor:zoom-in" loading="lazy" onclick="window.open(this.src)" />`;
+            ? `<video src="${url}" controls style="width:100%;border-radius:16px;margin-top:14px;box-shadow:0 2px 12px rgba(0,0,0,0.08)" muted></video>`
+            : `<img src="${url}" style="width:100%;max-height:420px;object-fit:cover;border-radius:16px;margin-top:14px;cursor:zoom-in;box-shadow:0 2px 12px rgba(0,0,0,0.08)" loading="lazy" onclick="window.open(this.src)" />`;
         } else if (imgCount === 2) {
-          imagesHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px">${imgs.map(img => {
+          imagesHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">${imgs.map(img => {
             const url = typeof img === 'object' ? img.url : img;
             const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
-            return isVid ? `<video src="${url}" style="width:100%;height:200px;object-fit:cover;border-radius:12px" muted></video>` : `<img src="${url}" style="width:100%;height:200px;object-fit:cover;border-radius:12px;cursor:zoom-in" loading="lazy" onclick="window.open(this.src)" />`;
+            return isVid ? `<video src="${url}" style="width:100%;height:220px;object-fit:cover;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06)" muted></video>` : `<img src="${url}" style="width:100%;height:220px;object-fit:cover;border-radius:14px;cursor:zoom-in;box-shadow:0 2px 8px rgba(0,0,0,0.06)" loading="lazy" onclick="window.open(this.src)" />`;
           }).join('')}</div>`;
         } else {
-          imagesHtml = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px">${imgs.slice(0,9).map(img => {
+          imagesHtml = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">${imgs.slice(0,9).map(img => {
             const url = typeof img === 'object' ? img.url : img;
             const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
-            return isVid ? `<video src="${url}" style="width:100%;height:120px;object-fit:cover;border-radius:10px" muted></video>` : `<img src="${url}" style="width:100%;height:120px;object-fit:cover;border-radius:10px;cursor:zoom-in" loading="lazy" onclick="window.open(this.src)" />`;
-          }).join('')}${imgCount > 9 ? `<div style="width:100%;height:120px;background:var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text-secondary)">+${imgCount-9}</div>` : ''}</div>`;
+            return isVid ? `<video src="${url}" style="width:100%;height:130px;object-fit:cover;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.05)" muted></video>` : `<img src="${url}" style="width:100%;height:130px;object-fit:cover;border-radius:12px;cursor:zoom-in;box-shadow:0 1px 6px rgba(0,0,0,0.05)" loading="lazy" onclick="window.open(this.src)" />`;
+          }).join('')}${imgCount > 9 ? `<div style="width:100%;height:130px;background:var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--text-secondary)">+${imgCount-9}</div>` : ''}</div>`;
         }
       }
 
       // 标签渲染
-      const tagsHtml = (data.tags && data.tags.length) ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">${data.tags.map(t => {
+      const tagsHtml = (data.tags && data.tags.length) ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">${data.tags.map(t => {
         const cfg = TAG_CONFIG[t] || { emoji: '🏷️', color: '#95A5A6' };
-        return `<span onclick="filterByTag('${t}');closeSubPage('wallDetailPage_sub')" style="display:inline-flex;align-items:center;gap:3px;padding:4px 12px;border-radius:14px;font-size:12px;background:${cfg.color}15;color:${cfg.color};cursor:pointer;transition:all 0.2s;border:1px solid ${cfg.color}25" onmouseover="this.style.background='${cfg.color}25'" onmouseout="this.style.background='${cfg.color}15'">${t}</span>`;
+        return `<span onclick="filterByTag('${t}');closeSubPage('wallDetailPage_sub')" style="display:inline-flex;align-items:center;gap:3px;padding:5px 14px;border-radius:16px;font-size:12px;font-weight:600;background:linear-gradient(135deg,${cfg.color}10,${cfg.color}20);color:${cfg.color};cursor:pointer;transition:all 0.2s;border:1px solid ${cfg.color}20" onmouseover="this.style.background='linear-gradient(135deg,${cfg.color}25,${cfg.color}35)';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='linear-gradient(135deg,${cfg.color}10,${cfg.color}20)';this.style.transform='translateY(0)'">${t}</span>`;
       }).join('')}</div>` : '';
 
-      const aiTagsHtml = (data.ai_tags && data.ai_tags.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${data.ai_tags.map(at => `<span onclick="filterByTag('${at}');closeSubPage('wallDetailPage_sub')" style="display:inline-flex;align-items:center;gap:2px;padding:3px 10px;border-radius:12px;font-size:11px;background:#8E44AD10;color:#8E44AD;cursor:pointer;border:1px solid #8E44AD20">🤖 ${escHtml(at)}</span>`).join('')}</div>` : '';
+      const aiTagsHtml = (data.ai_tags && data.ai_tags.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${data.ai_tags.map(at => `<span onclick="filterByTag('${at}');closeSubPage('wallDetailPage_sub')" style="display:inline-flex;align-items:center;gap:3px;padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:linear-gradient(135deg,#8E44AD0A,#8E44AD18);color:#8E44AD;cursor:pointer;transition:all 0.2s;border:1px solid #8E44AD18" onmouseover="this.style.background='linear-gradient(135deg,#8E44AD18,#8E44AD2A)';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='linear-gradient(135deg,#8E44AD0A,#8E44AD18)';this.style.transform='translateY(0)'">🤖 ${escHtml(at)}</span>`).join('')}</div>` : '';
 
       // 内联操作按钮（分享/举报/拉黑/删除）
-      var detailShareBtn = '<button onclick="event.stopPropagation();doSharePost('+data.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">📤 分享</button>';
-      var detailReportBtn = '<button onclick="event.stopPropagation();showReportMenu(\''+('post')+'\','+data.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">🚫 举报</button>';
-      var detailBlockBtn = (currentUser && data.phone !== currentUser.phone) ? '<button onclick="event.stopPropagation();doBlockUser(\''+escHtml(data.phone)+'\')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🚷 拉黑</button>' : '';
-      var detailDeleteBtn = ((currentUser && data.phone === currentUser.phone) || (currentUser && (currentUser.role==='admin'||currentUser.role==='super'))) ? '<button onclick="event.stopPropagation();doDeletePost('+data.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🗑️ 删除</button>' : '';
+      var detailShareBtn = '<button onclick="event.stopPropagation();doSharePost('+data.id+')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:9px 16px;border-radius:10px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap;color:var(--text);width:100%" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">📤 分享</button>';
+      var detailReportBtn = '<button onclick="event.stopPropagation();showReportMenu(\''+('post')+'\','+data.id+')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:9px 16px;border-radius:10px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap;color:var(--text);width:100%" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">🚫 举报</button>';
+      var detailBlockBtn = (currentUser && data.phone !== currentUser.phone) ? '<button onclick="event.stopPropagation();doBlockUser(\''+escHtml(data.phone)+'\')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:9px 16px;border-radius:10px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap;width:100%" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🚷 拉黑</button>' : '';
+      var detailDeleteBtn = ((currentUser && data.phone === currentUser.phone) || (currentUser && (currentUser.role==='admin'||currentUser.role==='super'))) ? '<button onclick="event.stopPropagation();doDeletePost('+data.id+')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:9px 16px;border-radius:10px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap;width:100%" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🗑️ 删除</button>' : '';
       var detailInlineActions = detailShareBtn + detailReportBtn + detailBlockBtn + detailDeleteBtn;
 
       const el = document.getElementById('wallDetailContent');
       el.innerHTML = `
         <!-- 帖子主体 -->
-        <div style="padding:16px;background:var(--card);border-radius:0 0 16px 16px;margin-bottom:10px">
+        <div style="background:var(--card);border-radius:16px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06)">
+          <!-- 顶部渐变条 -->
+          <div style="height:4px;background:linear-gradient(90deg,#FF6B2B,#FF8F5E,#FFB088,#FF8F5E,#FF6B2B)"></div>
+          <div style="padding:18px 16px 16px">
           <!-- 作者信息 -->
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-            ${avatarHtml(data.avatar, data.nickname, 44)}
-            <div style="flex:1;min-width:0">
-              <div style="font-size:16px;font-weight:700;color:var(--text)">${escHtml(data.nickname||'匿名')}</div>
-              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${timeAgo(data.created_at)}</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <div style="position:relative;flex-shrink:0">
+              ${avatarHtml(data.avatar, data.nickname, 48)}
+              <div style="position:absolute;inset:-3px;border-radius:50%;border:3px solid transparent;background:linear-gradient(135deg,#FF6B2B,#FFB088) border-box;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:destination-out;mask-composite:exclude;pointer-events:none"></div>
             </div>
-            <span style="position:relative;flex-shrink:0"><button onclick="event.stopPropagation();toggleInlineActions(this,${data.id},'${escHtml(data.phone)}',event)" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer;padding:6px 10px;border-radius:50%;transition:all 0.2s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">⋯</button><span class="wall-inline-actions" style="display:none;position:absolute;right:0;top:100%;background:var(--card);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:6px;z-index:50;min-width:120px;margin-top:4px" onmouseleave="this.classList.remove('open')">${detailInlineActions}</span></span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:16px;font-weight:800;color:var(--text);line-height:1.3">${escHtml(data.nickname||'匿名')}</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">${timeAgo(data.created_at)}</div>
+            </div>
+            <span style="position:relative;flex-shrink:0"><button onclick="event.stopPropagation();toggleInlineActions(this,${data.id},'${escHtml(data.phone)}',event)" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer;padding:8px 10px;border-radius:50%;transition:all 0.2s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">⋯</button><span class="wall-inline-actions" style="display:none;position:absolute;right:0;top:100%;background:var(--card);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:6px;z-index:50;min-width:120px;margin-top:4px" onmouseleave="this.classList.remove('open')">${detailInlineActions}</span></span>
           </div>
 
           <!-- 帖子内容 -->
-          <div style="font-size:16px;line-height:1.8;color:var(--text);word-break:break-word;white-space:pre-wrap">${escHtml(data.content)}</div>
+          <div style="font-size:16px;line-height:1.9;color:var(--text);word-break:break-word;white-space:pre-wrap;padding-left:4px">${escHtml(data.content)}</div>
 
           <!-- 标签 -->
           ${tagsHtml}${aiTagsHtml}
@@ -581,28 +589,30 @@
           ${imagesHtml}
 
           <!-- 互动栏 -->
-          <div style="display:flex;align-items:center;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-            <button onclick="event.stopPropagation();doWallLike(${data.id},this)" style="display:flex;align-items:center;gap:5px;padding:8px 16px;border-radius:24px;border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);font-size:14px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='#E74C3C';this.style.color='#E74C3C';this.style.background='rgba(231,76,60,0.06)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)';this.style.background='var(--bg)'">❤️ <span>${data.like_count||0}</span></button>
-            <button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border-radius:24px;border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);font-size:14px;cursor:default">💬 <span>${comments.length}</span></button>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+            <button onclick="event.stopPropagation();doWallLike(${data.id},this)" style="display:flex;align-items:center;gap:6px;padding:9px 18px;border-radius:24px;border:1px solid rgba(231,76,60,0.2);background:rgba(231,76,60,0.04);color:#E74C3C;font-size:14px;cursor:pointer;transition:all 0.2s;font-weight:600" onmouseover="this.style.background='rgba(231,76,60,0.12)';this.style.transform='scale(1.03)'" onmouseout="this.style.background='rgba(231,76,60,0.04)';this.style.transform='scale(1)'">❤️ <span>${data.like_count||0}</span></button>
+            <button style="display:flex;align-items:center;gap:6px;padding:9px 18px;border-radius:24px;border:1px solid rgba(69,183,209,0.2);background:rgba(69,183,209,0.04);color:#45B7D1;font-size:14px;cursor:default;font-weight:600">💬 <span>${comments.length}</span></button>
             <div style="flex:1"></div>
-            <button onclick="showReportMenu('post',${data.id})" style="display:flex;align-items:center;gap:4px;padding:8px 14px;border-radius:24px;border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);font-size:13px;cursor:pointer;transition:all 0.2s;opacity:0.6" onmouseover="this.style.opacity='1';this.style.borderColor='#E74C3C';this.style.color='#E74C3C'" onmouseout="this.style.opacity='0.6';this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">🚫 举报</button>
+            <button onclick="showReportMenu('post',${data.id})" style="display:flex;align-items:center;gap:4px;padding:8px 14px;border-radius:24px;border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);font-size:13px;cursor:pointer;transition:all 0.2s;opacity:0.5" onmouseover="this.style.opacity='1';this.style.borderColor='#d0d0d0';this.style.color='#666'" onmouseout="this.style.opacity='0.5';this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">🚫 举报</button>
+          </div>
           </div>
         </div>
 
         <!-- 评论区 -->
-        <div style="background:var(--card);border-radius:16px;padding:16px;margin-bottom:10px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <div style="background:var(--card);border-radius:16px;padding:16px;margin-bottom:10px;box-shadow:0 2px 12px rgba(0,0,0,0.06)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:12px;border-bottom:1px solid var(--border)">
             <span style="font-size:17px;font-weight:800;color:var(--text)">💬 评论</span>
-            <span style="font-size:13px;color:var(--text-secondary);background:var(--border);padding:2px 10px;border-radius:12px">${comments.length}</span>
+            <span style="font-size:13px;color:#FF6B2B;background:rgba(255,107,43,0.1);padding:2px 10px;border-radius:12px;font-weight:700">${comments.length}</span>
           </div>
-          ${topLevel.length ? topLevel.map((c, i) => renderTopComment(c, i)).join('') : '<div style="text-align:center;padding:32px 0;color:var(--text-secondary)"><div style="font-size:40px;margin-bottom:8px">💭</div><div style="font-size:14px">暂无评论，来说两句吧~</div></div>'}
+          ${topLevel.length ? topLevel.map((c, i) => renderTopComment(c, i)).join('') : '<div style="text-align:center;padding:40px 0;color:var(--text-secondary)"><div style="font-size:44px;margin-bottom:10px;opacity:0.6">💭</div><div style="font-size:14px">暂无评论，来说两句吧~</div></div>'}
         </div>
 
         <!-- 评论输入框 -->
-        <div style="position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:10px;align-items:center;border-radius:16px 16px 0 0">
+        <div style="position:sticky;bottom:0;background:var(--card);padding:10px 16px;display:flex;gap:10px;align-items:center;border-radius:16px 16px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,0.06)">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#FF6B2B,#FF8F5E,#FFB088)"></div>
           <div id="cancelReplyHint" style="display:none;font-size:11px;color:#FF6B2B;background:rgba(255,107,43,0.1);padding:3px 10px;border-radius:10px;white-space:nowrap;cursor:pointer" onclick="cancelReply()">✕ 取消回复</div>
-          <input id="wallCommentInput" placeholder="写评论..." style="flex:1;border:1px solid var(--border);border-radius:24px;padding:10px 18px;font-size:14px;outline:none;background:var(--bg);color:var(--text);transition:border-color 0.2s" onfocus="this.style.borderColor='#FF6B2B'" onblur="this.style.borderColor='var(--border)'" />
-          <button id="wallCommentSendBtn" onclick="submitWallComment(${data.id})" style="background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:#fff;border:none;border-radius:24px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.2s;box-shadow:0 2px 8px rgba(255,107,43,0.3)" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">发送</button>
+          <input id="wallCommentInput" placeholder="写评论..." style="flex:1;border:1.5px solid var(--border);border-radius:24px;padding:10px 18px;font-size:14px;outline:none;background:var(--bg);color:var(--text);transition:all 0.2s" onfocus="this.style.borderColor='#FF6B2B';this.style.boxShadow='0 0 0 3px rgba(255,107,43,0.08)'" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'" />
+          <button id="wallCommentSendBtn" onclick="submitWallComment(${data.id})" style="background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:#fff;border:none;border-radius:24px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.2s;box-shadow:0 3px 12px rgba(255,107,43,0.35);letter-spacing:0.5px" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 16px rgba(255,107,43,0.45)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 3px 12px rgba(255,107,43,0.35)'">发送</button>
         </div>
       `;
       openSubPage('wallDetailPage_sub');
@@ -721,7 +731,6 @@
       const el = document.getElementById('wallDetailContent');
       el.innerHTML = `
         <div style="text-align:center;padding:32px 0 20px;position:relative;overflow:hidden;border-radius:16px 16px 0 0;margin-bottom:16px;${bgStyle}">
-          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.05),rgba(0,0,0,0.4));z-index:0"></div>
           <div style="position:relative;z-index:1">
             <div class="wall-avatar" style="width:64px;height:64px;${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? 'overflow:hidden' : 'font-size:28px'};margin:0 auto 12px;border:3px solid rgba(255,255,255,0.6);box-shadow:0 2px 8px rgba(0,0,0,0.2)">${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? '<img src="'+escHtml(data.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />' : (data.avatar && /\p{Emoji}/u.test(data.avatar) && data.avatar.length<=2 ? data.avatar : (data.nickname||'匿')[0])}</div>
             <div style="font-size:18px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.3)">${escHtml(data.nickname)}</div>
@@ -1046,18 +1055,47 @@
 
 
     async function loadChatList() {
-      const list = await API.chatConversations(currentUser.phone);
       const el = document.getElementById('chatListBody');
+      // 并行拉取私信和通知
+      const [list, notifs] = await Promise.all([
+        API.chatConversations(currentUser.phone),
+        API.getNotifications(currentUser.phone).catch(() => [])
+      ]);
+      const notifArr = Array.isArray(notifs) ? notifs : [];
+      // 同步到 core.js 闭包，确保徽章准确
+      if (typeof setNotifications === 'function') setNotifications(notifArr);
       // 分享横幅（内嵌在列表顶部，不是弹窗）
       var shareBanner = '';
       if (window._pendingSharePostId) {
         shareBanner = '<div id="shareHint" style="background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:white;padding:10px 16px;margin-bottom:8px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;font-size:14px"><span>📤 点击下方好友分享帖子</span><button onclick="window._pendingSharePostId=null;loadChatList()" style="background:rgba(255,255,255,0.25);border:none;color:white;padding:3px 10px;border-radius:10px;cursor:pointer;font-size:12px">取消</button></div>';
       }
-      if (!list || !list.length) {
+      if ((!list || !list.length) && !notifArr.length) {
         el.innerHTML = shareBanner + '<div style="padding:40px;text-align:center;color:var(--text-secondary)">暂无消息</div>';
         return;
       }
-      el.innerHTML = shareBanner + list.map(c => `
+      // 通知条目渲染
+      const iconMap = {order:'📦',wall_like:'❤️',wall_comment:'💬',rating:'⭐',promo:'🎉'};
+      const clsMap = {order:'order',wall_like:'system',wall_comment:'system',rating:'promo',promo:'promo'};
+      const notifItems = notifArr.map(n => {
+        const icon = iconMap[n.type] || '🔔';
+        const cls = clsMap[n.type] || 'system';
+        const unreadDot = n.read ? '' : '<span class="chat-item-badge" style="min-width:8px;height:8px;border-radius:50%;padding:0"></span>';
+        return `<div class="chat-item" data-notif-id="${n.id}" onclick="markNotifRead(${n.id})">
+          <div class="chat-item-avatar notif-avatar ${cls}">${icon}</div>
+          <div class="chat-item-info">
+            <div class="chat-item-top">
+              <span class="chat-item-name">🔔 ${escHtml(n.title)}</span>
+              <span class="chat-item-time">${timeAgo(n.created_at)}</span>
+            </div>
+            <div class="chat-item-bottom">
+              <span class="chat-item-msg">${escHtml(n.content)}</span>
+              ${unreadDot}
+            </div>
+          </div>
+        </div>`;
+      });
+      // 私信条目渲染
+      const chatItems = (list || []).map(c => `
         <div class="chat-item" onclick="${window._pendingSharePostId ? 'window.shareAndOpenConv' : 'openChatConv'}(${c.id},'${escHtml(c.other_phone)}','${escHtml(c.other_name)}')">
           <div class="chat-item-avatar">${(c.other_name||'?')[0]}</div>
           <div class="chat-item-info">
@@ -1071,7 +1109,9 @@
             </div>
           </div>
         </div>
-      `).join('');
+      `);
+      // 通知在前，私信在后
+      el.innerHTML = shareBanner + notifItems.join('') + chatItems.join('');
       // 导出分享+打开会话的组合函数
       window.shareAndOpenConv = function(convId, otherPhone, otherName) {
         if (window._pendingSharePostId) {
@@ -1081,6 +1121,13 @@
           sendShareMessageToConv(convId, postId);
         }
       };
+    }
+
+    // 点击通知标记已读
+    async function markNotifRead(id) {
+      try { await API.markRead(currentUser.phone); } catch(e) {}
+      loadChatList();
+      if (typeof updateMsgBadge === 'function') updateMsgBadge();
     }
 
 
@@ -2351,6 +2398,7 @@ window.initMessagePage = initMessagePage;
 window.loadChatList = loadChatList;
 window.openChatConv = openChatConv;
 window.backToChatList = backToChatList;
+window.markNotifRead = markNotifRead;
 window.loadChatMessages = loadChatMessages;
 window.sendChatMsg = sendChatMsg;
 window.userChatUpload = userChatUpload;

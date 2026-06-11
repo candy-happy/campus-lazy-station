@@ -69,7 +69,9 @@
             '<div class="market-card-title">' + escHtml(item.title) + '</div>' +
             '<div class="market-card-price">¥' + (item.price || 0).toFixed(2) + (item.original_price ? '<small>¥' + item.original_price.toFixed(2) + '</small>' : '') + '</div>' +
             '<div class="market-card-meta">' +
-              '<div class="market-card-seller">' + avatarHtml + ' ' + escHtml(item.seller_name || '') + ' <span class="trust-badge">' + (trust.icon || '') + '</span></div>' +
+              '<div class="market-card-seller">' + avatarHtml + ' ' + escHtml(item.seller_name || '') + ' <span class="trust-badge">' + (trust.icon || '') + '</span>' +
+              (item.seller_avg_rating > 0 ? ' <span class="market-card-rating" style="font-size:12px">⭐' + parseFloat(item.seller_avg_rating).toFixed(1) + '</span>' : '') +
+              '</div>' +
               (item.condition_level ? '<div class="market-card-condition">' + escHtml(condLabel[item.condition_level] || item.condition_level) + '</div>' : '') +
             '</div>' +
           '</div></div>';
@@ -118,11 +120,13 @@
           '</div>' +
           (item.description ? '<div class="item-detail-desc">' + escHtml(item.description) + '</div>' : '') +
           (item.contact ? '<div style="margin-top:12px;font-size:13px;color:var(--primary)">📞 联系方式：' + escHtml(item.contact) + '</div>' : '') +
-          '<div class="item-seller-card" onclick="event.stopPropagation()">' +
+          '<div class="item-seller-card" onclick="viewSeller(\'' + escHtml(item.seller_phone) + '\', \'' + escHtml(item.seller_name || '卖家') + '\', \'' + (item.seller_avatar || '') + '\')">' +
             '<div class="item-seller-avatar">' + sellerAvatar + '</div>' +
             '<div class="item-seller-info">' +
               '<div class="item-seller-name">' + escHtml(item.seller_name || '卖家') + '</div>' +
-              '<div class="item-seller-trust">' + trust.icon + ' ' + trust.label + ' · ' + (trust.totalDeals || 0) + '笔交易 · 好评' + (trust.goodRate || 100) + '%</div>' +
+              '<div class="item-seller-trust">' + trust.icon + ' ' + trust.label + ' · ' + (trust.totalDeals || 0) + '笔交易' +
+              (item.seller_rating_count > 0 ? ' · <span class="star-rating" style="font-size:13px">' + renderStarRating(item.seller_avg_rating || 0, false) + '</span> ' + (item.seller_avg_rating || 0).toFixed(1) : '') +
+              '</div>' +
             '</div>' +
           '</div>' +
           '<div class="item-comments-section">' +
@@ -359,9 +363,10 @@
       try {
         const res = await API.createMarketOrder(itemId);
         if (res.ok) {
-          showToast('购买请求已发送 ✅');
+          showToast('购买成功！请在「我的交易」中查看进度 ✅');
           closeSubPage('itemDetailPage_sub');
-          loadMarketItems(true);
+          // 延迟打开交易页，确保子页面动画完成
+          setTimeout(() => openMyTrades(), 350);
         } else {
           showToast(res.error || '购买失败');
         }
@@ -493,6 +498,139 @@
 
 
     // ─── 我的交易 ─────────────────────────────────────────
+    async function viewSeller(phone, name, avatar) {
+      if (!phone) return;
+      _currentSellerPhone = phone;
+      _currentSellerName = name || '';
+      document.getElementById('sellerItemsTitle').textContent = (name || '卖家') + ' 的主页';
+      // 渲染空壳先
+      const infoCard = document.getElementById('sellerInfoCard');
+      infoCard.innerHTML = '<div style="text-align:center;padding:24px"><div class="skeleton" style="width:64px;height:64px;border-radius:50%;margin:0 auto 12px"></div><div class="skeleton" style="width:120px;height:18px;margin:0 auto 8px;border-radius:4px"></div><div class="skeleton" style="width:80px;height:14px;margin:0 auto;border-radius:4px"></div></div>';
+      document.getElementById('sellerItemsContainer').innerHTML = '';
+      document.getElementById('sellerRatingsList').innerHTML = '';
+      openSubPage('sellerItemsPage_sub');
+      // 并行加载
+      loadSellerStats(phone, name, avatar);
+      loadSellerItems(phone);
+      loadSellerRatings(phone);
+    }
+
+    // 加载卖家统计信息
+    async function loadSellerStats(phone, name, avatar) {
+      try {
+        const stats = await API.getSellerStats(phone);
+        const avgRating = parseFloat(stats.avg_rating) || 0;
+        const ratingCount = stats.rating_count || 0;
+        const itemCount = stats.item_count || 0;
+        const wallCount = stats.wall_count || 0;
+        const sellerName = stats.seller_name || name || '';
+        const sellerAvatar = stats.seller_avatar || avatar || '';
+        document.getElementById('sellerRatingCount').textContent = ratingCount + '条';
+        // 渲染信息卡
+        const starsHtml = renderStarRating(avgRating, false);
+        const infoCard = document.getElementById('sellerInfoCard');
+        infoCard.innerHTML = 
+          '<div class="seller-hero-bg"></div>' +
+          '<div class="seller-hero-content">' +
+            '<div class="seller-hero-avatar">' + renderAvatarHtml(sellerAvatar, sellerName) + '</div>' +
+            '<div class="seller-hero-name">' + escHtml(sellerName || '卖家') + '</div>' +
+            '<div class="seller-hero-rating">' + starsHtml + '<span class="seller-hero-rating-num">' + (avgRating > 0 ? avgRating.toFixed(1) : '暂无评分') + '</span></div>' +
+            '<div class="seller-hero-stats">' +
+              '<div class="seller-stat-item"><span class="seller-stat-num">' + itemCount + '</span><span class="seller-stat-label">商品</span></div>' +
+              '<div class="seller-stat-item"><span class="seller-stat-num">' + ratingCount + '</span><span class="seller-stat-label">评价</span></div>' +
+              '<div class="seller-stat-item"><span class="seller-stat-num">' + wallCount + '</span><span class="seller-stat-label">帖子</span></div>' +
+            '</div>' +
+            '<div class="seller-hero-actions">' +
+              '<button class="seller-action-btn" onclick="event.stopPropagation();chatWithTrader(\'' + escHtml(phone) + '\')">💬 私聊</button>' +
+              '<button class="seller-action-btn seller-action-wall" onclick="event.stopPropagation();openSellerWall(\'' + escHtml(phone) + '\',\'' + escHtml(sellerName) + '\')">📝 校园墙</button>' +
+            '</div>' +
+          '</div>';
+      } catch(e) {
+        console.error('加载卖家统计失败:', e);
+      }
+    }
+
+    // 五角星评分渲染
+    function renderStarRating(rating, showInteractive) {
+      const full = Math.floor(rating);
+      const half = rating - full >= 0.5 ? 1 : 0;
+      const empty = 5 - full - half;
+      let html = '<span class="star-rating">';
+      for (let i = 0; i < full; i++) html += '<span class="star star-full">★</span>';
+      if (half) html += '<span class="star star-half">★</span>';
+      for (let i = 0; i < empty; i++) html += '<span class="star star-empty">☆</span>';
+      html += '</span>';
+      return html;
+    }
+
+    // 加载卖家评价列表
+    async function loadSellerRatings(phone) {
+      const container = document.getElementById('sellerRatingsList');
+      container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-secondary);font-size:13px">加载中...</div>';
+      try {
+        const res = await API.getSellerRatings(phone, 1);
+        const ratings = res.ratings || [];
+        if (!ratings.length) {
+          container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-secondary);font-size:13px">暂无评价</div>';
+          return;
+        }
+        container.innerHTML = ratings.map(r => {
+          const dateStr = (r.created_at || '').slice(0, 10);
+          return '<div class="rating-item">' +
+            '<div class="rating-item-header">' +
+              '<span>' + renderStarRating(r.rating, false) + '</span>' +
+              '<span class="rating-item-date">' + dateStr + '</span>' +
+            '</div>' +
+            (r.item_title ? '<div class="rating-item-product">📦 ' + escHtml(r.item_title) + '</div>' : '') +
+            (r.comment ? '<div class="rating-item-comment">' + escHtml(r.comment) + '</div>' : '') +
+          '</div>';
+        }).join('');
+      } catch(e) {
+        container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--danger);font-size:13px">加载失败</div>';
+      }
+    }
+
+    var _currentSellerPhone = '';
+    var _currentSellerName = '';
+
+    // 打开卖家校园墙主页
+    async function openSellerWall(phone, name) {
+      closeSubPage('sellerItemsPage_sub');
+      showWallUser(phone);
+    }
+
+    async function loadSellerItems(sellerPhone) {
+      const container = document.getElementById('sellerItemsContainer');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:13px">加载中...</div>';
+      try {
+        const res = await API.getMarketItems({ seller: sellerPhone, limit: 50 });
+        const items = res.items || [];
+        if (!items.length) {
+          container.innerHTML = '<div class="sub-empty" style="padding:30px"><div class="sub-empty-icon">🛒</div><div class="sub-empty-text">该卖家暂无在售商品</div></div>';
+          return;
+        }
+        const condLabel = { new:'全新', like_new:'几乎全新', good:'良好', fair:'一般' };
+        const statusLabel = { active:'在售', trading:'交易中', sold:'已售', offline:'已下架' };
+        container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">' +
+          items.map(item => {
+            const img = (item.images && item.images[0]) || '';
+            const trust = item.trust || {};
+            const statusCls = item.status === 'active' ? 'active' : item.status === 'sold' ? 'sold' : 'offline';
+            return '<div class="market-card" onclick="openItemDetail(' + item.id + ')">' +
+              (img ? '<img class="market-card-img" src="' + img + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" /><div class="market-card-noimg" style="display:none">🛒</div>' : '<div class="market-card-noimg">🛒</div>') +
+              (statusLabel[item.status] ? '<span class="market-card-status ' + statusCls + '">' + statusLabel[item.status] + '</span>' : '') +
+              '<div class="market-card-info">' +
+                '<div class="market-card-title">' + escHtml(item.title) + '</div>' +
+                '<div class="market-card-price">¥' + (item.price || 0).toFixed(2) + (item.original_price ? '<small>¥' + item.original_price.toFixed(2) + '</small>' : '') + '</div>' +
+              '</div></div>';
+          }).join('') +
+        '</div>';
+      } catch(e) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger);font-size:13px">加载失败</div>';
+      }
+    }
+
 
     async function openMyTrades() {
       if (!currentUser) { showToast('请先登录'); return; }
@@ -531,8 +669,9 @@
           const statusClass = o.status || 'pending';
           const statusText = STATUS_MAP[statusClass] || statusClass;
           const img = o.image || '';
-          const avatarHtml = renderAvatarHtml(o.is_buyer ? o.seller_avatar : o.buyer_avatar, o.is_buyer ? o.seller_name : o.buyer_name);
           const otherName = o.is_buyer ? o.seller_name : o.buyer_name;
+          // 买家能看到卖家联系方式
+          const contactHtml = o.is_buyer && o.contact ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px">📞 ' + escHtml(o.contact) + '</div>' : '';
           return '<div class="trade-card">' +
             '<div class="trade-card-top">' +
               (img ? '<img class="trade-card-img" src="' + img + '" />' : '<div class="trade-card-noimg">🛒</div>') +
@@ -541,10 +680,12 @@
                 '<div class="trade-card-price">¥' + (o.price || 0).toFixed(2) + '</div>' +
                 '<div>' +
                   '<span class="trade-card-status ' + statusClass + '">' + statusText + '</span>' +
-                  ' <span style="font-size:11px;color:var(--text-secondary)">' + (o.is_buyer ? '买家' : '卖家') + ' · ' + escHtml(otherName || '') + '</span>' +
+                  ' <span style="font-size:11px;color:var(--text-secondary)">' + (o.is_buyer ? '卖家' : '买家') + ' · ' + escHtml(otherName || '') + '</span>' +
                 '</div>' +
+                contactHtml +
               '</div>' +
             '</div>' +
+            renderTradeGuide(o) +
             renderTradeActions(o) +
           '</div>';
         }).join('');
@@ -553,6 +694,38 @@
       }
     }
 
+
+
+    function renderTradeGuide(o) {
+      const steps = [
+        { label: '下单', icon: '📝' },
+        { label: '确认', icon: '✅' },
+        { label: '完成', icon: '🎉' }
+      ];
+      const activeIdx = o.status === 'completed' ? 3 : o.status === 'cancelled' ? 0 : o.status === 'confirmed' ? 2 : 1;
+      if (o.status === 'cancelled') {
+        return '<div class="trade-guide cancelled">❌ 交易已取消</div>';
+      }
+      let html = '<div class="trade-guide">';
+      steps.forEach((s, i) => {
+        const isActive = i < activeIdx;
+        const isCurrent = i === activeIdx - 1 && o.status !== 'completed';
+        html += '<div class="trade-guide-step' + (isActive ? ' active' : '') + (isCurrent ? ' current' : '') + '">' +
+          '<span class="trade-guide-dot">' + s.icon + '</span>' +
+          '<span class="trade-guide-label">' + s.label + '</span>' +
+        '</div>';
+        if (i < 2) html += '<div class="trade-guide-line' + (i < activeIdx - 1 ? ' active' : '') + '"></div>';
+      });
+      html += '</div>';
+      if (o.is_buyer && o.status === 'pending') {
+        html += '<div class="trade-guide-hint">⏳ 等待卖家确认订单</div>';
+      } else if (o.is_buyer && o.status === 'confirmed') {
+        html += '<div class="trade-guide-hint">🤝 订单已确认，请与卖家协商交付，完成后点击「确认完成」</div>';
+      } else if (o.is_seller && o.status === 'pending') {
+        html += '<div class="trade-guide-hint">📢 有新订单！请确认后联系买家交易</div>';
+      }
+      return html;
+    }
 
 
     function renderTradeActions(o) {
@@ -697,6 +870,12 @@ window.selectPublishCondition = selectPublishCondition;
 window.resetPublishSelectors = resetPublishSelectors;
 window.submitPublishItem = submitPublishItem;
 window.openMyTrades = openMyTrades;
+window.viewSeller = viewSeller;
+window.loadSellerItems = loadSellerItems;
+window.loadSellerStats = loadSellerStats;
+window.loadSellerRatings = loadSellerRatings;
+window.renderStarRating = renderStarRating;
+window.openSellerWall = openSellerWall;
 window.switchTradeTab = switchTradeTab;
 window.loadTradeList = loadTradeList;
 window.renderTradeActions = renderTradeActions;

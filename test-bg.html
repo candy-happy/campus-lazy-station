@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>BG Test</title>
+<style>
+:root { --gradient: linear-gradient(135deg, #FF6B35, #FF8C5A); }
+.me-profile-card {
+  position: relative; background: var(--gradient);
+  border-radius: 12px; padding: 28px 20px 20px; color: #fff;
+  overflow: hidden; cursor: pointer; height: 80px;
+  margin: 20px; box-shadow: 0 6px 24px rgba(255,107,53,0.25);
+}
+.fix-inline-individual {
+  /* 模拟 updateMePage 的方式：设置单独属性 */
+  background-image: url(/uploads/covers/cover-1781160140995-tpz49d.jpeg);
+  background-size: cover;
+  background-position: center;
+}
+.fix-inline-shorthand {
+  /* 模拟 showUserProfile 的方式：用简写 */
+  background: url(/uploads/covers/cover-1781160140995-tpz49d.jpeg) center/cover no-repeat;
+}
+</style>
+</head><body>
+<h3>方式1: 单独属性（updateMePage做法）</h3>
+<div class="me-profile-card fix-inline-individual">
+  <div style="position:relative;z-index:1">昵称：candy | 背景应该显示图片</div>
+</div>
+<h3>方式2: 简写属性（showUserProfile做法）</h3>
+<div class="me-profile-card fix-inline-shorthand">
+  <div style="position:relative;z-index:1">昵称：candy | 背景应该显示图片</div>
+</div>
+<h3>方式3: JS动态设置（模拟updateMePage的JS代码）</h3>
+<div class="me-profile-card" id="testJs">
+  <div style="position:relative;z-index:1">昵称：candy | 背景应该显示图片</div>
+</div>
+<script>
+var card = document.getElementById('testJs');
+card.style.backgroundImage = 'url(/uploads/covers/cover-1781160140995-tpz49d.jpeg)';
+card.style.backgroundSize = 'cover';
+card.style.backgroundPosition = 'center';
+setTimeout(function() {
+  console.log('computed background-image:', getComputedStyle(card).backgroundImage);
+  console.log('computed background-size:', getComputedStyle(card).backgroundSize);
+  document.getElementById('result').textContent =
+    'computed bg-image: ' + getComputedStyle(card).backgroundImage.substring(0, 60);
+}, 100);
+</script>
+<p id="result" style="font-family:monospace;padding:10px">等待JS计算结果...</p>
+</body></html>

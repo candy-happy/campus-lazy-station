@@ -84,7 +84,7 @@ router.get('/categories', (req, res) => JSON_RES(res, () => {
 
 // ─── 商品列表 ─────────────────────────────────────────────
 router.get('/items', (req, res) => JSON_RES(res, () => {
-  const { category, keyword, sort, page, limit } = req.query;
+  const { category, keyword, sort, page, limit, seller } = req.query;
   const p = Math.max(1, parseInt(page) || 1);
   const l = Math.min(50, Math.max(1, parseInt(limit) || 20));
   const offset = (p - 1) * l;
@@ -100,6 +100,10 @@ router.get('/items', (req, res) => JSON_RES(res, () => {
     where += ' AND (mi.title LIKE ? OR mi.description LIKE ?)';
     params.push('%' + keyword + '%', '%' + keyword + '%');
   }
+  if (seller) {
+    where += ' AND mi.seller_phone = ?';
+    params.push(seller);
+  }
 
   let orderBy = 'mi.created_at DESC';
   if (sort === 'price_asc') orderBy = 'mi.price ASC';
@@ -108,7 +112,9 @@ router.get('/items', (req, res) => JSON_RES(res, () => {
 
   const countRow = db.prepare('SELECT COUNT(*) as cnt FROM market_items mi ' + where).get(...params);
   const items = db.prepare(
-    'SELECT mi.id, mi.title, mi.description, mi.price, mi.category, mi.condition_level, mi.images, mi.seller_phone, mi.status, mi.views, mi.created_at, u.name as seller_display_name, u.avatar as seller_avatar FROM market_items mi ' +
+    'SELECT mi.id, mi.title, mi.description, mi.price, mi.category, mi.condition_level, mi.images, mi.seller_phone, mi.status, mi.views, mi.created_at, u.name as seller_name, u.avatar as seller_avatar, ' +
+    'COALESCE((SELECT ROUND(AVG(rating),1) FROM seller_ratings WHERE seller_phone = mi.seller_phone), 0) as seller_avg_rating ' +
+    'FROM market_items mi ' +
     'LEFT JOIN users u ON mi.seller_phone = u.phone ' +
     where + ' ORDER BY ' + orderBy + ' LIMIT ? OFFSET ?'
   ).all(...params, l, offset);
@@ -126,7 +132,10 @@ router.get('/items', (req, res) => JSON_RES(res, () => {
 // ─── 商品详情 ─────────────────────────────────────────────
 router.get('/items/:id', (req, res) => JSON_RES(res, () => {
   const item = db.prepare(
-    'SELECT mi.*, u.name as seller_name, u.avatar as seller_avatar FROM market_items mi ' +
+    'SELECT mi.*, u.name as seller_name, u.avatar as seller_avatar, ' +
+    'COALESCE((SELECT ROUND(AVG(rating),1) FROM seller_ratings WHERE seller_phone = mi.seller_phone), 0) as seller_avg_rating, ' +
+    '(SELECT COUNT(*) FROM seller_ratings WHERE seller_phone = mi.seller_phone) as seller_rating_count ' +
+    'FROM market_items mi ' +
     'LEFT JOIN users u ON mi.seller_phone = u.phone WHERE mi.id = ?'
   ).get(req.params.id);
   if (!item) return notFound('商品不存在');
@@ -302,13 +311,13 @@ router.get('/orders', requireAuth, (req, res) => JSON_RES(res, () => {
 
   let sql, params;
   if (role === 'buyer') {
-    sql = "SELECT mo.*, mi.condition_level, mi.category FROM market_orders mo LEFT JOIN market_items mi ON mo.item_id = mi.id WHERE mo.buyer_phone = ? ORDER BY mo.created_at DESC";
+    sql = "SELECT mo.*, mi.condition_level, mi.category, mi.contact FROM market_orders mo LEFT JOIN market_items mi ON mo.item_id = mi.id WHERE mo.buyer_phone = ? ORDER BY mo.created_at DESC";
     params = [phone];
   } else if (role === 'seller') {
-    sql = "SELECT mo.*, mi.condition_level, mi.category FROM market_orders mo LEFT JOIN market_items mi ON mo.item_id = mi.id WHERE mo.seller_phone = ? ORDER BY mo.created_at DESC";
+    sql = "SELECT mo.*, mi.condition_level, mi.category, mi.contact FROM market_orders mo LEFT JOIN market_items mi ON mo.item_id = mi.id WHERE mo.seller_phone = ? ORDER BY mo.created_at DESC";
     params = [phone];
   } else {
-    sql = "SELECT mo.*, mi.condition_level, mi.category FROM market_orders mo LEFT JOIN market_items mi ON mo.item_id = mi.id WHERE mo.buyer_phone = ? OR mo.seller_phone = ? ORDER BY mo.created_at DESC";
+    sql = "SELECT mo.*, mi.condition_level, mi.category, mi.contact FROM market_orders mo LEFT JOIN market_items mi ON mo.item_id = mi.id WHERE mo.buyer_phone = ? OR mo.seller_phone = ? ORDER BY mo.created_at DESC";
     params = [phone, phone];
   }
 
@@ -669,6 +678,81 @@ router.get('/admin/stats', requireAdmin, (req, res) => JSON_RES(res, () => {
     else trustDist.newcomer++;
   });
   return { totalItems, activeItems, todayItems, totalOrders, completedOrders, totalRevenue, totalComments, todayComments, trend, categories, trustDist };
+}));
+
+// ─── 卖家评分与统计 ──────────────────────────────────────
+
+// 获取卖家统计信息
+router.get('/sellers/:phone/stats', (req, res) => JSON_RES(res, () => {
+  const { phone } = req.params;
+  // 评分统计
+  const ratingStats = db.prepare(
+    'SELECT COUNT(*) as count, ROUND(AVG(rating), 1) as avg_rating FROM seller_ratings WHERE seller_phone = ?'
+  ).get(phone);
+  // 在售商品数
+  const itemCount = db.prepare(
+    "SELECT COUNT(*) as cnt FROM market_items WHERE seller_phone = ? AND status = 'active'"
+  ).get(phone).cnt;
+  // 校园墙帖子数
+  const wallCount = db.prepare(
+    'SELECT COUNT(*) as cnt FROM wall_posts WHERE phone = ?'
+  ).get(phone).cnt;
+  // 卖家名称和头像
+  const user = db.prepare(
+    'SELECT name, avatar FROM users WHERE phone = ?'
+  ).get(phone) || {};
+  return {
+    avg_rating: ratingStats.avg_rating || 0,
+    rating_count: ratingStats.count || 0,
+    item_count: itemCount,
+    wall_count: wallCount,
+    seller_name: user.name || '',
+    seller_avatar: user.avatar || ''
+  };
+}));
+
+// 获取卖家评分列表
+router.get('/sellers/:phone/ratings', (req, res) => JSON_RES(res, () => {
+  const { phone } = req.params;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 10));
+  const offset = (page - 1) * limit;
+  const count = db.prepare('SELECT COUNT(*) as cnt FROM seller_ratings WHERE seller_phone = ?').get(phone).cnt;
+  const ratings = db.prepare(
+    'SELECT r.id, r.rating, r.comment, r.created_at, mi.title as item_title, mi.id as item_id ' +
+    'FROM seller_ratings r LEFT JOIN market_orders mo ON r.order_id = mo.id ' +
+    'LEFT JOIN market_items mi ON mo.item_id = mi.id ' +
+    'WHERE r.seller_phone = ? ORDER BY r.created_at DESC LIMIT ? OFFSET ?'
+  ).all(phone, limit, offset);
+  return { ratings, total: count, page, pageSize: limit };
+}));
+
+// 给卖家打分
+router.post('/sellers/:phone/rate', requireAuth, (req, res) => JSON_RES(res, () => {
+  const sellerPhone = req.params.phone;
+  const buyerPhone = req.user.phone;
+  const { order_id, rating, comment } = req.body;
+
+  if (sellerPhone === buyerPhone) return makeError(ErrorCode.BAD_REQUEST, '不能给自己打分');
+  if (!order_id || !rating || rating < 1 || rating > 5) return makeError(ErrorCode.BAD_REQUEST, '参数不合法');
+
+  // 验证订单确实存在且已完成，且买家就是当前用户
+  const order = db.prepare(
+    'SELECT id, status FROM market_orders WHERE id = ? AND buyer_phone = ? AND seller_phone = ?'
+  ).get(order_id, buyerPhone, sellerPhone);
+
+  if (!order) return makeError(ErrorCode.NOT_FOUND, '订单不存在');
+  if (order.status !== 'completed') return makeError(ErrorCode.BAD_REQUEST, '只有交易完成后才能评价');
+
+  // 检查是否已评价
+  const existing = db.prepare('SELECT id FROM seller_ratings WHERE order_id = ?').get(order_id);
+  if (existing) return makeError(ErrorCode.BAD_REQUEST, '您已对该订单进行过评价');
+
+  db.prepare(
+    'INSERT INTO seller_ratings (seller_phone, buyer_phone, order_id, rating, comment) VALUES (?, ?, ?, ?, ?)'
+  ).run(sellerPhone, buyerPhone, order_id, rating, comment || '');
+
+  return { ok: true };
 }));
 
 module.exports = router;

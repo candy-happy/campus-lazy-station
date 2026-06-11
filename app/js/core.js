@@ -651,7 +651,11 @@
         renderAds(Array.isArray(ads) ? ads : []);
         renderOrders();
         updateMePage();
-        updateNotifBadge();
+        updateMsgBadge();
+        // 初始化聊天未读数
+        if (API.getChatUnread) {
+          API.getChatUnread().then(d => { _lastUnreadCount = d.count || 0; updateMsgBadge(); }).catch(() => {});
+        }
         loadMarketItems(true); // 加载二手市场
         startChatPolling(); // 启动消息轮询
         startNotifPolling(); // 启动通知轮询
@@ -976,11 +980,9 @@
         const cardEl = document.querySelector('.me-profile-card');
         if (cardEl) {
           if (pdata?.bg_image) {
-            cardEl.style.backgroundImage = 'url(' + pdata.bg_image + ')';
-            cardEl.style.backgroundSize = 'cover';
-            cardEl.style.backgroundPosition = 'center';
+            // 半透明白色覆盖层 + 背景图，保证黑色文字可读
+            cardEl.style.background = 'linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.45)), url(' + pdata.bg_image + ') center/cover no-repeat';
           } else if (pdata?.bg_color) {
-            cardEl.style.backgroundImage = '';
             cardEl.style.background = pdata.bg_color;
           }
         }
@@ -991,41 +993,21 @@
 
 
 
-    function updateNotifBadge() {
-      const unread = notifications.filter(n => !n.read).length;
-      const badge = document.getElementById('notifBadge');
-      if (badge) {
-        badge.textContent = unread;
-        badge.style.display = unread > 0 ? 'flex' : 'none';
+    // 合并通知+消息未读数，更新导航栏"消息"徽章
+    function updateMsgBadge() {
+      const notifUnread = notifications.filter(n => !n.read).length;
+      const totalUnread = notifUnread + _lastUnreadCount;
+      const navBadge = document.getElementById('chatBadge');
+      if (navBadge) {
+        navBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+        navBadge.style.display = totalUnread > 0 ? 'inline-block' : 'none';
       }
     }
 
 
 
-    async function openNotifModal() {
-      const list = document.getElementById('notifList');
-      if (!list) return;
-      if (!notifications.length) {
-        await API.getNotifications(currentUser.phone).then(n => { notifications = n || []; });
-      }
-      await API.markRead(currentUser.phone);
-      notifications.forEach(n => n.read = true);
-      updateNotifBadge();
-      list.innerHTML = notifications.length ? notifications.map(n => {
-        const iconMap = {order:'📦',wall_like:'❤️',wall_comment:'💬',rating:'⭐',promo:'🎉'};
-        const clsMap = {order:'order',wall_like:'system',wall_comment:'system',rating:'promo',promo:'promo'};
-        const icon = iconMap[n.type] || '🔔';
-        const cls = clsMap[n.type] || 'system';
-        return `<div class="notif-item">
-          <div class="notif-icon ${cls}">${icon}</div>
-          <div class="notif-body">
-            <div class="notif-title">${escHtml(n.title)}</div>
-            <div class="notif-text">${escHtml(n.content)}</div>
-            <div class="notif-time">${fmtTime(new Date(n.created_at).getTime())}</div>
-          </div>
-        </div>`;
-      }).join('') : '<div class="sub-empty"><div class="sub-empty-icon">🔔</div><div class="sub-empty-text">暂无通知</div></div>';
-      openSubPage('notifPage_sub');
+    function openNotifModal() {
+      switchPage('message');
     }
 
 
@@ -1036,7 +1018,7 @@
       const map = {
         'orderModal':'orderPage_sub','detailModal':'detailPage_sub',
         'wallPostModal':'wallPostPage_sub','wallDetailModal':'wallDetailPage_sub',
-        'rateModal':'ratePage_sub','notifModal':'notifPage_sub',
+        'rateModal':'ratePage_sub',
         'settingsModal':'settingsPage_sub','profileModal':'profilePage_sub',
         'genericModal':'genericPage_sub'
       };
@@ -1267,8 +1249,10 @@ window.escHtml = escHtml;
 window.fmtTime = fmtTime;
 window.switchPage = switchPage;
 window.updateMePage = updateMePage;
-window.updateNotifBadge = updateNotifBadge;
+window.updateMsgBadge = updateMsgBadge;
+window.setNotifications = function(v) { notifications = Array.isArray(v) ? v : []; };
 window.openNotifModal = openNotifModal;
+
 window.closeModal = closeModal;
 window.openModal = openModal;
 window.setTip = setTip;
@@ -1485,11 +1469,6 @@ window.showToast = showToast;
       try {
         const data = await API.getChatUnread();
         const count = data.count || 0;
-        const badge = document.getElementById('chatBadge');
-        if (badge) {
-          badge.textContent = count > 99 ? '99+' : count;
-          badge.style.display = count > 0 ? 'inline-block' : 'none';
-        }
         // 新消息提醒（仅当数量增加时）
         if (count > _lastUnreadCount && _lastUnreadCount >= 0) {
           const newMsgs = count - _lastUnreadCount;
@@ -1498,6 +1477,7 @@ window.showToast = showToast;
           }
         }
         _lastUnreadCount = count;
+        updateMsgBadge();
       } catch(e) {}
     }
 
@@ -1521,12 +1501,6 @@ window.showToast = showToast;
         const data = await API.getNotifications(currentUser.phone);
         const newNotifs = Array.isArray(data) ? data : [];
         const newUnread = newNotifs.filter(n => !n.read).length;
-        // 更新徽章
-        const badge = document.getElementById('notifBadge');
-        if (badge) {
-          badge.textContent = newUnread;
-          badge.style.display = newUnread > 0 ? 'flex' : 'none';
-        }
         // 新通知提醒
         if (newUnread > _lastNotifCount && _lastNotifCount >= 0 && _lastNotifCount > 0) {
           const diff = newUnread - _lastNotifCount;
@@ -1534,6 +1508,7 @@ window.showToast = showToast;
         }
         _lastNotifCount = newUnread;
         notifications = newNotifs;
+        updateMsgBadge();
       } catch(e) {}
     }
 

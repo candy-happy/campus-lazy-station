@@ -434,6 +434,11 @@ const API = {
   },
   async deleteMarketComment(commentId) { return fetch('/api/market/comments/' + commentId, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
 
+  // ─── 卖家评价 ───
+  async getSellerStats(phone) { return fetch('/api/market/sellers/' + encodeURIComponent(phone) + '/stats', { headers: this._headers() }).then(r => r.json()); },
+  async getSellerRatings(phone, page = 1) { return fetch('/api/market/sellers/' + encodeURIComponent(phone) + '/ratings?page=' + page, { headers: this._headers() }).then(r => r.json()); },
+  async rateSeller(phone, data) { return fetch('/api/market/sellers/' + encodeURIComponent(phone) + '/rate', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },
+
   // ─── 教师评价 ───
   async getTeacherColleges() { return fetch('/api/teachers/colleges', { headers: this._headers() }).then(r => r.json()); },
   async getTeachers(params = {}) {

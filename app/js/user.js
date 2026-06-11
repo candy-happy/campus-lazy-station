@@ -81,7 +81,12 @@
               <button id="loginBtn" onclick="doLogin()" style="width:100%;padding:14px;border:none;border-radius:14px;background:var(--gradient);color:white;font-size:16px;font-weight:700;cursor:pointer">
                 登录 / 注册
               </button>
-              <p style="font-size:12px;color:var(--text-light);margin-top:14px">登录即表示同意《用户协议》</p>
+              <div style="margin-top:16px;text-align:left">
+                <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--text-secondary);line-height:1.6">
+                  <input type="checkbox" id="agreeTerms" onchange="updateLoginBtn()" style="margin-top:2px;flex-shrink:0;accent-color:var(--primary);width:16px;height:16px" />
+                  <span>我已阅读并同意<br><a href="javascript:void(0)" onclick="showTermsModal('terms')" style="color:var(--primary);text-decoration:underline">《服务条款》</a> 和 <a href="javascript:void(0)" onclick="showTermsModal('privacy')" style="color:var(--primary);text-decoration:underline">《隐私协议》</a></span>
+                </label>
+              </div>
             </div>
           </div>`;
         app.parentNode.insertBefore(overlay, app.nextSibling);
@@ -91,9 +96,64 @@
         document.head.appendChild(s);
       }
       overlay.style.display = 'flex';
+      // 初始化按钮状态：未勾选时禁用
+      setTimeout(() => updateLoginBtn(), 0);
     }
 
 
+    function updateLoginBtn() {
+      const btn = document.getElementById('loginBtn');
+      const cb = document.getElementById('agreeTerms');
+      if (btn) {
+        btn.disabled = !cb.checked;
+        btn.style.opacity = cb.checked ? '1' : '0.5';
+      }
+    }
+
+    function showTermsModal(type) {
+      // 移除已有弹窗
+      const old = document.getElementById('termsOverlay');
+      if (old) old.remove();
+      const overlay = document.createElement('div');
+      overlay.id = 'termsOverlay';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column';
+      overlay.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0"><div style="display:flex;gap:0"><button id="termsTabTerms" style="padding:8px 16px;border:none;background:none;font-size:14px;font-weight:600;color:var(--primary);border-bottom:2px solid var(--primary);cursor:pointer;font-family:inherit" onclick="switchTermsTab(\'terms\')">服务条款</button><button id="termsTabPrivacy" style="padding:8px 16px;border:none;background:none;font-size:14px;font-weight:600;color:var(--text-light);cursor:pointer;font-family:inherit" onclick="switchTermsTab(\'privacy\')">隐私协议</button></div><button onclick="closeTermsModal()" style="width:32px;height:32px;border-radius:50%;border:none;background:var(--bg);font-size:16px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;justify-content:center">✕</button></div><iframe id="termsFrame" src="/public/terms.html" style="flex:1;width:100%;border:none"></iframe>';
+      document.body.appendChild(overlay);
+      // 初始tab
+      setTimeout(() => {
+        const frame = document.getElementById('termsFrame');
+        if (frame && frame.contentWindow) {
+          frame.contentWindow.postMessage({ action: 'switchTab', tab: type }, '*');
+        }
+      }, 500);
+      window._termsMsgHandler = function(e) {
+        if (e.data === 'closeTerms' || (e.data && e.data.action === 'closeTerms')) {
+          document.getElementById('termsOverlay').remove();
+          window.removeEventListener('message', window._termsMsgHandler);
+          delete window._termsMsgHandler;
+          delete window.closeTermsModal;
+          delete window.switchTermsTab;
+        }
+      };
+      window.addEventListener('message', window._termsMsgHandler);
+      window.closeTermsModal = function() {
+        document.getElementById('termsOverlay').remove();
+        window.removeEventListener('message', window._termsMsgHandler);
+        delete window._termsMsgHandler;
+        delete window.closeTermsModal;
+        delete window.switchTermsTab;
+      };
+      window.switchTermsTab = function(tab) {
+        document.getElementById('termsTabTerms').style.color = tab==='terms'?'var(--primary)':'var(--text-light)';
+        document.getElementById('termsTabTerms').style.borderBottom = tab==='terms'?'2px solid var(--primary)':'none';
+        document.getElementById('termsTabPrivacy').style.color = tab==='privacy'?'var(--primary)':'var(--text-light)';
+        document.getElementById('termsTabPrivacy').style.borderBottom = tab==='privacy'?'2px solid var(--primary)':'none';
+        const frame = document.getElementById('termsFrame');
+        if (frame && frame.contentWindow) {
+          frame.contentWindow.postMessage({ action: 'switchTab', tab: tab }, '*');
+        }
+      };
+    }
 
     async function doLogin() {
       const btn = document.getElementById('loginBtn');
@@ -101,6 +161,7 @@
       const phone = document.getElementById('loginPhone').value.trim();
       if (!name) { showToast('请输入您的称呼'); return; }
       if (!phoneRegex.test(phone)) { showToast('请输入正确的手机号码'); return; }
+      if (!document.getElementById('agreeTerms').checked) { showToast('请先阅读并同意服务条款和隐私协议'); return; }
       btn.textContent = '登录中...';
       btn.disabled = true;
       try {
@@ -175,7 +236,7 @@
           '<div class="settings-item-left">' + _t('phoneLabel') + '</div>' +
           '<div class="settings-item-right">' + escHtml(currentUser.phone) + '</div>' +
           '</div></div>' +
-          '<button class="settings-logout-btn" onclick="if(confirm(_t(\'logoutConfirm\'))){localStorage.removeItem(\'lazyUser\');location.reload()}">' + _t('logoutBtn') + '</button>' +
+          '<button class="settings-logout-btn" onclick="if(confirm(_t(\'logoutConfirm\'))){API.logout();location.reload()}">' + _t('logoutBtn') + '</button>' +
           '<div class="settings-version">' + _t('versionText') + '</div>';
         openSubPage('settingsPage_sub');
       });
@@ -203,14 +264,13 @@
       if (!currentUser) return showToast('请先登录');
       const u = await API.getUser(currentUser.phone);
       if (!u) return showToast(_t('loadFailed'));
-      const avatars = ['\u{1F9A5}','\u{1F431}','\u{1F436}','\u{1F98A}','\u{1F43C}','\u{1F428}','\u{1F984}','\u{1F438}','\u{1F427}','\u{1F98B}','\u{1F338}','\u2B50','\u{1F525}','\u{1F48E}','\u{1F3AD}'];
       const curAvatar = u.avatar || '\u{1F9A5}';
       const curBg = u.bg_image || '';
       const isUrl = curAvatar && (curAvatar.startsWith('/') || curAvatar.startsWith('http'));
       const avatarPreviewHtml = isUrl
         ? '<img src="' + curAvatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />'
         : (curAvatar || '\u{1F9A5}');
-      const bgStyle = curBg ? ' style="background-image:url(' + escHtml(curBg) + ');background-size:cover;background-position:center"' : '';
+      const bgStyle = curBg ? ' style="background:url(' + escHtml(curBg) + ') center/cover no-repeat"' : '';
       let el = document.getElementById('profilePage_sub');
       if (!el) {
         el = document.createElement('div');
@@ -219,20 +279,16 @@
         el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'profilePage_sub\')">\u2190</button><span class="sub-page-title">\u{1F464} 个人资料</span></div><div class="sub-page-body"></div>';
         document.body.appendChild(el);
       }
-      el.querySelector('.sub-page-body').innerHTML =
-        '<div class="profile-hero"'+bgStyle+'>' +
-        '<div class="profile-hero-overlay"></div>' +
+      const heroPart = '<div class="profile-hero' + (curBg ? ' has-bg' : '') + '"'+bgStyle+'>' +
         '<div class="profile-hero-inner">' +
-        '<div class="profile-avatar-big" id="profileAvatarPreview" style="cursor:pointer;position:relative;overflow:hidden;z-index:1" onclick="document.getElementById(\'userAvatarInput\').click()">' + avatarPreviewHtml + '</div>' +
-        '<div class="profile-avatar-label" style="z-index:1;color:#fff">点击头像上传照片，或在下方选择emoji</div>' +
-        '<div style="z-index:1;margin-top:6px"><label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.2);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px">\u{1F3A8} 更换封面背景<input type="file" id="userBgInput" accept="image/*" style="display:none" onchange="uploadUserBg(this)" /></label>' +
+        '<div class="profile-avatar-big" id="profileAvatarPreview" onclick="document.getElementById(\'userAvatarInput\').click()">' + avatarPreviewHtml + '<div class="profile-avatar-hint">📷</div></div>' +
+        '<div class="profile-hero-actions">' +
+        '<label class="profile-hero-btn"><input type="file" id="userBgInput" accept="image/*" style="display:none" onchange="uploadUserBg(this)" />🎨 更换封面</label>' +
+        '<label class="profile-hero-btn" style="background:transparent;border:1.5px solid rgba(255,255,255,0.55)"><input type="file" id="userAvatarInput" accept="image/*" style="display:none" onchange="uploadUserAvatar(this)" />📷 上传头像</label>' +
         '</div>' +
         '</div>' +
-        '<input type="file" id="userAvatarInput" accept="image/*" style="display:none" onchange="uploadUserAvatar(this)" />' +
-        '<div class="profile-avatar-grid">' +
-        avatars.map(a => '<div class="profile-avatar-option' + (a === curAvatar ? ' selected' : '') + '" data-avatar="' + a + '" onclick="selectProfileAvatar(this,\'' + a + '\')">' + a + '</div>').join('') +
-        '</div>' +
-        '<div class="profile-form-card">' +
+        '</div>';
+      const formPart = '<div class="profile-form-card">' +
         '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u270F\uFE0F</span><span class="profile-form-label">昵称</span><input type="text" class="profile-form-input" id="profileNickname" value="' + escHtml(u.nickname || '') + '" placeholder="给自己取个昵称" maxlength="20" /></div>' +
         '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F464}</span><span class="profile-form-label">姓名</span><input type="text" class="profile-form-input" id="profileName" value="' + escHtml(u.name || '') + '" placeholder="选填" /></div>' +
         '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F4AD}</span><span class="profile-form-label">签名</span><input type="text" class="profile-form-input" id="profileBio" value="' + escHtml(u.bio || '') + '" placeholder="一句话介绍自己" maxlength="50" /></div>' +
@@ -244,16 +300,18 @@
         
         '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F3E0}</span><span class="profile-form-label">宿舍楼</span><input type="text" class="profile-form-input" id="profileDorm" value="' + escHtml(u.dormitory || '') + '" placeholder="例如：3号宿舍楼" /></div>' +
         '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F6AA}</span><span class="profile-form-label">房间号</span><input type="text" class="profile-form-input" id="profileRoom" value="' + escHtml(u.room || '') + '" placeholder="例如：301" /></div>' +
-        '</div>' +
+        '</div>';
+      el.querySelector('.sub-page-body').innerHTML =
+        heroPart +
+        formPart +
         '<input type="hidden" id="profileAvatar" value="' + escHtml(curAvatar) + '" />' +
         '<input type="hidden" id="profileBg" value="' + escHtml(curBg) + '" />' +
-
         '<button class="profile-save-btn" onclick="saveProfile()">\u{1F4BE} 保存修改</button>';
       openSubPage('profilePage_sub');
     }
 
     function selectProfileAvatar(el, emoji) {
-      document.querySelectorAll('.profile-avatar-option').forEach(e => e.classList.remove('selected'));
+      document.querySelectorAll('.profile-emoji-item').forEach(e => e.classList.remove('selected'));
       el.classList.add('selected');
       document.getElementById('profileAvatar').value = emoji;
       document.getElementById('profileAvatarPreview').textContent = emoji;
@@ -312,8 +370,7 @@
             preview.innerHTML = '<img src="' + currentUser.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />';
           }
           document.getElementById('profileAvatar').value = currentUser.avatar;
-          // 取消 emoji 选中
-          document.querySelectorAll('.profile-avatar-option').forEach(e => e.classList.remove('selected'));
+          // 头像已更新为真实图片，无需管理 emoji 选中态
           updateMePage();
         } else {
           showToast(res.message || '上传失败');
@@ -339,7 +396,7 @@
         if (res.bgImageUrl) {
           document.getElementById('profileBg').value = res.bgImageUrl;
           var hero = document.querySelector('#profilePage_sub .profile-hero');
-          if (hero) { hero.style.backgroundImage = 'url(' + res.bgImageUrl + ')'; hero.style.background = ''; }
+          if (hero) { hero.style.cssText = 'background: url(' + res.bgImageUrl + ') center/cover no-repeat'; hero.classList.add('has-bg'); }
           showToast('封面上传成功 \u2705');
         } else {
           showToast(res.message || '上传失败');
@@ -353,6 +410,8 @@
 // ── Window exports ──
 window.showLoginPage = showLoginPage;
 window.doLogin = doLogin;
+window.updateLoginBtn = updateLoginBtn;
+window.showTermsModal = showTermsModal;
 
     // ═══════════════════════════════════════════════════════
     // 🔒 校园墙隐私设置

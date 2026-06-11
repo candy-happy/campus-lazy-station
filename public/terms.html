@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>校园圈 - 服务条款与隐私协议</title>
+<style>
+:root {
+  --primary: #2563EB;
+  --primary-light: #3B82F6;
+  --text: #1E293B;
+  --text-secondary: #475569;
+  --bg: #FFFFFF;
+  --bg-card: #F8FAFC;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--text);background:var(--bg);line-height:1.8;padding:0 20px 40px;max-width:800px;margin:0 auto}
+.tabs{display:flex;position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid #E2E8F0;margin:0 -20px;padding:0 20px}
+.tab{flex:1;padding:14px 0;text-align:center;font-size:15px;font-weight:600;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+h1{font-size:22px;font-weight:800;margin:24px 0 8px;color:var(--text)}
+h2{font-size:17px;font-weight:700;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid #E2E8F0;color:var(--text)}
+h3{font-size:15px;font-weight:600;margin:16px 0 8px;color:var(--text)}
+p{font-size:14px;color:var(--text-secondary);margin-bottom:10px}
+strong{color:var(--text)}
+ol,ul{padding-left:20px;margin-bottom:12px}
+li{font-size:14px;color:var(--text-secondary);margin-bottom:4px}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+th,td{border:1px solid #E2E8F0;padding:8px 10px;text-align:left}
+th{background:var(--bg-card);font-weight:600;color:var(--text);font-size:12px;white-space:nowrap}
+td{color:var(--text-secondary)}
+.update-date{font-size:12px;color:#94A3B8;margin-bottom:16px}
+.panel{display:none}
+.panel.active{display:block}
+.close-btn{position:fixed;top:12px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.05);border:none;font-size:18px;cursor:pointer;z-index:20;display:flex;align-items:center;justify-content:center;color:var(--text-secondary)}
+</style>
+</head>
+<body>
+<button class="close-btn" onclick="window.parent.postMessage('closeTerms','*')">✕</button>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('terms')">服务条款</button>
+  <button class="tab" onclick="switchTab('privacy')">隐私协议</button>
+</div>
+
+<!-- ══════ 服务条款 ══════ -->
+<div class="panel active" id="termsPanel">
+<h1>校园圈（Campus Circle）用户服务条款</h1>
+<p class="update-date">最后更新日期：2026年6月11日</p>
+
+<h2>一、导言与接受</h2>
+<p>欢迎使用校园圈（Campus Circle，以下简称"本平台"或"我们"）。校园圈是一个面向大学校园的综合服务 SPA 平台，提供即时配送、校园社交、二手交易、宠物追踪、教师评价、社团活动等一站式校园生活服务。</p>
+<p>本服务条款（以下简称"本条款"）是您（以下简称"用户"或"您"）与运营方之间关于您使用校园圈平台及相关服务的具有法律约束力的协议。</p>
+<p><strong>请您在使用本平台前仔细阅读本条款。</strong>当您注册账户、访问或使用本平台的任何服务时，即表示您已阅读、理解并同意受本条款的约束。如果您不同意本条款的任何部分，请您停止注册程序并不要使用本平台。</p>
+<p>本平台面向中国大陆高等院校在校学生提供服务。您确认您是具有完全民事行为能力的自然人，或已在监护人同意下使用本平台。</p>
+
+<h2>二、定义</h2>
+<ul>
+<li><strong>"本平台"或"服务"</strong>：指校园圈（Campus Circle）平台，包括用户端（app.html）、骑手端（rider.html）、管理后台（admin.html）及相关 API 接口。</li>
+<li><strong>"用户"</strong>：指注册并使用本平台服务的自然人，包括普通学生用户、骑手用户和管理员用户。</li>
+<li><strong>"用户内容"</strong>：指用户通过本平台上传、发布、传输或展示的任何内容，包括但不限于文字、图片、GIF 动图、评论、评价、消息、商品信息等。</li>
+<li><strong>"账户"</strong>：指用户为使用本平台服务而创建的注册账户。</li>
+<li><strong>"骑手"</strong>：指经过平台认证、提供即时配送服务的用户。</li>
+<li><strong>"管理员"</strong>：指经授权对本平台进行管理和维护的人员。</li>
+</ul>
+
+<h2>三、账户条款</h2>
+<h3>3.1 注册</h3>
+<p>您承诺在注册时提供真实、准确、完整的个人信息，并在信息变更时及时更新。您应使用本人手机号码进行注册，每人仅限注册一个账户。</p>
+<h3>3.2 账户安全</h3>
+<p>您对您的账户和密码的安全负全部责任。您不得将账户出借、转让或授权他人使用。对于因您未能妥善保管账户信息而导致的任何损失或损害，本平台不承担任何责任。</p>
+<p>如您发现账户被未经授权使用或存在任何安全漏洞，应立即通知本平台。</p>
+<h3>3.3 账户注销</h3>
+<p>您可随时通过本平台功能或联系运营方申请注销账户。账户注销后，我们将按照本平台隐私协议的规定处理您的数据。</p>
+
+<h2>四、可接受使用政策</h2>
+<p>使用本平台服务时，您承诺不会从事以下行为：</p>
+<ol>
+<li><strong>违法使用</strong>：利用本平台从事任何违反中华人民共和国法律法规的活动；</li>
+<li><strong>侵犯他人权益</strong>：发布侵犯他人知识产权、隐私权、名誉权、肖像权等合法权益的内容；</li>
+<li><strong>骚扰与威胁</strong>：对其他用户进行骚扰、威胁、辱骂、人身攻击或歧视性言论；</li>
+<li><strong>虚假信息</strong>：发布虚假、误导性、欺诈性信息或冒充他人身份；</li>
+<li><strong>垃圾信息</strong>：发送垃圾信息、商业广告或未经请求的大量重复信息；</li>
+<li><strong>干扰服务</strong>：干扰、破坏或试图未授权访问本平台系统、服务器或网络；</li>
+<li><strong>恶意程序</strong>：上传或传播病毒、木马、蠕虫等恶意代码；</li>
+<li><strong>刷单作弊</strong>：通过虚假交易、虚假评价等手段操纵平台数据；</li>
+<li><strong>违规配送</strong>：骑手不得私吞货物、虚假配送、拒绝合理配送请求或恶意拖延；</li>
+<li><strong>不当交易</strong>：在二手市场发布违禁品、假冒伪劣商品或进行欺诈交易。</li>
+</ol>
+
+<h3>内容审核</h3>
+<p>本平台使用 AI 自动审核系统对用户发布的内容（帖子、评论、评价等）进行实时检测。对于被判定为高风险（high 级别）的违规内容，系统将自动拦截。对于 AI 审核不确定的内容，管理员有权进行人工复审并采取相应措施。</p>
+
+<h3>违规处理</h3>
+<p>如违反上述规定，本平台有权采取以下一项或多项措施：</p>
+<ul>
+<li>删除违规内容；</li>
+<li>限制或暂停账户部分功能；</li>
+<li>临时冻结或永久封禁账户；</li>
+<li>冻结骑手账户并加入 Token 黑名单；</li>
+<li>向相关执法部门报告违法行为。</li>
+</ul>
+
+<h2>五、服务内容</h2>
+<h3>5.1 即时配送服务</h3>
+<p>用户可通过本平台发布配送订单，骑手抢单后完成取件和配送。骑手配送费用按订单金额的 80% 分成结算。</p>
+<p><strong>配送免责声明</strong>：本平台作为信息撮合平台，仅为用户和骑手提供订单匹配服务。骑手为独立服务提供者，非本平台雇员。对于配送过程中的货物损坏、丢失或延迟，本平台将协助双方协商解决，但不对配送结果承担直接责任。</p>
+
+<h3>5.2 校园墙（社交广场）</h3>
+<p>用户可在校园墙发布图文帖子、GIF 动图，进行评论、点赞、分享、关注等社交互动。用户发布的内容默认遵循其账户隐私设置所定义的可见范围。</p>
+
+<h3>5.3 二手交易市场</h3>
+<p>用户可在二手市场发布商品信息并与其他用户进行交易。本平台不参与实际交易过程，不保证商品质量、真实性或交易安全性。买卖双方应自行核实交易信息并承担交易风险。</p>
+
+<h3>5.4 猫狗追踪</h3>
+<p>用户可在猫狗日记模块上报校园流浪动物状况、分享目击信息。该功能旨在关爱流浪动物，用户上传的信息仅用于公益目的。</p>
+
+<h3>5.5 教师评价</h3>
+<p>用户可对教师进行多维度评价。评价内容应客观、真实，不得包含人身攻击或恶意诋毁。</p>
+
+<h3>5.6 其他服务</h3>
+<p>本平台还提供社团管理、校园活动、便民服务、优惠券与积分系统、实时聊天、钱包提现等功能。各项功能的具体规则以平台页面展示为准。</p>
+
+<h2>六、支付与结算</h2>
+<h3>6.1 支付</h3>
+<p>本平台可能涉及以下支付场景：即时配送订单费用（含小费）、二手交易商品费用、便民服务费用。</p>
+<h3>6.2 钱包与提现</h3>
+<p>用户账户内设有钱包功能，可存储余额。骑手配送收入自动结算至钱包。用户可通过钱包提现功能将余额转出，提现规则以平台页面公示为准。</p>
+<h3>6.3 退款</h3>
+<p>订单退款按平台退款流程处理。用户可向管理员提交退款申请，管理员审核后处理。具体退款条件、比例和流程以平台公示为准。</p>
+
+<h2>七、知识产权</h2>
+<h3>7.1 平台知识产权</h3>
+<p>本平台的名称、标识、源代码、界面设计、数据库结构等知识产权归运营方所有，受中华人民共和国著作权法、商标法及其他相关法律法规保护。未经运营方书面许可，任何人不得复制、修改、反向工程、分发或以其他方式使用上述知识产权。</p>
+<h3>7.2 用户内容许可</h3>
+<p>您保留对您发布内容的全部所有权。但为了提供、运营和维护本平台服务，您授予运营方一项全球范围内的、非排他性的、免版税的、可再许可的使用许可，用于在平台上存储、展示、复制、分发和传播您的内容。此许可在您删除相关内容或注销账户后终止，但已与其他用户产生交互的内容的许可将继续有效以维护平台社交功能的完整性。</p>
+
+<h2>八、隐私</h2>
+<p>保护您的隐私是本平台的首要任务之一。我们如何收集、使用和保护您的个人信息，详见《校园圈隐私协议》。本条款中提及的隐私协议构成本条款不可分割的组成部分。</p>
+
+<h2>九、第三方服务</h2>
+<p>本平台集成了豆包 AI 文生图服务及 AI 内容审核服务。这些第三方服务的可用性、准确性和安全性由其服务提供商负责，本平台不对第三方服务的表现承担任何责任。</p>
+
+<h2>十、免责声明</h2>
+<h3>10.1 服务按"现状"提供</h3>
+<p>本平台服务按"现状"和"可用"状态提供，我们不保证服务不会中断、及时、安全或无误。我们不保证通过本平台获取的任何结果或信息的准确性、可靠性或完整性。</p>
+<h3>10.2 AI 生成内容免责</h3>
+<p>本平台使用的 AI 内容审核及文生图功能可能产生不准确、不完整或不适当的结果。AI 生成内容仅供参考，不构成任何专业建议。</p>
+<h3>10.3 用户内容免责</h3>
+<p>本平台不认可、不验证用户发布的内容，也不对用户内容的真实性、准确性或合法性承担任何责任。</p>
+
+<h2>十一、责任限制</h2>
+<p>在适用法律允许的最大范围内，运营方及其关联方、管理人员、员工和代理人不就以下事项对您承担责任：任何间接的、偶然的、特殊的、附带的或惩罚性的损害赔偿；因使用或无法使用本平台服务而产生的任何损害；因第三方的行为或疏忽而产生的任何损害；因不可抗力事件导致服务中断而产生的任何损害。</p>
+<p>在适用法律允许的最大范围内，运营方对您承担的累计赔偿责任总额，不超过您在过去十二（12）个月内实际支付给运营方的费用总额与人民币壹佰元（¥100）中的较高者。</p>
+
+<h2>十二、赔偿</h2>
+<p>您同意赔偿并保护运营方及其关联方、管理人员、员工和代理人免受因以下原因引起或与之相关的任何索赔、损害、损失和费用：您使用本平台服务的行为；您违反本条款的行为；您侵犯任何第三方权利的行为；您发布的用户内容引起的纠纷。</p>
+
+<h2>十三、期限与终止</h2>
+<p>本条款自您接受之日起生效。您可随时停止使用本平台并申请注销账户。如您违反本条款，我们有权在不事先通知的情况下暂停或终止您对部分或全部服务的访问。账户注销或终止后，本条款中依其性质应在终止后继续有效的条款将继续有效。</p>
+
+<h2>十四、争议解决</h2>
+<p>本条款的订立、执行、解释及争议解决均适用中华人民共和国法律。因本条款引起的或与之相关的任何争议，双方应首先通过友好协商解决。协商不成的，任何一方均可向运营方所在地有管辖权的人民法院提起诉讼。</p>
+
+<h2>十五、不可抗力</h2>
+<p>因自然灾害、战争、政府行为、网络攻击、电力中断、校园网络基础设施故障等不可抗力事件导致我们未能或延迟履行本条款下义务的，我们不承担责任。</p>
+
+<h2>十六至十八</h2>
+<p>本条款任何规定如被法院认定为无效或不可执行，其余部分保持完全效力。本条款连同《校园圈隐私协议》构成完整协议。我们保留随时修改本条款的权利，重大修改将在平台显著位置公告。</p>
+
+<h2>十九、联系方式</h2>
+<p>电子邮箱：【待填写】<br>联系地址：【待填写】</p>
+</div>
+
+<!-- ══════ 隐私协议 ══════ -->
+<div class="panel" id="privacyPanel">
+<h1>校园圈（Campus Circle）隐私协议</h1>
+<p class="update-date">最后更新日期：2026年6月11日</p>
+
+<h2>一、引言</h2>
+<p>校园圈（以下简称"本平台"或"我们"）深知个人信息对您的重要性，并致力于保护您的个人信息安全。本隐私协议旨在向您说明我们如何收集、使用、存储、共享和保护您的个人信息，以及您对这些信息享有的权利。</p>
+<p><strong>请您仔细阅读本协议。使用本平台即表示您已充分理解并同意本协议所述的个人信息处理方式。</strong></p>
+
+<h2>二、我们收集的信息</h2>
+<h3>2.1 您主动提供的信息</h3>
+<table>
+<tr><th>信息类别</th><th>具体内容</th><th>收集场景</th><th>收集目的</th></tr>
+<tr><td>账户信息</td><td>手机号码、登录密码</td><td>账户注册/登录</td><td>创建账户、身份验证</td></tr>
+<tr><td>个人资料</td><td>姓名、昵称、头像、个人简介</td><td>编辑个人资料</td><td>展示用户身份、社交互动</td></tr>
+<tr><td>校园信息</td><td>宿舍楼号</td><td>编辑个人资料/下单</td><td>配送地址匹配</td></tr>
+<tr><td>联系方式</td><td>微信号、QQ 号</td><td>编辑个人资料</td><td>用户间联系（可选）</td></tr>
+<tr><td>订单信息</td><td>取件地址、配送地址、订单备注</td><td>创建配送订单</td><td>完成配送服务</td></tr>
+<tr><td>支付信息</td><td>钱包余额、提现信息</td><td>交易相关操作</td><td>资金结算</td></tr>
+<tr><td>社交内容</td><td>帖子文字、图片、GIF、评论、点赞</td><td>校园墙互动</td><td>提供社交功能</td></tr>
+<tr><td>二手商品</td><td>商品描述、图片、价格、成色</td><td>发布二手商品</td><td>提供二手交易服务</td></tr>
+<tr><td>评价内容</td><td>教师评价、订单评价、商品评价</td><td>发表评价</td><td>提供评价功能</td></tr>
+<tr><td>消息内容</td><td>私聊文本、分享帖子的消息</td><td>实时聊天</td><td>提供即时通讯功能</td></tr>
+<tr><td>宠物信息</td><td>动物状况描述、照片、目击位置</td><td>猫狗追踪上报</td><td>流浪动物关怀</td></tr>
+<tr><td>反馈意见</td><td>问题反馈内容</td><td>提交反馈</td><td>改进服务质量</td></tr>
+</table>
+
+<h3>2.2 自动收集的信息</h3>
+<table>
+<tr><th>信息类别</th><th>具体内容</th><th>收集目的</th></tr>
+<tr><td>设备信息</td><td>IP 地址、浏览器类型、操作系统</td><td>安全防护、异常登录检测</td></tr>
+<tr><td>日志信息</td><td>访问时间、请求路径、响应状态</td><td>系统监控、故障排查、安全审计</td></tr>
+<tr><td>请求信息</td><td>HTTP 请求头（含 User-Agent）</td><td>安全检测（SQL 注入/XSS 扫描）</td></tr>
+</table>
+
+<h3>2.3 我们不收集的信息</h3>
+<ul>
+<li>精确地理位置（GPS 定位）——配送地址由用户手动输入</li>
+<li>通讯录信息</li>
+<li>相册/文件系统的完整访问权限</li>
+<li>指纹、面部识别等生物识别信息</li>
+<li>金融账户敏感信息（支付由平台钱包系统内部处理）</li>
+</ul>
+
+<h2>三、Cookie 及类似技术</h2>
+<p>本平台使用必要 Cookie/存储技术：JWT Token（localStorage，24小时有效）用于身份认证；用户偏好（localStorage）保存界面设置。</p>
+<p><strong>本平台不使用任何第三方分析工具、广告追踪像素或社交媒体追踪器。</strong></p>
+
+<h2>四、信息的使用</h2>
+<p>我们收集的信息用于：服务提供、安全保障（身份验证/安全扫描/限流防护）、AI 内容审核、通信联系、服务改进、法律合规。</p>
+
+<h2>五、信息的存储与保护</h2>
+<h3>5.1 存储位置</h3>
+<p>您的个人信息存储在校园本地服务器的 SQLite 数据库中，不上传至外部云服务。</p>
+<h3>5.2 安全措施</h3>
+<ul>
+<li>五级认证中间件体系确保访问控制</li>
+<li>管理员密码使用 bcrypt 哈希算法加密存储</li>
+<li>CSP/XSS/CSRF 多层安全响应头保护</li>
+<li>上传文件受保护目录，禁止目录浏览，路径遍历拦截</li>
+<li>五级分类滑动窗口限流防暴力破解和 DoS 攻击</li>
+<li>access.log 自动轮转（超10MB），不记录敏感信息</li>
+<li>捕获未处理异常防止进程静默崩溃</li>
+<li>SQLite WAL 检查点机制防止数据库损坏</li>
+</ul>
+<h3>5.3 数据保留</h3>
+<table>
+<tr><th>数据类别</th><th>保留期限</th></tr>
+<tr><td>账户信息</td><td>账户存续期间 + 注销后合理期限</td></tr>
+<tr><td>订单信息</td><td>订单完成后 2 年</td></tr>
+<tr><td>社交内容</td><td>账户注销或用户自行删除前</td></tr>
+<tr><td>聊天消息</td><td>对话删除前</td></tr>
+<tr><td>上传文件</td><td>30 天（每天自动清理）</td></tr>
+<tr><td>访问日志</td><td>10MB 自动轮转</td></tr>
+<tr><td>限流记录</td><td>5 分钟</td></tr>
+</table>
+
+<h2>六、信息的共享与披露</h2>
+<h3>6.1 与其他用户共享</h3>
+<table>
+<tr><th>信息</th><th>可见范围</th></tr>
+<tr><td>昵称、头像、个人简介</td><td>校园墙社区，可通过隐私设置调整</td></tr>
+<tr><td>校园墙帖子及评论</td><td>按隐私设置决定（6字段×5级）</td></tr>
+<tr><td>二手商品信息</td><td>所有用户</td></tr>
+<tr><td>配送订单地址</td><td>仅接单骑手</td></tr>
+<tr><td>教师评价</td><td>按匿名/公开设置</td></tr>
+<tr><td>宠物目击信息</td><td>所有用户（公益）</td></tr>
+<tr><td>聊天消息</td><td>仅对话双方</td></tr>
+</table>
+<h3>6.2 与第三方共享</h3>
+<table>
+<tr><th>第三方</th><th>共享信息</th><th>目的</th></tr>
+<tr><td>豆包 AI（字节跳动）</td><td>用户上传的图片</td><td>AI 图像生成</td></tr>
+<tr><td>AI 内容审核服务</td><td>帖子和评论文本</td><td>内容安全审核（不关联身份）</td></tr>
+</table>
+
+<h2>七、您的权利</h2>
+<p>您享有访问权、更正权、删除权、数据可携带权、撤回同意权、注销账户权。大部分信息可通过个人资料页面自行管理，也可联系运营方行使权利。</p>
+
+<h2>八、未成年人保护</h2>
+<p>本平台主要面向高等院校在校学生（通常为 18 周岁以上的成年人）。我们不会故意收集未满 14 周岁儿童的个人信息。如果您是未满 18 周岁的未成年人，请在监护人指导下使用本平台。</p>
+
+<h2>九、隐私设置的变更</h2>
+<p>我们保留修改本隐私协议的权利。重大修改将通过平台公告和站内消息通知。</p>
+
+<h2>十、联系我们</h2>
+<p>电子邮箱：【待填写】<br>联系地址：【待填写】<br>我们将在收到请求后 15 个工作日内予以回复。</p>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.textContent.includes(tab==='terms'?'服务':'隐私')));
+  document.getElementById('termsPanel').classList.toggle('active', tab==='terms');
+  document.getElementById('privacyPanel').classList.toggle('active', tab==='privacy');
+  window.scrollTo(0,0);
+}
+// 监听父窗口切换tab的消息
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.action === 'switchTab') {
+    switchTab(e.data.tab);
+  }
+});
+</script>
+</body>
+</html>
