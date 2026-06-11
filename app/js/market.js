@@ -143,10 +143,10 @@
           (relatedHtml ? '<div style="margin-top:20px"><div style="font-size:15px;font-weight:700;margin-bottom:10px">卖家其他商品</div><div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">' + relatedHtml + '</div></div>' : '') +
         '</div>' +
         (isOwner ?
+          (item.status === 'active' ?
           '<div class="item-action-bar">' +
-            '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 私聊买家</button>' +
-            (item.status === 'active' ? '<button class="item-action-btn chat" style="background:#FFF0F0;color:var(--danger)" onclick="removeMyItem(' + item.id + ')">下架商品</button>' : '') +
-          '</div>' :
+            '<button class="item-action-btn chat" style="background:#FFF0F0;color:var(--danger)" onclick="removeMyItem(' + item.id + ')">下架商品</button>' +
+          '</div>' : '') :
           item.status === 'active' ?
           '<div class="item-action-bar">' +
             '<button class="item-action-btn chat" onclick="chatWithSeller(' + item.id + ')">💬 私聊卖家</button>' +
