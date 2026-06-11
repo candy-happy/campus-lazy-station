@@ -328,6 +328,23 @@ db.exec(`
     reply_at TEXT DEFAULT '',
     created_at TEXT DEFAULT (datetime('now','localtime'))
   );
+
+  CREATE TABLE IF NOT EXISTS market_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    seller_phone TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    price REAL NOT NULL,
+    original_price REAL,
+    category TEXT DEFAULT 'other',
+    condition_level INTEGER DEFAULT 1,
+    images TEXT DEFAULT '[]',
+    contact TEXT DEFAULT '',
+    status TEXT DEFAULT 'active',
+    views INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT (datetime('now','localtime')),
+    updated_at DATETIME DEFAULT (datetime('now','localtime'))
+  );
 `);
 
 // ─── 核心索引（性能优化，演示前必须添加） ─────────────
