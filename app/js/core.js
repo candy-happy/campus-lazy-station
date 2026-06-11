@@ -1390,7 +1390,7 @@ window.showToast = showToast;
           }
         } catch(e) {}
         try {
-          // 5. 搜索猫狗日记
+          // 5. 搜索猫狗日记（仅限宠物姓名）
           const petData = await API.getPets({ search: q, limit: 10 });
           const pets = Array.isArray(petData) ? petData : [];
           if (pets.length > 0) {
@@ -1401,7 +1401,7 @@ window.showToast = showToast;
           }
         } catch(e) {}
         try {
-          // 6. 搜索师说
+          // 6. 搜索师说（仅限姓名+毕业院校）
           const teacherData = await API.getTeachers({ search: q, limit: 10 });
           const teachers = Array.isArray(teacherData) ? teacherData : (teacherData && teacherData.teachers || []);
           if (teachers.length > 0) {
@@ -1412,7 +1412,7 @@ window.showToast = showToast;
           }
         } catch(e) {}
         try {
-          // 7. 搜索二手市场
+          // 7. 搜索二手市场（仅限标题+内容）
           const marketData = await API.getMarketItems({ search: q, limit: 10 });
           const items = Array.isArray(marketData) ? marketData : (marketData && marketData.items || []);
           if (items.length > 0) {

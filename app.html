@@ -10,13 +10,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="app/css/style.css?v=3.0.38" />
   <script src="api.js?v=3.0.33"></script>
-  <script src="app/js/core.js?v=3.0.39"></script>
-  <script src="app/js/wall.js?v=3.0.55"></script>
+  <script src="app/js/core.js?v=3.0.40"></script>
+  <script src="app/js/wall.js?v=3.0.57"></script>
   <script src="app/js/order.js?v=3.0.28"></script>
-  <script src="app/js/market.js?v=3.0.38"></script>
+  <script src="app/js/market.js?v=3.0.40"></script>
   <script src="app/js/user.js?v=3.0.43"></script>
   <script src="app/js/address.js?v=3.0.28"></script>
-  <script src="app/js/teachers.js?v=3.0.28"></script>
+  <script src="app/js/teachers.js?v=3.0.29"></script>
   <script src="app/js/pets.js?v=3.0.31"></script>
   <script src="app/js/feedback.js?v=3.0.28"></script>
   <script src="app/js/services.js?v=3.0.28"></script>
@@ -279,16 +279,6 @@
             <span class="me-menu-text" data-i18n="menuPoints">我的积分</span>
             <span class="me-menu-arrow">›</span>
           </div>
-          <div class="me-menu-item" onclick="openMyTrades()">
-            <span class="me-menu-icon">🛒</span>
-            <span class="me-menu-text" data-i18n="menuTrades">我的交易</span>
-            <span class="me-menu-arrow">›</span>
-          </div>
-          <div class="me-menu-item" onclick="openMyListings()">
-            <span class="me-menu-icon">📦</span>
-            <span class="me-menu-text" data-i18n="menuListings">我的在售</span>
-            <span class="me-menu-arrow">›</span>
-          </div>
           <div class="me-menu-item" onclick="openSubPage('orderPage')">
             <span class="me-menu-icon">📋</span>
             <span class="me-menu-text" data-i18n="menuOrders">我的订单</span>
@@ -427,7 +417,7 @@
             </div>
             <div class="post-media-grid" id="wallFilePreview">
               <label class="post-media-add">
-                <span class="add-icon">+</span>
+                <span class="add-icon">📷</span>
                 <span class="add-text">添加</span>
                 <input type="file" id="wallFileInput" accept="image/*,video/*" multiple style="display:none" onchange="previewWallFiles(this)" />
               </label>
@@ -485,7 +475,7 @@
         <div class="chat-input-bar">
           <span class="chat-attach-btn" onclick="toggleEmojiPicker()">😊</span>
           <label class="chat-attach-btn" title="发送图片/视频">
-            📎<input type="file" accept="image/*,video/*" style="display:none" onchange="userChatUpload(this)">
+            📷<input type="file" accept="image/*,video/*" style="display:none" onchange="userChatUpload(this)">
           </label>
           <input id="chatInput" class="chat-input-field" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChatMsg()" />
           <button onclick="sendChatMsg()" class="chat-send-btn">发送</button>
@@ -570,7 +560,7 @@
       </div>
       <div class="sub-page-body" style="padding:0">
         <!-- 分类标签 -->
-        <div class="market-tabs" id="marketTabs" style="padding:8px 12px">
+        <div class="market-tabs" id="marketTabs" style="padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
           <div class="market-tab active" onclick="switchMarketCategory('all')">全部</div>
           <div class="market-tab" onclick="switchMarketCategory('textbook')">📚 教材</div>
           <div class="market-tab" onclick="switchMarketCategory('digital')">💻 数码</div>
@@ -578,6 +568,9 @@
           <div class="market-tab" onclick="switchMarketCategory('clothing')">👔 服饰</div>
           <div class="market-tab" onclick="switchMarketCategory('beauty')">💄 美妆</div>
           <div class="market-tab" onclick="switchMarketCategory('other')">📦 其他</div>
+          <span style="color:var(--border);margin:0 4px">│</span>
+          <div class="market-tab market-tab-mine" id="marketTabListings" onclick="openMyListings()">📦 我的在售</div>
+          <div class="market-tab market-tab-mine" id="marketTabTrades" onclick="openMyTrades()">🛒 我的交易</div>
         </div>
         <!-- 商品网格 -->
         <div class="market-grid" id="marketGrid">
@@ -592,6 +585,10 @@
         <div id="marketMore" style="text-align:center;padding:12px;display:none">
           <button onclick="loadMoreMarketItems()" style="padding:8px 24px;border:2px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer">加载更多</button>
         </div>
+        <!-- 我的在售（内联） -->
+        <div id="marketMyListings" style="display:none;padding:0 12px"></div>
+        <!-- 我的交易（内联） -->
+        <div id="marketMyTrades" style="display:none;padding:0 12px"></div>
       </div>
     </div>
 
@@ -622,7 +619,7 @@
             <div class="publish-img-section">
               <div class="publish-img-grid" id="publishImgGrid">
                 <div class="publish-img-item add-btn" onclick="document.getElementById('publishImgInput').click()">
-                  <div class="add-icon">+</div>
+                  <div class="add-icon">📷</div>
                 </div>
               </div>
               <input type="file" id="publishImgInput" accept="image/*" multiple style="display:none" onchange="onPublishImages(this)" />

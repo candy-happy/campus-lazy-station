@@ -53,9 +53,9 @@ router.get('/', (req, res) => JSON_RES(res, () => {
     params.push(college);
   }
   if (search) {
-    where += ' AND (name LIKE ? OR college LIKE ? OR title LIKE ? OR research LIKE ? OR education LIKE ? OR papers LIKE ? OR projects LIKE ?)';
+    where += ' AND (name LIKE ? OR college LIKE ? OR graduate LIKE ?)';
     const kw = `%${search}%`;
-    params.push(kw, kw, kw, kw, kw, kw, kw);
+    params.push(kw, kw, kw);
   }
   
   const total = db.prepare(`SELECT COUNT(*) as c FROM teachers WHERE ${where}`).get(...params).c;

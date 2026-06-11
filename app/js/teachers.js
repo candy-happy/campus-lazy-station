@@ -17,7 +17,7 @@ async function loadTeacherColleges() {
       const bar = document.getElementById('teacherCollegeBar');
       bar.innerHTML = '<div class="teacher-college-tag active" data-college="全部" onclick="filterTeacherCollege(\'全部\')">全部</div>';
       res.colleges.forEach(c => {
-        bar.innerHTML += '<div class="teacher-college-tag" data-college="' + c.college + '" onclick="filterTeacherCollege(\'' + c.college + '\')">' + c.college + '(' + c.count + ')</div>';
+        bar.innerHTML += '<div class="teacher-college-tag" data-college="' + escHtml(c.college) + '" onclick="filterTeacherCollege(\'' + escHtml(c.college) + '\')">' + escHtml(c.college) + '(' + escHtml(String(c.count)) + ')</div>';
       });
       // 设置滚动监听更新箭头
       setTimeout(updateTeacherCollegeArrows, 50);
@@ -78,21 +78,21 @@ async function loadTeachers(reset = true) {
     if (res.teachers && res.teachers.length > 0) {
       res.teachers.forEach(t => {
         const ratingClass = t.avg_rating >= 4 ? 'teacher-rating-high' : t.avg_rating >= 3 ? 'teacher-rating-mid' : 'teacher-rating-low';
-        const titleTag = t.title ? '<span style="font-size:11px;color:#FF6B35;background:#FFF3E0;padding:1px 6px;border-radius:4px;margin-left:6px">' + t.title + '</span>' : '';
+        const titleTag = t.title ? '<span style="font-size:11px;color:#FF6B35;background:#FFF3E0;padding:1px 6px;border-radius:4px;margin-left:6px">' + escHtml(t.title) + '</span>' : '';
         const gradTag = t.graduate ? '<span style="font-size:10px;color:#7B1FA2;background:#F3E5F5;padding:1px 6px;border-radius:4px;margin-left:4px">' + (t.graduate.includes('博士') ? '博士' : '硕士') + '</span>' : (t.education && t.education.includes('博士') ? '<span style="font-size:10px;color:#7B1FA2;background:#F3E5F5;padding:1px 6px;border-radius:4px;margin-left:4px">博士</span>' : '');
         // 课程标签（最多3个）
         let courseTags = '';
         if (t.courses) {
           const cList = t.courses.split(/[，,、；;]/).filter(c => c.trim()).slice(0, 3);
           courseTags = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' +
-            cList.map(c => '<span style="font-size:10px;color:#FF6B35;background:#FFF3E0;padding:1px 6px;border-radius:4px">' + c.trim() + '</span>').join('') + '</div>';
+            cList.map(c => '<span style="font-size:10px;color:#FF6B35;background:#FFF3E0;padding:1px 6px;border-radius:4px">' + escHtml(c.trim()) + '</span>').join('') + '</div>';
         }
         container.innerHTML += '<div class="teacher-card" onclick="openTeacherDetail(' + t.id + ')">' +
           '<div class="teacher-avatar-lg">' + t.name.charAt(0) + '</div>' +
           '<div class="teacher-info">' +
-            '<div class="teacher-name">' + t.name + titleTag + gradTag + '</div>' +
-            '<div class="teacher-meta">' + t.college + '</div>' +
-            (t.research ? '<div class="teacher-meta" style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔬 ' + t.research.substring(0, 28) + (t.research.length > 28 ? '...' : '') + '</div>' : '') +
+            '<div class="teacher-name">' + escHtml(t.name) + titleTag + gradTag + '</div>' +
+            '<div class="teacher-meta">' + escHtml(t.college) + '</div>' +
+            (t.research ? '<div class="teacher-meta" style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔬 ' + escHtml(t.research.substring(0, 28)) + (t.research.length > 28 ? '...' : '') + '</div>' : '') +
             courseTags +
             '<div class="teacher-stats">' +
               '<span class="teacher-stat">👍 ' + (t.like_count||0) + '</span>' +
@@ -123,15 +123,15 @@ async function openTeacherDetail(id) {
     // ── 教师信息头部卡片（渐变背景） ──
     const researchTags = t.research
       ? t.research.split(/[，,、；;]/).filter(r => r.trim()).map(r =>
-          '<span style="display:inline-block;padding:3px 10px;border-radius:12px;background:rgba(255,255,255,.2);font-size:11px;margin:2px">' + r.trim() + '</span>'
+          '<span style="display:inline-block;padding:3px 10px;border-radius:12px;background:rgba(255,255,255,.2);font-size:11px;margin:2px">' + escHtml(r.trim()) + '</span>'
         ).join('')
       : '';
 
     document.getElementById('teacherInfoHeader').innerHTML =
       '<div style="background:linear-gradient(135deg,#FF6B35,#FF8C5A);padding:28px 16px 22px;color:#fff;text-align:center">' +
         '<div style="width:76px;height:76px;font-size:32px;margin:0 auto 12px;background:rgba(255,255,255,.2);color:#fff;border:3px solid rgba(255,255,255,.4);border-radius:50%;display:flex;align-items:center;justify-content:center">' + t.name.charAt(0) + '</div>' +
-        '<div style="font-size:22px;font-weight:700">' + t.name + '</div>' +
-        '<div style="font-size:13px;opacity:.85;margin-top:6px">' + t.college + (t.title ? ' · ' + t.title : '') + '</div>' +
+        '<div style="font-size:22px;font-weight:700">' + escHtml(t.name) + '</div>' +
+        '<div style="font-size:13px;opacity:.85;margin-top:6px">' + escHtml(t.college) + (t.title ? ' · ' + escHtml(t.title) : '') + '</div>' +
         (researchTags ? '<div style="margin-top:10px">' + researchTags + '</div>' : '') +
         '<div style="display:flex;gap:24px;justify-content:center;margin-top:16px">' +
           '<div style="text-align:center"><div style="font-size:22px;font-weight:700">' + (t.like_count||0) + '</div><div style="font-size:10px;opacity:.7">点赞</div></div>' +
@@ -156,15 +156,15 @@ async function openTeacherDetail(id) {
       cleanBio = cleanBio.trim();
       if (cleanBio.length > 5) {
         infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📝 个人简介</div>' +
-          '<div class="teacher-info-item" style="color:#555;line-height:1.7">' + cleanBio + '</div></div>');
+          '<div class="teacher-info-item" style="color:#555;line-height:1.7">' + escHtml(cleanBio) + '</div></div>');
       }
     }
 
     // 毕业院校
     const eduParts = [];
-    if (t.undergraduate) eduParts.push('<div class="teacher-info-item">🎓 本科：' + t.undergraduate + '</div>');
-    if (t.graduate) eduParts.push('<div class="teacher-info-item">🎓 研究生：' + t.graduate + '</div>');
-    if (t.education && eduParts.length === 0) eduParts.push('<div class="teacher-info-item">🏫 ' + t.education + '</div>');
+    if (t.undergraduate) eduParts.push('<div class="teacher-info-item">🎓 本科：' + escHtml(t.undergraduate) + '</div>');
+    if (t.graduate) eduParts.push('<div class="teacher-info-item">🎓 研究生：' + escHtml(t.graduate) + '</div>');
+    if (t.education && eduParts.length === 0) eduParts.push('<div class="teacher-info-item">🏫 ' + escHtml(t.education) + '</div>');
     if (eduParts.length > 0) {
       infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🎓 毕业院校</div>' +
         eduParts.join('') + '</div>');
@@ -175,7 +175,7 @@ async function openTeacherDetail(id) {
       const courseList = t.courses.split(/[，,、；;]/).filter(c => c.trim()).map(c => c.replace(/《/g,'').replace(/》/g,'').trim());
       infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📖 主讲课程</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
-          courseList.map(c => '<span class="teacher-course-tag">' + c + '</span>').join('') +
+          courseList.map(c => '<span class="teacher-course-tag">' + escHtml(c) + '</span>').join('') +
         '</div></div>');
     }
 
@@ -183,7 +183,7 @@ async function openTeacherDetail(id) {
     if (t.papers) {
       const paperLines = t.papers.split(/[；;]/).filter(l => l.trim());
       infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📄 学术论文</div>' +
-        paperLines.map(p => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">• ' + p.trim() + '</div>').join('') +
+        paperLines.map(p => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">• ' + escHtml(p.trim()) + '</div>').join('') +
       '</div>');
     }
 
@@ -191,7 +191,7 @@ async function openTeacherDetail(id) {
     if (t.projects) {
       const projLines = t.projects.split(/[；;]/).filter(l => l.trim());
       infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🔬 科研项目</div>' +
-        projLines.map(p => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">• ' + p.trim() + '</div>').join('') +
+        projLines.map(p => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">• ' + escHtml(p.trim()) + '</div>').join('') +
       '</div>');
     }
 
@@ -199,7 +199,7 @@ async function openTeacherDetail(id) {
     if (t.achievements) {
       const achLines = t.achievements.split('\n').filter(l => l.trim());
       infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🏆 主要成果</div>' +
-        achLines.map(a => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">🏅 ' + a + '</div>').join('') +
+        achLines.map(a => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">🏅 ' + escHtml(a) + '</div>').join('') +
       '</div>');
     }
 
@@ -207,7 +207,7 @@ async function openTeacherDetail(id) {
     if (t.social_roles) {
       const roleLines = t.social_roles.split(/[；;]/).filter(l => l.trim());
       infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🌐 社会兼职</div>' +
-        roleLines.map(r => '<div class="teacher-info-item">• ' + r.trim() + '</div>').join('') +
+        roleLines.map(r => '<div class="teacher-info-item">• ' + escHtml(r.trim()) + '</div>').join('') +
       '</div>');
     }
     
@@ -231,7 +231,7 @@ async function openTeacherDetail(id) {
     const reviewList = document.getElementById('teacherReviewList');
     if (res.reviews && res.reviews.length > 0) {
       reviewList.innerHTML = res.reviews.map(r => {
-        const displayName = r.is_anonymous ? '匿名' : (r.nickname || '匿名');
+        const displayName = r.is_anonymous ? '匿名' : escHtml(r.nickname || '匿名');
         const avatarHtml = r.is_anonymous
           ? '<div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999">🕵</div>'
           : (r.avatar ? '<img src="' + r.avatar + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover;cursor:pointer" onclick="showWallUser(\'' + r.phone + '\')">' : '<div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999;cursor:pointer" onclick="showWallUser(\'' + r.phone + '\')">' + (r.nickname||'匿').charAt(0) + '</div>');
@@ -259,7 +259,7 @@ async function openTeacherDetail(id) {
         }
         return '<div class="teacher-review-card">' +
           '<div class="teacher-review-header">' + avatarHtml + '<span class="teacher-review-user">' + displayName + '</span><span class="teacher-review-date">' + (r.created_at||'').slice(0,10) + '</span></div>' +
-          '<div class="teacher-review-content">' + r.content + '</div>' +
+          '<div class="teacher-review-content">' + escHtml(r.content) + '</div>' +
           mediaHtml +
         '</div>';
       }).join('');

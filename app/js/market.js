@@ -36,6 +36,10 @@
 
     function switchMarketCategory(cat) {
       marketCategory = cat;
+      // Reset to grid view
+      document.getElementById('marketGrid').style.display = '';
+      document.getElementById('marketMyListings').style.display = 'none';
+      document.getElementById('marketMyTrades').style.display = 'none';
       document.querySelectorAll('#marketTabs .market-tab').forEach(t => t.classList.toggle('active', t.textContent.includes(CATEGORY_MAP[cat] || '全部')));
       loadMarketItems(true);
     }
@@ -47,6 +51,12 @@
       const empty = document.getElementById('marketEmpty');
       const more = document.getElementById('marketMore');
       if (!grid) return;
+      // Hide inline listings/trades
+      const listings = document.getElementById('marketMyListings');
+      const trades = document.getElementById('marketMyTrades');
+      if (listings) listings.style.display = 'none';
+      if (trades) trades.style.display = 'none';
+      grid.style.display = '';
       if (!marketItems.length) {
         grid.innerHTML = '';
         if (empty) empty.style.display = 'block';
@@ -136,7 +146,7 @@
               '<div id="replyHint" class="comment-reply-hint" style="display:none;width:100%;margin-bottom:6px">回复 <span id="replyName"></span> <span class="cancel-reply" onclick="cancelReplyComment()">✕ 取消</span></div>' +
               '<div style="display:flex;gap:6px;align-items:center;width:100%">' +
                 '<span class="comment-emoji-btn" onclick="toggleCommentEmoji()">😊</span>' +
-                '<label class="comment-media-btn" title="上传图片/视频">📎<input type="file" accept="image/*,video/*" style="display:none" onchange="commentUploadMedia(this)" /></label>' +
+                '<label class="comment-media-btn" title="上传图片/视频">📷<input type="file" accept="image/*,video/*" style="display:none" onchange="commentUploadMedia(this)" /></label>' +
                 '<input class="comment-input" id="commentInput" placeholder="说点什么..." maxlength="500" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendComment(' + item.id + ')}" />' +
                 '<button class="comment-send-btn" id="commentSendBtn" onclick="sendComment(' + item.id + ')">发送</button>' +
               '</div>' +
@@ -634,42 +644,50 @@
     async function openMyTrades() {
       if (!currentUser) { showToast('请先登录'); return; }
       tradeTab = 'all';
-      document.getElementById('tradeTabAll').classList.add('active');
-      document.getElementById('tradeTabBuy').classList.remove('active');
-      document.getElementById('tradeTabSell').classList.remove('active');
-      openSubPage('myTradesPage_sub');
+      // Show inline, hide grid
+      document.getElementById('marketGrid').style.display = 'none';
+      document.getElementById('marketEmpty').style.display = 'none';
+      document.getElementById('marketMore').style.display = 'none';
+      document.getElementById('marketMyListings').style.display = 'none';
+      document.getElementById('marketMyTrades').style.display = 'block';
+      // Activate tab
+      document.querySelectorAll('#marketTabs .market-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('marketTabTrades').classList.add('active');
       await loadTradeList();
     }
 
-
-
     function switchTradeTab(tab) {
       tradeTab = tab;
-      ['tradeTabAll','tradeTabBuy','tradeTabSell'].forEach(id => document.getElementById(id).classList.remove('active'));
+      document.querySelectorAll('#tradeTabs .trade-tab').forEach(t => t.classList.remove('active'));
       const map = { all:'tradeTabAll', buyer:'tradeTabBuy', seller:'tradeTabSell' };
-      document.getElementById(map[tab]).classList.add('active');
+      const el = document.getElementById(map[tab]);
+      if (el) el.classList.add('active');
       loadTradeList();
     }
 
-
-
     async function loadTradeList() {
-      const container = document.getElementById('tradeListContainer');
+      const container = document.getElementById('marketMyTrades');
       if (!container) return;
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">加载中...</div>';
+      // Render trade tabs inline
+      const tabLabels = { all:'全部', buyer:'买入', seller:'卖出' };
+      let tabsHtml = '<div id="tradeTabs" style="display:flex;gap:8px;margin-bottom:12px;padding-top:4px">';
+      Object.entries(tabLabels).forEach(([k, v]) => {
+        tabsHtml += '<div class="trade-tab' + (tradeTab === k ? ' active' : '') + '" id="tradeTab' + k.charAt(0).toUpperCase() + k.slice(1) + '" onclick="switchTradeTab(\'' + k + '\')" style="padding:6px 16px;border-radius:16px;font-size:13px;cursor:pointer;' + (tradeTab === k ? 'background:var(--gradient);color:#fff' : 'background:var(--bg);color:var(--text-secondary)') + '">' + v + '</div>';
+      });
+      tabsHtml += '</div>';
+      container.innerHTML = tabsHtml + '<div style="text-align:center;padding:40px;color:var(--text-secondary)">加载中...</div>';
       try {
         const res = await API.getMarketOrders(tradeTab === 'all' ? '' : tradeTab);
         const orders = res.orders || [];
         if (!orders.length) {
-          container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">📭</div><div class="sub-empty-text">暂无交易记录</div></div>';
+          container.innerHTML = tabsHtml + '<div class="sub-empty"><div class="sub-empty-icon">📭</div><div class="sub-empty-text">暂无交易记录</div></div>';
           return;
         }
-        container.innerHTML = orders.map(o => {
+        container.innerHTML = tabsHtml + orders.map(o => {
           const statusClass = o.status || 'pending';
           const statusText = STATUS_MAP[statusClass] || statusClass;
           const img = o.image || '';
           const otherName = o.is_buyer ? o.seller_name : o.buyer_name;
-          // 买家能看到卖家联系方式
           const contactHtml = o.is_buyer && o.contact ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px">📞 ' + escHtml(o.contact) + '</div>' : '';
           return '<div class="trade-card">' +
             '<div class="trade-card-top">' +
@@ -689,7 +707,7 @@
           '</div>';
         }).join('');
       } catch(e) {
-        container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger)">加载失败</div>';
+        container.innerHTML = tabsHtml + '<div style="text-align:center;padding:40px;color:var(--danger)">加载失败</div>';
       }
     }
 
@@ -806,21 +824,27 @@
 
     async function openMyListings() {
       if (!currentUser) { showToast('请先登录'); return; }
-      openSubPage('myListingsPage_sub');
+      // Show inline, hide grid
+      document.getElementById('marketGrid').style.display = 'none';
+      document.getElementById('marketEmpty').style.display = 'none';
+      document.getElementById('marketMore').style.display = 'none';
+      document.getElementById('marketMyTrades').style.display = 'none';
+      document.getElementById('marketMyListings').style.display = 'block';
+      // Activate tab
+      document.querySelectorAll('#marketTabs .market-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('marketTabListings').classList.add('active');
       await loadMyListings();
     }
 
-
-
     async function loadMyListings() {
-      const container = document.getElementById('myListingsContainer');
+      const container = document.getElementById('marketMyListings');
       if (!container) return;
       container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">加载中...</div>';
       try {
         const res = await API.getMyMarketItems();
         const items = res.items || [];
         if (!items.length) {
-          container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">📦</div><div class="sub-empty-text">暂无在售商品</div><button onclick="closeSubPage(\'myListingsPage_sub\');openPublishItem()" style="margin-top:16px;padding:10px 24px;border:2px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-weight:600;cursor:pointer">发布商品</button></div>';
+          container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">📦</div><div class="sub-empty-text">暂无在售商品</div><button onclick="switchMarketCategory(\'all\');openPublishItem()" style="margin-top:16px;padding:10px 24px;border:2px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-weight:600;cursor:pointer">发布商品</button></div>';
           return;
         }
         const statusLabel = { active:'在售', trading:'交易中', sold:'已售', removed:'已下架' };

@@ -605,11 +605,19 @@
         </div>
 
         <!-- 评论输入框 -->
-        <div style="position:sticky;bottom:0;background:var(--card);padding:10px 16px;display:flex;gap:10px;align-items:center;border-radius:16px 16px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,0.06)">
+        <div style="position:sticky;bottom:0;background:var(--card);padding:10px 16px;border-radius:16px 16px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,0.06)">
           <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#FF6B2B,#FF8F5E,#FFB088)"></div>
-          <div id="cancelReplyHint" style="display:none;font-size:11px;color:#FF6B2B;background:rgba(255,107,43,0.1);padding:3px 10px;border-radius:10px;white-space:nowrap;cursor:pointer" onclick="cancelReply()">✕ 取消回复</div>
-          <input id="wallCommentInput" placeholder="写评论..." style="flex:1;border:1.5px solid var(--border);border-radius:24px;padding:10px 18px;font-size:14px;outline:none;background:var(--bg);color:var(--text);transition:all 0.2s" onfocus="this.style.borderColor='#FF6B2B';this.style.boxShadow='0 0 0 3px rgba(255,107,43,0.08)'" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'" />
-          <button id="wallCommentSendBtn" onclick="submitWallComment(${data.id})" style="background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:#fff;border:none;border-radius:24px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.2s;box-shadow:0 3px 12px rgba(255,107,43,0.35);letter-spacing:0.5px" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 16px rgba(255,107,43,0.45)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 3px 12px rgba(255,107,43,0.35)'">发送</button>
+          <div id="cancelReplyHint" style="display:none;font-size:11px;color:#FF6B2B;background:rgba(255,107,43,0.1);padding:3px 10px;border-radius:10px;white-space:nowrap;cursor:pointer;margin-bottom:6px" onclick="cancelReply()">✕ 取消回复</div>
+          <div id="wallCommentEmojiPanel" style="display:none;margin-bottom:8px"></div>
+          <div id="wallCommentMediaPreview" style="display:none;margin-bottom:8px"></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button onclick="toggleWallCommentEmoji()" style="font-size:22px;background:none;border:none;cursor:pointer;padding:4px;border-radius:8px;transition:background 0.15s;flex-shrink:0" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'" title="表情">😊</button>
+            <label style="font-size:22px;cursor:pointer;padding:4px;border-radius:8px;transition:background 0.15s;flex-shrink:0;display:flex;align-items:center" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'" title="上传图片/视频">
+              📷<input type="file" accept="image/*,video/*" style="display:none" onchange="uploadWallCommentMedia(this)">
+            </label>
+            <input id="wallCommentInput" placeholder="写评论..." style="flex:1;border:1.5px solid var(--border);border-radius:24px;padding:10px 18px;font-size:14px;outline:none;background:var(--bg);color:var(--text);transition:all 0.2s" onfocus="this.style.borderColor='#FF6B2B';this.style.boxShadow='0 0 0 3px rgba(255,107,43,0.08)'" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'" />
+            <button id="wallCommentSendBtn" onclick="submitWallComment(${data.id})" style="background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:#fff;border:none;border-radius:24px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.2s;box-shadow:0 3px 12px rgba(255,107,43,0.35);letter-spacing:0.5px" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 16px rgba(255,107,43,0.45)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 3px 12px rgba(255,107,43,0.35)'">发送</button>
+          </div>
         </div>
       `;
       openSubPage('wallDetailPage_sub');
@@ -618,30 +626,50 @@
 
     let _replyContext = null; // { parentId, replyToNickname, replyToPhone }
     let _currentWallPostId = null;
+    let _wallCommentMediaFile = null;
 
 
     async function submitWallComment(postId) {
       const input = document.getElementById('wallCommentInput');
       const content = input.value.trim();
-      if (!content) return;
-      const data = { phone: currentUser.phone, nickname: currentUser.name, avatar: currentUser.avatar || '', content };
-      if (_replyContext) {
-        data.parent_id = _replyContext.parentId;
-        data.reply_to_nickname = _replyContext.replyToNickname;
-        data.reply_to_phone = _replyContext.replyToPhone;
-      }
-      const res = await API.wallComment(postId, data);
-      if (res.error) return showToast(res.error);
-      _replyContext = null;
+      if (!content && !_wallCommentMediaFile) return showToast('请输入内容或上传图片/视频');
       const sendBtn = document.getElementById('wallCommentSendBtn');
-      if (sendBtn) sendBtn.textContent = '发送';
-      const cancelHint = document.getElementById('cancelReplyHint');
-      if (cancelHint) cancelHint.style.display = 'none';
-      const input2 = document.getElementById('wallCommentInput');
-      if (input2) input2.placeholder = '写评论...';
-      showToast('评论成功');
-      showWallDetail(postId);
-      loadWallFeed();
+      if (sendBtn) sendBtn.disabled = true;
+      try {
+        let mediaUrl = '';
+        let mediaType = '';
+        if (_wallCommentMediaFile) {
+          showToast('上传中...');
+          const uploadRes = await API.chatUpload(_wallCommentMediaFile);
+          if (uploadRes.error) { showToast(uploadRes.error); if (sendBtn) sendBtn.disabled = false; return; }
+          mediaUrl = uploadRes.url;
+          mediaType = uploadRes.type || (_wallCommentMediaFile.type.startsWith('video/') ? 'video' : 'image');
+        }
+        let finalContent = content;
+        if (mediaUrl) {
+          finalContent = content ? content + '\n' + mediaUrl : mediaUrl;
+        }
+        const data = { phone: currentUser.phone, nickname: currentUser.name, avatar: currentUser.avatar || '', content: finalContent };
+        if (_replyContext) {
+          data.parent_id = _replyContext.parentId;
+          data.reply_to_nickname = _replyContext.replyToNickname;
+          data.reply_to_phone = _replyContext.replyToPhone;
+        }
+        const res = await API.wallComment(postId, data);
+        if (res.error) { showToast(res.error); if (sendBtn) sendBtn.disabled = false; return; }
+        _replyContext = null;
+        if (sendBtn) sendBtn.textContent = '发送';
+        const cancelHint = document.getElementById('cancelReplyHint');
+        if (cancelHint) cancelHint.style.display = 'none';
+        const input2 = document.getElementById('wallCommentInput');
+        if (input2) input2.placeholder = '写评论...';
+        clearWallCommentMedia();
+        showToast('评论成功');
+        showWallDetail(postId);
+        loadWallFeed();
+      } finally {
+        if (sendBtn) sendBtn.disabled = false;
+      }
     }
 
 
@@ -677,6 +705,73 @@
       if (sendBtn) sendBtn.textContent = '发送';
       const cancelHint = document.getElementById('cancelReplyHint');
       if (cancelHint) cancelHint.style.display = 'none';
+    }
+
+
+
+    // 😊 帖子详情评论表情面板
+    function toggleWallCommentEmoji() {
+      const panel = document.getElementById('wallCommentEmojiPanel');
+      if (!panel) return;
+      if (panel.style.display === 'none' || !panel.style.display) {
+        panel.style.display = 'block';
+        if (!panel.innerHTML) {
+          const emojis = ['😀','😂','🤣','😊','😍','🥰','😘','😜','🤔','😎','🥺','😢','😤','👍','👏','🙏','💪','🎉','❤️','🔥','💯','✨','👀','🤝','💰','🎁','📦','📱','💻','📚','🎮','🎵','🍕','🍔','☕','🍦','⚽','🏠','🚀','⭐','🌈','💡','🔔','💬','🤗','😌','🤩','😇','🥳'];
+          panel.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:4px;padding:8px;background:var(--bg);border-radius:10px;max-height:160px;overflow-y:auto">' +
+            emojis.map(e => '<span style="font-size:22px;cursor:pointer;padding:4px;border-radius:6px;transition:background 0.15s" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'" onclick="insertWallCommentEmoji(\'' + e + '\')">' + e + '</span>').join('') +
+          '</div>';
+        }
+      } else {
+        panel.style.display = 'none';
+      }
+    }
+
+
+
+    function insertWallCommentEmoji(emoji) {
+      const input = document.getElementById('wallCommentInput');
+      if (input) {
+        const start = input.selectionStart;
+        input.value = input.value.substring(0, start) + emoji + input.value.substring(input.selectionEnd);
+        input.selectionStart = input.selectionEnd = start + emoji.length;
+        input.focus();
+      }
+    }
+
+
+
+    // 📷 帖子详情评论图片/视频上传
+    function uploadWallCommentMedia(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { showToast('文件不能超过5MB'); input.value = ''; return; }
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) { showToast('仅支持图片/视频'); input.value = ''; return; }
+      _wallCommentMediaFile = file;
+      const preview = document.getElementById('wallCommentMediaPreview');
+      if (!preview) return;
+      preview.style.display = 'block';
+      const url = URL.createObjectURL(file);
+      if (file.type.startsWith('video/')) {
+        preview.innerHTML = '<div style="position:relative;display:inline-block">' +
+          '<video src="' + url + '" style="max-height:80px;border-radius:6px" muted></video>' +
+          '<span onclick="clearWallCommentMedia()" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer">✕</span>' +
+        '</div>';
+      } else {
+        preview.innerHTML = '<div style="position:relative;display:inline-block">' +
+          '<img src="' + url + '" style="max-height:80px;border-radius:6px" />' +
+          '<span onclick="clearWallCommentMedia()" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer">✕</span>' +
+        '</div>';
+      }
+    }
+
+
+
+    function clearWallCommentMedia() {
+      _wallCommentMediaFile = null;
+      const preview = document.getElementById('wallCommentMediaPreview');
+      if (preview) { preview.innerHTML = ''; preview.style.display = 'none'; }
+      const fileInput = document.querySelector('#wallCommentMediaPreview + div label input[type=file]');
+      if (fileInput) fileInput.value = '';
     }
 
 
@@ -806,33 +901,6 @@
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById('messagePage').classList.add('active');
       document.getElementById('chatConversation').style.display = 'flex';
-      await loadChatMessages();
-      if (chatRefreshTimer) clearInterval(chatRefreshTimer);
-      chatRefreshTimer = setInterval(loadChatMessages, 5000);
-    }
-
-    async function tryWallChat(otherPhone) {
-      if (!currentUser) return showLoginPage();
-      if (otherPhone === currentUser.phone) return showToast('不能给自己发私信');
-      showToast('正在连接...');
-      const res = await API.wallChat(currentUser.phone, otherPhone);
-      if (res.error) {
-        // 隐私限制 - 显示原因弹窗
-        if (res.code === 'CHAT_002' || res.code === 'CHAT_PRIVACY_BLOCKED') {
-          showChatBlockedDialog(otherPhone, res.error);
-        } else {
-          showToast(res.error);
-        }
-        return;
-      }
-      closeSubPage('wallProfilePage_sub');
-      currentConvId = res.id;
-      currentConvPhone = otherPhone;
-      const profile = await API.wallUserProfile(otherPhone);
-      const otherName = profile.nickname || profile.name || otherPhone;
-      document.getElementById('chatConvTitle').textContent = otherName;
-      document.getElementById('chatConvModal').style.display = 'flex';
-      document.body.style.overflow = 'hidden';
       await loadChatMessages();
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
       chatRefreshTimer = setInterval(loadChatMessages, 5000);
@@ -1320,7 +1388,7 @@
 
 
     // ═══════════════════════════════════════════════════════
-    // 📎 用户端图片/视频上传
+    // 📷 用户端图片/视频上传
     // ═══════════════════════════════════════════════════════
 
     async function userChatUpload(input) {
@@ -2441,6 +2509,10 @@ window.markNotifRead = markNotifRead;
 window.loadChatMessages = loadChatMessages;
 window.sendChatMsg = sendChatMsg;
 window.userChatUpload = userChatUpload;
+window.toggleWallCommentEmoji = toggleWallCommentEmoji;
+window.insertWallCommentEmoji = insertWallCommentEmoji;
+window.uploadWallCommentMedia = uploadWallCommentMedia;
+window.clearWallCommentMedia = clearWallCommentMedia;
 window.openChatFromOrder = openChatFromOrder;
 window.showChatPrivacyOptions = showChatPrivacyOptions;
 window.setChatPrivacy = setChatPrivacy;

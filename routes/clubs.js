@@ -366,14 +366,16 @@ router.post('/:id/posts', requireAuth, clubUpload.array('photos', MAX_POST_PHOTO
   return { ok: true };
 }));
 
-// 获取公告列表
+// 获取公告列表（批量加载作者名，避免N+1）
 router.get('/:id/posts', requireAuth, (req, res) => JSON_RES(res, () => {
   const posts = db.prepare('SELECT * FROM club_posts WHERE club_id = ? ORDER BY pinned DESC, created_at DESC').all(req.params.id);
-  // 关联用户信息
-  return posts.map(p => {
-    const author = db.prepare('SELECT name FROM users WHERE phone = ?').get(p.phone);
-    return { ...p, images: JSON.parse(p.images || '[]'), author_name: author ? author.name : '' };
-  });
+  const authorPhones = [...new Set(posts.map(p => p.phone).filter(Boolean))];
+  const authorMap = {};
+  if (authorPhones.length > 0) {
+    const ph = authorPhones.map(() => '?').join(',');
+    db.prepare(`SELECT phone, name FROM users WHERE phone IN (${ph})`).all(...authorPhones).forEach(a => { authorMap[a.phone] = a.name; });
+  }
+  return posts.map(p => ({ ...p, images: JSON.parse(p.images || '[]'), author_name: authorMap[p.phone] || '' }));
 }));
 
 // 删除公告（owner/admin 或本人）

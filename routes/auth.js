@@ -13,7 +13,9 @@ const rateLimit = require('../middleware/rateLimit');
 
 // ─── 获取图形验证码 ─────────────────────────────────────────
 // 用 phone 作为 key，同一手机号一段时间内只能有一个有效验证码
-router.get('/captcha', (req, res) => {
+// 限速：每IP每分钟最多 10 次，防止暴力调用耗尽内存
+const captchaRateLimit = rateLimit(10, 60 * 1000);
+router.get('/captcha', captchaRateLimit, (req, res) => {
   const phone = req.query.phone || 'default';
   const { svg } = captcha.create(phone);
   res.set('Content-Type', 'image/svg+xml');
