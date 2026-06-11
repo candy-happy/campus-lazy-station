@@ -6,6 +6,12 @@ const { DB_PATH } = require('./index');
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
+// 性能调优：WAL 自动检查点、内存缓存、内存映射 I/O
+db.pragma('synchronous = NORMAL');      // WAL 模式下 NORMAL 足够安全
+db.pragma('cache_size = -16000');       // 16MB 页面缓存
+db.pragma('mmap_size = 268435456');     // 256MB 内存映射（64位系统）
+db.pragma('wal_autocheckpoint = 1000'); // 每 1000 页自动检查点
+db.pragma('busy_timeout = 30000');      // 30s 忙等待，避免 SQLITE_BUSY
 
 // ─── 建表脚本 ───────────────────────────────────────────
 db.exec(`
@@ -322,6 +328,35 @@ db.exec(`
     reply_at TEXT DEFAULT '',
     created_at TEXT DEFAULT (datetime('now','localtime'))
   );
+`);
+
+// ─── 核心索引（性能优化，演示前必须添加） ─────────────
+db.exec(`
+  -- 校园墙核心
+  CREATE INDEX IF NOT EXISTS idx_wall_posts_created ON wall_posts(created_at);
+  CREATE INDEX IF NOT EXISTS idx_wall_posts_phone ON wall_posts(phone);
+  CREATE INDEX IF NOT EXISTS idx_wall_comments_post ON wall_comments(post_id);
+  CREATE INDEX IF NOT EXISTS idx_wall_likes_post_phone ON wall_likes(post_id, phone);
+  CREATE INDEX IF NOT EXISTS idx_wall_follows_follower ON wall_follows(follower_phone);
+  CREATE INDEX IF NOT EXISTS idx_wall_follows_following ON wall_follows(following_phone);
+  CREATE INDEX IF NOT EXISTS idx_wall_blocks_blocker ON wall_blocks(blocker_phone);
+  CREATE INDEX IF NOT EXISTS idx_wall_exposures_post ON wall_exposures(post_id, phone);
+  -- 聊天消息
+  CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, id);
+  CREATE INDEX IF NOT EXISTS idx_conv_user1 ON conversations(user1_phone);
+  CREATE INDEX IF NOT EXISTS idx_conv_user2 ON conversations(user2_phone);
+  -- 通知
+  CREATE INDEX IF NOT EXISTS idx_notif_phone_time ON notifications(phone, created_at);
+  -- 订单
+  CREATE INDEX IF NOT EXISTS idx_orders_phone_time ON orders(phone, created_at);
+  CREATE INDEX IF NOT EXISTS idx_orders_rider_phone ON orders(rider_phone);
+  -- 教师评价
+  CREATE INDEX IF NOT EXISTS idx_teacher_reviews_tid ON teacher_reviews(teacher_id);
+  CREATE INDEX IF NOT EXISTS idx_teacher_likes_tid ON teacher_likes(teacher_id, phone);
+  -- AI审核
+  CREATE INDEX IF NOT EXISTS idx_ai_logs_source_id ON ai_review_logs(source, source_id);
+  -- 二手市场
+  CREATE INDEX IF NOT EXISTS idx_market_items_status ON market_items(status);
 `);
 
 // ─── 数据库迁移 ─────────────────────────────────────────

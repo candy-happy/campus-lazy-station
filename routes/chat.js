@@ -75,7 +75,11 @@ router.post('/conversation', requireAuth, (req, res) => JSON_RES(res, () => {
     ).run(user_phone, rider_phone, order_id || null, order_title || '');
     conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(r.lastInsertRowid);
   }
-  return conv;
+  const otherPhone = conv.user1_phone === authPhone ? conv.user2_phone : conv.user1_phone;
+  const otherUser = db.prepare('SELECT name FROM users WHERE phone=?').get(otherPhone)
+    || db.prepare('SELECT name FROM riders WHERE phone=?').get(otherPhone)
+    || { name: '未知用户' };
+  return { id: conv.id, other_phone: otherPhone, other_name: otherUser.name };
 }));
 
 // ─── 会话列表 ──────────────────────────────────────────────

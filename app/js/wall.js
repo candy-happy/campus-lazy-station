@@ -1,4 +1,4 @@
-// wall.js - 校园墙
+﻿// wall.js - 校园墙
 // 依赖: core.js (需先加载)
 // 新功能请添加为独立JS模块，不要在骨架文件中添加代码
 
@@ -563,17 +563,14 @@
       el.innerHTML = `
         <!-- 帖子主体 -->
         <div style="background:var(--card);border-radius:16px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06)">
-          <!-- 顶部渐变条 -->
-          <div style="height:4px;background:linear-gradient(90deg,#FF6B2B,#FF8F5E,#FFB088,#FF8F5E,#FF6B2B)"></div>
           <div style="padding:18px 16px 16px">
           <!-- 作者信息 -->
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-            <div style="position:relative;flex-shrink:0">
-              ${avatarHtml(data.avatar, data.nickname, 48)}
-              <div style="position:absolute;inset:-3px;border-radius:50%;border:3px solid transparent;background:linear-gradient(135deg,#FF6B2B,#FFB088) border-box;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:destination-out;mask-composite:exclude;pointer-events:none"></div>
+            <div style="position:relative;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showWallUser('${escHtml(data.phone)}')">
+              ${avatarHtml(data.avatar, data.nickname, 56)}
             </div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:16px;font-weight:800;color:var(--text);line-height:1.3">${escHtml(data.nickname||'匿名')}</div>
+            <div style="flex:1;min-width:0" onclick="event.stopPropagation();showWallUser('${escHtml(data.phone)}')" title="查看个人主页">
+              <div style="font-size:16px;font-weight:800;color:var(--primary);line-height:1.3;cursor:pointer">${escHtml(data.nickname)}</div>
               <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">${timeAgo(data.created_at)}</div>
             </div>
             <span style="position:relative;flex-shrink:0"><button onclick="event.stopPropagation();toggleInlineActions(this,${data.id},'${escHtml(data.phone)}',event)" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer;padding:8px 10px;border-radius:50%;transition:all 0.2s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'">⋯</button><span class="wall-inline-actions" style="display:none;position:absolute;right:0;top:100%;background:var(--card);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:6px;z-index:50;min-width:120px;margin-top:4px" onmouseleave="this.classList.remove('open')">${detailInlineActions}</span></span>
@@ -728,7 +725,7 @@
       if (data.bio && data.bio !== 'null') {
         contactHtml = '<div style="font-size:13px;color:rgba(255,255,255,0.9);margin-top:8px;padding:0 20px;text-shadow:0 1px 2px rgba(0,0,0,0.2)">' + escHtml(data.bio) + '</div>' + contactHtml;
       }
-      const el = document.getElementById('wallDetailContent');
+      const el = document.getElementById('wallProfileContent');
       el.innerHTML = `
         <div style="text-align:center;padding:32px 0 20px;position:relative;overflow:hidden;border-radius:16px 16px 0 0;margin-bottom:16px;${bgStyle}">
           <div style="position:relative;z-index:1">
@@ -746,17 +743,17 @@
         <div style="font-weight:700;margin-bottom:12px">📝 ${isMe ? '我的' : 'TA的'}帖子</div>
         ${posts.length ? posts.map(p => `
           <div class="wall-card" style="margin-bottom:12px">
-            <div class="wall-content" onclick="closeSubPage('wallDetailPage_sub');showWallDetail(${p.id})">${escHtml(p.content)}</div>
+            <div class="wall-content" onclick="closeSubPage('wallProfilePage_sub');showWallDetail(${p.id})">${escHtml(p.content)}</div>
             ${p.images && p.images.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + (Array.isArray(p.images) ? p.images : []).map(img => {
               const url = typeof img === 'object' ? img.url : img;
               const isVid = typeof img === 'object' ? img.isVideo : false;
               return isVid ? '<video src="' + url + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px" muted></video>' : '<img src="' + url + '" style="width:80px;height:80px;object-fit:cover;border-radius:6px" loading="lazy" />';
             }).join('') + '</div>' : ''}
-            <div class="wall-actions"><button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button><button class="wall-action" onclick="closeSubPage('wallDetailPage_sub');showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button></div>
+            <div class="wall-actions"><button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button><button class="wall-action" onclick="closeSubPage('wallProfilePage_sub');showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button></div>
           </div>
         `).join('') : '<div style="text-align:center;color:var(--text-secondary,#888);padding:20px">暂无帖子</div>'}
       `;
-      openSubPage('wallDetailPage_sub');
+      openSubPage('wallProfilePage_sub');
     }
 
 
@@ -799,7 +796,7 @@
         }
         return;
       }
-      closeSubPage('wallDetailPage_sub');
+      closeSubPage('wallProfilePage_sub');
       currentConvId = res.id;
       currentConvPhone = otherPhone;
       const profile = await API.wallUserProfile(otherPhone);
@@ -828,7 +825,7 @@
         }
         return;
       }
-      closeSubPage('wallDetailPage_sub');
+      closeSubPage('wallProfilePage_sub');
       currentConvId = res.id;
       currentConvPhone = otherPhone;
       const profile = await API.wallUserProfile(otherPhone);
@@ -903,7 +900,7 @@
           ? '<button onclick="toggleFollowFromList(\''+u.phone+'\',this)" class="follow-list-btn follow-list-btn-followed">已关注</button>'
           : '<button onclick="toggleFollowFromList(\''+u.phone+'\',this)" class="follow-list-btn follow-list-btn-follow">+ 关注</button>'
         );
-        return '<div class="follow-list-item" style="animation-delay:' + (i*0.04) + 's" onclick="closeSubPage(\'followListPage_sub\');closeSubPage(\'wallDetailPage_sub\');setTimeout(()=>showWallUser(\''+u.phone+'\'),100)">' +
+        return '<div class="follow-list-item" style="animation-delay:' + (i*0.04) + 's" onclick="closeSubPage(\'followListPage_sub\');closeSubPage(\'wallProfilePage_sub\');setTimeout(()=>showWallUser(\''+u.phone+'\'),100)">' +
           '<div class="follow-list-avatar" style="background:linear-gradient(135deg,' + _avatarColor(i) + ')">' + avatarHtml + '</div>' +
           '<div class="follow-list-info"><div class="follow-list-name">' + escHtml(u.nickname) + '</div>' +
           (type === 'followers' && u.isFollowing ? '<span class="follow-list-mutual">互相关注</span>' : '') +
@@ -1073,27 +1070,26 @@
         el.innerHTML = shareBanner + '<div style="padding:40px;text-align:center;color:var(--text-secondary)">暂无消息</div>';
         return;
       }
-      // 通知条目渲染
-      const iconMap = {order:'📦',wall_like:'❤️',wall_comment:'💬',rating:'⭐',promo:'🎉'};
-      const clsMap = {order:'order',wall_like:'system',wall_comment:'system',rating:'promo',promo:'promo'};
-      const notifItems = notifArr.map(n => {
-        const icon = iconMap[n.type] || '🔔';
-        const cls = clsMap[n.type] || 'system';
-        const unreadDot = n.read ? '' : '<span class="chat-item-badge" style="min-width:8px;height:8px;border-radius:50%;padding:0"></span>';
-        return `<div class="chat-item" data-notif-id="${n.id}" onclick="markNotifRead(${n.id})">
-          <div class="chat-item-avatar notif-avatar ${cls}">${icon}</div>
-          <div class="chat-item-info">
-            <div class="chat-item-top">
-              <span class="chat-item-name">🔔 ${escHtml(n.title)}</span>
-              <span class="chat-item-time">${timeAgo(n.created_at)}</span>
-            </div>
-            <div class="chat-item-bottom">
-              <span class="chat-item-msg">${escHtml(n.content)}</span>
-              ${unreadDot}
-            </div>
+      // 通知汇总条目（合并为一个对话）
+      const unreadNotifCount = notifArr.filter(n => !n.read).length;
+      const latestNotif = notifArr.length > 0 ? notifArr[0] : null;
+      const notifPreview = latestNotif ? escHtml(latestNotif.title) : '暂无通知';
+      const notifTime = latestNotif ? timeAgo(latestNotif.created_at) : '';
+      const notifBadge = unreadNotifCount > 0 ? '<span class="chat-item-badge">' + (unreadNotifCount > 99 ? '99+' : unreadNotifCount) + '</span>' : '';
+
+      const notifItem = `<div class="chat-item" onclick="openNotifConv()">
+        <div class="chat-item-avatar notif-avatar system">🔔</div>
+        <div class="chat-item-info">
+          <div class="chat-item-top">
+            <span class="chat-item-name">通知</span>
+            <span class="chat-item-time">${notifTime}</span>
           </div>
-        </div>`;
-      });
+          <div class="chat-item-bottom">
+            <span class="chat-item-msg">${notifPreview}</span>
+            ${notifBadge}
+          </div>
+        </div>
+      </div>`;
       // 私信条目渲染
       const chatItems = (list || []).map(c => `
         <div class="chat-item" onclick="${window._pendingSharePostId ? 'window.shareAndOpenConv' : 'openChatConv'}(${c.id},'${escHtml(c.other_phone)}','${escHtml(c.other_name)}')">
@@ -1111,7 +1107,7 @@
         </div>
       `);
       // 通知在前，私信在后
-      el.innerHTML = shareBanner + notifItems.join('') + chatItems.join('');
+      el.innerHTML = shareBanner + notifItem + chatItems.join('');
       // 导出分享+打开会话的组合函数
       window.shareAndOpenConv = function(convId, otherPhone, otherName) {
         if (window._pendingSharePostId) {
@@ -1128,6 +1124,46 @@
       try { await API.markRead(currentUser.phone); } catch(e) {}
       loadChatList();
       if (typeof updateMsgBadge === 'function') updateMsgBadge();
+    }
+
+    // 打开通知对话
+    async function openNotifConv() {
+      try { await API.markRead(currentUser.phone); } catch(e) {}
+      if (typeof updateMsgBadge === 'function') updateMsgBadge();
+      document.getElementById('chatConversation').style.display = 'none';
+      document.getElementById('notifConversation').style.display = 'flex';
+      await loadNotifMessages();
+    }
+
+    // 关闭通知对话，回到消息列表
+    function backFromNotifConv() {
+      document.getElementById('notifConversation').style.display = 'none';
+      loadChatList();
+    }
+
+    // 加载通知对话内容
+    let _notifFingerprint = '';
+    async function loadNotifMessages() {
+      const notifs = await API.getNotifications(currentUser.phone).catch(() => []);
+      const arr = Array.isArray(notifs) ? notifs : [];
+      const fp = arr.length + ':' + (arr.length > 0 ? arr[arr.length-1].id : '');
+      if (fp === _notifFingerprint) return;
+      _notifFingerprint = fp;
+      const el = document.getElementById('notifMessages');
+      const iconMap = {order:'📦',wall_like:'❤️',wall_comment:'💬',rating:'⭐',promo:'🎉'};
+      el.innerHTML = arr.map(n => {
+        const icon = iconMap[n.type] || '🔔';
+        const time = new Date(n.created_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+        return `<div style="display:flex;justify-content:center;margin:8px 0;font-size:12px;color:var(--text-secondary)">${time}</div>
+          <div style="display:flex;justify-content:flex-start;padding:4px 12px">
+            <div style="background:var(--card);border-radius:16px 16px 16px 4px;padding:10px 14px;max-width:85%;box-shadow:0 1px 4px rgba(0,0,0,0.06);line-height:1.6;font-size:14px">
+              <div style="margin-bottom:4px;font-size:15px">${icon} ${escHtml(n.title)}</div>
+              <div style="color:var(--text-secondary)">${escHtml(n.content)}</div>
+            </div>
+          </div>`;
+      }).join('');
+      if (arr.length === 0) el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary)">暂无通知</div>';
+      el.scrollTop = el.scrollHeight;
     }
 
 
@@ -1380,7 +1416,7 @@
       // 拉黑按钮：非自己可见
       const blockBtn = (!isOwn) ? `<button onclick="doBlockUser('${postPhone}')" style="display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--bg);border:none;border-top:1px solid var(--border);cursor:pointer;font-size:15px;color:#E74C3C;text-align:left;width:100%">🚷 拉黑该用户</button>` : '';
       ov.innerHTML = `
-        <div style="background:var(--card-bg);border-radius:16px 16px 0 0;width:100%;max-width:420px;animation:slideUp 0.25s;padding-bottom:env(safe-area-inset-bottom)">
+        <div style="background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:420px;animation:slideUp 0.25s;padding-bottom:env(safe-area-inset-bottom)">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px">
             <div style="font-size:17px;font-weight:700">更多操作</div>
             <button onclick="document.getElementById('postMoreOverlay').remove()" style="background:none;border:none;font-size:22px;color:var(--text-secondary);cursor:pointer">✕</button>
@@ -1410,7 +1446,7 @@
       overlay.id = 'shareOverlay';
       overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10001;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s';
       overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
-      overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:16px 16px 0 0;width:100%;max-width:420px;padding:20px 16px 32px;animation:slideUp 0.3s"><div style="text-align:center;padding:40px 0;color:var(--text-secondary)"><div style="font-size:32px;margin-bottom:12px">⏳</div><div>加载好友列表...</div></div></div>';
+      overlay.innerHTML = '<div style="background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:420px;padding:20px 16px 32px;animation:slideUp 0.3s"><div style="text-align:center;padding:40px 0;color:var(--text-secondary)"><div style="font-size:32px;margin-bottom:12px">⏳</div><div>加载好友列表...</div></div></div>';
       document.body.appendChild(overlay);
 
       // 并行拉取关注列表和粉丝列表
@@ -1511,7 +1547,7 @@
       function renderModal() {
         overlay.innerHTML = '';
         var sheet = document.createElement('div');
-        sheet.style.cssText = 'background:var(--card-bg);border-radius:20px 20px 0 0;width:100%;max-width:440px;animation:slideUp 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;max-height:88vh;box-shadow:0 -8px 32px rgba(0,0,0,0.12)';
+        sheet.style.cssText = 'background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:440px;animation:slideUp 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;max-height:88vh;box-shadow:0 -8px 32px rgba(0,0,0,0.12)';
         overlay.appendChild(sheet);
 
         // === 顶部拖拽条 ===
@@ -1551,7 +1587,7 @@
 
         // === 底部发送栏 ===
         var bottomBar = document.createElement('div');
-        bottomBar.style.cssText = 'flex-shrink:0;padding:12px 20px 20px;display:flex;gap:10px;align-items:center;background:linear-gradient(180deg,transparent 0%,var(--card-bg) 20%);border-top:1px solid var(--border)';
+        bottomBar.style.cssText = 'flex-shrink:0;padding:12px 20px 20px;display:flex;gap:10px;align-items:center;background:linear-gradient(180deg,transparent 0%,var(--card) 20%);border-top:1px solid var(--border)';
         bottomBar.innerHTML = '<button id="shareSendBtn" style="flex:1;padding:15px;background:linear-gradient(135deg,#E0E0E0,#D0D0D0);color:#999;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:default;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);letter-spacing:0.5px" disabled><span id="shareSendText">选择好友发送</span></button>';
         sheet.appendChild(bottomBar);
 
@@ -1559,7 +1595,7 @@
         if (users.length === 0) {
           overlay.innerHTML = '';
           var emptySheet = document.createElement('div');
-          emptySheet.style.cssText = 'background:var(--card-bg);border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:32px 20px 40px;animation:slideUp 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;align-items:center;text-align:center';
+          emptySheet.style.cssText = 'background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:32px 20px 40px;animation:slideUp 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;align-items:center;text-align:center';
           emptySheet.innerHTML = '<div style="width:72px;height:72px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:16px">👥</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)">还没有好友</div><div style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;line-height:1.5">关注别人或被关注后<br/>即可分享帖子给好友</div><button onclick="document.getElementById(\'shareOverlay\').remove()" style="padding:12px 36px;background:var(--primary);color:white;border:none;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer">知道了</button>';
           overlay.appendChild(emptySheet);
           return;
@@ -1695,7 +1731,7 @@
       }
 
       if (users.length === 0) {
-        overlay.innerHTML = '<div style="background:var(--card-bg);border-radius:16px 16px 0 0;width:100%;max-width:420px;padding:20px 16px 32px;animation:slideUp 0.3s"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div style="font-size:17px;font-weight:700">📤 分享帖子给好友</div><button onclick="document.getElementById(\'shareOverlay\').remove()" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer">✕</button></div><div style="text-align:center;padding:40px 0;color:var(--text-secondary)"><div style="font-size:32px;margin-bottom:12px">😢</div><div>还没有好友</div><div style="font-size:12px;margin-top:4px">关注别人或被关注后即可分享</div></div></div>';
+        overlay.innerHTML = '<div style="background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:420px;padding:20px 16px 32px;animation:slideUp 0.3s"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div style="font-size:17px;font-weight:700">📤 分享帖子给好友</div><button onclick="document.getElementById(\'shareOverlay\').remove()" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer">✕</button></div><div style="text-align:center;padding:40px 0;color:var(--text-secondary)"><div style="font-size:32px;margin-bottom:12px">😢</div><div>还没有好友</div><div style="font-size:12px;margin-top:4px">关注别人或被关注后即可分享</div></div></div>';
         return;
       }
 
@@ -1731,7 +1767,7 @@
           </div>
         </div>` : '';
       overlay.innerHTML = `
-        <div style="background:var(--card-bg);border-radius:16px 16px 0 0;width:100%;max-width:420px;padding:20px 16px 32px;animation:slideUp 0.3s">
+        <div style="background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:420px;padding:20px 16px 32px;animation:slideUp 0.3s">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
             <div style="font-size:17px;font-weight:700">🚫 举报</div>
             <button onclick="document.getElementById('reportOverlay').remove()" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer">✕</button>
@@ -2398,6 +2434,9 @@ window.initMessagePage = initMessagePage;
 window.loadChatList = loadChatList;
 window.openChatConv = openChatConv;
 window.backToChatList = backToChatList;
+window.openNotifConv = openNotifConv;
+window.backFromNotifConv = backFromNotifConv;
+window.loadNotifMessages = loadNotifMessages;
 window.markNotifRead = markNotifRead;
 window.loadChatMessages = loadChatMessages;
 window.sendChatMsg = sendChatMsg;

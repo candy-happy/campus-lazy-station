@@ -1625,6 +1625,24 @@
     body.dark .notif-icon.order { background: #3d2010; }
     body.dark .notif-icon.system { background: #1a2d40; }
     body.dark .notif-icon.promo { background: #1a3020; }
+    /* 通知气泡（系统通知对话中） */
+    .notif-msg {
+      display: flex;
+      justify-content: center;
+      margin: 8px 0;
+    }
+    .notif-msg-bubble {
+      width: 85%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      text-align: left;
+    }
+    .notif-msg-icon { font-size: 28px; margin-bottom: 6px; }
+    .notif-msg-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .notif-msg-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .notif-msg-time { font-size: 11px; color: var(--text-light); margin-top: 8px; }
 
     /* 聊天输入栏美化 */
     .chat-input-bar {
@@ -2225,11 +2243,11 @@
     /* 我的页 - 个人卡片 */
     .me-profile-card {
       position: relative;
-      background: #FFFAF7;
+      background: var(--gradient);
       border-radius: var(--radius);
       padding: 28px 20px 20px;
-      color: #1a1a1a;
-      box-shadow: 0 6px 24px rgba(255,107,53,0.2);
+      color: #fff;
+      box-shadow: 0 6px 24px rgba(255,107,53,0.25);
       overflow: hidden;
       cursor: pointer;
       transition: transform 0.2s;
@@ -2241,7 +2259,7 @@
       top: -30px; right: -30px;
       width: 120px; height: 120px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.1);
     }
     .me-profile-card::after {
       content: '';
@@ -2249,7 +2267,7 @@
       bottom: -20px; left: 20px;
       width: 80px; height: 80px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.1);
     }
     .me-profile-top {
       display: flex;
@@ -2261,15 +2279,13 @@
     .me-avatar-wrap {
       width: 68px; height: 68px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.2);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 38px;
       flex-shrink: 0;
-      border: 3px solid rgba(255,255,255,0.6);
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     .me-avatar-wrap img {
       width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
@@ -2280,7 +2296,7 @@
     }
     .me-nickname {
       font-size: 19px;
-      font-weight: 900;
+      font-weight: 800;
       line-height: 1.3;
       white-space: nowrap;
       overflow: hidden;
@@ -2288,12 +2304,12 @@
     }
     .me-phone {
       font-size: 13px;
-      color: rgba(0,0,0,0.65);
+      opacity: 0.8;
       margin-top: 2px;
     }
     .me-bio {
       font-size: 12px;
-      color: rgba(0,0,0,0.6);
+      opacity: 0.7;
       margin-top: 4px;
       white-space: nowrap;
       overflow: hidden;
@@ -2301,7 +2317,7 @@
     }
     .me-edit-hint {
       font-size: 11px;
-      color: rgba(0,0,0,0.5);
+      opacity: 0.6;
       margin-top: 6px;
       display: flex;
       align-items: center;
@@ -2523,11 +2539,7 @@
     .profile-save-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(255,107,53,0.2); }
 
     /* 暗色模式 */
-    body.dark .me-profile-card { box-shadow: 0 6px 24px rgba(0,0,0,0.4); color: #e0e0e0; }
-    body.dark .me-phone { color: rgba(255,255,255,0.55); }
-    body.dark .me-bio { color: rgba(255,255,255,0.45); }
-    body.dark .me-edit-hint { color: rgba(255,255,255,0.4); }
-    body.dark .me-avatar-wrap { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); box-shadow: none; }
+    body.dark .me-profile-card { box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
     body.dark .me-stats-bar { box-shadow: var(--shadow); }
     body.dark .me-menu-card { box-shadow: var(--shadow); }
     body.dark .profile-hero { box-shadow: var(--shadow); }
@@ -3543,3 +3555,24 @@
     display: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   帖子详情页 — 视差滚动 (Parallax Cover)
+   Layer 0: 固定背景图  Layer 1: transform 位移内容
+═══════════════════════════════════════════════════════════ */
+
+.pd-parallax.sub-page {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  background: #f0f2f5;
+  /* 覆盖 .sub-page 的 transform（position:fixed子元素会受父级transform影响）
+     用 margin-left + calc 实现居中，避免使用 transform */
+  transform: none;
+  left: 50%;
+  margin-left: calc(-1 * min(240px, 50vw));
+  width: 100%;
+  max-width: 480px;
+}
+
+

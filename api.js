@@ -91,10 +91,10 @@ const API = {
   },
 
   // ─── 用户 ───
-  async userLogin(name, phone) {
+  async userLogin(name, phone, captchaCode, captchaKey) {
     const res = await fetch('/api/user/login', {
       method: 'POST', headers: this._headers(),
-      body: JSON.stringify({ name, phone })
+      body: JSON.stringify({ name, phone, captcha: captchaCode, captchaKey })
     }).then(r => r.json());
     if (res.error) throw new Error(res.error);
     this._user = { ...res.user, phone_original: phone };

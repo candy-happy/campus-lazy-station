@@ -1,4 +1,4 @@
-// market.js - 二手市场
+﻿// market.js - 二手市场
 // 依赖: core.js (需先加载)
 // 新功能请添加为独立JS模块，不要在骨架文件中添加代码
 
@@ -347,8 +347,7 @@
       try {
         const res = await API.marketItemChat(itemId);
         if (res.ok && res.conversation_id) {
-          closeSubPage('itemDetailPage_sub');
-          openChatWithId(res.conversation_id);
+          openChatWithId(res.conversation_id, res.other_phone, res.other_name);
         } else {
           showToast(res.error || '创建会话失败');
         }
@@ -797,7 +796,7 @@
       if (!currentUser) return;
       try {
         const res = await API.chatGetOrCreateConversation({ user_phone: currentUser.phone, rider_phone: phone });
-        if (res.id) openChatWithId(res.id);
+        if (res.id) openChatWithId(res.id, res.other_phone, res.other_name);
         else showToast(res.error || '打开聊天失败');
       } catch(e) { showToast('操作失败'); }
     }

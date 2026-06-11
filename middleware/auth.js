@@ -3,6 +3,21 @@ const { verifyToken } = require('../utils/jwt');
 const { ErrorCode } = require('../utils/response');
 const db = require('../config/database');
 
+// ─── 骑手冻结缓存 ──────────────────────────────────────
+let frozenRiders = new Set();
+let frozenCacheTime = 0;
+const FROZEN_CACHE_TTL = 30000; // 30秒刷新一次
+function getFrozenRiders() {
+  if (Date.now() - frozenCacheTime > FROZEN_CACHE_TTL) {
+    try {
+      const rows = db.prepare('SELECT rider_phone FROM token_blacklist').all();
+      frozenRiders = new Set(rows.map(r => r.rider_phone));
+      frozenCacheTime = Date.now();
+    } catch(e) { /* DB 错误时继续使用旧缓存 */ }
+  }
+  return frozenRiders;
+}
+
 // ─── 通用错误码映射 ──────────────────────────────────────
 const AUTH_ERRORS = {
   NO_TOKEN: { code: 'AUTH_001', message: '请先登录' },
@@ -35,10 +50,9 @@ function requireAuth(req, res, next) {
   if (!req.user) {
     return makeError(res, 401, AUTH_ERRORS.NO_TOKEN);
   }
-  // 检查骑手是否被冻结：通过 token_blacklist 中的 phone 标记
+  // 检查骑手是否被冻结：内存缓存（每30秒刷新）
   if (req.user.type === 'rider' && req.user.phone) {
-    const blocked = db.prepare('SELECT 1 FROM token_blacklist WHERE rider_phone = ? LIMIT 1').get(req.user.phone);
-    if (blocked) {
+    if (getFrozenRiders().has(req.user.phone)) {
       return res.status(403).json({
         error: '你的账号已被冻结，即将退出',
         code: 'RIDER_FROZEN',

@@ -12,6 +12,7 @@ const app = express();
 const PORT = config.PORT;
 
 // ─── 基础中间件 ────────────────────────────────────────
+app.use(require('compression')()); // gzip/deflate 压缩
 app.use(securityHeaders);
 app.use(requestLogger); // 请求日志与安全检测
 // CORS 配置：限制来源白名单
@@ -46,12 +47,24 @@ app.use(rateLimit());
 
 // ─── 静态文件服务（禁用缓存） ────────────────────────────
 app.use(express.static(path.join(__dirname), {
-  etag: false,
-  maxAge: 0,
-  setHeaders: (res) => {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+  etag: true,
+  maxAge: config.NODE_ENV === 'production' ? 3600000 : 0,
+  setHeaders: (res, filePath) => {
+    if (config.NODE_ENV === 'production') {
+      // 生产环境：HTML 短期缓存，图片/字体/CDN 资源长期缓存
+      if (/\.(html)$/i.test(filePath)) {
+        res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
+      } else if (/\.(css|js)$/i.test(filePath)) {
+        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+      }
+    } else {
+      // 开发环境：禁用缓存，方便调试
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
   }
 }));
 

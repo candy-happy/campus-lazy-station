@@ -65,11 +65,11 @@ function callDeepSeek(messages, maxTokens = 1024) {
   });
 }
 
-// ─── 图片 base64 编码 ──────────────────────────────────────
-function imageToBase64(imgPath) {
+// ─── 图片 base64 编码（异步） ────────────────────────────
+async function imageToBase64(imgPath) {
   const full = path.join(__dirname, '..', imgPath);
-  if (!fs.existsSync(full)) return null;
-  const buf = fs.readFileSync(full);
+  try { await fs.promises.access(full); } catch(e) { return null; }
+  const buf = await fs.promises.readFile(full);
   const ext = path.extname(imgPath).toLowerCase();
   const mime = ext === '.png' ? 'image/png' : ext === '.gif' ? 'image/gif' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
   return { mime, base64: buf.toString('base64') };
@@ -112,7 +112,7 @@ async function checkMarketItem(item) {
     // 图片单独用一轮检测
     const imgResults = [];
     for (let i = 0; i < Math.min(images.length, 3); i++) {
-      const imgData = imageToBase64(images[i]);
+      const imgData = await imageToBase64(images[i]);
       if (imgData) {
         try {
           const imgResult = await callDeepSeek([
@@ -197,7 +197,7 @@ async function checkWallPost(post) {
   if (images.length > 0) {
     const imgResults = [];
     for (let i = 0; i < Math.min(images.length, 3); i++) {
-      const imgData = imageToBase64(images[i]);
+      const imgData = await imageToBase64(images[i]);
       if (imgData) {
         try {
           const imgResult = await callDeepSeek([

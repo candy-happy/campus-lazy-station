@@ -271,7 +271,7 @@ router.post('/items/:id/chat', requireAuth, (req, res) => JSON_RES(res, () => {
     ).run(conv.id, phone, JSON.stringify({ itemId: item.id, title: item.title, price: item.price, image: img }), 'market_item');
   }
 
-  return { ok: true, conversation_id: conv.id };
+  return { ok: true, conversation_id: conv.id, other_phone: item.seller_phone, other_name: (db.prepare('SELECT name FROM users WHERE phone=?').get(item.seller_phone) || {}).name || '卖家' };
 }));
 
 // ─── 购买下单 ─────────────────────────────────────────────

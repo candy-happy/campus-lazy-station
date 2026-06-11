@@ -45,9 +45,12 @@ function startCleanup() {
     const now = Date.now();
     let removed = 0;
     for (const [key, timestamps] of windows) {
-      // 找出该key所有分类中最大的windowMs
-      const maxWindow = Math.max(...Object.values(CATEGORIES).map(c => c.windowMs));
-      const filtered = timestamps.filter(t => now - t <= maxWindow);
+      // 从 key 提取分类名 (格式: "category:ip")，使用对应分类的 windowMs
+      const colonIdx = key.indexOf(':');
+      const catKey = colonIdx > 0 ? key.slice(0, colonIdx) : null;
+      const cat = catKey && CATEGORIES[catKey];
+      const catWindow = cat ? cat.windowMs : 15 * 60 * 1000;
+      const filtered = timestamps.filter(t => now - t <= catWindow);
       if (filtered.length === 0) {
         windows.delete(key);
         removed++;

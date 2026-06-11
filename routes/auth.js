@@ -6,23 +6,36 @@ const db = require('../config/database');
 const { generateToken } = require('../utils/jwt');
 const { fmtPhone, sanitizeString, isValidPhone } = require('../utils/helpers');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
+const captcha = require('../utils/captcha');
+const crypto = require('crypto');
 const { optionalAuth, requireAdmin } = require('../middleware/auth');
 const rateLimit = require('../middleware/rateLimit');
+
+// ─── 获取图形验证码 ─────────────────────────────────────────
+// 用 phone 作为 key，同一手机号一段时间内只能有一个有效验证码
+router.get('/captcha', (req, res) => {
+  const phone = req.query.phone || 'default';
+  const { svg } = captcha.create(phone);
+  res.set('Content-Type', 'image/svg+xml');
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.send(svg);
+});
 
 // ─── 用户登录 ─────────────────────────────────────────────
 // 登录接口严格限速：每IP每分钟最多5次
 const loginRateLimit = rateLimit(5, 60 * 1000);
 
 router.post('/user/login', loginRateLimit, (req, res) => JSON_RES(res, () => {
-  const { name, phone, captcha } = req.body;
+  const { name, phone, captcha: captchaInput, captchaKey } = req.body;
   
   // 输入验证
   if (!phone || !isValidPhone(phone)) return makeError('请输入正确手机号', ErrorCode.USER_PHONE_INVALID);
   const sanitizedName = sanitizeString(name || '同学', 20);
 
-  // 验证码验证（预留接口，生产环境应启用）
-  // if (!captcha) return makeError('请输入验证码', ErrorCode.PARAM_MISSING);
-  // if (!verifyCaptcha(phone, captcha)) return makeError('验证码错误', ErrorCode.CAPTCHA_INVALID);
+  // 验证码验证
+  if (!captchaInput) return makeError('请输入验证码', ErrorCode.PARAM_MISSING);
+  const key = captchaKey || phone;
+  if (!captcha.verify(key, captchaInput)) return makeError('验证码错误或已过期', ErrorCode.CAPTCHA_INVALID);
 
   let user = db.prepare('SELECT * FROM users WHERE phone = ?').get(phone);
   if (!user) {

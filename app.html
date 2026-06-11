@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -8,13 +8,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>校园圈</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="app/css/style.css?v=3.0.28" />
-  <script src="api.js?v=3.0.32"></script>
-  <script src="app/js/core.js?v=3.0.32"></script>
-  <script src="app/js/wall.js?v=3.0.32"></script>
+  <link rel="stylesheet" href="app/css/style.css?v=3.0.38" />
+  <script src="api.js?v=3.0.33"></script>
+  <script src="app/js/core.js?v=3.0.39"></script>
+  <script src="app/js/wall.js?v=3.0.55"></script>
   <script src="app/js/order.js?v=3.0.28"></script>
-  <script src="app/js/market.js?v=3.0.28"></script>
-  <script src="app/js/user.js?v=3.0.28"></script>
+  <script src="app/js/market.js?v=3.0.38"></script>
+  <script src="app/js/user.js?v=3.0.43"></script>
   <script src="app/js/address.js?v=3.0.28"></script>
   <script src="app/js/teachers.js?v=3.0.28"></script>
   <script src="app/js/pets.js?v=3.0.31"></script>
@@ -439,11 +439,24 @@
 
     <!-- 帖子详情子页面 -->
     <div class="sub-page" id="wallDetailPage_sub">
-      <div class="sub-page-header" style="background:var(--card);border-bottom:1px solid var(--border);color:var(--text)">
-        <button class="sub-page-back" onclick="closeSubPage('wallDetailPage_sub')" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;transition:background 0.2s;background:var(--border);color:var(--text)" onmouseover="this.style.background='var(--text-light)'" onmouseout="this.style.background='var(--border)'">←</button>
-        <span class="sub-page-title" style="font-size:17px;font-weight:700;color:var(--text)">帖子详情</span>
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('wallDetailPage_sub')">←</button>
+        <span class="sub-page-title">帖子详情</span>
       </div>
-      <div class="sub-page-body" id="wallDetailContent" style="background:var(--bg);padding-bottom:0"></div>
+      <div class="sub-page-body" style="padding:12px">
+        <div id="wallDetailContent"></div>
+      </div>
+    </div>
+
+    <!-- 个人主页子页面 -->
+    <div class="sub-page" id="wallProfilePage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('wallProfilePage_sub')">←</button>
+        <span class="sub-page-title">个人主页</span>
+      </div>
+      <div class="sub-page-body" style="padding:12px">
+        <div id="wallProfileContent"></div>
+      </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
@@ -498,6 +511,15 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 通知对话 -->
+    <div class="chat-conversation" id="notifConversation" style="display:none">
+      <div class="chat-header">
+        <button class="chat-back" onclick="backFromNotifConv()">←</button>
+        <span class="chat-title">通知</span>
+      </div>
+      <div class="chat-messages" id="notifMessages" style="padding:12px"></div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════

@@ -497,6 +497,7 @@
       if (!el) return;
       el.classList.remove('active');
       el.style.zIndex = '';
+      if (el.scrollTop) el.scrollTop = 0;
       _pageStack = _pageStack.filter(p => p !== id);
       if (_pageStack.length === 0) { document.body.style.overflow = ''; _subPageZBase = 1000; }
     }
@@ -917,7 +918,8 @@
     // ══════ 页面切换 ══════
 
     function switchPage(page) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      // 清除行内样式，恢复CSS class控制
+      document.querySelectorAll('.page').forEach(p => { p.style.display = ''; p.classList.remove('active'); });
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       if (page === 'home') {
         document.getElementById('homePage').classList.add('active');
@@ -980,8 +982,9 @@
         const cardEl = document.querySelector('.me-profile-card');
         if (cardEl) {
           if (pdata?.bg_image) {
-            // 半透明白色覆盖层 + 背景图，保证黑色文字可读
-            cardEl.style.background = 'linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.45)), url(' + pdata.bg_image + ') center/cover no-repeat';
+            cardEl.style.backgroundImage = 'url(' + pdata.bg_image + ')';
+            cardEl.style.backgroundSize = 'cover';
+            cardEl.style.backgroundPosition = 'center';
           } else if (pdata?.bg_color) {
             cardEl.style.background = pdata.bg_color;
           }

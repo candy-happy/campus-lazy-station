@@ -10,6 +10,33 @@ const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { safeJSON, parseImageUrls, validateUploadFile } = require('../utils/helpers');
 const aiChecker = require('./ai');
 
+// ─── 批量头像加载（避免 N+1 查询） ──────────────────────
+function batchLoadAvatars(phones) {
+  const unique = [...new Set(phones)].filter(Boolean);
+  if (unique.length === 0) return new Map();
+  const map = new Map();
+  const placeholders = unique.map(() => '?').join(',');
+  try {
+    db.prepare(`SELECT phone, avatar FROM users WHERE phone IN (${placeholders})`).all(...unique)
+      .forEach(r => { if (r.avatar) map.set(r.phone, r.avatar); });
+  } catch(e) {}
+  try {
+    const remaining = unique.filter(p => !map.has(p));
+    if (remaining.length > 0) {
+      const ph2 = remaining.map(() => '?').join(',');
+      db.prepare(`SELECT phone, avatar FROM riders WHERE phone IN (${ph2})`).all(...remaining)
+        .forEach(r => { if (r.avatar && !map.has(r.phone)) map.set(r.phone, r.avatar); });
+    }
+  } catch(e) {}
+  return map;
+}
+function resolveAvatar(postPhone, postAvatar, avatarMap) {
+  if (postAvatar && (postAvatar.startsWith('/') || postAvatar.startsWith('http'))) return postAvatar;
+  const fromMap = avatarMap.get(postPhone);
+  if (fromMap && (fromMap.startsWith('/') || fromMap.startsWith('http'))) return fromMap;
+  return postAvatar || '';
+}
+
 // ─── AI审核记录写入辅助 ────────────────────────────────
 function logAiReview(source, sourceId, phone, contentPreview, check, action) {
   try {
@@ -202,14 +229,11 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
   if (phone) {
     db.prepare('SELECT following_phone FROM wall_follows WHERE follower_phone = ?').all(phone).forEach(f => followSet.add(f.following_phone));
   }
+  // 批量加载所有帖子作者头像（避免 N+1）
+  const avatarMap = batchLoadAvatars(posts.map(p => p.phone));
   const resultPosts = posts.map(p => {
-    // 如果帖子头像是旧emoji/空，尝试从用户表同步最新头像
-    let avatar = p.avatar;
-    if (!avatar || (!avatar.startsWith('/') && !avatar.startsWith('http'))) {
-      const user = db.prepare('SELECT avatar FROM users WHERE phone = ?').get(p.phone)
-        || db.prepare('SELECT avatar FROM riders WHERE phone = ?').get(p.phone);
-      if (user && user.avatar && (user.avatar.startsWith('/') || user.avatar.startsWith('http'))) avatar = user.avatar;
-    }
+    // 帖子头像从批量查询的结果中取
+    let avatar = resolveAvatar(p.phone, p.avatar, avatarMap);
     return {
       ...p,
       avatar,
@@ -235,24 +259,15 @@ router.get('/posts/:id', (req, res) => JSON_RES(res, () => {
       db.prepare('UPDATE wall_posts SET exposure_count = exposure_count + 1 WHERE id = ?').run(req.params.id);
     }
   } catch (e) {}
-  // 同步最新头像
-  let postAvatar = post.avatar;
-  if (!postAvatar || (!postAvatar.startsWith('/') && !postAvatar.startsWith('http'))) {
-    const user = db.prepare('SELECT avatar FROM users WHERE phone = ?').get(post.phone)
-      || db.prepare('SELECT avatar FROM riders WHERE phone = ?').get(post.phone);
-    if (user && user.avatar && (user.avatar.startsWith('/') || user.avatar.startsWith('http'))) postAvatar = user.avatar;
-  }
   const comments = db.prepare('SELECT * FROM wall_comments WHERE post_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id);
-  // 评论头像同步
-  const enrichedComments = comments.map(c => {
-    let cAvatar = c.avatar;
-    if (!cAvatar || (!cAvatar.startsWith('/') && !cAvatar.startsWith('http'))) {
-      const cu = db.prepare('SELECT avatar FROM users WHERE phone = ?').get(c.phone)
-        || db.prepare('SELECT avatar FROM riders WHERE phone = ?').get(c.phone);
-      if (cu && cu.avatar && (cu.avatar.startsWith('/') || cu.avatar.startsWith('http'))) cAvatar = cu.avatar;
-    }
-    return { ...c, avatar: cAvatar };
-  });
+  // 批量加载帖主+所有评论者头像（避免 N+1）
+  const allPhones = [post.phone, ...comments.map(c => c.phone)];
+  const detailAvatarMap = batchLoadAvatars(allPhones);
+  let postAvatar = resolveAvatar(post.phone, post.avatar, detailAvatarMap);
+  const enrichedComments = comments.map(c => ({
+    ...c,
+    avatar: resolveAvatar(c.phone, c.avatar, detailAvatarMap)
+  }));
   return {
     ...post,
     avatar: postAvatar,
@@ -504,13 +519,10 @@ router.get('/search', (req, res) => JSON_RES(res, () => {
     db.prepare('SELECT following_phone FROM wall_follows WHERE follower_phone = ?').all(phone).forEach(f => followSet.add(f.following_phone));
   }
 
+  // 批量头像（避免 N+1）
+  const avatarMap = batchLoadAvatars(posts.map(p => p.phone));
   return posts.map(p => {
-    let avatar = p.avatar;
-    if (!avatar || (!avatar.startsWith('/') && !avatar.startsWith('http'))) {
-      const user = db.prepare('SELECT avatar FROM users WHERE phone = ?').get(p.phone)
-        || db.prepare('SELECT avatar FROM riders WHERE phone = ?').get(p.phone);
-      if (user && user.avatar && (user.avatar.startsWith('/') || user.avatar.startsWith('http'))) avatar = user.avatar;
-    }
+    let avatar = resolveAvatar(p.phone, p.avatar, avatarMap);
     return {
       ...p,
       avatar,
@@ -802,7 +814,7 @@ function getCategoryMap() {
 }
 
 // ─── 获取可分享的用户列表（关注+粉丝） ─────────────────
-router.get('/users', requireAuth, (req, res) => JSON_RES(res, () => {
+router.get('/shareable-users', requireAuth, (req, res) => JSON_RES(res, () => {
   const phone = req.user.phone;
   const mode = req.query.mode || 'shareable'; // shareable | all
   if (mode !== 'shareable') {

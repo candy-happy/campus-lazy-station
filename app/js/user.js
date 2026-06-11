@@ -78,6 +78,13 @@
                 <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">手机号码</label>
                 <input id="loginPhone" type="tel" placeholder="请输入手机号" maxlength="11" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
               </div>
+              <div style="text-align:left;margin-bottom:24px">
+                <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">验证码</label>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <input id="loginCaptcha" type="text" placeholder="4位数字" maxlength="4" style="flex:1;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box;min-width:0" />
+                  <img id="captchaImg" src="" alt="验证码" onclick="refreshCaptcha()" style="height:44px;border-radius:10px;cursor:pointer;border:2px solid var(--border);flex-shrink:0" title="点击刷新验证码" />
+                </div>
+              </div>
               <button id="loginBtn" onclick="doLogin()" style="width:100%;padding:14px;border:none;border-radius:14px;background:var(--gradient);color:white;font-size:16px;font-weight:700;cursor:pointer">
                 登录 / 注册
               </button>
@@ -98,6 +105,16 @@
       overlay.style.display = 'flex';
       // 初始化按钮状态：未勾选时禁用
       setTimeout(() => updateLoginBtn(), 0);
+      // 加载验证码
+      setTimeout(() => refreshCaptcha(), 100);
+    }
+
+    var _captchaKey = '';
+    function refreshCaptcha() {
+      const phone = document.getElementById('loginPhone')?.value?.trim() || 'default';
+      _captchaKey = phone;
+      const img = document.getElementById('captchaImg');
+      if (img) img.src = '/api/captcha?phone=' + encodeURIComponent(phone) + '&t=' + Date.now();
     }
 
 
@@ -165,7 +182,10 @@
       btn.textContent = '登录中...';
       btn.disabled = true;
       try {
-        const res = await API.userLogin(name, phone);
+        const captchaInput = document.getElementById('loginCaptcha').value.trim();
+        if (!captchaInput) { showToast('请输入验证码'); btn.disabled = false; btn.textContent = '登录 / 注册'; return; }
+        if (captchaInput.length !== 4) { showToast('请输入4位验证码'); btn.disabled = false; btn.textContent = '登录 / 注册'; return; }
+        const res = await API.userLogin(name, phone, captchaInput, _captchaKey);
         const userPhone = res.phone || phone;
         const userName = res.name || name;
         currentUser = { name: userName, phone: userPhone };
@@ -177,6 +197,8 @@
         startOrderPolling();
         showToast('欢迎回来！');
       } catch(e) {
+        // 验证码错误时自动刷新
+        if (e.message && e.message.includes('验证码')) { refreshCaptcha(); document.getElementById('loginCaptcha').value = ''; }
         showToast('登录失败: ' + (e.message || '请重试'));
         console.error('doLogin error:', e);
       } finally {
@@ -409,6 +431,7 @@
 
 // ── Window exports ──
 window.showLoginPage = showLoginPage;
+window.refreshCaptcha = refreshCaptcha;
 window.doLogin = doLogin;
 window.updateLoginBtn = updateLoginBtn;
 window.showTermsModal = showTermsModal;
