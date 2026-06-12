@@ -18,3 +18,5 @@ _migrate*.js
 _schema*.js
 _patch*.js
 .env
+*.bak-shm
+*.bak-wal

@@ -42,8 +42,6 @@ module.exports = {
   // 管理端入口路径（安全：隐藏后台入口）
   ADMIN_ENTRY_PATH: 'admin.html',
 
-  // CORS 白名单（生产环境可配置）
-  CORS_ORIGINS: process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',')
-    : '*',
+  // CORS 白名单（生产环境可配置。默认空字符串让 server.js 走硬编码兜底）
+  CORS_ORIGINS: process.env.CORS_ORIGINS || '',
 };
