@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const router = express.Router();
 const db = require('../config/database');
-const { optionalAuth, requireAuth } = require('../middleware/auth');
+const { optionalAuth, requireAuth, requireAdmin } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { safeJSON, parseImageUrls, validateUploadFile } = require('../utils/helpers');
 const aiChecker = require('./ai');
@@ -718,6 +718,15 @@ router.post('/report', requireAuth, (req, res) => JSON_RES(res, () => {
   db.prepare("INSERT INTO wall_reports (target_type, target_id, reporter_phone, reason, detail, status, created_at) VALUES (?, ?, ?, ?, ?, 'pending', datetime('now','localtime'))")
     .run(target_type, target_id, phone, reason, detail || '');
 
+  // 同步到统一举报表
+  try {
+    const contentCache = target_type === 'post'
+      ? (db.prepare('SELECT content FROM wall_posts WHERE id=?').get(target_id) || {}).content || ''
+      : (db.prepare('SELECT content FROM wall_comments WHERE id=?').get(target_id) || {}).content || '';
+    db.prepare(`INSERT INTO reports (source,target_type,target_id,target_content,reporter_phone,reason,detail,status,created_at) VALUES ('wall',?,?,?,?,?,?,'pending',datetime('now','localtime'))`)
+      .run(target_type, target_id, contentCache.slice(0,200), phone, reason, detail || '');
+  } catch(e) { console.error('[举报] 同步到统一表失败:', e.message); }
+
   // 同一内容被3人以上举报时自动隐藏
   const reportCount = db.prepare('SELECT COUNT(*) as c FROM wall_reports WHERE target_type = ? AND target_id = ?').get(target_type, target_id).c;
   if (reportCount >= 3) {
@@ -735,7 +744,7 @@ router.post('/report', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 管理端：举报列表 ──────────────────────────────────
-router.get('/reports', requireAuth, (req, res) => JSON_RES(res, () => {
+router.get('/reports', requireAdmin, (req, res) => JSON_RES(res, () => {
   const status = req.query.status || 'pending';
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(50, parseInt(req.query.limit) || 20);
@@ -754,7 +763,7 @@ router.get('/reports', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 管理端：处理举报 ──────────────────────────────────
-router.post('/reports/:id/handle', requireAuth, (req, res) => JSON_RES(res, () => {
+router.post('/reports/:id/handle', requireAdmin, (req, res) => JSON_RES(res, () => {
   const { action, admin_note } = req.body; // action: 'dismiss' | 'remove'
   const report = db.prepare('SELECT * FROM wall_reports WHERE id = ?').get(req.params.id);
   if (!report) return makeError('举报不存在');
@@ -773,7 +782,7 @@ router.post('/reports/:id/handle', requireAuth, (req, res) => JSON_RES(res, () =
 }));
 
 // ─── 置顶/取消置顶帖子 ─────────────────────────────────
-router.post('/pin/:id', requireAuth, (req, res) => JSON_RES(res, () => {
+router.post('/pin/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
   const post = db.prepare('SELECT * FROM wall_posts WHERE id=?').get(req.params.id);
   if (!post) return makeError('帖子不存在', ErrorCode.PARAM_INVALID);
   const newPin = post.is_pinned ? 0 : 1;
@@ -782,7 +791,7 @@ router.post('/pin/:id', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 精华/取消精华帖子 ─────────────────────────────────
-router.post('/feature/:id', requireAuth, (req, res) => JSON_RES(res, () => {
+router.post('/feature/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
   const post = db.prepare('SELECT * FROM wall_posts WHERE id=?').get(req.params.id);
   if (!post) return makeError('帖子不存在', ErrorCode.PARAM_INVALID);
   const newFeature = post.is_featured ? 0 : 1;
@@ -841,6 +850,103 @@ router.get('/shareable-users', requireAuth, (req, res) => JSON_RES(res, () => {
     else if (isFollowing) relation = '已关注';
     return { ...u, relation };
   });
+}));
+
+// ══════════════════════════════════════════════════════
+// 管理端校园墙接口（requireAdmin）
+// ══════════════════════════════════════════════════════
+
+// ─── 管理端帖子列表 ───────────────────────────────────
+router.get('/admin/posts', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { page = 1, limit = 20, keyword = '', status = '' } = req.query;
+  const l = Math.min(parseInt(limit) || 20, 100);
+  const offset = (Math.max(1, parseInt(page) || 1) - 1) * l;
+
+  let needsJoin = false;
+  let where = [];
+  let params = [];
+  if (keyword) {
+    where.push('(p.content LIKE ? OR p.phone LIKE ? OR u.nickname LIKE ?)');
+    params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+    needsJoin = true;
+  }
+  if (status === 'pinned') where.push('p.is_pinned = 1');
+  if (status === 'featured') where.push('p.is_featured = 1');
+  if (status === 'reported') where.push('p.id IN (SELECT target_id FROM wall_reports WHERE target_type = ? AND status = ?)'), params.push('post', 'pending');
+
+  const whereClause = where.length > 0 ? 'WHERE ' + where.join(' AND ') : '';
+
+  const countFrom = needsJoin ? 'wall_posts p LEFT JOIN users u ON p.phone = u.phone' : 'wall_posts p';
+
+  const total = db.prepare(`SELECT COUNT(*) as c FROM ${countFrom} ${whereClause}`).get(...params).c;
+  const posts = db.prepare(`
+    SELECT p.*, u.nickname, u.avatar
+    FROM wall_posts p
+    LEFT JOIN users u ON p.phone = u.phone
+    ${whereClause}
+    ORDER BY p.created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(...params, l, offset);
+
+  // 附加举报数
+  const postIds = posts.map(p => p.id);
+  let reportMap = new Map();
+  if (postIds.length > 0) {
+    const ph = postIds.map(() => '?').join(',');
+    db.prepare(`SELECT target_id, COUNT(*) as c FROM wall_reports WHERE target_type='post' AND target_id IN (${ph}) AND status='pending' GROUP BY target_id`)
+      .all(...postIds).forEach(r => reportMap.set(r.target_id, r.c));
+  }
+
+  return { posts: posts.map(p => ({ ...p, pendingReports: reportMap.get(p.id) || 0 })), total, page: parseInt(page) };
+}));
+
+// ─── 管理端删除帖子（级联删评论、点赞、举报） ──────────
+router.delete('/admin/posts/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const post = db.prepare('SELECT * FROM wall_posts WHERE id = ?').get(req.params.id);
+  if (!post) return makeError('帖子不存在', ErrorCode.PARAM_INVALID);
+
+  db.prepare('DELETE FROM wall_comments WHERE post_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM wall_likes WHERE post_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM wall_reports WHERE target_type = ? AND target_id = ?').run('post', req.params.id);
+  db.prepare('DELETE FROM wall_posts WHERE id = ?').run(req.params.id);
+  return { ok: true };
+}));
+
+// ─── 管理端删除评论 ────────────────────────────────────
+router.get('/admin/comments', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { page = 1, limit = 20, keyword = '' } = req.query;
+  const l = Math.min(parseInt(limit) || 20, 100);
+  const offset = (Math.max(1, parseInt(page) || 1) - 1) * l;
+
+  let where = [];
+  let params = [];
+  if (keyword) {
+    where.push('(c.content LIKE ? OR c.phone LIKE ?)');
+    params.push(`%${keyword}%`, `%${keyword}%`);
+  }
+  const whereClause = where.length > 0 ? 'WHERE ' + where.join(' AND ') : '';
+
+  const total = db.prepare(`SELECT COUNT(*) as c FROM wall_comments c ${whereClause}`).get(...params).c;
+  const comments = db.prepare(`
+    SELECT c.*, u.nickname, u.avatar
+    FROM wall_comments c
+    LEFT JOIN users u ON c.phone = u.phone
+    ${whereClause}
+    ORDER BY c.created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(...params, l, offset);
+
+  return { comments, total, page: parseInt(page) };
+}));
+
+// ─── 管理端删除评论 ────────────────────────────────────
+router.delete('/admin/comments/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const comment = db.prepare('SELECT * FROM wall_comments WHERE id = ?').get(req.params.id);
+  if (!comment) return makeError('评论不存在', ErrorCode.PARAM_INVALID);
+  db.prepare('DELETE FROM wall_comment_likes WHERE comment_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM wall_reports WHERE target_type = ? AND target_id = ?').run('comment', req.params.id);
+  db.prepare('DELETE FROM wall_comments WHERE id = ?').run(req.params.id);
+  return { ok: true };
 }));
 
 module.exports = router;

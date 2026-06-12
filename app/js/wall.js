@@ -1818,8 +1818,10 @@
       } catch(e) { showToast('删除失败，请重试'); }
     }
 
-    // ══════ P0-1: 举报功能 ══════
-    function showReportMenu(targetType, targetId) {
+    // ══════ P0-1: 举报功能（支持 wall/market/pets/teachers） ══════
+    var _reportSource = 'wall';
+    function showReportMenu(targetType, targetId, source) {
+      _reportSource = source || 'wall';
       const reasons = ['广告推广', '色情低俗', '诈骗信息', '人身攻击', '虚假信息', '侵权内容', '其他'];
       const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super');
       const overlay = document.createElement('div');
@@ -1881,10 +1883,34 @@
       const overlay = document.getElementById('reportOverlay');
       if (overlay) overlay.remove();
       try {
-        const res = await API.wallReport(targetType, targetId, reason);
+        var apiMap = {
+          wall: API.wallReport, market: API.marketReport,
+          pet: API.petReport, teacher: API.teacherReport
+        };
+        var fn = apiMap[_reportSource] || API.wallReport;
+        const res = await fn(targetType, targetId, reason);
         if (res.ok) showToast('举报成功，我们会尽快处理');
         else showToast(res.error || '举报失败');
       } catch(e) { showToast('举报失败，请稍后重试'); }
+    }
+
+    // ══════ 分享评论（复制到剪贴板） ══════
+    function shareComment(source, itemName, commentText, author) {
+      var sourceLabel = { market: '二手市场', pet: '猫狗日记', teacher: '师说' }[source] || '校园圈';
+      var text = '📤 [' + sourceLabel + '] ' + (author || '用户') + '：' + commentText + '\n——来自校园圈';
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function() {
+            showToast('📤 已复制分享内容');
+          });
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+          showToast('📤 已复制分享内容');
+        }
+      } catch(e) { showToast('分享失败'); }
     }
 
     // ══════ 拉黑用户 ══════
@@ -2517,6 +2543,7 @@ window.openChatFromOrder = openChatFromOrder;
 window.showChatPrivacyOptions = showChatPrivacyOptions;
 window.setChatPrivacy = setChatPrivacy;
 window.showReportMenu = showReportMenu;
+window.shareComment = shareComment;
 window.showPostMoreMenu = showPostMoreMenu;
 window.doSharePost = doSharePost;
 window.sendShareMessage = sendShareMessage;

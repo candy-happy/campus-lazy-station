@@ -18,7 +18,9 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    phone TEXT UNIQUE NOT NULL,
+    phone TEXT UNIQUE,
+    student_id TEXT UNIQUE,
+    password TEXT,
     nickname TEXT,
     avatar TEXT,
     bio TEXT,
@@ -248,6 +250,25 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now','localtime')),
     handled_at TEXT DEFAULT ''
   );
+
+  -- 统一举报表（校园墙/二手市场/猫狗日记/教师评价/社团/活动）
+  CREATE TABLE IF NOT EXISTS reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source TEXT NOT NULL CHECK(source IN ('wall','market','pet','teacher','club','activity')),
+    target_type TEXT NOT NULL,
+    target_id INTEGER NOT NULL,
+    target_content TEXT DEFAULT '',
+    reporter_phone TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    detail TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','resolved','dismissed')),
+    admin_note TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    handled_at TEXT DEFAULT ''
+  );
+  CREATE INDEX IF NOT EXISTS idx_reports_source ON reports(source);
+  CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
+  CREATE INDEX IF NOT EXISTS idx_reports_reporter ON reports(reporter_phone);
 
   CREATE TABLE IF NOT EXISTS conversations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -594,6 +615,11 @@ const initData = db.transaction(() => {
     insertCoupon.run(1, '新用户专享', 5, 0, '2026-12-31 23:59');
     insertCoupon.run(2, '满10减3', 3, 10, '2026-12-31 23:59');
   }
+
+  // ─── 学号+密码登录迁移 ───────────────────────────
+  try { db.exec("ALTER TABLE users ADD COLUMN student_id TEXT"); } catch(e) { /* 已存在 */ }
+  try { db.exec("ALTER TABLE users ADD COLUMN password TEXT"); } catch(e) { /* 已存在 */ }
+  try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_student_id ON users(student_id)"); } catch(e) { /* 已存在 */ }
 
   // 总管理员
   const bcrypt = require('bcryptjs');

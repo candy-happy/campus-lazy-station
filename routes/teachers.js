@@ -1,7 +1,8 @@
 // routes/teachers.js - 池州学院教师评价系统
 const { Router } = require('express');
-const { JSON_RES } = require('../utils/response');
+const { JSON_RES, makeError } = require('../utils/response');
 const db = require('../config/database');
+const { requireAuth } = require('../middleware/auth');
 const aiChecker = require('./ai');
 const multer = require('multer');
 const path = require('path');
@@ -208,5 +209,18 @@ router.post('/upload-media', reviewUpload.array('files', 6), (req, res) => {
   const urls = req.files.map(f => '/uploads/teacher_reviews/' + f.filename);
   res.json({ urls });
 });
+
+// ─── 举报教师评价 ───────────────────────────────────────
+router.post('/report', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { target_type, target_id, target_content, reason, detail } = req.body;
+  const phone = req.user.phone;
+  if (!target_type || !target_id || !reason) return makeError('参数不完整');
+  if (target_type !== 'review') return makeError('举报类型无效');
+  const existing = db.prepare('SELECT id FROM reports WHERE source=? AND target_type=? AND target_id=? AND reporter_phone=?').get('teacher', target_type, target_id, phone);
+  if (existing) return makeError('您已举报过该内容');
+  db.prepare(`INSERT INTO reports (source,target_type,target_id,target_content,reporter_phone,reason,detail,status,created_at) VALUES ('teacher',?,?,?,?,?,?,'pending',datetime('now','localtime'))`)
+    .run(target_type, target_id, (target_content||'').slice(0,200), phone, reason, detail||'');
+  return { ok: true };
+}));
 
 module.exports = router;

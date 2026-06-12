@@ -7,6 +7,17 @@ const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const aiChecker = require('./ai');
+
+// ─── AI审核记录写入辅助 ────────────────────────────────
+function logAiReview(source, sourceId, phone, contentPreview, check, action) {
+  try {
+    db.prepare(`INSERT INTO ai_review_logs (source, source_id, phone, content_preview, violation, level, category, reason, action)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(source, sourceId, phone, (contentPreview || '').slice(0, 100),
+        check.violation ? 1 : 0, check.level || 'none', check.category || '无', check.reason || '', action || 'pass');
+  } catch(e) { console.error('[AI审核] 写入审核记录失败:', e.message); }
+}
 
 // ─── 辅助：获取当前登录用户手机号 ──────────────────────────
 function getAuthPhone(req) {
@@ -101,7 +112,7 @@ router.get('/conversations', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 发送消息 ──────────────────────────────────────────────
-router.post('/send', requireAuth, (req, res) => JSON_RES(res, () => {
+router.post('/send', requireAuth, (req, res) => JSON_RES(res, async () => {
   const { conversation_id, sender_phone, content, type } = req.body;
   if (!conversation_id || !sender_phone || !content) return makeError('参数不完整', ErrorCode.CHAT_PARAM_INCOMPLETE);
   // 安全校验：发送者必须是当前登录用户
@@ -113,9 +124,28 @@ router.post('/send', requireAuth, (req, res) => JSON_RES(res, () => {
   if (!isConversationParticipant(conversation_id, sender_phone)) {
     return makeError('你不是该会话的参与者', ErrorCode.PARAM_INVALID);
   }
+
+  // ── AI审核文本消息 ────────────────────────────
+  if (type === 'text' || !type) {
+    try {
+      const aiResult = await aiChecker.checkTextContent(content, '校园私聊');
+      if (aiResult.violation && aiResult.level === 'high') {
+        console.log(`[AI审核] 聊天消息被拦截: phone=${sender_phone}, level=${aiResult.level}, reason=${aiResult.reason}`);
+        logAiReview('chat_message', 0, sender_phone, content, aiResult, 'block');
+        return makeError('消息内容不符合平台规范：' + (aiResult.reason || '请修改后重新发送'), 'AI_001');
+      }
+      if (aiResult.violation) console.log(`[AI审核] 聊天消息提醒(未拦截): phone=${sender_phone}, level=${aiResult.level}`);
+    } catch (e) {
+      console.error('[AI审核] 聊天消息审核失败(放行):', e.message);
+    }
+  }
   const r = db.prepare(
     "INSERT INTO messages (conversation_id,sender_phone,content,type,created_at) VALUES (?,?,?,?,datetime('now','localtime'))"
   ).run(conversation_id, sender_phone, content, type || 'text');
+  // 记录AI审核日志
+  if (type === 'text' || !type) {
+    logAiReview('chat_message', r.lastInsertRowid, sender_phone, content, { violation: false, level: 'none', category: '无', reason: '' }, 'pass');
+  }
   db.prepare(
     "UPDATE conversations SET last_message=?, last_message_at=datetime('now','localtime'), last_sender=? WHERE id=?"
   ).run(content.slice(0, 100), sender_phone, conversation_id);

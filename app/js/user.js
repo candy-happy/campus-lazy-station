@@ -32,13 +32,13 @@
   };
 
       const saved = API.restoreSession();
-      if (saved && saved.phone) {
+      if (saved && (saved.phone || saved.student_id)) {
         // 如果phone含脱敏标记，清除session要求重新登录
-        if (saved.phone.includes('*')) {
+        if (saved.phone && saved.phone.includes('*')) {
           API.logout();
           showLoginPage();
         } else {
-          currentUser = { phone: saved.phone, name: saved.name, avatar: saved.avatar || '' };
+          currentUser = { student_id: saved.student_id, phone: saved.phone || '', name: saved.name || '', avatar: saved.avatar || '' };
           var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + (saved.name || '...');
           showMainApp();
           await loadData();
@@ -71,19 +71,13 @@
             <p style="color:var(--text-secondary);font-size:13px;margin-bottom:32px">随时随地，帮我干活</p>
             <div style="background:var(--card);border-radius:20px;padding:28px 24px;box-shadow:var(--shadow)">
               <div style="text-align:left;margin-bottom:20px">
-                <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">您的称呼</label>
-                <input id="loginName" type="text" placeholder="怎么称呼您？" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
+                <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">学号</label>
+                <input id="loginStudentId" type="text" placeholder="请输入9位学号" maxlength="9" inputmode="numeric" pattern="[0-9]*" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
               </div>
               <div style="text-align:left;margin-bottom:24px">
-                <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">手机号码</label>
-                <input id="loginPhone" type="tel" placeholder="请输入手机号" maxlength="11" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
-              </div>
-              <div style="text-align:left;margin-bottom:24px">
-                <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">验证码</label>
-                <div style="display:flex;gap:10px;align-items:center">
-                  <input id="loginCaptcha" type="text" placeholder="4位数字" maxlength="4" style="flex:1;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box;min-width:0" />
-                  <img id="captchaImg" src="" alt="验证码" onclick="refreshCaptcha()" style="height:44px;border-radius:10px;cursor:pointer;border:2px solid var(--border);flex-shrink:0" title="点击刷新验证码" />
-                </div>
+                <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">密码</label>
+                <input id="loginPassword" type="password" placeholder="请输入密码" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
+                <p style="font-size:11px;color:var(--text-secondary);margin-top:4px">首次登录默认密码：shoujihao</p>
               </div>
               <button id="loginBtn" onclick="doLogin()" style="width:100%;padding:14px;border:none;border-radius:14px;background:var(--gradient);color:white;font-size:16px;font-weight:700;cursor:pointer">
                 登录 / 注册
@@ -103,10 +97,7 @@
         document.head.appendChild(s);
       }
       overlay.style.display = 'flex';
-      // 初始化按钮状态：未勾选时禁用
       setTimeout(() => updateLoginBtn(), 0);
-      // 加载验证码
-      setTimeout(() => refreshCaptcha(), 100);
     }
 
     var _captchaKey = '';
@@ -174,31 +165,24 @@
 
     async function doLogin() {
       const btn = document.getElementById('loginBtn');
-      const name = document.getElementById('loginName').value.trim();
-      const phone = document.getElementById('loginPhone').value.trim();
-      if (!name) { showToast('请输入您的称呼'); return; }
-      if (!phoneRegex.test(phone)) { showToast('请输入正确的手机号码'); return; }
+      const studentId = document.getElementById('loginStudentId').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      if (!/^\d{9}$/.test(studentId)) { showToast('请输入正确的9位学号'); return; }
+      if (!password) { showToast('请输入密码'); return; }
       if (!document.getElementById('agreeTerms').checked) { showToast('请先阅读并同意服务条款和隐私协议'); return; }
       btn.textContent = '登录中...';
       btn.disabled = true;
       try {
-        const captchaInput = document.getElementById('loginCaptcha').value.trim();
-        if (!captchaInput) { showToast('请输入验证码'); btn.disabled = false; btn.textContent = '登录 / 注册'; return; }
-        if (captchaInput.length !== 4) { showToast('请输入4位验证码'); btn.disabled = false; btn.textContent = '登录 / 注册'; return; }
-        const res = await API.userLogin(name, phone, captchaInput, _captchaKey);
-        const userPhone = res.phone || phone;
-        const userName = res.name || name;
-        currentUser = { name: userName, phone: userPhone };
-        localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', phone: userPhone, name: userName }));
+        const res = await API.userLogin(studentId, password);
+        currentUser = { student_id: studentId, phone: res.phone || studentId, name: res.name || '同学' };
+        localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', student_id: studentId, phone: res.phone || studentId, name: res.name || '同学' }));
         document.getElementById('loginOverlay').style.display = 'none';
-        var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + userName;
+        var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + (res.name || '同学');
         showMainApp();
         await loadData();
         startOrderPolling();
-        showToast('欢迎回来！');
+        showToast(res.isNewUser ? '🎉 首次登录，默认密码为 shoujihao，记得去设置修改哦' : '欢迎回来！');
       } catch(e) {
-        // 验证码错误时自动刷新
-        if (e.message && e.message.includes('验证码')) { refreshCaptcha(); document.getElementById('loginCaptcha').value = ''; }
         showToast('登录失败: ' + (e.message || '请重试'));
         console.error('doLogin error:', e);
       } finally {
@@ -216,7 +200,10 @@
       if (!currentUser) return showToast(_t('loginFirst'));
       const isDark = document.body.classList.contains('dark');
       // 加载私聊隐私设置
-      API.getChatPrivacy(currentUser.phone).then(pr => {
+      const curPhone = currentUser.phone && /^1[3-9]\d{9}$/.test(currentUser.phone) ? currentUser.phone : '';
+      const displayPhone = curPhone || currentUser.student_id || '';
+      const hasPhone = !!curPhone;
+      API.getChatPrivacy(curPhone || displayPhone).then(pr => {
         const curPrivacy = pr.privacy || 'all';
         const privacyLabels = { all: '所有人', mutual: '互相关注', followers: '关注我的人' };
         let el = document.getElementById('settingsPage_sub');
@@ -254,10 +241,13 @@
           '</div></div>' +
           '<div class="settings-section">' +
           '<div class="settings-section-title">' + _t('settingsAccount') + '</div>' +
-          '<div class="settings-item">' +
-          '<div class="settings-item-left">' + _t('phoneLabel') + '</div>' +
-          '<div class="settings-item-right">' + escHtml(currentUser.phone) + '</div>' +
-          '</div></div>' +
+          (currentUser.student_id ? '<div class="settings-item"><div class="settings-item-left">🎓 学号</div><div class="settings-item-right">' + escHtml(currentUser.student_id) + '</div></div>' : '') +
+          (hasPhone ? '<div class="settings-item"><div class="settings-item-left">' + _t('phoneLabel') + '</div><div class="settings-item-right">' + escHtml(curPhone) + '</div></div>' : '') +
+          '<div class="settings-item" style="cursor:pointer" onclick="showChangePassword()">' +
+          '<div class="settings-item-left">🔑 修改密码</div>' +
+          '<div class="settings-item-right" style="font-weight:600;color:var(--primary)">›</div>' +
+          '</div>' +
+          '</div>' +
           '<button class="settings-logout-btn" onclick="if(confirm(_t(\'logoutConfirm\'))){API.logout();location.reload()}">' + _t('logoutBtn') + '</button>' +
           '<div class="settings-version">' + _t('versionText') + '</div>';
         openSubPage('settingsPage_sub');
@@ -275,6 +265,55 @@
       if (btn) btn.textContent = on ? '☀️' : '🌙';
       closeSubPage('settingsPage_sub');
       setTimeout(() => showSettings(), 200);
+    }
+
+    // ─── 修改密码弹窗 ────────────────────────────────────
+    function showChangePassword() {
+      const old = document.getElementById('changePwdOverlay');
+      if (old) old.remove();
+      const overlay = document.createElement('div');
+      overlay.id = 'changePwdOverlay';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
+      overlay.innerHTML = `
+        <div style="background:var(--card);border-radius:20px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+          <h3 style="font-size:18px;font-weight:700;margin-bottom:20px;text-align:center">🔑 修改密码</h3>
+          <div style="margin-bottom:16px">
+            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px">旧密码</label>
+            <input id="changePwdOld" type="password" placeholder="输入旧密码" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
+          </div>
+          <div style="margin-bottom:20px">
+            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px">新密码</label>
+            <input id="changePwdNew" type="password" placeholder="新密码（至少6位）" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
+          </div>
+          <div style="display:flex;gap:10px">
+            <button onclick="document.getElementById('changePwdOverlay').remove()" style="flex:1;padding:12px;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font-size:15px;cursor:pointer;font-family:inherit">取消</button>
+            <button id="changePwdSubmit" onclick="doChangePassword()" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--gradient);color:white;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">确认修改</button>
+          </div>
+        </div>`;
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+      setTimeout(() => document.getElementById('changePwdOld')?.focus(), 100);
+    }
+
+    async function doChangePassword() {
+      const oldPwd = document.getElementById('changePwdOld').value.trim();
+      const newPwd = document.getElementById('changePwdNew').value.trim();
+      const btn = document.getElementById('changePwdSubmit');
+      if (!oldPwd) return showToast('请输入旧密码');
+      if (!newPwd) return showToast('请输入新密码');
+      if (newPwd.length < 6) return showToast('新密码长度至少6位');
+      btn.textContent = '修改中...';
+      btn.disabled = true;
+      try {
+        await API.changePassword(oldPwd, newPwd);
+        showToast('✅ 密码修改成功');
+        document.getElementById('changePwdOverlay').remove();
+      } catch(e) {
+        showToast('修改失败: ' + (e.message || '请重试'));
+      } finally {
+        btn.textContent = '确认修改';
+        btn.disabled = false;
+      }
     }
 
 
@@ -526,3 +565,8 @@ window.selectProfileAvatar = selectProfileAvatar;
 window.saveProfile = saveProfile;
 window.uploadUserAvatar = uploadUserAvatar;
 window.uploadUserBg = uploadUserBg;
+window.showChangePassword = showChangePassword;
+window.doChangePassword = doChangePassword;
+window.showLoginPage = showLoginPage;
+window.doLogin = doLogin;
+window.updateLoginBtn = updateLoginBtn;

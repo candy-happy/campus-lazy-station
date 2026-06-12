@@ -267,6 +267,10 @@ function renderPetComments(mode) {
       '</div></div>' +
       '<div class="pet-comment-content">' + escHtml(c.content) + '</div>' +
       (images ? '<div class="pet-comment-media">' + images + '</div>' : '') +
+      '<div style="margin-top:6px;display:flex;gap:6px">' +
+        '<button onclick="shareComment(\'pet\',\'猫狗\',\'' + escHtml((c.content||'').replace(/'/g,"\\'").replace(/"/g,'&quot;')) + '\',\'' + escHtml((c.nickname||'用户').replace(/'/g,"\\'")) + '\')" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:3px 8px;border-radius:10px;opacity:0.45;transition:opacity 0.15s" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.45\'">📤</button>' +
+        '<button onclick="showReportMenu(\'comment\',' + c.id + ',\'pet\')" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:3px 8px;border-radius:10px;opacity:0.45;transition:opacity 0.15s" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.45\'">🚫</button>' +
+      '</div>' +
     '</div>';
   }).join('');
   if (more) html += '<div onclick="renderPetComments(\'expand\')" style="text-align:center;padding:8px;color:var(--primary,#ff6a88);font-size:13px;cursor:pointer;font-weight:600">展开更多留言 (' + (all.length - shown.length) + '条) ▾</div>';

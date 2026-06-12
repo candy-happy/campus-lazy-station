@@ -478,4 +478,17 @@ router.get('/meta/categories', requireAuth, (req, res) => JSON_RES(res, () => {
   return categories;
 }));
 
+// ─── 举报社团帖子/公告 ───────────────────────────────────
+router.post('/report', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { target_type, target_id, target_content, reason, detail } = req.body;
+  const phone = req.user.phone;
+  if (!target_type || !target_id || !reason) return makeError('参数不完整');
+  if (!['post', 'announcement'].includes(target_type)) return makeError('举报类型无效');
+  const existing = db.prepare('SELECT id FROM reports WHERE source=? AND target_type=? AND target_id=? AND reporter_phone=?').get('club', target_type, target_id, phone);
+  if (existing) return makeError('您已举报过该内容');
+  db.prepare(`INSERT INTO reports (source,target_type,target_id,target_content,reporter_phone,reason,detail,status,created_at) VALUES ('club',?,?,?,?,?,?,'pending',datetime('now','localtime'))`)
+    .run(target_type, target_id, (target_content||'').slice(0,200), phone, reason, detail||'');
+  return { ok: true };
+}));
+
 module.exports = router;

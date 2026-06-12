@@ -55,6 +55,7 @@
 <div class="nav-item" data-page="ads" onclick="switchPage('ads')"><span class="nav-item-icon">🖼️</span><span class="nav-item-label">广告管理</span></div>
 <div class="nav-item" data-page="market" onclick="switchPage('market')"><span class="nav-item-icon">🛒</span><span class="nav-item-label">二手市场</span></div>
 <div class="nav-item" data-page="ai" onclick="switchPage('ai')"><span class="nav-item-icon">🤖</span><span class="nav-item-label">AI审核</span><span class="pending-badge" id="aiBadge" style="display:none">0</span></div>
+<div class="nav-item" data-page="wall" onclick="switchPage('wall')"><span class="nav-item-icon">📝</span><span class="nav-item-label">校园墙管理</span><span class="pending-badge" id="wallBadge" style="display:none">0</span></div>
 <div class="nav-item" data-page="pets" onclick="switchPage('pets')"><span class="nav-item-icon">🐱</span><span class="nav-item-label">猫狗管理</span><span class="pending-badge" id="petBadge" style="display:none">0</span></div>
 <div class="nav-item" data-page="withdraw" onclick="switchPage('withdraw')"><span class="nav-item-icon">💸</span><span class="nav-item-label">提现审核</span><span class="pending-badge" id="withdrawBadge" style="display:none">0</span></div>
 <div class="nav-item" data-page="feedback" onclick="switchPage('feedback')"><span class="nav-item-icon">💬</span><span class="nav-item-label">问题反馈</span><span class="pending-badge" id="feedbackBadge" style="display:none">0</span></div>
@@ -570,16 +571,25 @@
 </div>
 
 <div class="page-section" id="page-reports">
- <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+ <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
   <h2 style="margin:0">🚫 举报管理</h2>
-  <div style="display:flex;gap:8px">
-   <select id="reportStatusFilter" onchange="loadReports()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px">
-    <option value="pending">待处理</option>
-    <option value="resolved">已处理</option>
-    <option value="dismissed">已驳回</option>
-    <option value="all">全部</option>
-   </select>
-  </div>
+ </div>
+ <!-- 来源Tab -->
+ <div id="reportSourceTabs" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+  <button class="source-tab active" data-source="all" onclick="switchReportSource('all')" style="padding:6px 14px;border-radius:18px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px;font-weight:600;transition:all .2s">📋 全部 <span class="pending-badge" id="reportBadge-all" style="display:none">0</span></button>
+  <button class="source-tab" data-source="wall" onclick="switchReportSource('wall')" style="padding:6px 14px;border-radius:18px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px;transition:all .2s">📝 校园墙 <span class="pending-badge" id="reportBadge-wall" style="display:none">0</span></button>
+  <button class="source-tab" data-source="market" onclick="switchReportSource('market')" style="padding:6px 14px;border-radius:18px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px;transition:all .2s">🛒 二手市场 <span class="pending-badge" id="reportBadge-market" style="display:none">0</span></button>
+  <button class="source-tab" data-source="pet" onclick="switchReportSource('pet')" style="padding:6px 14px;border-radius:18px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px;transition:all .2s">🐱 猫狗日记 <span class="pending-badge" id="reportBadge-pet" style="display:none">0</span></button>
+  <button class="source-tab" data-source="teacher" onclick="switchReportSource('teacher')" style="padding:6px 14px;border-radius:18px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px;transition:all .2s">👨‍🏫 教师评价 <span class="pending-badge" id="reportBadge-teacher" style="display:none">0</span></button>
+  <button class="source-tab" data-source="club" onclick="switchReportSource('club')" style="padding:6px 14px;border-radius:18px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px;transition:all .2s">🏘️ 社团 <span class="pending-badge" id="reportBadge-club" style="display:none">0</span></button>
+  <button class="source-tab" data-source="activity" onclick="switchReportSource('activity')" style="padding:6px 14px;border-radius:18px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px;transition:all .2s">🎉 活动 <span class="pending-badge" id="reportBadge-activity" style="display:none">0</span></button>
+ </div>
+ <!-- 状态筛选 -->
+ <div id="reportStatusBtns" style="display:flex;gap:6px;margin-bottom:12px">
+  <button class="status-btn active" data-status="pending" onclick="filterReportStatus('pending')" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px;transition:all .2s">待处理</button>
+  <button class="status-btn" data-status="resolved" onclick="filterReportStatus('resolved')" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px;transition:all .2s">已处理</button>
+  <button class="status-btn" data-status="dismissed" onclick="filterReportStatus('dismissed')" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px;transition:all .2s">已驳回</button>
+  <button class="status-btn" data-status="all" onclick="filterReportStatus('all')" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px;transition:all .2s">全部</button>
  </div>
  <div id="reportsList"></div>
  <div id="reportsPager" style="display:flex;justify-content:center;gap:8px;align-items:center;padding:12px;font-size:13px;color:var(--text-secondary)"></div>
@@ -683,6 +693,49 @@
     </div>
   </div>
   </div><!-- end page-market -->
+
+  <!-- 校园墙管理页面 -->
+  <div class="page-section" id="page-wall">
+    <div class="page-header"><h1 class="page-title">📝 校园墙管理</h1><p class="page-desc">管理帖子、评论、浏览举报与数据统计</p></div>
+    <div class="market-admin-tabs">
+      <button class="market-tab active" data-tab="posts" onclick="switchWallTab('posts',this)">📄 帖子管理</button>
+      <button class="market-tab" data-tab="comments" onclick="switchWallTab('comments',this)">💬 评论管理</button>
+    </div>
+    <!-- Tab: 帖子管理 -->
+    <div class="market-admin-panel active" id="wallPanel-posts">
+      <div class="market-admin-toolbar">
+        <div class="market-admin-filters">
+          <button class="ads-filter-btn active" data-filter="all" onclick="filterWallPosts('all',this)">全部</button>
+          <button class="ads-filter-btn" data-filter="pinned" onclick="filterWallPosts('pinned',this)">已置顶</button>
+          <button class="ads-filter-btn" data-filter="featured" onclick="filterWallPosts('featured',this)">已精华</button>
+          <button class="ads-filter-btn" data-filter="reported" onclick="filterWallPosts('reported',this)">被举报</button>
+        </div>
+        <div class="market-admin-search">
+          <input type="text" id="wallPostSearch" placeholder="搜索内容/手机号/发布者昵称" class="form-input" style="width:280px" onkeydown="if(event.key==='Enter')loadWallPosts()">
+          <button class="btn btn-secondary btn-sm" onclick="loadWallPosts()">搜索</button>
+        </div>
+      </div>
+      <span class="ads-filter-count" id="wallPostCount"></span>
+      <div class="table-card">
+        <table class="data-table"><thead><tr><th>ID</th><th>发布者</th><th>内容</th><th>标签</th><th>图/视频</th><th>👍点赞</th><th>💬评论</th><th>📌置顶</th><th>⭐精华</th><th>🚫举报</th><th>时间</th><th>操作</th></tr></thead><tbody id="wallPostsTable"></tbody></table>
+      </div>
+      <div class="pagination" id="wallPostsPager"></div>
+    </div>
+    <!-- Tab: 评论管理 -->
+    <div class="market-admin-panel" id="wallPanel-comments">
+      <div class="market-admin-toolbar">
+        <div class="market-admin-search">
+          <input type="text" id="wallCommentSearch" placeholder="搜索评论内容/发布者手机号" class="form-input" style="width:280px" onkeydown="if(event.key==='Enter')loadWallComments()">
+          <button class="btn btn-secondary btn-sm" onclick="loadWallComments()">搜索</button>
+        </div>
+      </div>
+      <span class="ads-filter-count" id="wallCommentCount"></span>
+      <div class="table-card">
+        <table class="data-table"><thead><tr><th>ID</th><th>帖子ID</th><th>发布者</th><th>内容</th><th>时间</th><th>操作</th></tr></thead><tbody id="wallCommentsTable"></tbody></table>
+      </div>
+      <div class="pagination" id="wallCommentsPager"></div>
+    </div>
+  </div><!-- end page-wall -->
 
   <!-- AI 审核页面 -->
   <div class="page-section" id="page-ai">
@@ -946,5 +999,6 @@
  <script src="admin/js/pets.js?v=202606082310"></script>
  <script src="admin/js/feedback.js?v=202606082310"></script>
  <script src="admin/js/reports.js?v=20260609"></script>
+<script src="admin/js/wall.js?v=202606121830"></script>
 </body>
 </html>

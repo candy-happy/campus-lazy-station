@@ -116,6 +116,7 @@ function switchPage(page) {
   if (page === 'riders') { loadRidersPage(); }
   if (page === 'pets') { loadPetsAdmin(); }
   if (page === 'reports') { loadReports(); }
+  if (page === 'wall') { loadWallPosts(); }
 }
 
 function showModal(id) { document.getElementById(id).classList.add('active'); }

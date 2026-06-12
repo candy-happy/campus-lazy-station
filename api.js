@@ -91,17 +91,26 @@ const API = {
   },
 
   // ─── 用户 ───
-  async userLogin(name, phone, captchaCode, captchaKey) {
+  async userLogin(student_id, password) {
     const res = await fetch('/api/user/login', {
       method: 'POST', headers: this._headers(),
-      body: JSON.stringify({ name, phone, captcha: captchaCode, captchaKey })
+      body: JSON.stringify({ student_id, password })
     }).then(r => r.json());
     if (res.error) throw new Error(res.error);
-    this._user = { ...res.user, phone_original: phone };
+    this._user = Object.assign({}, res.user, { phone_original: res.user?.phone || student_id });
     this._role = 'user';
     if (res.token) { this._token = res.token; localStorage.setItem('lazy_token', res.token); }
-    localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', phone, name, avatar: res.user?.avatar || '' }));
-    return this._user;
+    localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', student_id, phone: res.user?.phone || student_id, name: res.user?.name || '', avatar: res.user?.avatar || '' }));
+    return { ...this._user, isNewUser: res.isNewUser };
+  },
+
+  async changePassword(oldPassword, newPassword) {
+    const res = await fetch('/api/user/change-password', {
+      method: 'POST', headers: this._headers(),
+      body: JSON.stringify({ oldPassword, newPassword })
+    }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    return res;
   },
 
   // ─── 骑手 ───
@@ -349,6 +358,15 @@ const API = {
   async wallReport(targetType, targetId, reason, detail) { return fetch('/api/wall/report', {
     method: 'POST', headers: this._headers(), body: JSON.stringify({ target_type: targetType, target_id: targetId, reason, detail: detail || '' })
   }).then(r => r.json()); },
+  async marketReport(targetType, targetId, reason, detail) { return fetch('/api/market/report', {
+    method: 'POST', headers: this._headers(), body: JSON.stringify({ target_type: targetType, target_id: targetId, reason, detail: detail || '' })
+  }).then(r => r.json()); },
+  async petReport(targetType, targetId, reason, detail) { return fetch('/api/pets/report', {
+    method: 'POST', headers: this._headers(), body: JSON.stringify({ target_type: targetType, target_id: targetId, reason, detail: detail || '' })
+  }).then(r => r.json()); },
+  async teacherReport(targetType, targetId, reason, detail) { return fetch('/api/teachers/report', {
+    method: 'POST', headers: this._headers(), body: JSON.stringify({ target_type: targetType, target_id: targetId, reason, detail: detail || '' })
+  }).then(r => r.json()); },
 
   // ─── 聊天 ───
   async chatGetOrCreateConversation(data) { return fetch('/api/chat/conversation', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },
@@ -476,7 +494,7 @@ const API = {
         const key = s.role === 'admin' ? 'lazy_admin_token' : s.role === 'rider' ? 'lazy_rider_token' : 'lazy_token';
         const t = localStorage.getItem(key);
         if (t) this._token = t;
-        if (s.role === 'user') return { phone: s.phone, name: s.name, avatar: s.avatar || '' };
+        if (s.role === 'user') return { phone: s.phone, student_id: s.student_id, name: s.name, avatar: s.avatar || '' };
         if (s.role === 'rider') return { phone: s.phone, name: s.name, avatar: s.avatar || '' };
         if (s.role === 'admin') return { username: s.username };
       }

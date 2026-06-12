@@ -514,7 +514,7 @@
 
     // ══════ 工具 ══════
     const phoneRegex = /^1[3-9]\d{9}$/;
-    const fmtPhone = (p) => p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : '...';
+    const fmtPhone = (p) => p ? (phoneRegex.test(p) ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : p) : '...';
     const fmtTime = (ts) => {
       if (!ts) return '';
       const d = new Date(ts);

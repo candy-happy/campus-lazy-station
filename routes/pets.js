@@ -8,6 +8,17 @@ const db = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { safeJSON, parseImageUrls } = require('../utils/helpers');
+const aiChecker = require('./ai');
+
+// ─── AI审核记录写入辅助 ────────────────────────────────
+function logAiReview(source, sourceId, phone, contentPreview, check, action) {
+  try {
+    db.prepare(`INSERT INTO ai_review_logs (source, source_id, phone, content_preview, violation, level, category, reason, action)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(source, sourceId, phone, (contentPreview || '').slice(0, 100),
+        check.violation ? 1 : 0, check.level || 'none', check.category || '无', check.reason || '', action || 'pass');
+  } catch(e) { console.error('[AI审核] 写入审核记录失败:', e.message); }
+}
 
 // ─── 创建表 ────────────────────────────────────────────
 db.exec(`
@@ -231,13 +242,32 @@ router.post('/like/:id', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 留言 ────────────────────────────────────────────────
-router.post('/comment/:id', requireAuth, upload.array('media', 6), (req, res) => JSON_RES(res, () => {
+router.post('/comment/:id', requireAuth, upload.array('media', 6), (req, res) => JSON_RES(res, async () => {
   const { phone, nickname, content, parent_id } = req.body;
   if (!phone) return makeError('请先登录', ErrorCode.AUTH_001, 401);
   if (!content && (!req.files || req.files.length === 0)) return makeError('请输入内容或上传媒体', ErrorCode.PARAM_001, 400);
 
   const pet = db.prepare('SELECT id FROM pets WHERE id = ?').get(req.params.id);
   if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
+
+  // ── AI审核留言文字 ────────────────────────────
+  if (content) {
+    try {
+      const aiResult = await aiChecker.checkTextContent(content, '猫狗日记');
+      if (aiResult.violation && aiResult.level === 'high') {
+        // 删除已上传的文件
+        if (req.files && req.files.length > 0) {
+          req.files.forEach(f => { try { fs.unlinkSync(f.path); } catch(e) {} });
+        }
+        console.log(`[AI审核] 猫狗留言被拦截: phone=${phone}, level=${aiResult.level}, reason=${aiResult.reason}`);
+        logAiReview('pet_comment', 0, phone, content, aiResult, 'block');
+        return makeError('留言内容不符合平台规范：' + (aiResult.reason || '请修改后重新发布'), 'AI_001');
+      }
+      if (aiResult.violation) console.log(`[AI审核] 猫狗留言提醒(未拦截): phone=${phone}, level=${aiResult.level}`);
+    } catch (e) {
+      console.error('[AI审核] 猫狗留言审核失败(放行):', e.message);
+    }
+  }
 
   // 获取用户头像
   let avatar = '';
@@ -260,6 +290,11 @@ router.post('/comment/:id', requireAuth, upload.array('media', 6), (req, res) =>
   );
   const result = stmt.run(req.params.id, phone, nickname || '', avatar, content || '', images, parent_id || null);
   db.prepare(`UPDATE pets SET comment_count = comment_count + 1, updated_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
+
+  // 记录AI审核日志
+  if (content) {
+    logAiReview('pet_comment', result.lastInsertRowid, phone, content, { violation: false, level: 'none', category: '无', reason: '' }, 'pass');
+  }
 
   return { id: result.lastInsertRowid, message: '留言成功' };
 }));
@@ -488,6 +523,19 @@ router.get('/admin/pending-sightings', requireAdmin, (req, res) => JSON_RES(res,
     ORDER BY ps.created_at DESC
   `).all();
   return sightings;
+}));
+
+// ─── 举报猫狗帖子/留言 ───────────────────────────────────
+router.post('/report', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { target_type, target_id, target_content, reason, detail } = req.body;
+  const phone = req.user.phone;
+  if (!target_type || !target_id || !reason) return makeError('参数不完整');
+  if (!['post', 'comment'].includes(target_type)) return makeError('举报类型无效');
+  const existing = db.prepare('SELECT id FROM reports WHERE source=? AND target_type=? AND target_id=? AND reporter_phone=?').get('pet', target_type, target_id, phone);
+  if (existing) return makeError('您已举报过该内容');
+  db.prepare(`INSERT INTO reports (source,target_type,target_id,target_content,reporter_phone,reason,detail,status,created_at) VALUES ('pet',?,?,?,?,?,?,'pending',datetime('now','localtime'))`)
+    .run(target_type, target_id, (target_content||'').slice(0,200), phone, reason, detail||'');
+  return { ok: true };
 }));
 
 module.exports = router;

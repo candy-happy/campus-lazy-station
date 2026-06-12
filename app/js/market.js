@@ -249,6 +249,10 @@
                 (r.content ? '<div class="comment-text">' + escHtml(r.content) + '</div>' : '') +
                 renderCommentMedia(r) +
                 '<div class="comment-time">' + timeAgo(r.created_at) + (rMine ? ' · <button class="comment-del-btn" onclick="deleteComment(' + r.id + ',' + itemId + ')">删除</button>' : '') + '</div>' +
+                '<div style="margin-top:4px;display:flex;gap:4px">' +
+                  '<button onclick="shareComment(\'market\',\'商品\',\'' + escHtml((r.content||'').replace(/'/g,"\\'").replace(/"/g,'&quot;')) + '\',\'' + escHtml((r.user_name||'用户').replace(/'/g,"\\'")) + '\')" style="background:none;border:none;font-size:11px;color:var(--text-secondary);cursor:pointer;padding:2px 6px;border-radius:8px;opacity:0.4;transition:opacity 0.15s" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.4\'">📤</button>' +
+                  '<button onclick="showReportMenu(\'comment\',' + r.id + ',\'market\')" style="background:none;border:none;font-size:11px;color:var(--text-secondary);cursor:pointer;padding:2px 6px;border-radius:8px;opacity:0.4;transition:opacity 0.15s" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.4\'">🚫</button>' +
+                '</div>' +
               '</div>' +
             '</div>' +
           '</div>';
@@ -264,6 +268,8 @@
             '<div class="comment-time">' + timeAgo(c.created_at) + '</div>' +
             '<div class="comment-actions">' +
               '<button class="comment-action-btn" onclick="replyToComment(' + c.id + ',\'' + escHtml(c.user_name || '用户').replace(/'/g, "\\'") + '\')">💬 回复</button>' +
+              '<button onclick="shareComment(\'market\',\'商品\',\'' + escHtml((c.content||'').replace(/'/g,"\\'").replace(/"/g,'&quot;')) + '\',\'' + escHtml((c.user_name||'用户').replace(/'/g,"\\'")) + '\')" style="background:none;border:none;font-size:13px;color:var(--text-secondary);cursor:pointer;padding:5px 10px;border-radius:14px;opacity:0.45;transition:opacity 0.15s" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.45\'">📤</button>' +
+              '<button onclick="showReportMenu(\'comment\',' + c.id + ',\'market\')" style="background:none;border:none;font-size:13px;color:var(--text-secondary);cursor:pointer;padding:5px 10px;border-radius:14px;opacity:0.45;transition:opacity 0.15s" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.45\'">🚫</button>' +
               (isMine ? '<button class="comment-del-btn" onclick="deleteComment(' + c.id + ',' + itemId + ')">🗑 删除</button>' : '') +
             '</div>' +
           '</div>' +

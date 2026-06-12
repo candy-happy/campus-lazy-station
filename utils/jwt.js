@@ -62,7 +62,7 @@ function verifyToken(token) {
 
       // 验证必要字段（管理员token没有phone字段）
       if (!data.type) return null;
-      if (data.type !== 'admin' && !data.phone) return null;
+      if (data.type !== 'admin' && !data.student_id && !data.phone) return null;
 
       return data;
     }

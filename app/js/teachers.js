@@ -265,6 +265,10 @@ async function openTeacherDetail(id) {
           '<div class="teacher-review-header">' + avatarHtml + '<span class="teacher-review-user">' + displayName + '</span><span class="teacher-review-date">' + (r.created_at||'').slice(0,10) + '</span></div>' +
           '<div class="teacher-review-content">' + escHtml(r.content) + '</div>' +
           mediaHtml +
+          '<div style="margin-top:6px;display:flex;gap:6px">' +
+            '<button onclick="shareComment(\'teacher\',\'师说\',\'' + escHtml((r.content||'').replace(/'/g,"\\'").replace(/"/g,'&quot;')) + '\',\'' + escHtml((r.nickname||'用户').replace(/'/g,"\\'")) + '\')" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:3px 8px;border-radius:10px;opacity:0.45;transition:opacity 0.15s" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.45\'">📤</button>' +
+            '<button onclick="showReportMenu(\'comment\',' + r.id + ',\'teacher\')" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:3px 8px;border-radius:10px;opacity:0.45;transition:opacity 0.15s" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.45\'">🚫</button>' +
+          '</div>' +
         '</div>';
       }).join('');
     } else {

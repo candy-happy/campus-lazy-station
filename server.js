@@ -170,6 +170,7 @@ app.use('/api/clubs', require('./routes/clubs'));
 
 // 活动
 app.use('/api/activities', require('./routes/activities'));
+app.use('/api/reports', require('./routes/reports'));
 
 // ─── 404 + SPA 兜底 ───────────────────────────────────
 app.use('/api', (req, res) => {
