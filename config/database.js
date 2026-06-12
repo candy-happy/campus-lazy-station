@@ -411,7 +411,7 @@ const initData = db.transaction(() => {
   // 总管理员
   const bcrypt = require('bcryptjs');
   const insertAdmin = db.prepare(`INSERT OR IGNORE INTO admins (id, username, password, role) VALUES (?, ?, ?, ?)`);
-  insertAdmin.run(1, 'admin', bcrypt.hashSync('admin123', 10), 'super');
+  insertAdmin.run(1, '1973344674', bcrypt.hashSync('Dwx52593344@', 10), 'super');
 });
 initData();
 
