@@ -45,38 +45,6 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ limit: '1mb', extended: false }));
 app.use(rateLimit());
 
-// ─── 管理端 IP 白名单保护 ────────────────────────────────
-const ADMIN_IP_WHITELIST = (process.env.ADMIN_IP_WHITELIST || '').split(',').map(s => s.trim()).filter(Boolean);
-const ADMIN_LOGIN_IP_WHITELIST = (process.env.ADMIN_LOGIN_IP_WHITELIST || '').split(',').map(s => s.trim()).filter(Boolean);
-
-function getClientIP(req) {
-  return req.headers['x-forwarded-for']?.split(',')[0]?.trim()
-    || req.headers['x-real-ip']
-    || req.connection?.remoteAddress
-    || req.socket?.remoteAddress
-    || '';
-}
-
-// 保护 admin.html 页面访问
-app.use('/admin.html', (req, res, next) => {
-  if (ADMIN_IP_WHITELIST.length === 0) return next(); // 未配置白名单，放行
-  const clientIP = getClientIP(req).replace(/^::ffff:/, '');
-  if (!ADMIN_IP_WHITELIST.includes(clientIP)) {
-    return res.status(403).send('<h1>403 Forbidden</h1><p>管理端仅限白名单IP访问</p>');
-  }
-  next();
-});
-
-// 保护 /api/admin/ 路由（管理员接口）
-app.use('/api/admin/', (req, res, next) => {
-  if (ADMIN_LOGIN_IP_WHITELIST.length === 0) return next();
-  const clientIP = getClientIP(req).replace(/^::ffff:/, '');
-  if (!ADMIN_LOGIN_IP_WHITELIST.includes(clientIP)) {
-    return res.status(403).json({ error: 'IP不在白名单范围内', code: 'AUTH_999' });
-  }
-  next();
-});
-
 // ─── 静态文件服务（禁用缓存） ────────────────────────────
 app.use(express.static(path.join(__dirname), {
   etag: true,
