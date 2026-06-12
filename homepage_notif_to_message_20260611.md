@@ -1,34 +1,45 @@
-# 首页通知迁移到消息界面 - 2026-06-11
+# 通知聚合为单一对话 - 2026-06-11 (第2版)
 
-## 目标
-将首页顶栏的🔔通知铃铛移除，通知功能统一整合到底部导航的"消息"界面中。
+## 变更：通知不再分散为多条对话，而是聚合为一条"系统通知"对话
 
-## 修改文件
+### app/js/wall.js
+- **`loadChatList()`**: 通知聚合为一条 `🔔 系统通知` 对话项，显示最新通知预览 + 未读计数。通知数据缓存到 `window._notifCache`。
+- **`openNotifConv()`**: 点击进入通知对话视图
+  - 复用 `chatConversation` 结构
+  - 标题设为 "🔔 系统通知"
+  - 隐藏输入栏（通知不可回复）
+  - 通知渲染为居中气泡卡片（emoji图标 + 标题 + 内容 + 时间）
+  - 自动滚动到底部
+- **`backToChatList()`**: 新增恢复输入栏 + 刷新消息列表（通知可能已读）
+- 删除 `markNotifRead()` 及相关导出
+- 新增 `window.openNotifConv` 导出
 
-### 1. `app.html`
-- **移除** 首页 header 中的🔔铃铛按钮（`openNotifModal()` 入口 + `notifBadge` 徽章）
-- **新增** 消息页 Tab 栏：`💬 私信` / `🔔 通知`（带 `msgNotifBadge` 未读徽章）
-- **新增** `notifListBody` 通知列表容器
-- **移除** 独立的 `notifPage_sub` 子页面
+### app/css/style.css
+- 新增 `.notif-msg` / `.notif-msg-bubble` / `.notif-msg-icon` / `.notif-msg-title` / `.notif-msg-text` / `.notif-msg-time` 气泡卡片样式
 
-### 2. `app/css/style.css`
-- **新增** `.msg-tabs` / `.msg-tab` / `.msg-tab.active` 样式
+### 效果
+消息列表：
+```
+🔔  系统通知        刚刚
+    订单已送达：您的快递已签收    3  ← 未读计数
 
-### 3. `app/js/core.js`
-- **新增** `updateMsgBadge()` — 合并通知+私信未读数，更新导航"消息"徽章和页内通知Tab徽章
-- **新增** `switchMsgTab()` — 消息页内私信/通知Tab切换
-- **新增** `renderNotifList()` — 渲染通知列表（拉取→标已读→渲染）
-- **重写** `openNotifModal()` — 不再打开子页面，改为跳转到消息页+通知Tab
-- **修改** `pollChatUnread()` — 徽章更新改为调用 `updateMsgBadge()`
-- **修改** `pollNotifications()` — 徽章更新改为调用 `updateMsgBadge()`
-- **修改** `loadData()` — 初始化时异步获取聊天未读数合并到徽章
-- **修改** `switchPage('message')` — 进入消息页自动切到私信Tab
-- **移除** `closeModal` map 中的 `notifModal` 映射
+张  张三            3分钟前
+    我：好的谢谢           2
+```
 
-### 4. `app/js/wall.js`
-- **修改** `initMessagePage()` — 未登录时两个tab都显示"请先登录"；登录后不重复加载（由 `switchMsgTab` 负责）
-
-## 行为变化
-- 导航栏"消息"徽章 = 通知未读 + 私信未读（合并显示）
-- 点击通知Tab自动拉取最新并标已读
-- 轮询（私信15s、通知30s）同时更新合并徽章
+点击「系统通知」进入：
+```
+← 🔔 系统通知
+┌──────────────────────┐
+│       📦             │
+│   订单已送达          │
+│   您的快递已签收      │
+│   2026-06-11 15:25   │
+└──────────────────────┘
+┌──────────────────────┐
+│       💬             │
+│   新评论提醒          │
+│   有人评论了你的帖子   │
+│   2026-06-11 14:10   │
+└──────────────────────┘
+```

@@ -24,6 +24,15 @@ db.exec(`
     bio TEXT,
     dormitory TEXT,
     room TEXT,
+    bg_image TEXT,
+    bg_color TEXT,
+    wechat TEXT,
+    qq TEXT,
+    show_phone_on_wall INTEGER DEFAULT 0,
+    show_wechat_on_wall INTEGER DEFAULT 0,
+    show_qq_on_wall INTEGER DEFAULT 0,
+    wall_privacy TEXT,
+    chat_privacy TEXT DEFAULT 'all',
     total_orders INTEGER DEFAULT 0,
     total_spent REAL DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now','localtime'))
@@ -139,6 +148,19 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now','localtime')),
     updated_at TEXT DEFAULT (datetime('now','localtime'))
   );
+
+  CREATE TABLE IF NOT EXISTS ad_views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ad_id INTEGER NOT NULL,
+    phone TEXT DEFAULT '',
+    event_type TEXT NOT NULL CHECK(event_type IN ('impression','click')),
+    ip TEXT,
+    user_agent TEXT,
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    FOREIGN KEY (ad_id) REFERENCES ads(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_ad_views_ad_id ON ad_views(ad_id);
+  CREATE INDEX IF NOT EXISTS idx_ad_views_created ON ad_views(created_at);
 
   CREATE TABLE IF NOT EXISTS wall_posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -516,6 +538,14 @@ try { db.exec('ALTER TABLE riders ADD COLUMN avatar TEXT'); } catch(e) { /* 列�
 try { db.exec('ALTER TABLE wall_posts ADD COLUMN is_pinned INTEGER DEFAULT 0'); } catch(e) {}
 try { db.exec('ALTER TABLE wall_posts ADD COLUMN is_featured INTEGER DEFAULT 0'); } catch(e) {}
 try { db.exec('ALTER TABLE users ADD COLUMN chat_privacy TEXT DEFAULT \'all\''); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN bg_image TEXT DEFAULT NULL'); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN bg_color TEXT DEFAULT NULL'); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN wechat TEXT DEFAULT NULL'); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN qq TEXT DEFAULT NULL'); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN show_phone_on_wall INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN show_wechat_on_wall INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN show_qq_on_wall INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN wall_privacy TEXT DEFAULT NULL'); } catch(e) {}
 try { db.exec('ALTER TABLE market_items ADD COLUMN trade_status TEXT DEFAULT \'available\''); } catch(e) {}
 
 // ─── 基础数据初始化 ─────────────────────────────────────
