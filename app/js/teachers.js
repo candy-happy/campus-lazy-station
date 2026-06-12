@@ -3,6 +3,10 @@
 // 新功能请添加为独立JS模块，不要在骨架文件中添加代码
 
 
+// 兜底：防止 escHtml 未定义导致整个模块崩溃
+if (typeof window.escHtml !== 'function') { window.escHtml = function(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }; }
+var escHtml = function(s) { return window.escHtml(s); };
+
 // ═══ 教师留言系统 ═══
 let _teacherPage = 1;
 let _teacherCollege = '全部';
