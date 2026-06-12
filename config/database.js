@@ -320,6 +320,8 @@ db.exec(`
     avatar TEXT DEFAULT '',
     rating INTEGER NOT NULL DEFAULT 5 CHECK(rating BETWEEN 1 AND 5),
     content TEXT NOT NULL,
+    is_anonymous INTEGER DEFAULT 0,
+    media_url TEXT DEFAULT '',
     ai_reviewed INTEGER DEFAULT 0,
     ai_level TEXT DEFAULT 'none',
     created_at TEXT DEFAULT (datetime('now','localtime'))
