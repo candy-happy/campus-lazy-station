@@ -142,6 +142,8 @@ db.exec(`
     link_type TEXT DEFAULT 'none',
     link_value TEXT,
     sort_order INTEGER DEFAULT 0,
+    view_count INTEGER DEFAULT 0,
+    click_count INTEGER DEFAULT 0,
     status TEXT DEFAULT 'active',
     start_time TEXT,
     end_time TEXT,
@@ -286,6 +288,14 @@ db.exec(`
     research TEXT DEFAULT '',
     avatar TEXT DEFAULT '',
     bio TEXT DEFAULT '',
+    education TEXT DEFAULT '',
+    undergraduate TEXT DEFAULT '',
+    graduate TEXT DEFAULT '',
+    courses TEXT DEFAULT '',
+    papers TEXT DEFAULT '',
+    projects TEXT DEFAULT '',
+    achievements TEXT DEFAULT '',
+    social_roles TEXT DEFAULT '',
     like_count INTEGER DEFAULT 0,
     review_count INTEGER DEFAULT 0,
     avg_rating REAL DEFAULT 0,
@@ -547,6 +557,16 @@ try { db.exec('ALTER TABLE users ADD COLUMN show_wechat_on_wall INTEGER DEFAULT 
 try { db.exec('ALTER TABLE users ADD COLUMN show_qq_on_wall INTEGER DEFAULT 0'); } catch(e) {}
 try { db.exec('ALTER TABLE users ADD COLUMN wall_privacy TEXT DEFAULT NULL'); } catch(e) {}
 try { db.exec('ALTER TABLE market_items ADD COLUMN trade_status TEXT DEFAULT \'available\''); } catch(e) {}
+try { db.exec('ALTER TABLE ads ADD COLUMN view_count INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE ads ADD COLUMN click_count INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE teachers ADD COLUMN education TEXT DEFAULT \'\''); } catch(e) {}
+try { db.exec('ALTER TABLE teachers ADD COLUMN undergraduate TEXT DEFAULT \'\''); } catch(e) {}
+try { db.exec('ALTER TABLE teachers ADD COLUMN graduate TEXT DEFAULT \'\''); } catch(e) {}
+try { db.exec('ALTER TABLE teachers ADD COLUMN courses TEXT DEFAULT \'\''); } catch(e) {}
+try { db.exec('ALTER TABLE teachers ADD COLUMN papers TEXT DEFAULT \'\''); } catch(e) {}
+try { db.exec('ALTER TABLE teachers ADD COLUMN projects TEXT DEFAULT \'\''); } catch(e) {}
+try { db.exec('ALTER TABLE teachers ADD COLUMN achievements TEXT DEFAULT \'\''); } catch(e) {}
+try { db.exec('ALTER TABLE teachers ADD COLUMN social_roles TEXT DEFAULT \'\''); } catch(e) {}
 
 // ─── 基础数据初始化 ─────────────────────────────────────
 const initData = db.transaction(() => {
