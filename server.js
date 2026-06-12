@@ -234,7 +234,8 @@ process.on('uncaughtException', (err) => {
 });
 process.on('unhandledRejection', (reason) => {
   console.error('[FATAL] unhandledRejection:', reason);
-  // 不立即退出，但记录以便排查
+  // 致命未处理Promise应重启恢复干净状态
+  gracefulShutdown(new Error('unhandledRejection: ' + String(reason)));
 });
 
 // ─── 启动 ───────────────────────────────────────────────

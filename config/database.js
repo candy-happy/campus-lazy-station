@@ -41,6 +41,8 @@ db.exec(`
     total_earnings REAL DEFAULT 0,
     rating REAL DEFAULT 5.0,
     level TEXT DEFAULT 'bronze' CHECK(level IN ('bronze','silver','gold','diamond')),
+    frozen INTEGER DEFAULT 0,
+    frozen_reason TEXT,
     created_at TEXT DEFAULT (datetime('now','localtime'))
   );
 
@@ -345,6 +347,119 @@ db.exec(`
     created_at DATETIME DEFAULT (datetime('now','localtime')),
     updated_at DATETIME DEFAULT (datetime('now','localtime'))
   );
+
+  CREATE TABLE IF NOT EXISTS market_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL,
+    buyer_phone TEXT NOT NULL,
+    seller_phone TEXT NOT NULL,
+    title TEXT NOT NULL,
+    price REAL NOT NULL,
+    image TEXT,
+    status TEXT DEFAULT 'pending' CHECK(status IN ('pending','confirmed','paid','completed','cancelled')),
+    rating INTEGER,
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    updated_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS market_comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL,
+    user_phone TEXT NOT NULL,
+    content TEXT,
+    parent_id INTEGER,
+    media_url TEXT,
+    media_type TEXT,
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS seller_ratings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    seller_phone TEXT NOT NULL,
+    buyer_phone TEXT NOT NULL,
+    order_id INTEGER NOT NULL,
+    rating REAL NOT NULL,
+    comment TEXT,
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS token_blacklist (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT,
+    rider_phone TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS clubs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    logo TEXT,
+    category TEXT DEFAULT '其他',
+    description TEXT,
+    president_phone TEXT NOT NULL,
+    member_count INTEGER DEFAULT 1,
+    status TEXT DEFAULT 'active' CHECK(status IN ('active','frozen','pending')),
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS club_members (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    club_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    role TEXT DEFAULT 'member' CHECK(role IN ('owner','admin','member')),
+    joined_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(club_id, phone)
+  );
+
+  CREATE TABLE IF NOT EXISTS club_posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    club_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    content TEXT,
+    images TEXT DEFAULT '[]',
+    pinned INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS club_applications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    club_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    reason TEXT,
+    status TEXT DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
+    reviewed_by TEXT,
+    reviewed_at TEXT,
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS activities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    cover TEXT,
+    description TEXT,
+    location TEXT,
+    start_time TEXT,
+    end_time TEXT,
+    signup_deadline TEXT,
+    max_participants INTEGER DEFAULT 0,
+    current_participants INTEGER DEFAULT 0,
+    category TEXT DEFAULT '其他',
+    publisher_type TEXT DEFAULT 'user' CHECK(publisher_type IN ('club','user')),
+    publisher_id INTEGER,
+    publisher_name TEXT,
+    phone TEXT NOT NULL,
+    status TEXT DEFAULT 'open' CHECK(status IN ('open','closed','cancelled','ended')),
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS activity_signups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    activity_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    status TEXT DEFAULT 'signed' CHECK(status IN ('signed','cancelled','attended')),
+    signed_up_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(activity_id, phone)
+  );
 `);
 
 // ─── 核心索引（性能优化，演示前必须添加） ─────────────
@@ -374,6 +489,26 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_ai_logs_source_id ON ai_review_logs(source, source_id);
   -- 二手市场
   CREATE INDEX IF NOT EXISTS idx_market_items_status ON market_items(status);
+  CREATE INDEX IF NOT EXISTS idx_market_orders_buyer ON market_orders(buyer_phone);
+  CREATE INDEX IF NOT EXISTS idx_market_orders_seller ON market_orders(seller_phone);
+  CREATE INDEX IF NOT EXISTS idx_market_orders_item ON market_orders(item_id);
+  CREATE INDEX IF NOT EXISTS idx_market_comments_item ON market_comments(item_id);
+  CREATE INDEX IF NOT EXISTS idx_seller_ratings_seller ON seller_ratings(seller_phone);
+  -- 社团
+  CREATE INDEX IF NOT EXISTS idx_clubs_status ON clubs(status);
+  CREATE INDEX IF NOT EXISTS idx_clubs_category ON clubs(category);
+  CREATE INDEX IF NOT EXISTS idx_club_members_club ON club_members(club_id);
+  CREATE INDEX IF NOT EXISTS idx_club_members_phone ON club_members(phone);
+  CREATE INDEX IF NOT EXISTS idx_club_posts_club ON club_posts(club_id);
+  CREATE INDEX IF NOT EXISTS idx_club_applications_club ON club_applications(club_id);
+  -- 活动
+  CREATE INDEX IF NOT EXISTS idx_activities_status ON activities(status);
+  CREATE INDEX IF NOT EXISTS idx_activities_category ON activities(category);
+  CREATE INDEX IF NOT EXISTS idx_activities_phone ON activities(phone);
+  CREATE INDEX IF NOT EXISTS idx_activity_signups_act ON activity_signups(activity_id);
+  CREATE INDEX IF NOT EXISTS idx_activity_signups_phone ON activity_signups(phone);
+  -- 骑手冻结
+  CREATE INDEX IF NOT EXISTS idx_token_blacklist_phone ON token_blacklist(rider_phone);
 `);
 
 // ─── 数据库迁移 ─────────────────────────────────────────
