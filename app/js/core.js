@@ -723,78 +723,11 @@
         pill.classList.toggle('active', tag === wallTagFilter);
       });
       
-      // 全站搜索模式：在顶部展示社团/活动结果
-      let searchExtraHtml = '';
-      if (_wallSearchMode && _globalSearchQuery) {
-        const clubs = _globalSearchClubs || [];
-        const acts = _globalSearchActs || [];
-        const pets = _globalSearchPets || [];
-        const teachers = _globalSearchTeachers || [];
-        const marketItems = _globalSearchMarket || [];
-        if (clubs.length > 0) {
-          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">🏘️ 相关社团 (' + (clubs.length) + '条)</div>';
-          clubs.forEach(c => {
-            searchExtraHtml += '<div class="wall-post" style="padding:12px;cursor:pointer;border:1px solid var(--border)" onclick="switchPage(\'discoverPage\');switchDiscoverTab(\'clubs\')">' +
-              '<div style="font-weight:600;font-size:14px">🏘️ ' + escHtml(c.name) + '</div>' +
-              '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(c.description||'') + ' · ' + (c.member_count||0) + ' 人</div>' +
-              '</div>';
-          });
-          if (clubs.length >= 50) { searchExtraHtml += '<a onclick="switchPage(\'discoverPage\');switchDiscoverTab(\'clubs\')" style="display:block;padding:8px 12px;text-align:center;font-size:12px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部社团 →</a>'; }
-        }
-        if (acts.length > 0) {
-          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">🎯 相关活动 (' + (acts.length) + '条)</div>';
-          acts.forEach(a => {
-            searchExtraHtml += '<div class="wall-post" style="padding:12px;cursor:pointer;border:1px solid var(--border)" onclick="switchPage(\'discoverPage\');switchDiscoverTab(\'activities\')">' +
-              '<div style="font-weight:600;font-size:14px">🎯 ' + escHtml(a.title) + '</div>' +
-              '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(a.location||'未知地点') + ' · ' + (a.signup_count||0) + '/' + (a.max_participants||'∞') + ' 人</div>' +
-              '</div>';
-          });
-          if (acts.length >= 50) { searchExtraHtml += '<a onclick="switchPage(\'discoverPage\');switchDiscoverTab(\'activities\')" style="display:block;padding:8px 12px;text-align:center;font-size:12px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部活动 →</a>'; }
-        }
-        if (pets.length > 0) {
-          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">🐱 相关猫狗 (' + (pets.length) + '条)</div>';
-          pets.forEach(p => {
-            const statusMap = { healthy: '😊健康', sick: '🤒生病', injured: '🤕受伤', pregnant: '🤰孕期', nursing: '🍼哺乳', quarantine: '🔒隔离', other: '❓其他' };
-            const statusText = statusMap[p.status] || '';
-            searchExtraHtml += '<div class="wall-post" style="padding:12px;cursor:pointer;border:1px solid var(--border)" onclick="switchPage(\'petPage\');showPetDetail(' + p.id + ')">' +
-              '<div style="font-weight:600;font-size:14px">🐾 ' + escHtml(p.code_name || p.name) + ' <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">' + escHtml(p.species||'') + '</span>' + (statusText ? ' · ' + statusText : '') + '</div>' +
-              '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(p.bio||p.personality||'') + ' · ' + escHtml(p.location||'') + '</div>' +
-              '</div>';
-          });
-          if (pets.length >= 50) { searchExtraHtml += '<a onclick="switchPage(\'petPage\')" style="display:block;padding:8px 12px;text-align:center;font-size:12px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部猫狗 →</a>'; }
-        }
-        if (teachers.length > 0) {
-          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">👨‍🏫 相关师说 (' + (teachers.length) + '条)</div>';
-          teachers.forEach(t => {
-            searchExtraHtml += '<div class="wall-post" style="padding:12px;cursor:pointer;border:1px solid var(--border)" onclick="switchPage(\'teacherPage\');openTeacherDetail(' + t.id + ')">' +
-              '<div style="font-weight:600;font-size:14px">👨‍🏫 ' + escHtml(t.name) + ' <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">' + escHtml(t.title||'') + '</span></div>' +
-              '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(t.college||'未知学院') + ' · ' + (t.like_count||0) + ' 👍' + '</div>' +
-              '</div>';
-          });
-          if (teachers.length >= 50) { searchExtraHtml += '<a onclick="switchPage(\'teacherPage\')" style="display:block;padding:8px 12px;text-align:center;font-size:12px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部教师 →</a>'; }
-        }
-        if (marketItems.length > 0) {
-          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">🛒 相关二手 (' + (marketItems.length) + '条)</div>';
-          marketItems.forEach(m => {
-            const priceText = m.price ? '¥' + m.price : '免费';
-            searchExtraHtml += '<div class="wall-post" style="padding:12px;cursor:pointer;border:1px solid var(--border)" onclick="switchPage(\'marketPage\');openItemDetail(' + m.id + ')">' +
-              '<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:600;font-size:14px">🛒 ' + escHtml(m.title) + '</div><div style="font-weight:600;color:#E74C3C;font-size:14px">' + escHtml(priceText) + '</div></div>' +
-              '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(m.description||'').substring(0, 50) + ' · ' + (m.views||0) + ' 次浏览</div>' +
-              '</div>';
-          });
-          if (marketItems.length >= 50) { searchExtraHtml += '<a onclick="switchPage(\'marketPage\')" style="display:block;padding:8px 12px;text-align:center;font-size:12px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部二手 →</a>'; }
-        }
-        if (searchExtraHtml && wallPosts.length > 0) {
-          searchExtraHtml += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600;margin-top:8px">📱 相关帖子</div>';
-        }
-      }
-      
-      const hasSearchExtra = !!searchExtraHtml;
-      if (!wallPosts.length && !hasSearchExtra) {
+      if (!wallPosts.length) {
         el.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-text">还没有帖子，来发第一条吧！</div></div>';
         return;
       }
-      el.innerHTML = searchExtraHtml + wallPosts.map(p => {
+      el.innerHTML = wallPosts.map(p => {
         const avatarHtml = p.avatar && (p.avatar.startsWith('/') || p.avatar.startsWith('http'))
           ? '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="'+escHtml(p.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" /></div>'
           : '<div class="wall-avatar" style="cursor:pointer" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页">'+(p.avatar && /\p{Emoji}/u.test(p.avatar) && p.avatar.length<=2 ? p.avatar : (p.nickname||'匿')[0])+'</div>';
@@ -1315,9 +1248,152 @@ window.showToast = showToast;
       _globalSearchTeachers = teachers;
       _globalSearchMarket = marketItems;
       _globalSearchQuery = q;
-      switchPage('wallPage');
-      renderWallFeed();
+      openSubPage('searchResultPage_sub');
+      document.getElementById('searchResultTitle').textContent = '🔍 "' + q + '"';
+      renderSearchResults();
       hideGlobalSearchHints();
+    }
+
+    function renderWallPostCard(p) {
+      const avatarHtml = p.avatar && (p.avatar.startsWith('/') || p.avatar.startsWith('http'))
+        ? '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="'+escHtml(p.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" /></div>'
+        : '<div class="wall-avatar" style="cursor:pointer" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页">'+(p.avatar && /\p{Emoji}/u.test(p.avatar) && p.avatar.length<=2 ? p.avatar : (p.nickname||'匿')[0])+'</div>';
+      const hasImages = p.images && p.images.length;
+      let imageGrid = '';
+      if (hasImages) {
+        const imgs = (Array.isArray(p.images) ? p.images : p.images.split(',').filter(Boolean));
+        const imgCount = imgs.length;
+        if (imgCount === 1) {
+          const url = typeof imgs[0] === 'object' ? imgs[0].url : imgs[0];
+          const isVid = typeof imgs[0] === 'object' ? imgs[0].isVideo : /\.mp4|\.mov|\.webm/i.test(url);
+          imageGrid = isVid
+            ? '<video src="' + url + '" controls style="width:100%;border-radius:12px;margin-top:8px" muted></video>'
+            : '<img src="' + url + '" style="width:100%;max-height:280px;object-fit:cover;border-radius:12px;margin-top:8px" loading="lazy" onclick="showWallDetail('+p.id+')" />';
+        } else if (imgCount === 2) {
+          imageGrid = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px">' + imgs.map(img => {
+            const url = typeof img === 'object' ? img.url : img;
+            return '<img src="' + url + '" style="width:100%;height:140px;object-fit:cover;border-radius:8px" loading="lazy" />';
+          }).join('') + '</div>';
+        } else {
+          imageGrid = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px">' + imgs.slice(0,9).map(img => {
+            const url = typeof img === 'object' ? img.url : img;
+            return '<img src="' + url + '" style="width:100%;height:100px;object-fit:cover;border-radius:6px" loading="lazy" />';
+          }).join('') + (imgCount > 9 ? '<div style="width:100%;height:100px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-secondary)">+' + (imgCount - 9) + '</div>' : '') + '</div>';
+        }
+      }
+      const tagsHtml = (p.tags && p.tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">' + p.tags.map(t => {
+        const cfg = TAG_CONFIG[t] || { emoji: '🏷️', color: '#95A5A6' };
+        return '<span onclick="event.stopPropagation();filterByTag(\''+t+'\')" style="display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:10px;font-size:11px;background:'+cfg.color+'18;color:'+cfg.color+';cursor:pointer">'+cfg.emoji+' '+t+'</span>';
+      }).join('') + '</div>' : '';
+      const aiTagsHtml = (p.ai_tags && p.ai_tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' + p.ai_tags.map(at => '<span onclick="event.stopPropagation();filterByTag(\''+at+'\')" style="display:inline-flex;align-items:center;gap:2px;padding:1px 7px;border-radius:9px;font-size:10px;background:#8E44AD12;color:#8E44AD;cursor:pointer">🤖 '+escHtml(at)+'</span>').join('') + '</div>' : '';
+      return `
+        <div class="wall-card" style="border-radius:14px;overflow:hidden;cursor:pointer" onclick="showWallDetail(${p.id})">
+          <div class="wall-card-header">
+            ${avatarHtml}
+            <div style="flex:1;min-width:0">
+              <span class="wall-nickname">${escHtml(p.nickname||_t('teacherReviewAnonymous'))}</span>
+              <div class="wall-time">${escHtml(p.created_at||'')}</div>
+            </div>
+          </div>
+          <div class="wall-content-text">${escHtml(p.content||'').substring(0, 200)}</div>
+          ${imageGrid}
+          ${tagsHtml}
+          ${aiTagsHtml}
+          <div style="display:flex;gap:12px;align-items:center;padding:4px 0 0;font-size:12px;color:var(--text-secondary)">
+            <span>❤️ ${p.like_count||0}</span>
+            <span>💬 ${p.comment_count||0}</span>
+            <span>📤 ${p.share_count||0}</span>
+          </div>
+        </div>`;
+    }
+
+    function renderSearchResults() {
+      const el = document.getElementById('searchResultContent');
+      if (!el) return;
+      const clubs = _globalSearchClubs || [];
+      const acts = _globalSearchActs || [];
+      const pets = _globalSearchPets || [];
+      const teachers = _globalSearchTeachers || [];
+      const marketItems = _globalSearchMarket || [];
+      const posts = wallPosts || [];
+
+      let html = '';
+
+      // 社团
+      if (clubs.length > 0) {
+        html += '<div style="padding:12px 0 8px;font-size:13px;color:var(--text-secondary);font-weight:600">🏘️ 相关社团 (' + clubs.length + '条)</div>';
+        clubs.forEach(c => {
+          html += '<div class="wall-post" style="padding:12px;cursor:pointer;margin-bottom:8px;border:1px solid var(--border);border-radius:12px" onclick="closeSubPage(\'searchResultPage_sub\');switchPage(\'discoverPage\');switchDiscoverTab(\'clubs\')">' +
+            '<div style="font-weight:600;font-size:14px">🏘️ ' + escHtml(c.name) + '</div>' +
+            '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(c.description||'') + ' · ' + (c.member_count||0) + ' 人</div>' +
+            '</div>';
+        });
+        if (clubs.length >= 50) { html += '<a onclick="closeSubPage(\'searchResultPage_sub\');switchPage(\'discoverPage\');switchDiscoverTab(\'clubs\')" style="display:block;padding:8px 12px;text-align:center;font-size:13px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部社团 →</a>'; }
+      }
+
+      // 活动
+      if (acts.length > 0) {
+        html += '<div style="padding:12px 0 8px;font-size:13px;color:var(--text-secondary);font-weight:600">🎯 相关活动 (' + acts.length + '条)</div>';
+        acts.forEach(a => {
+          html += '<div class="wall-post" style="padding:12px;cursor:pointer;margin-bottom:8px;border:1px solid var(--border);border-radius:12px" onclick="closeSubPage(\'searchResultPage_sub\');switchPage(\'discoverPage\');switchDiscoverTab(\'activities\')">' +
+            '<div style="font-weight:600;font-size:14px">🎯 ' + escHtml(a.title) + '</div>' +
+            '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(a.location||'未知地点') + ' · ' + (a.signup_count||0) + '/' + (a.max_participants||'∞') + ' 人</div>' +
+            '</div>';
+        });
+        if (acts.length >= 50) { html += '<a onclick="closeSubPage(\'searchResultPage_sub\');switchPage(\'discoverPage\');switchDiscoverTab(\'activities\')" style="display:block;padding:8px 12px;text-align:center;font-size:13px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部活动 →</a>'; }
+      }
+
+      // 猫狗
+      if (pets.length > 0) {
+        html += '<div style="padding:12px 0 8px;font-size:13px;color:var(--text-secondary);font-weight:600">🐱 相关猫狗 (' + pets.length + '条)</div>';
+        pets.forEach(p => {
+          const statusMap = { healthy: '😊健康', sick: '🤒生病', injured: '🤕受伤', pregnant: '🤰孕期', nursing: '🍼哺乳', quarantine: '🔒隔离', other: '❓其他' };
+          const statusText = statusMap[p.status] || '';
+          html += '<div class="wall-post" style="padding:12px;cursor:pointer;margin-bottom:8px;border:1px solid var(--border);border-radius:12px" onclick="showPetDetail(' + p.id + ')">' +
+            '<div style="font-weight:600;font-size:14px">🐾 ' + escHtml(p.code_name || p.name) + ' <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">' + escHtml(p.species||'') + '</span>' + (statusText ? ' · ' + statusText : '') + '</div>' +
+            '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(p.bio||p.personality||'') + ' · ' + escHtml(p.location||'') + '</div>' +
+            '</div>';
+        });
+        if (pets.length >= 50) { html += '<a onclick="switchPage(\'petPage\')" style="display:block;padding:8px 12px;text-align:center;font-size:13px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部猫狗 →</a>'; }
+      }
+
+      // 师说
+      if (teachers.length > 0) {
+        html += '<div style="padding:12px 0 8px;font-size:13px;color:var(--text-secondary);font-weight:600">👨‍🏫 相关师说 (' + teachers.length + '条)</div>';
+        teachers.forEach(t => {
+          html += '<div class="wall-post" style="padding:12px;cursor:pointer;margin-bottom:8px;border:1px solid var(--border);border-radius:12px" onclick="openTeacherDetail(' + t.id + ')">' +
+            '<div style="font-weight:600;font-size:14px">👨‍🏫 ' + escHtml(t.name) + ' <span style="font-size:11px;font-weight:400;color:var(--text-secondary)">' + escHtml(t.title||'') + '</span></div>' +
+            '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(t.college||'未知学院') + ' · ' + (t.like_count||0) + ' 👍' + '</div>' +
+            '</div>';
+        });
+        if (teachers.length >= 50) { html += '<a onclick="switchPage(\'teacherPage\')" style="display:block;padding:8px 12px;text-align:center;font-size:13px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部教师 →</a>'; }
+      }
+
+      // 二手
+      if (marketItems.length > 0) {
+        html += '<div style="padding:12px 0 8px;font-size:13px;color:var(--text-secondary);font-weight:600">🛒 相关二手 (' + marketItems.length + '条)</div>';
+        marketItems.forEach(m => {
+          const priceText = m.price ? '¥' + m.price : '免费';
+          html += '<div style="padding:12px;cursor:pointer;margin-bottom:8px;border:1px solid var(--border);border-radius:12px;display:flex;justify-content:space-between;align-items:center" onclick="openItemDetail(' + m.id + ')">' +
+            '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">🛒 ' + escHtml(m.title) + '</div>' +
+            '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(m.description||'').substring(0, 50) + ' · ' + (m.views||0) + ' 次浏览</div></div>' +
+            '<div style="font-weight:600;color:#E74C3C;font-size:14px;flex-shrink:0;margin-left:12px">' + escHtml(priceText) + '</div>' +
+            '</div>';
+        });
+        if (marketItems.length >= 50) { html += '<a onclick="switchPage(\'marketPage\')" style="display:block;padding:8px 12px;text-align:center;font-size:13px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部二手 →</a>'; }
+      }
+
+      // 校园墙帖子
+      if (posts.length > 0) {
+        if (html) html += '<div style="padding:12px 0 8px;font-size:13px;color:var(--text-secondary);font-weight:600;border-top:1px solid var(--border);margin-top:8px">📱 相关帖子 (' + posts.length + '条)</div>';
+        html += posts.map(p => renderWallPostCard(p)).join('');
+      }
+
+      if (!html) {
+        el.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-secondary)"><div style="font-size:48px;margin-bottom:12px">🔍</div><div style="font-size:15px">没有找到相关内容</div></div>';
+        return;
+      }
+      el.innerHTML = html;
     }
 
     function clearGlobalSearch() {
