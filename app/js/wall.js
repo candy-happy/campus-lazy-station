@@ -373,34 +373,15 @@
       if (wasSelected) {
         el.classList.remove('selected');
         _selectedTags = _selectedTags.filter(t => t !== topic);
-        removeTagFromContent(topic);
       } else {
         if (_selectedTags.length >= 5) return showToast('最多选择5个标签');
         el.classList.add('selected');
         _selectedTags.push(topic);
-        appendTagToContent(topic);
       }
       updateSelectedTagPreview();
     }
 
-    function appendTagToContent(tag) {
-      const textarea = document.getElementById('wallPostContent');
-      if (!textarea) return;
-      const tagStr = '#' + tag + '#';
-      let text = textarea.value;
-      if (text.includes(tagStr)) return;
-      text = text.trimEnd();
-      textarea.value = text + (text ? ' ' : '') + tagStr;
-      onPostContentInput(textarea);
-    }
 
-    function removeTagFromContent(tag) {
-      const textarea = document.getElementById('wallPostContent');
-      if (!textarea) return;
-      const tagStr = '#' + tag + '#';
-      textarea.value = textarea.value.replace(tagStr, '').replace(/\s{2,}/g, ' ').trim();
-      onPostContentInput(textarea);
-    }
 
     function addCustomTag() {
       const input = document.getElementById('customTagInput');
@@ -410,7 +391,6 @@
       if (_selectedTags.includes(tag)) return showToast('标签已选择');
       if (_selectedTags.length >= 5) return showToast('最多选择5个标签');
       _selectedTags.push(tag);
-      appendTagToContent(tag);
       input.value = '';
       renderPostTagGrid();
       updateSelectedTagPreview();
@@ -423,7 +403,7 @@
       if (!content) return showToast('请输入内容');
       if (content.length > 500) return showToast('内容不能超过500字');
       // 从内容提取 #话题# 标签，合并手动选择的标签
-      const hashTags = [...new Set([...extractHashTags(content), ..._selectedTags])];
+      const hashTags = [..._selectedTags];
       
       // 上传媒体文件
       let imageUrls = [];
