@@ -201,13 +201,16 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
   } else {
     posts = db.prepare(`SELECT * FROM wall_posts ORDER BY is_pinned DESC, exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
   }
-  // 屏蔽过滤：排除被当前用户屏蔽的用户的帖子
+  // 屏蔽过滤（双向）：①不看我屏蔽的人 ②不让屏蔽我的人看我
   if (phone) {
     const blockedPhones = new Set(
       db.prepare('SELECT blocked_phone FROM wall_blocks WHERE blocker_phone = ?').all(phone).map(r => r.blocked_phone)
     );
-    if (blockedPhones.size > 0) {
-      posts = posts.filter(p => !blockedPhones.has(p.phone));
+    const blockedByPhones = new Set(
+      db.prepare('SELECT blocker_phone FROM wall_blocks WHERE blocked_phone = ?').all(phone).map(r => r.blocker_phone)
+    );
+    if (blockedPhones.size > 0 || blockedByPhones.size > 0) {
+      posts = posts.filter(p => !blockedPhones.has(p.phone) && !blockedByPhones.has(p.phone));
     }
   }
   // 按作者筛选（用于卖家校园墙等场景）
@@ -242,15 +245,32 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
 router.get('/posts/:id', (req, res) => JSON_RES(res, () => {
   const post = db.prepare('SELECT * FROM wall_posts WHERE id = ?').get(req.params.id);
   if (!post) return makeError('帖子不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
+  const viewerPhone = req.query.phone || '';
+  // 屏蔽检查：双向过滤（不看屏蔽的人，也不让屏蔽我的人看）
+  if (viewerPhone) {
+    const isBlocked = db.prepare('SELECT 1 FROM wall_blocks WHERE (blocker_phone = ? AND blocked_phone = ?) OR (blocker_phone = ? AND blocked_phone = ?)').get(viewerPhone, post.phone, post.phone, viewerPhone);
+    if (isBlocked) return makeError('帖子不可见', ErrorCode.WALL_POST_NOT_FOUND, 404);
+  }
   // 记录浏览量（点开详情才算浏览）
   try {
-    const viewerPhone = req.query.phone || '';
     if (viewerPhone) {
       db.prepare("INSERT OR IGNORE INTO wall_exposures (post_id, phone, created_at) VALUES (?, ?, datetime('now','localtime'))").run(req.params.id, viewerPhone);
       db.prepare('UPDATE wall_posts SET exposure_count = exposure_count + 1 WHERE id = ?').run(req.params.id);
     }
   } catch (e) {}
-  const comments = db.prepare('SELECT * FROM wall_comments WHERE post_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id);
+  let comments = db.prepare('SELECT * FROM wall_comments WHERE post_id = ? ORDER BY created_at DESC LIMIT 50').all(req.params.id);
+  // 评论过滤：排除双向屏蔽用户的评论
+  if (viewerPhone) {
+    const blockedPhones = new Set(
+      db.prepare('SELECT blocked_phone FROM wall_blocks WHERE blocker_phone = ?').all(viewerPhone).map(r => r.blocked_phone)
+    );
+    const blockedByPhones = new Set(
+      db.prepare('SELECT blocker_phone FROM wall_blocks WHERE blocked_phone = ?').all(viewerPhone).map(r => r.blocker_phone)
+    );
+    if (blockedPhones.size > 0 || blockedByPhones.size > 0) {
+      comments = comments.filter(c => !blockedPhones.has(c.phone) && !blockedByPhones.has(c.phone));
+    }
+  }
   // 批量加载帖主+所有评论者头像（避免 N+1）
   const allPhones = [post.phone, ...comments.map(c => c.phone)];
   const detailAvatarMap = batchLoadAvatars(allPhones);
