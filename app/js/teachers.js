@@ -17,10 +17,11 @@ async function loadTeacherColleges() {
     const res = await API.getTeacherColleges();
     if (res.colleges) {
       const bar = document.getElementById('teacherCollegeBar');
-      bar.innerHTML = '<div class="teacher-college-tag active" data-college="全部" onclick="filterTeacherCollege(\'全部\')">全部</div>';
+      let html = '<div class="teacher-college-tag active" data-college="全部" onclick="filterTeacherCollege(\'全部\')">全部</div>';
       res.colleges.forEach(c => {
-        bar.innerHTML += '<div class="teacher-college-tag" data-college="' + escHtml(c.college) + '" onclick="filterTeacherCollege(\'' + escHtml(c.college) + '\')">' + escHtml(c.college) + '(' + escHtml(String(c.count)) + ')</div>';
+        html += '<div class="teacher-college-tag" data-college="' + escHtml(c.college) + '" onclick="filterTeacherCollege(\'' + escHtml(c.college) + '\')">' + escHtml(c.college) + '(' + escHtml(String(c.count)) + ')</div>';
       });
+      bar.innerHTML = html;
       // 设置滚动监听更新箭头
       setTimeout(updateTeacherCollegeArrows, 50);
       bar.onscroll = updateTeacherCollegeArrows;
@@ -78,6 +79,7 @@ async function loadTeachers(reset = true) {
     if (!container) return;
     if (reset) container.innerHTML = '';
     if (res.teachers && res.teachers.length > 0) {
+      let html = '';
       res.teachers.forEach(t => {
         const ratingClass = t.avg_rating >= 4 ? 'teacher-rating-high' : t.avg_rating >= 3 ? 'teacher-rating-mid' : 'teacher-rating-low';
         const titleTag = t.title ? '<span style="font-size:11px;color:#FF6B35;background:#FFF3E0;padding:1px 6px;border-radius:4px;margin-left:6px">' + escHtml(t.title) + '</span>' : '';
@@ -89,7 +91,7 @@ async function loadTeachers(reset = true) {
           courseTags = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' +
             cList.map(c => '<span style="font-size:10px;color:#FF6B35;background:#FFF3E0;padding:1px 6px;border-radius:4px">' + escHtml(c.trim()) + '</span>').join('') + '</div>';
         }
-        container.innerHTML += '<div class="teacher-card" onclick="openTeacherDetail(' + t.id + ')">' +
+        html += '<div class="teacher-card" onclick="openTeacherDetail(' + t.id + ')">' +
           '<div class="teacher-avatar-lg">' + t.name.charAt(0) + '</div>' +
           '<div class="teacher-info">' +
             '<div class="teacher-name">' + escHtml(t.name) + titleTag + gradTag + '</div>' +
@@ -103,6 +105,7 @@ async function loadTeachers(reset = true) {
           '</div>' +
         '</div>';
       });
+      container.innerHTML += html;
       // 显示/隐藏加载更多
       document.getElementById('teacherLoadMore').style.display = res.page < res.totalPages ? 'block' : 'none';
       // 不再在此处重新加载学院标签，避免覆盖用户选中的学院
