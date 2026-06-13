@@ -424,8 +424,44 @@
       if (content.length > 500) return showToast('内容不能超过500字');
       // 从内容提取 #话题# 标签，合并手动选择的标签
       const hashTags = [...new Set([...extractHashTags(content), ..._selectedTags])];
-      const res = await API.wallPost({ phone: currentUser.phone, nickname: currentUser.name, avatar: currentUser.avatar || '', content: content, tags: hashTags.join(',') });
+      
+      // 上传媒体文件
+      let imageUrls = [];
+      if (wallSelectedFiles && wallSelectedFiles.length > 0) {
+        const uploadPromises = wallSelectedFiles.map(async (file) => {
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', file.type.startsWith('video') ? 'video' : 'image');
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_token') || '') },
+              body: formData
+            });
+            const data = await res.json();
+            if (data.url) return data.url;
+            return null;
+          } catch (e) {
+            console.error('上传失败:', e);
+            return null;
+          }
+        });
+        const results = await Promise.all(uploadPromises);
+        imageUrls = results.filter(url => url !== null);
+      }
+      
+      const res = await API.wallPost({ 
+        phone: currentUser.phone, 
+        nickname: currentUser.name, 
+        avatar: currentUser.avatar || '', 
+        content: content, 
+        tags: hashTags.join(','),
+        images: imageUrls.join(',')
+      });
       if (res.error) return showToast(res.error);
+      // 清空已选文件
+      wallSelectedFiles = [];
+      renderWallFilePreview();
       closeSubPage('wallPostPage_sub');
       showToast('发布成功！🎉');
       loadWallFeed();
