@@ -615,8 +615,66 @@ window.showTermsModal = showTermsModal;
       }
     }
 
+    // ─── 黑名单 ────────────────────────────────────
+    async function showBlockList() {
+      try {
+        const blocks = await API.wallGetBlocks();
+        const html = blocks && blocks.length > 0
+          ? blocks.map(b => {
+              const avatar = b.avatar || '';
+              const nickname = b.nickname || b.blocked_phone || '未知';
+              const avatarHtml = avatar
+                ? `<img src="${escHtml(avatar)}" style="width:40px;height:40px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'" />`
+                : `<div style="width:40px;height:40px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">${(nickname[0]||'?').toUpperCase()}</div>`;
+              return `
+                <div class="block-list-item" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+                  ${avatarHtml}
+                  <div style="flex:1;min-width:0">
+                    <div style="font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(nickname)}</div>
+                    <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${escHtml(b.blocked_phone)}</div>
+                  </div>
+                  <button onclick="event.stopPropagation();doUnblockUser('${escHtml(b.blocked_phone)}')" style="padding:6px 14px;border:1.5px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap">解除屏蔽</button>
+                </div>`;
+            }).join('')
+          : '<div style="text-align:center;padding:40px 20px;color:var(--text-secondary);font-size:14px">📭 黑名单为空</div>';
+        const overlay = document.createElement('div');
+        overlay.id = 'blockListOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
+        overlay.innerHTML = `
+          <div style="background:var(--card);border-radius:20px;padding:0;width:100%;max-width:400px;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 20px 12px">
+              <h3 style="font-size:18px;font-weight:700;margin:0">🚫 黑名单</h3>
+              <button onclick="document.getElementById('blockListOverlay').remove()" style="width:32px;height:32px;border:none;border-radius:50%;background:var(--bg);color:var(--text);font-size:18px;cursor:pointer;line-height:1;font-family:inherit">✕</button>
+            </div>
+            <div style="overflow-y:auto;padding:0 20px 20px;flex:1">
+              ${html}
+            </div>
+          </div>`;
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        document.body.appendChild(overlay);
+      } catch(e) {
+        showToast('加载失败: ' + (e.message || '请重试'));
+      }
+    }
+
+    async function doUnblockUser(phone) {
+      if (!confirm('确定解除对 ' + phone + ' 的屏蔽？')) return;
+      try {
+        await API.wallUnblockUser(phone);
+        showToast('✅ 已解除屏蔽');
+        const overlay = document.getElementById('blockListOverlay');
+        if (overlay) overlay.remove();
+        // 重新打开黑名单
+        showBlockList();
+      } catch(e) {
+        showToast('操作失败: ' + (e.message || '请重试'));
+      }
+    }
+
     window.showSettings = showSettings;
 window.showWallPrivacySettings = showWallPrivacySettings;
+window.showBlockList = showBlockList;
+window.doUnblockUser = doUnblockUser;
 window.selectPrivacyLevel = selectPrivacyLevel;
 window.saveWallPrivacy = saveWallPrivacy;
 window.toggleLanguage = toggleLanguage;
