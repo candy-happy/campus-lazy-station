@@ -104,6 +104,15 @@ const API = {
     return { ...this._user, isNewUser: res.isNewUser };
   },
 
+  async verifyPassword(oldPassword) {
+    const res = await fetch('/api/user/verify-password', {
+      method: 'POST', headers: this._headers(),
+      body: JSON.stringify({ oldPassword })
+    }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    return res.valid === true;
+  },
+
   async changePassword(oldPassword, newPassword) {
     const res = await fetch('/api/user/change-password', {
       method: 'POST', headers: this._headers(),

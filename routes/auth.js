@@ -90,6 +90,26 @@ router.post('/user/login', loginRateLimit, (req, res) => JSON_RES(res, () => {
   };
 }));
 
+// ─── 验证旧密码 ───────────────────────────────────────────
+router.post('/user/verify-password', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { oldPassword } = req.body;
+  if (!oldPassword) return makeError('请输入旧密码', ErrorCode.PARAM_MISSING);
+
+  const student_id = req.user.student_id;
+  if (!student_id) return makeError('当前账号未绑定学号', ErrorCode.FORBIDDEN);
+
+  const user = db.prepare('SELECT * FROM users WHERE student_id = ?').get(student_id);
+  if (!user) return makeError('用户不存在', ErrorCode.USER_NOT_FOUND);
+
+  let matched = false;
+  if (user.password) {
+    matched = bcrypt.compareSync(oldPassword, user.password);
+  } else {
+    matched = (oldPassword === 'shoujihao');
+  }
+  return { ok: true, valid: matched };
+}));
+
 // ─── 修改密码 ─────────────────────────────────────────────
 router.post('/user/change-password', requireAuth, (req, res) => JSON_RES(res, () => {
   const { oldPassword, newPassword } = req.body;

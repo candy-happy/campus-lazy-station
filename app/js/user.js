@@ -280,44 +280,93 @@
     }
 
     // ─── 修改密码弹窗 ────────────────────────────────────
+    var _verifiedOldPwd = ''; // 已验证通过的旧密码
+
     function showChangePassword() {
       const old = document.getElementById('changePwdOverlay');
       if (old) old.remove();
+      _verifiedOldPwd = '';
       const overlay = document.createElement('div');
       overlay.id = 'changePwdOverlay';
       overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
       overlay.innerHTML = `
-        <div style="background:var(--card);border-radius:20px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div class="change-pwd-card" style="background:var(--card);border-radius:20px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
           <h3 style="font-size:18px;font-weight:700;margin-bottom:20px;text-align:center">🔑 修改密码</h3>
-          <div style="margin-bottom:16px">
-            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px">旧密码</label>
-            <input id="changePwdOld" type="password" placeholder="输入旧密码" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
+          <p id="changePwdHint" style="font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:16px">请先验证旧密码</p>
+          <div id="changePwdStep1">
+            <div style="margin-bottom:16px">
+              <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px">旧密码</label>
+              <input id="changePwdOld" type="password" placeholder="输入旧密码" autocomplete="new-password" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
+            </div>
+            <div style="display:flex;gap:10px">
+              <button onclick="document.getElementById('changePwdOverlay').remove()" style="flex:1;padding:12px;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font-size:15px;cursor:pointer;font-family:inherit">取消</button>
+              <button id="changePwdVerify" onclick="doVerifyOldPassword()" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--gradient);color:white;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">验证</button>
+            </div>
           </div>
-          <div style="margin-bottom:20px">
-            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px">新密码</label>
-            <input id="changePwdNew" type="password" placeholder="新密码（至少6位）" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
-          </div>
-          <div style="display:flex;gap:10px">
-            <button onclick="document.getElementById('changePwdOverlay').remove()" style="flex:1;padding:12px;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font-size:15px;cursor:pointer;font-family:inherit">取消</button>
-            <button id="changePwdSubmit" onclick="doChangePassword()" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--gradient);color:white;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">确认修改</button>
+          <div id="changePwdStep2" style="display:none">
+            <div style="margin-bottom:12px">
+              <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px">新密码</label>
+              <input id="changePwdNew" type="password" placeholder="新密码（至少6位）" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
+            </div>
+            <div style="margin-bottom:16px">
+              <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px">确认新密码</label>
+              <input id="changePwdNew2" type="password" placeholder="再次输入新密码" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
+            </div>
+            <div style="display:flex;gap:10px">
+              <button onclick="showChangePassword()" style="flex:1;padding:12px;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font-size:15px;cursor:pointer;font-family:inherit">← 返回</button>
+              <button id="changePwdSubmit" onclick="doChangePassword()" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--gradient);color:white;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">确认修改</button>
+            </div>
           </div>
         </div>`;
       overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);
-      setTimeout(() => document.getElementById('changePwdOld')?.focus(), 100);
+      setTimeout(() => {
+        const inp = document.getElementById('changePwdOld');
+        if (inp) { inp.value = ''; inp.focus(); }
+      }, 150);
     }
 
-    async function doChangePassword() {
+    // 第一步：验证旧密码
+    async function doVerifyOldPassword() {
       const oldPwd = document.getElementById('changePwdOld').value.trim();
-      const newPwd = document.getElementById('changePwdNew').value.trim();
-      const btn = document.getElementById('changePwdSubmit');
+      const btn = document.getElementById('changePwdVerify');
       if (!oldPwd) return showToast('请输入旧密码');
+      btn.textContent = '验证中...';
+      btn.disabled = true;
+      try {
+        const valid = await API.verifyPassword(oldPwd);
+        if (!valid) {
+          showToast('❌ 旧密码不正确');
+          return;
+        }
+        _verifiedOldPwd = oldPwd;
+        // 切换到第二步
+        document.getElementById('changePwdStep1').style.display = 'none';
+        document.getElementById('changePwdStep2').style.display = 'block';
+        document.getElementById('changePwdHint').textContent = '旧密码验证通过，请设置新密码';
+        document.getElementById('changePwdHint').style.color = '#22c55e';
+        setTimeout(() => document.getElementById('changePwdNew')?.focus(), 100);
+      } catch(e) {
+        showToast('验证失败: ' + (e.message || '请重试'));
+      } finally {
+        btn.textContent = '验证';
+        btn.disabled = false;
+      }
+    }
+
+    // 第二步：修改密码（需两次输入一致）
+    async function doChangePassword() {
+      const newPwd = document.getElementById('changePwdNew').value.trim();
+      const newPwd2 = document.getElementById('changePwdNew2').value.trim();
+      const btn = document.getElementById('changePwdSubmit');
       if (!newPwd) return showToast('请输入新密码');
       if (newPwd.length < 6) return showToast('新密码长度至少6位');
+      if (newPwd !== newPwd2) return showToast('两次输入的新密码不一致');
+      if (newPwd === _verifiedOldPwd) return showToast('新密码不能与旧密码相同');
       btn.textContent = '修改中...';
       btn.disabled = true;
       try {
-        await API.changePassword(oldPwd, newPwd);
+        await API.changePassword(_verifiedOldPwd, newPwd);
         showToast('✅ 密码修改成功');
         document.getElementById('changePwdOverlay').remove();
       } catch(e) {
@@ -578,6 +627,7 @@ window.saveProfile = saveProfile;
 window.uploadUserAvatar = uploadUserAvatar;
 window.uploadUserBg = uploadUserBg;
 window.showChangePassword = showChangePassword;
+window.doVerifyOldPassword = doVerifyOldPassword;
 window.doChangePassword = doChangePassword;
 window.showLoginPage = showLoginPage;
 window.doLogin = doLogin;
