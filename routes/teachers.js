@@ -29,6 +29,38 @@ const reviewUpload = multer({
 
 const router = Router();
 
+// ── 从bio中提取结构化信息 ──────────────────────────
+function enrichFromBio(teacher) {
+  if (!teacher || !teacher.bio) return teacher;
+  const bio = teacher.bio;
+  
+  // 提取研究方向（仅在research为空时）
+  if (!teacher.research) {
+    const m = bio.match(/研究方向[：:]\s*([^。；]+)/);
+    if (m) teacher.research = m[1].trim().replace(/[。；]$/, '');
+  }
+  
+  // 提取主讲课程（仅在courses为空时）
+  if (!teacher.courses) {
+    const m = bio.match(/主讲课程[：:]\s*([^。]+)/);
+    if (m) teacher.courses = m[1].trim().replace(/[。；]$/, '');
+  }
+  
+  // 提取毕业院校（仅在graduate为空时）
+  if (!teacher.graduate) {
+    const m = bio.match(/([\u4e00-\u9fff]+大学)/);
+    if (m) teacher.graduate = m[1];
+  }
+  
+  // 提取学历（仅在education为空时）
+  if (!teacher.education) {
+    const m = bio.match(/(博士研究生|硕士研究生|大学本科|[硕博本]士)/);
+    if (m) teacher.education = m[1];
+  }
+  
+  return teacher;
+}
+
 // ── 获取学院列表 ──────────────────────────────────────
 router.get('/colleges', (req, res) => JSON_RES(res, () => {
   const rows = db.prepare('SELECT college, COUNT(*) as count FROM teachers GROUP BY college ORDER BY count DESC').all();
@@ -61,16 +93,17 @@ router.get('/', (req, res) => JSON_RES(res, () => {
   
   const total = db.prepare(`SELECT COUNT(*) as c FROM teachers WHERE ${where}`).get(...params).c;
   const teachers = db.prepare(
-    `SELECT id, name, college, title, research, avatar, education, graduate, courses, like_count, review_count, avg_rating FROM teachers WHERE ${where} ORDER BY like_count DESC, review_count DESC LIMIT ? OFFSET ?`
+    `SELECT id, name, college, title, research, avatar, education, graduate, courses, bio, like_count, review_count, avg_rating FROM teachers WHERE ${where} ORDER BY like_count DESC, review_count DESC LIMIT ? OFFSET ?`
   ).all(...params, parseInt(limit), offset);
   
-  return { teachers, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) };
+  return { teachers: teachers.map(enrichFromBio), total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) };
 }));
 
 // ── 获取教师详情 ──────────────────────────────────────
 router.get('/:id', (req, res) => JSON_RES(res, () => {
-  const teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
-  if (!teacher) return { error: '教师不存在', code: 'TEACHER_001', status: 404 };
+  const teacherRaw = db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
+  if (!teacherRaw) return { error: '教师不存在', code: 'TEACHER_001', status: 404 };
+  const teacher = enrichFromBio(teacherRaw);
   
   // 获取最新评价（匿名评价隐藏nickname/avatar/phone）
   let reviews = db.prepare(
