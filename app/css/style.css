@@ -276,8 +276,9 @@
       color: #000 !important;
       outline: none;
     }
-    .search-bar input::placeholder { color: #999 !important; }
-    .search-icon { font-size: 18px; color: #333 !important; }
+    /* 修复搜索提示: .header 有 color:white 会被继承, 导致白底白字 */
+    .search-bar, .search-bar * { color: #333 !important; }
+    .search-bar .search-icon { color: #333 !important; }
     /* 暗色模式下强制搜索框白底黑字，对抗 body.dark input 全局规则 */
     body.dark .search-bar { background: rgba(255,255,255,0.95) !important; }
     body.dark .search-bar input { color: #000 !important; background: transparent !important; }
