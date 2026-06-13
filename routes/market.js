@@ -405,6 +405,17 @@ router.get('/items/:id/comments', (req, res) => JSON_RES(res, () => {
   const item = db.prepare('SELECT id FROM market_items WHERE id = ?').get(itemId);
   if (!item) return notFound('商品不存在');
 
+  // 获取当前查看者手机号
+  let viewerPhone = '';
+  const authHdr = req.headers.authorization;
+  if (authHdr && authHdr.startsWith('Bearer ')) {
+    try {
+      const { verifyToken } = require('../utils/jwt');
+      const decoded = verifyToken(authHdr.slice(7));
+      if (decoded && decoded.phone) viewerPhone = decoded.phone;
+    } catch (e) {}
+  }
+
   // 获取顶层评论
   const comments = db.prepare(
     'SELECT mc.*, u.name as user_name, u.avatar as user_avatar ' +
@@ -412,19 +423,33 @@ router.get('/items/:id/comments', (req, res) => JSON_RES(res, () => {
     'WHERE mc.item_id = ? AND mc.parent_id IS NULL ORDER BY mc.created_at DESC'
   ).all(itemId);
 
+  // 屏蔽过滤（双向）：排除双向屏蔽用户的评论
+  let blockedPhones = new Set(), blockedByPhones = new Set();
+  if (viewerPhone) {
+    blockedPhones = new Set(db.prepare('SELECT blocked_phone FROM wall_blocks WHERE blocker_phone = ?').all(viewerPhone).map(r => r.blocked_phone));
+    blockedByPhones = new Set(db.prepare('SELECT blocker_phone FROM wall_blocks WHERE blocked_phone = ?').all(viewerPhone).map(r => r.blocker_phone));
+  }
+
+  const filterBlocked = (c) => {
+    if (!viewerPhone) return true;
+    return !blockedPhones.has(c.user_phone) && !blockedByPhones.has(c.user_phone);
+  };
+
+  const filteredComments = comments.filter(filterBlocked);
+
   // 获取每条评论的回复
-  comments.forEach(c => {
+  filteredComments.forEach(c => {
     const replies = db.prepare(
       'SELECT mc.*, u.name as user_name, u.avatar as user_avatar ' +
       'FROM market_comments mc LEFT JOIN users u ON mc.user_phone = u.phone ' +
       'WHERE mc.parent_id = ? ORDER BY mc.created_at ASC'
     ).all(c.id);
-    c.replies = replies;
-    c.reply_count = replies.length;
+    c.replies = replies.filter(filterBlocked);
+    c.reply_count = c.replies.length;
   });
 
-  const total = db.prepare('SELECT COUNT(*) as cnt FROM market_comments WHERE item_id = ?').get(itemId).cnt;
-  return { comments, total };
+  const total = filteredComments.length + filteredComments.reduce((sum, c) => sum + c.replies.length, 0);
+  return { comments: filteredComments, total };
 }));
 
 // 发表评论（支持图片/视频）

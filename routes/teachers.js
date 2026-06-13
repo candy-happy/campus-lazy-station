@@ -73,10 +73,17 @@ router.get('/:id', (req, res) => JSON_RES(res, () => {
   if (!teacher) return { error: '教师不存在', code: 'TEACHER_001', status: 404 };
   
   // 获取最新评价（匿名评价隐藏nickname/avatar/phone）
-  const reviews = db.prepare(
+  let reviews = db.prepare(
     `SELECT r.id, CASE WHEN r.is_anonymous = 1 THEN '' ELSE r.phone END as phone, CASE WHEN r.is_anonymous = 1 THEN '匿名' ELSE r.nickname END as nickname, CASE WHEN r.is_anonymous = 1 THEN '' ELSE r.avatar END as avatar, r.rating, r.content, r.created_at, r.is_anonymous, r.media_url 
      FROM teacher_reviews r WHERE r.teacher_id = ? ORDER BY r.created_at DESC LIMIT 20`
   ).all(req.params.id);
+
+  // 屏蔽过滤（双向）：排除双向屏蔽用户的评价
+  if (req.user && req.user.phone) {
+    const bp = new Set(db.prepare('SELECT blocked_phone FROM wall_blocks WHERE blocker_phone = ?').all(req.user.phone).map(r => r.blocked_phone));
+    const bb = new Set(db.prepare('SELECT blocker_phone FROM wall_blocks WHERE blocked_phone = ?').all(req.user.phone).map(r => r.blocker_phone));
+    if (bp.size > 0 || bb.size > 0) reviews = reviews.filter(r => !bp.has(r.phone) && !bb.has(r.phone));
+  }
   
   // 获取今日是否已点赞/已评论
   const today = new Date().toISOString().slice(0, 10);

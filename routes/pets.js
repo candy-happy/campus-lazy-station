@@ -148,9 +148,25 @@ router.get('/detail/:id', (req, res) => JSON_RES(res, () => {
   if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
 
   // 获取最新评论
-  const comments = db.prepare(
+  let comments = db.prepare(
     'SELECT * FROM pet_comments WHERE pet_id = ? ORDER BY created_at DESC LIMIT 50'
   ).all(req.params.id);
+
+  // 屏蔽过滤（双向）：排除双向屏蔽用户的评论
+  let viewerPhoneForPets = '';
+  const authHdr = req.headers.authorization;
+  if (authHdr && authHdr.startsWith('Bearer ')) {
+    try {
+      const { verifyToken } = require('../utils/jwt');
+      const decoded = verifyToken(authHdr.slice(7));
+      if (decoded && decoded.phone) viewerPhoneForPets = decoded.phone;
+    } catch (e) {}
+  }
+  if (viewerPhoneForPets) {
+    const bp = new Set(db.prepare('SELECT blocked_phone FROM wall_blocks WHERE blocker_phone = ?').all(viewerPhoneForPets).map(r => r.blocked_phone));
+    const bb = new Set(db.prepare('SELECT blocker_phone FROM wall_blocks WHERE blocked_phone = ?').all(viewerPhoneForPets).map(r => r.blocker_phone));
+    if (bp.size > 0 || bb.size > 0) comments = comments.filter(c => !bp.has(c.phone) && !bb.has(c.phone));
+  }
 
   // 评论头像同步
   const enrichedComments = comments.map(c => {
