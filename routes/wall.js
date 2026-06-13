@@ -188,7 +188,7 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
         WHERE p.${tagWhere.replace(/tags/g, 'p.tags')}
         ORDER BY p.is_pinned DESC, p.created_at DESC LIMIT ? OFFSET ?`).all(phone, ...tagParams, l, offset);
     } else if (tab === 'hot') {
-      posts = db.prepare(`SELECT * FROM wall_posts WHERE exposure_done = 1 AND ${tagWhere} ORDER BY is_pinned DESC, like_count DESC, created_at DESC LIMIT ? OFFSET ?`).all(...tagParams, l, offset);
+      posts = db.prepare(`SELECT * FROM wall_posts WHERE exposure_done = 1 AND created_at > datetime('now', '-7 days') AND ${tagWhere} ORDER BY is_pinned DESC, like_count DESC, created_at DESC LIMIT ? OFFSET ?`).all(...tagParams, l, offset);
     } else {
       posts = db.prepare(`SELECT * FROM wall_posts WHERE ${tagWhere} ORDER BY is_pinned DESC, exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all(...tagParams, l, offset);
     }
@@ -197,7 +197,7 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
       JOIN wall_follows f ON f.following_phone = p.phone AND f.follower_phone = ?
       ORDER BY p.is_pinned DESC, p.created_at DESC LIMIT ? OFFSET ?`).all(phone, l, offset);
   } else if (tab === 'hot') {
-    posts = db.prepare(`SELECT * FROM wall_posts WHERE exposure_done = 1 ORDER BY is_pinned DESC, like_count DESC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
+    posts = db.prepare(`SELECT * FROM wall_posts WHERE exposure_done = 1 AND created_at > datetime('now', '-7 days') ORDER BY is_pinned DESC, like_count DESC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
   } else {
     posts = db.prepare(`SELECT * FROM wall_posts ORDER BY is_pinned DESC, exposure_done ASC, created_at DESC LIMIT ? OFFSET ?`).all(l, offset);
   }
