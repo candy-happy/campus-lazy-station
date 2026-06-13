@@ -447,6 +447,7 @@
       overflow: hidden;
       aspect-ratio: 4/3;
       min-height: 220px; /* QQ浏览器 aspect-ratio 降级 */
+      min-width: 0; /* 允许 Grid 收缩，防止图片撑破容器 */
       cursor: pointer;
       transition: all 0.4s ease;
       box-shadow: var(--shadow-sm);
@@ -461,6 +462,8 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      min-width: 0;
+      min-height: 0;
       transition: transform 0.6s ease;
     }
 
@@ -891,42 +894,156 @@
       color: var(--primary-light);
     }
 
+    /* 汉堡菜单按钮（仅移动端显示） */
+    .nav-hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      z-index: 1001;
+      width: 36px;
+      height: 28px;
+      justify-content: center;
+    }
+    .nav-hamburger span {
+      display: block;
+      width: 24px;
+      height: 2.5px;
+      background: var(--text-primary);
+      border-radius: 2px;
+      transition: all 0.3s ease;
+      transform-origin: center;
+    }
+    .nav-hamburger.open span:nth-child(1) {
+      transform: translateY(7.5px) rotate(45deg);
+    }
+    .nav-hamburger.open span:nth-child(2) {
+      opacity: 0;
+    }
+    .nav-hamburger.open span:nth-child(3) {
+      transform: translateY(-7.5px) rotate(-45deg);
+    }
+
+    /* 移动端导航抽屉 */
+    .nav-mobile-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 999;
+    }
+    .nav-mobile-overlay.open {
+      display: block;
+    }
+    .nav-mobile-drawer {
+      position: fixed;
+      top: 0;
+      right: -280px;
+      width: 260px;
+      height: 100vh;
+      background: white;
+      z-index: 1000;
+      padding: 80px 28px 28px;
+      transition: right 0.35s ease;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+    }
+    .nav-mobile-drawer.open {
+      right: 0;
+    }
+    .nav-mobile-drawer a {
+      display: block;
+      padding: 14px 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-decoration: none;
+      border-bottom: 1px solid var(--border-light);
+      transition: color 0.2s ease;
+    }
+    .nav-mobile-drawer a:active {
+      color: var(--primary);
+    }
+
+    /* ===== 响应式 ===== */
     @media (max-width: 900px) {
-      .nav-links {
-        display: none;
-      }
-
-      .hero-stats {
-        gap: 32px;
-      }
-
+      .nav-links { display: none; }
+      .nav-hamburger { display: flex; }
+      .hero-stats { gap: 24px; }
       .campus-card.large {
         grid-column: span 1;
+        aspect-ratio: auto; /* 移动端不强制宽高比，避免 min-height 撑破 Grid */
       }
     }
 
-    @media (max-width: 600px) {
-      nav {
-        height: 64px;
-      }
+    @media (max-width: 768px) {
+      nav { height: 60px; padding: 0 16px; }
+      .nav-logo-text { font-size: 1rem; }
+      .nav-logo-tag { font-size: 0.65rem; padding: 2px 8px; }
+      .nav-logo-icon { width: 36px; height: 36px; border-radius: 10px; }
+      .nav-cta { padding: 8px 18px; font-size: 0.82rem; }
 
-      .nav-cta {
-        padding: 8px 20px;
-        font-size: 0.85rem;
-      }
+      section { padding: 56px 16px; }
+      .section-header { margin-bottom: 32px; }
+      .section-title { font-size: 1.5rem; }
+      .section-desc { font-size: 0.9rem; }
 
-      .hero-title {
-        font-size: clamp(2.2rem, 8vw, 3rem);
-      }
+      .hero { min-height: auto; padding: 88px 16px 48px; }
+      .hero-title { font-size: clamp(2rem, 8vw, 2.8rem); }
+      .hero-subtitle { font-size: 0.95rem; line-height: 1.7; }
+      .btn-primary, .btn-secondary { padding: 14px 28px; font-size: 0.92rem; }
 
-      .hero-subtitle {
-        font-size: 1rem;
-      }
+      .campus-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .wall-showcase { grid-template-columns: 1fr; gap: 16px; }
+      .features-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+      .safety-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
 
-      .btn-primary, .btn-secondary {
-        padding: 12px 28px;
-        font-size: 0.95rem;
-      }
+      /* 触屏：校园照片标题始终可见 */
+      .campus-card-overlay { opacity: 1; background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.65) 100%); }
+
+      .cta-section { padding: 56px 16px; }
+      .cta-title { font-size: 1.5rem; }
+      .cta-desc { font-size: 0.9rem; max-width: 100%; margin-bottom: 28px; }
+      .cta-btn { padding: 14px 32px; font-size: 0.92rem; }
+
+      .footer-content { flex-direction: column; gap: 28px; }
+      .footer-brand { max-width: 100%; }
+      .footer-links-group { flex-direction: row; gap: 40px; }
+    }
+
+    @media (max-width: 480px) {
+      .nav-logo-tag { display: none; }
+      .hero { padding: 76px 16px 40px; }
+      .hero-title { font-size: clamp(1.7rem, 9vw, 2.2rem); }
+      .hero-subtitle { font-size: 0.88rem; }
+      .hero-actions { flex-direction: column; align-items: stretch; }
+      .btn-primary, .btn-secondary { width: 100%; justify-content: center; padding: 14px 20px; font-size: 0.9rem; }
+      .hero-stats { gap: 16px; }
+      .stat-value { font-size: 1.5rem; }
+      .stat-label { font-size: 0.75rem; }
+
+      section { padding: 44px 14px; }
+      .section-title { font-size: 1.35rem; }
+
+      .campus-grid { grid-template-columns: 1fr; gap: 12px; }
+      .campus-card { min-height: 200px; }
+      .campus-card.large { min-height: 220px; }
+      .features-grid { grid-template-columns: 1fr; gap: 12px; }
+      .safety-grid { grid-template-columns: 1fr; gap: 10px; }
+      .feature-card { padding: 24px 20px; }
+
+      .wall-card { padding: 18px; }
+      .wall-action { gap: 4px; font-size: 0.78rem; }
+
+      .cta-section { padding: 48px 14px; }
+      .cta-title { font-size: 1.3rem; }
+      .cta-buttons { flex-direction: column; align-items: stretch; }
+      .cta-btn { width: 100%; justify-content: center; }
+
+      .footer-links-group { flex-direction: column; gap: 20px; }
+      .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
     }
   </style>
 </head>
@@ -946,7 +1063,21 @@
     </ul>
 
     <a href="app.html" class="nav-cta">进入平台 →</a>
+
+    <button class="nav-hamburger" id="navHamburger" aria-label="菜单">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
+
+  <!-- 移动端导航遮罩 -->
+  <div class="nav-mobile-overlay" id="navMobileOverlay"></div>
+  <div class="nav-mobile-drawer" id="navMobileDrawer">
+    <a href="#campus">🏫 校园风光</a>
+    <a href="#wall">💬 校园墙</a>
+    <a href="#features">✨ 功能特色</a>
+    <a href="#safety">🛡️ 安全保障</a>
+    <a href="app.html" style="color: var(--primary); border-bottom: none; margin-top: 8px; font-weight: 700;">📱 进入平台 →</a>
+  </div>
 
   <section class="hero">
     <div class="hero-bg"></div>
@@ -1257,10 +1388,41 @@
   </footer>
 
   <script>
+    // 导航栏滚动阴影
     window.addEventListener('scroll', function() {
-      const navbar = document.getElementById('navbar');
+      var navbar = document.getElementById('navbar');
       navbar.classList.toggle('scrolled', window.scrollY > 50);
     });
+
+    // 移动端汉堡菜单
+    (function() {
+      var btn = document.getElementById('navHamburger');
+      var overlay = document.getElementById('navMobileOverlay');
+      var drawer = document.getElementById('navMobileDrawer');
+      var links = drawer.querySelectorAll('a');
+      var open = false;
+
+      function toggle() {
+        open = !open;
+        btn.classList.toggle('open', open);
+        overlay.classList.toggle('open', open);
+        drawer.classList.toggle('open', open);
+        document.body.style.overflow = open ? 'hidden' : '';
+      }
+
+      function close() {
+        if (!open) return;
+        open = false;
+        btn.classList.remove('open');
+        overlay.classList.remove('open');
+        drawer.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+
+      btn.addEventListener('click', toggle);
+      overlay.addEventListener('click', close);
+      links.forEach(function(a) { a.addEventListener('click', close); });
+    })();
   </script>
 </body>
 </html>
