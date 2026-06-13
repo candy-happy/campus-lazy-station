@@ -126,18 +126,11 @@ async function openTeacherDetail(id) {
     if (!t) return showToast('教师不存在');
 
     // ── 教师信息头部卡片（渐变背景） ──
-    const researchTags = t.research
-      ? t.research.split(/[，,、；;]/).filter(r => r.trim()).map(r =>
-          '<span style="display:inline-block;padding:3px 10px;border-radius:12px;background:rgba(255,255,255,.2);font-size:11px;margin:2px">' + escHtml(r.trim()) + '</span>'
-        ).join('')
-      : '';
-
     document.getElementById('teacherInfoHeader').innerHTML =
       '<div style="background:linear-gradient(135deg,#FF6B35,#FF8C5A);padding:28px 16px 22px;color:#fff;text-align:center">' +
         '<div style="width:76px;height:76px;font-size:32px;margin:0 auto 12px;background:rgba(255,255,255,.2);color:#fff;border:3px solid rgba(255,255,255,.4);border-radius:50%;display:flex;align-items:center;justify-content:center">' + t.name.charAt(0) + '</div>' +
         '<div style="font-size:22px;font-weight:700">' + escHtml(t.name) + '</div>' +
         '<div style="font-size:13px;opacity:.85;margin-top:6px">' + escHtml(t.college) + (t.title ? ' · ' + escHtml(t.title) : '') + '</div>' +
-        (researchTags ? '<div style="margin-top:10px">' + researchTags + '</div>' : '') +
         '<div style="display:flex;gap:24px;justify-content:center;margin-top:16px">' +
           '<div style="text-align:center"><div style="font-size:22px;font-weight:700">' + (t.like_count||0) + '</div><div style="font-size:10px;opacity:.7">点赞</div></div>' +
           '<div style="width:1px;height:30px;background:rgba(255,255,255,.3)"></div>' +
