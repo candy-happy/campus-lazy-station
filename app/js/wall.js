@@ -337,7 +337,8 @@
         html += `<div class="post-tag-category-tags">`;
         visibleSubs.forEach(tag => {
           const isSelected = _selectedTags.includes(tag);
-          html += '<span class="post-topic-tag' + (isSelected ? ' selected' : '') + '" data-topic="' + tag + '" onclick="togglePostTag(this)">' + tag + '</span>';
+          const cfg = TAG_CONFIG[tag] || { emoji: '🏷️' };
+          html += '<span class="post-topic-tag' + (isSelected ? ' selected' : '') + '" data-topic="' + tag + '" onclick="togglePostTag(this)">' + cfg.emoji + ' ' + tag + '</span>';
         });
         html += `</div></div>`;
       });
