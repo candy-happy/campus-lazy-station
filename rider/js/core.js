@@ -1,5 +1,16 @@
 // core.js - 核心工具/全局/初始化
 
+// QQ/WeChat 浏览器兼容 polyfill
+if (!Object.fromEntries) {
+  Object.fromEntries = function(entries) {
+    var obj = {};
+    for (var i = 0; i < entries.length; i++) {
+      obj[entries[i][0]] = entries[i][1];
+    }
+    return obj;
+  };
+}
+
 // ====== 全局状态 ======
 var currentRider = null;
 var riderStatusFilter = 'all';

@@ -338,7 +338,7 @@ function showTeacherReviewForm(teacherId) {
     '<div style="margin-bottom:12px">' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
         '<label style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;border:1px solid #ddd;cursor:pointer;font-size:13px;color:#666">' +
-          '<input type="file" id="reviewMediaInput" accept="image/*,video/*" multiple style="display:none" onchange="handleReviewMedia(this)"> ' + _t('teacherReviewMedia') + '</label>' +
+          '<input type="file" id="reviewMediaInput" multiple style="display:none" onchange="handleReviewMedia(this)"> ' + _t('teacherReviewMedia') + '</label>' +
         '<span id="reviewMediaCount" style="font-size:11px;color:#999"></span>' +
       '</div>' +
       '<div id="reviewMediaPreview" style="display:flex;flex-wrap:wrap;gap:6px"></div>' +

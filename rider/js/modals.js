@@ -212,7 +212,7 @@
          '<div class="settings-level-badge"><span>' + (levelIcons[lvl]||'\u{1F949}') + '</span><span>' + (levelNames[lvl]||lvl) + '</span></div>' +
        '</div>' +
      '</div>' +
-     '<input type="file" id="riderAvatarInput" accept="image/*" style="display:none" onchange="uploadRiderAvatar(this)" />' +
+     '<input type="file" id="riderAvatarInput" style="display:none" onchange="uploadRiderAvatar(this)" />' +
      // Appearance
      '<div class="sp-card">' +
        '<div class="sp-card-title">外观</div>' +

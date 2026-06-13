@@ -7,7 +7,6 @@
   <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>校园圈</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="app/css/style.css?v=3.0.41" />
   <script src="api.js?v=3.0.33"></script>
   <script src="app/js/core.js?v=3.0.42"></script>
@@ -42,7 +41,7 @@
         </div>
         <div class="search-bar" style="position:relative">
           <span class="search-icon">🔍</span>
-          <input type="text" placeholder="搜索帖子、服务、订单..." data-i18n-placeholder="searchPlaceholder" id="globalSearchInput" style="color:#000;font-size:15px" onkeydown="if(event.key==='Enter')doGlobalSearch()" onfocus="showGlobalSearchHints()" oninput="showGlobalSearchHints()" />
+          <input type="text" placeholder="搜索帖子、服务、订单..." data-i18n-placeholder="searchPlaceholder" id="globalSearchInput" autocorrect="off" autocomplete="off" inputmode="search" style="color:#000;font-size:15px" onkeydown="if(event.key==='Enter')doGlobalSearch()" onfocus="showGlobalSearchHints()" oninput="showGlobalSearchHints()" />
           <button id="globalSearchClear" onclick="clearGlobalSearch()" style="position:absolute;right:40px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-secondary);display:none">✕</button>
           <button onclick="doGlobalSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);padding:4px 10px;border-radius:12px;background:var(--gradient);color:white;border:none;font-size:11px;cursor:pointer">搜索</button>
           <div id="globalSearchHints" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:0 0 12px 12px;box-shadow:var(--shadow);z-index:100;max-height:240px;overflow-y:auto"></div>
@@ -98,7 +97,7 @@
             <!-- 搜索栏 -->
             <div style="position:relative;margin-bottom:12px">
               <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
-              <input type="text" id="discoverSearchInput" placeholder="搜索社团或活动..." style="width:100%;padding:10px 36px 10px 32px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box" onkeydown="if(event.key==='Enter')doDiscoverSearch()" />
+              <input type="text" id="discoverSearchInput" placeholder="搜索社团或活动..." autocorrect="off" autocomplete="off" inputmode="search" style="width:100%;padding:10px 36px 10px 32px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box" onkeydown="if(event.key==='Enter')doDiscoverSearch()" />
               <button onclick="clearDiscoverSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-secondary)">✕</button>
             </div>
             <!-- 主Tab切换 -->
@@ -419,7 +418,7 @@
               <label class="post-media-add">
                 <span class="add-icon">📷</span>
                 <span class="add-text">添加</span>
-                <input type="file" id="wallFileInput" accept="image/*,video/*" multiple style="display:none" onchange="previewWallFiles(this)" />
+                <input type="file" id="wallFileInput" multiple style="display:none" onchange="previewWallFiles(this)" />
               </label>
             </div>
           </div>
@@ -475,9 +474,9 @@
         <div class="chat-input-bar">
           <span class="chat-attach-btn" onclick="toggleEmojiPicker()">😊</span>
           <label class="chat-attach-btn" title="发送图片/视频">
-            📷<input type="file" accept="image/*,video/*" style="display:none" onchange="userChatUpload(this)">
+            📷<input type="file" style="display:none" onchange="userChatUpload(this)">
           </label>
-          <input id="chatInput" class="chat-input-field" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChatMsg()" />
+          <input id="chatInput" class="chat-input-field" placeholder="输入消息..." autocorrect="off" onkeydown="if(event.key==='Enter')sendChatMsg()" />
           <button onclick="sendChatMsg()" class="chat-send-btn">发送</button>
           <div id="emojiPicker" class="chat-emoji-picker">
             <div style="display:flex;gap:8px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:8px">
@@ -622,7 +621,7 @@
                   <div class="add-icon">📷</div>
                 </div>
               </div>
-              <input type="file" id="publishImgInput" accept="image/*" multiple style="display:none" onchange="onPublishImages(this)" />
+              <input type="file" id="publishImgInput" multiple style="display:none" onchange="onPublishImages(this)" />
             </div>
           </div>
 
@@ -767,7 +766,7 @@
         <div style="padding:12px 16px 0">
           <div class="teacher-search-box">
             <span class="teacher-search-icon">🔍</span>
-            <input id="teacherSearchInput" type="text" placeholder="搜索教师姓名、学院、研究方向..." data-i18n-placeholder="teacherSearchPlaceholder" onkeydown="if(event.key==='Enter'){_teacherSearch=this.value;loadTeachers()}">
+            <input id="teacherSearchInput" type="text" placeholder="搜索教师姓名、学院、研究方向..." data-i18n-placeholder="teacherSearchPlaceholder" autocorrect="off" autocomplete="off" inputmode="search" onkeydown="if(event.key==='Enter'){_teacherSearch=this.value;loadTeachers()}">
             <button class="teacher-search-btn" onclick="_teacherSearch=document.getElementById('teacherSearchInput').value;loadTeachers()">搜索</button>
           </div>
         </div>
@@ -842,12 +841,12 @@
         <div style="display:flex;gap:8px;align-items:center">
           <button onclick="petToggleEmoji()" style="font-size:24px;background:none;border:none;cursor:pointer">😊</button>
           <button onclick="petToggleMediaUpload()" style="font-size:24px;background:none;border:none;cursor:pointer">📷</button>
-          <input type="text" id="petCommentText" placeholder="说点什么..." style="flex:1;border:1px solid var(--border);border-radius:20px;padding:8px 14px;font-size:14px;outline:none" onkeydown="if(event.key==='Enter')submitPetComment()">
+          <input type="text" id="petCommentText" placeholder="说点什么..." autocorrect="off" style="flex:1;border:1px solid var(--border);border-radius:20px;padding:8px 14px;font-size:14px;outline:none" onkeydown="if(event.key==='Enter')submitPetComment()">
           <button onclick="submitPetComment()" style="background:linear-gradient(135deg,#ff9a56,#ff6a88);color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:14px;font-weight:600;cursor:pointer">发送</button>
         </div>
         <div id="petEmojiPanel" style="display:none;margin-top:8px;padding:8px;background:#f5f5f5;border-radius:12px;flex-wrap:wrap;gap:4px;max-height:120px;overflow-y:auto"></div>
         <div id="petMediaPreview" style="display:none;margin-top:8px"></div>
-        <input type="file" id="petMediaInput" multiple accept="image/*,video/*" style="display:none" onchange="petPreviewMedia(this.files)">
+        <input type="file" id="petMediaInput" multiple style="display:none" onchange="petPreviewMedia(this.files)">
       </div>
     </div>
 
@@ -966,7 +965,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">封面图</label>
-            <input type="file" name="actCover" accept="image/*" style="font-size:13px" />
+            <input type="file" name="actCover" style="font-size:13px" />
           </div>
           <button type="submit" class="submit-btn">发布活动</button>
         </form>
@@ -1004,7 +1003,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">社团Logo</label>
-            <input type="file" name="clubLogo" accept="image/*" style="font-size:13px" />
+            <input type="file" name="clubLogo" style="font-size:13px" />
           </div>
           <button type="submit" class="submit-btn">创建社团</button>
         </form>
@@ -1032,7 +1031,7 @@
         <div style="font-size:17px;font-weight:700;margin-bottom:4px">✏️ 发布公告</div>
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">向社团成员发布重要信息或动态</div>
         <textarea id="clubPostContent" placeholder="通知全体成员..." rows="4" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:14px;resize:none;box-sizing:border-box"></textarea>
-        <input type="file" id="clubPostPhotos" accept="image/*" multiple style="margin-top:8px;font-size:13px" />
+        <input type="file" id="clubPostPhotos" multiple style="margin-top:8px;font-size:13px" />
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px">最多4张图片</div>
         <div style="display:flex;gap:8px;margin-top:14px">
           <button onclick="closeClubPostModal()" style="flex:1;padding:10px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--border);font-size:14px;cursor:pointer">取消</button>
@@ -1048,7 +1047,7 @@
         <div class="form-group"><label class="form-label">社团名称</label><input id="clubEditName" class="form-input" placeholder="社团名称" /></div>
         <div class="form-group"><label class="form-label">分类</label><select id="clubEditCategory" class="form-input"><option value="">不修改</option><option value="文艺">🎨 文艺</option><option value="体育">⚽ 体育</option><option value="学术">📚 学术</option><option value="科技">💻 科技</option><option value="公益">💛 公益</option><option value="社交">🤝 社交</option><option value="音乐">🎵 音乐</option><option value="其他">🏷️ 其他</option></select></div>
         <div class="form-group"><label class="form-label">简介</label><textarea id="clubEditDesc" class="form-textarea" rows="3" placeholder="社团简介"></textarea></div>
-        <div class="form-group"><label class="form-label">Logo（可选）</label><input type="file" id="clubEditLogo" accept="image/*" style="font-size:13px" /></div>
+        <div class="form-group"><label class="form-label">Logo（可选）</label><input type="file" id="clubEditLogo" style="font-size:13px" /></div>
         <div style="display:flex;gap:8px;margin-top:14px">
           <button onclick="closeEditClubModal()" style="flex:1;padding:10px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--border);font-size:14px;cursor:pointer">取消</button>
           <button onclick="submitEditClub()" style="flex:1;padding:10px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">保存</button>

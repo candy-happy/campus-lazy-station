@@ -276,7 +276,7 @@
         html += '<label class="post-media-add">';
         html += '<span class="add-icon">+</span>';
         html += '<span class="add-text">添加</span>';
-        html += '<input type="file" accept="image/*,video/*" multiple style="display:none" onchange="previewWallFiles(this)" />';
+        html += '<input type="file" multiple style="display:none" onchange="previewWallFiles(this)" />';
         html += '</label>';
       }
       container.innerHTML = html;
@@ -607,7 +607,7 @@
           <div style="display:flex;gap:8px;align-items:center">
             <button onclick="toggleWallCommentEmoji()" style="font-size:22px;background:none;border:none;cursor:pointer;padding:4px;border-radius:8px;transition:background 0.15s;flex-shrink:0" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'" title="表情">😊</button>
             <label style="font-size:22px;cursor:pointer;padding:4px;border-radius:8px;transition:background 0.15s;flex-shrink:0;display:flex;align-items:center" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='transparent'" title="上传图片/视频">
-              📷<input type="file" accept="image/*,video/*" style="display:none" onchange="uploadWallCommentMedia(this)">
+              📷<input type="file" style="display:none" onchange="uploadWallCommentMedia(this)">
             </label>
             <input id="wallCommentInput" placeholder="写评论..." style="flex:1;border:1.5px solid var(--border);border-radius:24px;padding:10px 18px;font-size:14px;outline:none;background:var(--bg);color:var(--text);transition:all 0.2s" onfocus="this.style.borderColor='#FF6B2B';this.style.boxShadow='0 0 0 3px rgba(255,107,43,0.08)'" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'" />
             <button id="wallCommentSendBtn" onclick="submitWallComment(${data.id})" style="background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:#fff;border:none;border-radius:24px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.2s;box-shadow:0 3px 12px rgba(255,107,43,0.35);letter-spacing:0.5px" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 16px rgba(255,107,43,0.45)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 3px 12px rgba(255,107,43,0.35)'">发送</button>

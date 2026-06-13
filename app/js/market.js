@@ -73,7 +73,7 @@
         const avatarHtml = renderAvatarHtml(item.seller_avatar, item.seller_name);
         const statusCls = item.status === 'active' ? 'active' : item.status === 'sold' ? 'sold' : 'offline';
         return '<div class="market-card" onclick="openItemDetail(' + item.id + ')">' +
-          (img ? '<img class="market-card-img" src="' + img + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" /><div class="market-card-noimg" style="display:none">🛒</div>' : '<div class="market-card-noimg">🛒</div>') +
+          (img ? '<img class="market-card-img" src="' + img + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" /><div class="market-card-noimg" style="display:none">🛒</div>' : '<div class="market-card-noimg">🛒</div>') +
           (statusLabel[item.status] ? '<span class="market-card-status ' + statusCls + '">' + statusLabel[item.status] + '</span>' : '') +
           '<div class="market-card-info">' +
             '<div class="market-card-title">' + escHtml(item.title) + '</div>' +
@@ -111,14 +111,14 @@
       const relatedHtml = (item.relatedItems || []).map(r => {
         const rImg = (r.images && r.images[0]) || '';
         return '<div style="min-width:120px;background:var(--card);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);cursor:pointer" onclick="openItemDetail(' + r.id + ')">' +
-          (rImg ? '<img src="' + rImg + '" style="width:120px;height:90px;object-fit:cover" />' : '<div style="width:120px;height:90px;background:#FFF0EB;display:flex;align-items:center;justify-content:center;font-size:24px">🛒</div>') +
+          (rImg ? '<img src="' + rImg + '" loading="lazy" style="width:120px;height:90px;object-fit:cover" />' : '<div style="width:120px;height:90px;background:#FFF0EB;display:flex;align-items:center;justify-content:center;font-size:24px">🛒</div>') +
           '<div style="padding:8px;font-size:12px;font-weight:600">' + escHtml(r.title) + '</div>' +
           '<div style="padding:0 8px 8px;font-size:14px;font-weight:900;color:var(--danger)">¥' + (r.price || 0).toFixed(2) + '</div>' +
           '</div>';
       }).join('');
 
       body.innerHTML =
-        (imgs.length ? '<div class="item-detail-imgs"><img src="' + imgs[0] + '" /><div class="img-counter">1/' + imgs.length + '</div></div>' : '<div class="item-detail-imgs" style="display:flex;align-items:center;justify-content:center;font-size:64px;background:#FFF0EB">🛒</div>') +
+        (imgs.length ? '<div class="item-detail-imgs"><img src="' + imgs[0] + '" loading="lazy" /><div class="img-counter">1/' + imgs.length + '</div></div>' : '<div class="item-detail-imgs" style="display:flex;align-items:center;justify-content:center;font-size:64px;background:#FFF0EB">🛒</div>') +
         '<div class="item-detail-body">' +
           '<div class="item-detail-price">¥' + (item.price || 0).toFixed(2) + (item.original_price ? '<small>¥' + item.original_price.toFixed(2) + '</small>' : '') + '</div>' +
           '<div class="item-detail-title">' + escHtml(item.title) + '</div>' +
@@ -146,7 +146,7 @@
               '<div id="replyHint" class="comment-reply-hint" style="display:none;width:100%;margin-bottom:6px">回复 <span id="replyName"></span> <span class="cancel-reply" onclick="cancelReplyComment()">✕ 取消</span></div>' +
               '<div style="display:flex;gap:6px;align-items:center;width:100%">' +
                 '<span class="comment-emoji-btn" onclick="toggleCommentEmoji()">😊</span>' +
-                '<label class="comment-media-btn" title="上传图片/视频">📷<input type="file" accept="image/*,video/*" style="display:none" onchange="commentUploadMedia(this)" /></label>' +
+                '<label class="comment-media-btn" title="上传图片/视频">📷<input type="file" style="display:none" onchange="commentUploadMedia(this)" /></label>' +
                 '<input class="comment-input" id="commentInput" placeholder="说点什么..." maxlength="500" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendComment(' + item.id + ')}" />' +
                 '<button class="comment-send-btn" id="commentSendBtn" onclick="sendComment(' + item.id + ')">发送</button>' +
               '</div>' +
@@ -225,7 +225,7 @@
     function renderCommentMedia(c) {
       if (!c.media_url) return '';
       if (c.media_type === 'video') return '<video src="' + c.media_url + '" controls playsinline style="max-width:100%;max-height:200px;border-radius:8px;margin-top:6px"></video>';
-      return '<img src="' + c.media_url + '" onclick="previewImage(this.src)" style="max-width:100%;max-height:200px;border-radius:8px;margin-top:6px;cursor:pointer" />';
+      return '<img src="' + c.media_url + '" loading="lazy" onclick="previewImage(this.src)" style="max-width:100%;max-height:200px;border-radius:8px;margin-top:6px;cursor:pointer" />';
     }
 
 
@@ -633,7 +633,7 @@
             const trust = item.trust || {};
             const statusCls = item.status === 'active' ? 'active' : item.status === 'sold' ? 'sold' : 'offline';
             return '<div class="market-card" onclick="openItemDetail(' + item.id + ')">' +
-              (img ? '<img class="market-card-img" src="' + img + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" /><div class="market-card-noimg" style="display:none">🛒</div>' : '<div class="market-card-noimg">🛒</div>') +
+              (img ? '<img class="market-card-img" src="' + img + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" /><div class="market-card-noimg" style="display:none">🛒</div>' : '<div class="market-card-noimg">🛒</div>') +
               (statusLabel[item.status] ? '<span class="market-card-status ' + statusCls + '">' + statusLabel[item.status] + '</span>' : '') +
               '<div class="market-card-info">' +
                 '<div class="market-card-title">' + escHtml(item.title) + '</div>' +
@@ -697,7 +697,7 @@
           const contactHtml = o.is_buyer && o.contact ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px">📞 ' + escHtml(o.contact) + '</div>' : '';
           return '<div class="trade-card">' +
             '<div class="trade-card-top">' +
-              (img ? '<img class="trade-card-img" src="' + img + '" />' : '<div class="trade-card-noimg">🛒</div>') +
+              (img ? '<img class="trade-card-img" src="' + img + '" loading="lazy" />' : '<div class="trade-card-noimg">🛒</div>') +
               '<div class="trade-card-info">' +
                 '<div class="trade-card-title">' + escHtml(o.title || '') + '</div>' +
                 '<div class="trade-card-price">¥' + (o.price || 0).toFixed(2) + '</div>' +
@@ -858,7 +858,7 @@
           const img = (item.images && item.images[0]) || '';
           return '<div class="trade-card">' +
             '<div class="trade-card-top">' +
-              (img ? '<img class="trade-card-img" src="' + img + '" />' : '<div class="trade-card-noimg">🛒</div>') +
+              (img ? '<img class="trade-card-img" src="' + img + '" loading="lazy" />' : '<div class="trade-card-noimg">🛒</div>') +
               '<div class="trade-card-info">' +
                 '<div class="trade-card-title">' + escHtml(item.title) + '</div>' +
                 '<div class="trade-card-price">¥' + (item.price || 0).toFixed(2) + '</div>' +

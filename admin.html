@@ -7,7 +7,6 @@
  <meta http-equiv="Expires" content="0" />
  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
  <title>校园圈 - 管理后台</title>
- <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
  <script src="admin/js/chart.min.js"></script>
 <script src="api.js"></script>
 <link rel="stylesheet" href="admin/css/style.css" />
@@ -453,7 +452,7 @@
       <div class="form-group">
         <label class="form-label" style="color:#E65100">📷 照片 <span style="font-weight:400;color:#999;font-size:0.8rem">最多6张</span></label>
         <div style="position:relative">
-          <input type="file" id="petImages" multiple accept="image/*" style="display:none" onchange="previewPetImages(this)">
+          <input type="file" id="petImages" multiple style="display:none" onchange="previewPetImages(this)">
           <button type="button" onclick="document.getElementById('petImages').click()" style="padding:10px 20px;border:2px dashed #FFCC80;border-radius:10px;background:#FFF8E1;color:#E65100;cursor:pointer;font-size:0.9rem;font-weight:600">📁 选择图片</button>
           <span id="petImageCount" style="margin-left:10px;color:#999;font-size:0.85rem"></span>
         </div>
@@ -940,7 +939,7 @@
  <div class="form-group"><label class="form-label">图标(emoji，无媒体时显示)</label><input type="text" class="form-input" id="adImage" value="🎁" maxlength="4"></div>
  <div class="form-group">
   <label class="form-label">媒体文件（图片/视频）</label>
-  <input type="file" class="form-input" id="adMediaFile" accept="image/*,video/*" style="padding:4px" onchange="uploadAdMedia()">
+  <input type="file" class="form-input" id="adMediaFile" style="padding:4px" onchange="uploadAdMedia()">
   <div id="adMediaPreview" style="margin-top:6px;display:none"></div>
   <input type="hidden" id="adMediaUrl">
  </div>

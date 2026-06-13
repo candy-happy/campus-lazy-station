@@ -1,6 +1,17 @@
 // === 管理端核心模块 ===
 // 全局变量、工具函数、导航、登录、仪表盘、刷新
 
+// QQ/WeChat 浏览器兼容 polyfill
+if (!Object.fromEntries) {
+  Object.fromEntries = function(entries) {
+    var obj = {};
+    for (var i = 0; i < entries.length; i++) {
+      obj[entries[i][0]] = entries[i][1];
+    }
+    return obj;
+  };
+}
+
 const services = {
   delivery: { name: '代取外卖', icon: '🍱' },
   express: { name: '代取快递', icon: '📦' },

@@ -144,7 +144,7 @@ async function showPetDetail(id) {
   // 照片
   if (data.images && data.images.length) {
     infoHtml += '<div style="padding:0 16px 12px;display:flex;gap:4px;overflow-x:auto">';
-    data.images.forEach(img => { infoHtml += '<img src="' + escHtml(img) + '" style="width:120px;height:90px;object-fit:cover;border-radius:8px;cursor:pointer" onclick="previewImage(\'' + escHtml(img) + '\')">'; });
+    data.images.forEach(img => { infoHtml += '<img src="' + escHtml(img) + '" loading="lazy" style="width:120px;height:90px;object-fit:cover;border-radius:8px;cursor:pointer" onclick="previewImage(\'' + escHtml(img) + '\')">'; });
     infoHtml += '</div>';
   }
 
@@ -199,7 +199,7 @@ function renderSightingItem(s) {
   var sName = escHtml(s.user_nickname || s.nickname || '匿名');
   var sLoc = s.location ? ' \u{1F4CD}' + escHtml(s.location) : '';
   var sNote = s.note ? '<span style="color:#666;font-size:12px"> - ' + escHtml(s.note) + '</span>' : '';
-  var sPhoto = s.photo ? '<div style="margin-top:4px"><img src="' + escHtml(s.photo) + '" style="max-width:80px;max-height:60px;border-radius:6px;object-fit:cover" onclick="previewImage(this.src)"></div>' : '';
+  var sPhoto = s.photo ? '<div style="margin-top:4px"><img src="' + escHtml(s.photo) + '" loading="lazy" style="max-width:80px;max-height:60px;border-radius:6px;object-fit:cover" onclick="previewImage(this.src)"></div>' : '';
   return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5">' +
     sAvatar + '<div style="flex:1;font-size:13px"><div><strong>' + sName + '</strong>' + sLoc + sNote + '</div>' + sPhoto + '</div>' +
     '<span style="font-size:11px;color:#aaa;white-space:nowrap">' + fmtTime(s.created_at) + '</span></div>';
@@ -230,7 +230,7 @@ function renderPetRelatedPosts(mode) {
   var shown = all.slice(0, limit);
   var more = all.length > shown.length;
   var html = shown.map(function(p) {
-    var imgs = (p.images || []).slice(0, 3).map(function(img) { return '<img src="' + escHtml(img) + '">'; }).join('');
+    var imgs = (p.images || []).slice(0, 3).map(function(img) { return '<img src="' + escHtml(img) + '" loading="lazy">'; }).join('');
     return '<div class="pet-related-post" onclick="closeSubPage(\'petDetailPage_sub\');setTimeout(function(){showWallDetail(' + p.id + ')},100)">' +
       '<div class="author">' + escHtml(p.nickname || '匿名') + ' · ' + fmtTime(p.created_at) + '</div>' +
       '<div class="content">' + escHtml(p.content) + '</div>' +
@@ -257,7 +257,7 @@ function renderPetComments(mode) {
     var avatar = c.avatar && (c.avatar.startsWith('/') || c.avatar.startsWith('http'))
       ? '<img class="pet-comment-avatar" src="' + escHtml(c.avatar) + '" onclick="showWallUser(\'' + c.phone + '\')">'
       : '<div class="pet-comment-avatar-ph" onclick="showWallUser(\'' + c.phone + '\')">👤</div>';
-    var images = (c.images||[]).map(function(i){ return '<img src="'+escHtml(i)+'" onclick="previewImage(this.src)">'; }).join('');
+    var images = (c.images||[]).map(function(i){ return '<img src="'+escHtml(i)+'" loading="lazy" onclick="previewImage(this.src)">'; }).join('');
     var deleteBtn = c.phone === myPhone ? '<span style="color:var(--danger);font-size:11px;cursor:pointer;margin-left:8px" onclick="event.stopPropagation();deletePetComment('+c.id+')">删除</span>' : '';
     return '<div class="pet-comment-item"><div class="pet-comment-header">' +
       avatar +
