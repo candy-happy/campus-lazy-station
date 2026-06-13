@@ -1,12 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>校园墙 · 池州学院专属生活平台</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@300;400;500;600&family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<title>鏍″洯澧?路 姹犲窞瀛﹂櫌涓撳睘鐢熸椿骞冲彴</title>
+
 <style>
   :root{
     --ink:#0a0a0b;
@@ -16,7 +14,7 @@
     --paper-tint:#e8e5de;
     --ink-tint:#18181a;
 
-    /* 校园主题色 - 蓝瓷 */
+    /* 鏍″洯涓婚鑹?- 钃濈摲 */
     --accent:#2563eb;
     --accent-rgb:37,99,235;
     --accent-light:#3b82f6;
@@ -31,24 +29,24 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);color:var(--paper);font-family:var(--sans-zh);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 
-  canvas.bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block;transition:opacity 1.2s ease}
+  canvas.bg{position:fixed;top:0;right:0;bottom:0;left:0;width:100vw;height:100vh;z-index:0;display:block;transition:opacity 1.2s ease}
   canvas#bg-light{opacity:0}
   canvas#bg-dark{opacity:1}
   body.light-bg canvas#bg-light{opacity:1}
   body.light-bg canvas#bg-dark{opacity:0}
   body.low-power canvas.bg{display:none!important}
 
-  #deck{position:fixed;inset:0;width:10000vw;height:100vh;display:flex;flex-wrap:nowrap;transition:transform .9s cubic-bezier(.77,0,.175,1);z-index:10;will-change:transform}
+  #deck{position:fixed;top:0;right:0;bottom:0;left:0;width:10000vw;height:100vh;display:flex;flex-wrap:nowrap;transition:transform .9s cubic-bezier(.77,0,.175,1);z-index:10;will-change:transform}
   .slide{width:100vw;height:100vh;flex:0 0 100vw;position:relative;padding:5vh 5vw 8vh 5vw;display:flex;flex-direction:column;overflow:hidden}
   .slide.light{color:var(--ink);background:var(--paper)}
   .slide.dark{color:var(--paper);background:var(--ink)}
 
-  .slide::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;transition:background .7s ease}
+  .slide::before{content:"";position:absolute;top:0;right:0;bottom:0;left:0;z-index:-1;pointer-events:none;transition:background .7s ease}
   .slide.light::before{background:rgba(var(--paper-rgb),.82);backdrop-filter:blur(3px)}
   .slide.dark::before{background:rgba(var(--ink-rgb),.82);backdrop-filter:blur(3px)}
   .slide.hero.light::before{background:rgba(var(--paper-rgb),.12);backdrop-filter:none}
   .slide.hero.dark::before{background:rgba(var(--ink-rgb),.1);backdrop-filter:none}
-  .slide.hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+  .slide.hero::after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;z-index:-1;pointer-events:none}
   .slide.hero.light::after{background:linear-gradient(180deg,rgba(var(--paper-rgb),.25) 0%,rgba(var(--paper-rgb),0) 12%,rgba(var(--paper-rgb),0) 88%,rgba(var(--paper-rgb),.25) 100%)}
   .slide.hero.dark::after{background:linear-gradient(180deg,rgba(var(--ink-rgb),.3) 0%,rgba(var(--ink-rgb),0) 12%,rgba(var(--ink-rgb),0) 88%,rgba(var(--ink-rgb),.3) 100%)}
 
@@ -79,7 +77,7 @@
   .split-4-6{display:grid;grid-template-columns:4fr 6fr;gap:4vw;flex:1;align-items:center}
   .split-6-4{display:grid;grid-template-columns:6fr 4fr;gap:4vw;flex:1;align-items:center}
 
-  /* 图片容器 */
+  /* 鍥剧墖瀹瑰櫒 */
   .img-frame{
     position:relative;
     overflow:hidden;
@@ -91,7 +89,7 @@
     object-fit:cover;
     display:block;
   }
-  /* 占位图样式 */
+  /* 鍗犱綅鍥炬牱寮?*/
   .img-placeholder{
     width:100%;
     height:100%;
@@ -112,7 +110,7 @@
   .img-placeholder .icon{font-size:max(24px,4vw)}
   .img-placeholder .tip{font-size:max(10px,.75vw);opacity:.6}
 
-  /* 功能卡片 */
+  /* 鍔熻兘鍗＄墖 */
   .feature-card{
     background:rgba(var(--accent-rgb),.06);
     border:1px solid rgba(var(--accent-rgb),.15);
@@ -163,51 +161,48 @@
 <canvas class="bg" id="bg-light"></canvas>
 
 <div id="deck">
-  <!-- ═══════════════════════════════════════════════════════
-       Slide 1: 封面 - 校园风景
-  ═══════════════════════════════════════════════════════ -->
+  <!-- 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?       Slide 1: 灏侀潰 - 鏍″洯椋庢櫙
+  鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?-->
   <section class="slide hero dark" data-anim="fade-up">
     <div class="chrome">
-      <div class="left"><span>池州学院</span><span class="sep"></span><span>2026</span></div>
-      <div class="right"><span>校园生活平台</span></div>
+      <div class="left"><span>姹犲窞瀛﹂櫌</span><span class="sep"></span><span>2026</span></div>
+      <div class="right"><span>鏍″洯鐢熸椿骞冲彴</span></div>
     </div>
 
-    <!-- 替换为池州学院校园风景照片 -->
-    <div class="img-frame" style="position:absolute;inset:0;z-index:-1;border-radius:0">
+    <!-- 鏇挎崲涓烘睜宸炲闄㈡牎鍥鏅収鐗?-->
+    <div class="img-frame" style="position:absolute;top:0;right:0;bottom:0;left:0;z-index:-1;border-radius:0">
       <div class="img-placeholder" style="border-radius:0;border:none;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)">
         <div class="icon"></div>
-        <div>插入校园风景照片<br><span class="tip">建议：校门、教学楼、图书馆等标志性建筑</span></div>
+        <div>鎻掑叆鏍″洯椋庢櫙鐓х墖<br><span class="tip">寤鸿锛氭牎闂ㄣ€佹暀瀛︽ゼ銆佸浘涔﹂绛夋爣蹇楁€у缓绛?/span></div>
       </div>
     </div>
 
     <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:3vh;position:relative;z-index:1">
       <div class="campus-badge mb-3">
-        <span></span><span>专属于池州学院学子</span>
+        <span></span><span>涓撳睘浜庢睜宸炲闄㈠瀛?/span>
       </div>
-      <h1 class="display-zh">校园墙</h1>
+      <h1 class="display-zh">鏍″洯澧?/h1>
       <p class="lead" style="max-width:55vw;text-align:center;opacity:.75">
-        让校园生活更便捷，让信息流通更自由<br>
-        没有外来干扰，只有同窗情谊
-      </p>
+        璁╂牎鍥敓娲绘洿渚挎嵎锛岃淇℃伅娴侀€氭洿鑷敱<br>
+        娌℃湁澶栨潵骞叉壈锛屽彧鏈夊悓绐楁儏璋?      </p>
       <div class="stat-row mt-3">
-        <div class="stat-item"><div class="stat-number">100%</div><div class="stat-label">校内认证</div></div>
-        <div class="stat-item"><div class="stat-number">0</div><div class="stat-label">外来干扰</div></div>
-        <div class="stat-item"><div class="stat-number">24h</div><div class="stat-label">信息直达</div></div>
+        <div class="stat-item"><div class="stat-number">100%</div><div class="stat-label">鏍″唴璁よ瘉</div></div>
+        <div class="stat-item"><div class="stat-number">0</div><div class="stat-label">澶栨潵骞叉壈</div></div>
+        <div class="stat-item"><div class="stat-number">24h</div><div class="stat-label">淇℃伅鐩磋揪</div></div>
       </div>
     </div>
 
     <div class="foot">
-      <span class="title">校园墙 · 池州学院专属生活平台</span>
-      <span>← → 翻页</span>
+      <span class="title">鏍″洯澧?路 姹犲窞瀛﹂櫌涓撳睘鐢熸椿骞冲彴</span>
+      <span>鈫?鈫?缈婚〉</span>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════
-       Slide 2: 校园生活场景
-  ═══════════════════════════════════════════════════════ -->
+  <!-- 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?       Slide 2: 鏍″洯鐢熸椿鍦烘櫙
+  鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?-->
   <section class="slide light" data-anim="fade-up">
     <div class="chrome">
-      <div class="left"><span>01</span><span class="sep"></span><span>校园生活</span></div>
+      <div class="left"><span>01</span><span class="sep"></span><span>鏍″洯鐢熸椿</span></div>
       <div class="right"><span>SCENES</span></div>
     </div>
 
@@ -215,33 +210,33 @@
       <div class="col" style="justify-content:center">
         <div class="kicker">DAILY LIFE</div>
         <h2 class="h1-zh" style="font-size:min(4vw,6.5vh)">
-          校园生活<br><span class="accent-text">无处不在</span>
+          鏍″洯鐢熸椿<br><span class="accent-text">鏃犲涓嶅湪</span>
         </h2>
         <p class="body-zh mt-3" style="max-width:35vw">
-          从清晨的图书馆到傍晚的操场，从食堂的热闹到宿舍的温馨
-          校园墙记录着每一个珍贵的校园瞬间
+          浠庢竻鏅ㄧ殑鍥句功棣嗗埌鍌嶆櫄鐨勬搷鍦猴紝浠庨鍫傜殑鐑椆鍒板鑸嶇殑娓╅Θ
+          鏍″洯澧欒褰曠潃姣忎竴涓弽璐电殑鏍″洯鐬棿
         </p>
-        <div class="campus-badge mt-4"><span></span><span>真实校园生活</span></div>
+        <div class="campus-badge mt-4"><span></span><span>鐪熷疄鏍″洯鐢熸椿</span></div>
       </div>
       <div class="col" style="gap:1.5vh">
-        <!-- 插入校园生活场景照片 -->
+        <!-- 鎻掑叆鏍″洯鐢熸椿鍦烘櫙鐓х墖 -->
         <div class="img-frame" style="flex:1;border-radius:10px">
           <div class="img-placeholder">
             <div class="icon"></div>
-            <div>插入校园生活场景1<br><span class="tip">建议：图书馆学习、操场运动、社团活动</span></div>
+            <div>鎻掑叆鏍″洯鐢熸椿鍦烘櫙1<br><span class="tip">寤鸿锛氬浘涔﹂瀛︿範銆佹搷鍦鸿繍鍔ㄣ€佺ぞ鍥㈡椿鍔?/span></div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5vh;flex:0 0 auto">
           <div class="img-frame" style="height:min(12vh,120px);border-radius:8px">
             <div class="img-placeholder">
               <div class="icon"></div>
-              <div>插入场景2</div>
+              <div>鎻掑叆鍦烘櫙2</div>
             </div>
           </div>
           <div class="img-frame" style="height:min(12vh,120px);border-radius:8px">
             <div class="img-placeholder">
               <div class="icon"></div>
-              <div>插入场景3</div>
+              <div>鎻掑叆鍦烘櫙3</div>
             </div>
           </div>
         </div>
@@ -249,195 +244,188 @@
     </div>
 
     <div class="foot">
-      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span class="title">鏍″洯澧?路 姹犲窞瀛﹂櫌涓撳睘鐢熸椿骞冲彴</span>
       <span>02 / 08</span>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════
-       Slide 3: 核心功能
-  ═══════════════════════════════════════════════════════ -->
+  <!-- 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?       Slide 3: 鏍稿績鍔熻兘
+  鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?-->
   <section class="slide dark" data-anim="fade-up">
     <div class="chrome">
-      <div class="left"><span>02</span><span class="sep"></span><span>核心功能</span></div>
+      <div class="left"><span>02</span><span class="sep"></span><span>鏍稿績鍔熻兘</span></div>
       <div class="right"><span>FEATURES</span></div>
     </div>
 
     <div style="flex:1;display:flex;flex-direction:column;gap:2.5vh">
       <div class="kicker">WHAT WE OFFER</div>
-      <h2 class="h1-zh">六大核心功能</h2>
+      <h2 class="h1-zh">鍏ぇ鏍稿績鍔熻兘</h2>
 
       <div class="grid-3" style="flex:1;align-content:start;gap:1.8vh">
         <div class="feature-card">
           <div class="feature-icon"></div>
-          <div class="feature-title">校园墙</div>
-          <div class="feature-desc">信息发布、失物招领、急事求助，精准触达校内同学</div>
+          <div class="feature-title">鏍″洯澧?/div>
+          <div class="feature-desc">淇℃伅鍙戝竷銆佸け鐗╂嫑棰嗐€佹€ヤ簨姹傚姪锛岀簿鍑嗚Е杈炬牎鍐呭悓瀛?/div>
         </div>
         <div class="feature-card">
           <div class="feature-icon"></div>
-          <div class="feature-title">二手交易</div>
-          <div class="feature-desc">教材、电子产品、生活用品，校内面对面交易</div>
+          <div class="feature-title">浜屾墜浜ゆ槗</div>
+          <div class="feature-desc">鏁欐潗銆佺數瀛愪骇鍝併€佺敓娲荤敤鍝侊紝鏍″唴闈㈠闈氦鏄?/div>
         </div>
         <div class="feature-card">
           <div class="feature-icon"></div>
-          <div class="feature-title">精准定位</div>
-          <div class="feature-desc">急事找人、社团招新、活动通知，快速触达目标</div>
+          <div class="feature-title">绮惧噯瀹氫綅</div>
+          <div class="feature-desc">鎬ヤ簨鎵句汉銆佺ぞ鍥㈡嫑鏂般€佹椿鍔ㄩ€氱煡锛屽揩閫熻Е杈剧洰鏍?/div>
         </div>
         <div class="feature-card">
           <div class="feature-icon"></div>
-          <div class="feature-title">表白墙</div>
-          <div class="feature-desc">匿名表白、情感分享，校园浪漫故事</div>
+          <div class="feature-title">琛ㄧ櫧澧?/div>
+          <div class="feature-desc">鍖垮悕琛ㄧ櫧銆佹儏鎰熷垎浜紝鏍″洯娴极鏁呬簨</div>
         </div>
         <div class="feature-card">
           <div class="feature-icon"></div>
-          <div class="feature-title">社团活动</div>
-          <div class="feature-desc">社团招新、活动发布、报名参与</div>
+          <div class="feature-title">绀惧洟娲诲姩</div>
+          <div class="feature-desc">绀惧洟鎷涙柊銆佹椿鍔ㄥ彂甯冦€佹姤鍚嶅弬涓?/div>
         </div>
         <div class="feature-card">
           <div class="feature-icon"></div>
-          <div class="feature-title">广告快传</div>
-          <div class="feature-desc">急事广告、重要通知，快速全校传播</div>
+          <div class="feature-title">骞垮憡蹇紶</div>
+          <div class="feature-desc">鎬ヤ簨骞垮憡銆侀噸瑕侀€氱煡锛屽揩閫熷叏鏍′紶鎾?/div>
         </div>
       </div>
     </div>
 
     <div class="foot">
-      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span class="title">鏍″洯澧?路 姹犲窞瀛﹂櫌涓撳睘鐢熸椿骞冲彴</span>
       <span>03 / 08</span>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════
-       Slide 4: 社团活动
-  ═══════════════════════════════════════════════════════ -->
+  <!-- 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?       Slide 4: 绀惧洟娲诲姩
+  鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?-->
   <section class="slide light" data-anim="fade-up">
     <div class="chrome">
-      <div class="left"><span>03</span><span class="sep"></span><span>社团生态</span></div>
+      <div class="left"><span>03</span><span class="sep"></span><span>绀惧洟鐢熸€?/span></div>
       <div class="right"><span>CLUBS</span></div>
     </div>
 
     <div class="split-6-4" style="flex:1">
-      <!-- 插入社团活动照片 -->
+      <!-- 鎻掑叆绀惧洟娲诲姩鐓х墖 -->
       <div class="img-frame" style="height:100%;border-radius:12px">
         <div class="img-placeholder">
           <div class="icon"></div>
-          <div>插入社团活动照片<br><span class="tip">建议：招新现场、社团演出、比赛合影</span></div>
+          <div>鎻掑叆绀惧洟娲诲姩鐓х墖<br><span class="tip">寤鸿锛氭嫑鏂扮幇鍦恒€佺ぞ鍥㈡紨鍑恒€佹瘮璧涘悎褰?/span></div>
         </div>
       </div>
       <div class="col" style="justify-content:center">
         <div class="kicker">CLUB LIFE</div>
         <h2 class="h1-zh">
-          社团<span class="accent-text">招新</span><br>与<span class="accent-text">活动</span>
+          绀惧洟<span class="accent-text">鎷涙柊</span><br>涓?span class="accent-text">娲诲姩</span>
         </h2>
         <p class="body-zh mt-3">
-          社团招新季，精准推送给感兴趣的同学<br>
-          社团活动、比赛讲座，一键发布全校可见
-        </p>
+          绀惧洟鎷涙柊瀛ｏ紝绮惧噯鎺ㄩ€佺粰鎰熷叴瓒ｇ殑鍚屽<br>
+          绀惧洟娲诲姩銆佹瘮璧涜搴э紝涓€閿彂甯冨叏鏍″彲瑙?        </p>
         <div class="grid-4 mt-4">
           <div class="feature-card">
             <div class="feature-icon"></div>
-            <div class="feature-title">社团主页</div>
+            <div class="feature-title">绀惧洟涓婚〉</div>
           </div>
           <div class="feature-card">
             <div class="feature-icon"></div>
-            <div class="feature-title">招新宣传</div>
+            <div class="feature-title">鎷涙柊瀹ｄ紶</div>
           </div>
           <div class="feature-card">
             <div class="feature-icon"></div>
-            <div class="feature-title">活动发布</div>
+            <div class="feature-title">娲诲姩鍙戝竷</div>
           </div>
           <div class="feature-card">
             <div class="feature-icon"></div>
-            <div class="feature-title">在线报名</div>
+            <div class="feature-title">鍦ㄧ嚎鎶ュ悕</div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="foot">
-      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span class="title">鏍″洯澧?路 姹犲窞瀛﹂櫌涓撳睘鐢熸椿骞冲彴</span>
       <span>04 / 08</span>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════
-       Slide 5: 校内认证
-  ═══════════════════════════════════════════════════════ -->
+  <!-- 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?       Slide 5: 鏍″唴璁よ瘉
+  鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?-->
   <section class="slide hero dark" data-anim="fade-up">
     <div class="chrome">
-      <div class="left"><span>04</span><span class="sep"></span><span>安全认证</span></div>
+      <div class="left"><span>04</span><span class="sep"></span><span>瀹夊叏璁よ瘉</span></div>
       <div class="right"><span>SECURITY</span></div>
     </div>
 
-    <!-- 插入校园标志性建筑照片 -->
-    <div class="img-frame" style="position:absolute;inset:0;z-index:-1;border-radius:0">
+    <!-- 鎻掑叆鏍″洯鏍囧織鎬у缓绛戠収鐗?-->
+    <div class="img-frame" style="position:absolute;top:0;right:0;bottom:0;left:0;z-index:-1;border-radius:0">
       <div class="img-placeholder" style="border-radius:0;border:none;background:linear-gradient(to right,rgba(10,10,11,.85) 0%,rgba(10,10,11,.6) 50%,rgba(10,10,11,.85) 100%)">
         <div class="icon"></div>
-        <div>插入校园标志性建筑<br><span class="tip">建议：图书馆、行政楼、校训石</span></div>
+        <div>鎻掑叆鏍″洯鏍囧織鎬у缓绛?br><span class="tip">寤鸿锛氬浘涔﹂銆佽鏀挎ゼ銆佹牎璁煶</span></div>
       </div>
     </div>
 
     <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:3vh;position:relative;z-index:1">
       <div class="kicker">100% CAMPUS VERIFIED</div>
       <h2 class="display-zh" style="font-size:min(6.5vw,11vh)">
-        <span class="accent-text">100% 校内认证</span><br>零外来干扰
-      </h2>
+        <span class="accent-text">100% 鏍″唴璁よ瘉</span><br>闆跺鏉ュ共鎵?      </h2>
       <p class="lead" style="max-width:50vw;opacity:.75">
-        所有用户必须通过池州学院学生身份认证<br>
-        确保每一位用户都是本校同学
-      </p>
+        鎵€鏈夌敤鎴峰繀椤婚€氳繃姹犲窞瀛﹂櫌瀛︾敓韬唤璁よ瘉<br>
+        纭繚姣忎竴浣嶇敤鎴烽兘鏄湰鏍″悓瀛?      </p>
       <div class="stat-row mt-4">
-        <div class="stat-item"><div class="stat-number" style="font-size:min(3.5vw,5.5vh)"></div><div class="stat-label">实名认证</div></div>
-        <div class="stat-item"><div class="stat-number" style="font-size:min(3.5vw,5.5vh)"></div><div class="stat-label">隐私保护</div></div>
-        <div class="stat-item"><div class="stat-number" style="font-size:min(3.5vw,5.5vh)"></div><div class="stat-label">安全交易</div></div>
+        <div class="stat-item"><div class="stat-number" style="font-size:min(3.5vw,5.5vh)"></div><div class="stat-label">瀹炲悕璁よ瘉</div></div>
+        <div class="stat-item"><div class="stat-number" style="font-size:min(3.5vw,5.5vh)"></div><div class="stat-label">闅愮淇濇姢</div></div>
+        <div class="stat-item"><div class="stat-number" style="font-size:min(3.5vw,5.5vh)"></div><div class="stat-label">瀹夊叏浜ゆ槗</div></div>
       </div>
     </div>
 
     <div class="foot">
-      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span class="title">鏍″洯澧?路 姹犲窞瀛﹂櫌涓撳睘鐢熸椿骞冲彴</span>
       <span>05 / 08</span>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════
-       Slide 6: 校园风景
-  ═══════════════════════════════════════════════════════ -->
+  <!-- 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?       Slide 6: 鏍″洯椋庢櫙
+  鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?-->
   <section class="slide light" data-anim="fade-up">
     <div class="chrome">
-      <div class="left"><span>05</span><span class="sep"></span><span>校园风光</span></div>
+      <div class="left"><span>05</span><span class="sep"></span><span>鏍″洯椋庡厜</span></div>
       <div class="right"><span>CAMPUS</span></div>
     </div>
 
     <div style="flex:1;display:flex;flex-direction:column;gap:2vh">
       <div class="kicker">BEAUTIFUL CAMPUS</div>
-      <h2 class="h1-zh">池州学院<span class="accent-text">美丽风光</span></h2>
+      <h2 class="h1-zh">姹犲窞瀛﹂櫌<span class="accent-text">缇庝附椋庡厜</span></h2>
 
       <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:1.5vw;flex:1;align-content:start">
-        <!-- 插入校园风景大图 -->
+        <!-- 鎻掑叆鏍″洯椋庢櫙澶у浘 -->
         <div class="img-frame" style="height:100%;border-radius:10px">
           <div class="img-placeholder">
             <div class="icon"></div>
-            <div>插入校园全景/主风景<br><span class="tip">建议：校园全景、湖景、林荫道</span></div>
+            <div>鎻掑叆鏍″洯鍏ㄦ櫙/涓婚鏅?br><span class="tip">寤鸿锛氭牎鍥叏鏅€佹箹鏅€佹灄鑽亾</span></div>
           </div>
         </div>
         <div class="col" style="gap:1.5vh">
-          <!-- 插入校园风景小图 -->
+          <!-- 鎻掑叆鏍″洯椋庢櫙灏忓浘 -->
           <div class="img-frame" style="flex:1;border-radius:8px">
             <div class="img-placeholder">
               <div class="icon"></div>
-              <div>插入风景2</div>
+              <div>鎻掑叆椋庢櫙2</div>
             </div>
           </div>
           <div class="img-frame" style="flex:1;border-radius:8px">
             <div class="img-placeholder">
               <div class="icon"></div>
-              <div>插入风景3</div>
+              <div>鎻掑叆椋庢櫙3</div>
             </div>
           </div>
           <div class="img-frame" style="flex:1;border-radius:8px">
             <div class="img-placeholder">
               <div class="icon"></div>
-              <div>插入风景4</div>
+              <div>鎻掑叆椋庢櫙4</div>
             </div>
           </div>
         </div>
@@ -445,114 +433,111 @@
     </div>
 
     <div class="foot">
-      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span class="title">鏍″洯澧?路 姹犲窞瀛﹂櫌涓撳睘鐢熸椿骞冲彴</span>
       <span>06 / 08</span>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════
-       Slide 7: 愿景
-  ═══════════════════════════════════════════════════════ -->
+  <!-- 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?       Slide 7: 鎰挎櫙
+  鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?-->
   <section class="slide hero dark" data-anim="fade-up">
     <div class="chrome">
-      <div class="left"><span>06</span><span class="sep"></span><span>愿景</span></div>
+      <div class="left"><span>06</span><span class="sep"></span><span>鎰挎櫙</span></div>
       <div class="right"><span>VISION</span></div>
     </div>
 
-    <!-- 插入校园黄昏/夜景照片 -->
-    <div class="img-frame" style="position:absolute;inset:0;z-index:-1;border-radius:0">
+    <!-- 鎻掑叆鏍″洯榛勬槒/澶滄櫙鐓х墖 -->
+    <div class="img-frame" style="position:absolute;top:0;right:0;bottom:0;left:0;z-index:-1;border-radius:0">
       <div class="img-placeholder" style="border-radius:0;border:none;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)">
         <div class="icon"></div>
-        <div>插入校园黄昏/夜景<br><span class="tip">建议：夕阳校园、灯光夜景、星空校园</span></div>
+        <div>鎻掑叆鏍″洯榛勬槒/澶滄櫙<br><span class="tip">寤鸿锛氬闃虫牎鍥€佺伅鍏夊鏅€佹槦绌烘牎鍥?/span></div>
       </div>
     </div>
 
     <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:3vh;position:relative;z-index:1">
       <div class="kicker">OUR VISION</div>
       <h2 class="display-zh" style="font-size:min(6vw,10vh)">
-        让校园生活<br><span class="accent-text">更美好</span>
+        璁╂牎鍥敓娲?br><span class="accent-text">鏇寸編濂?/span>
       </h2>
       <div class="stat-row mt-4">
-        <div class="stat-item"><div class="stat-number"></div><div class="stat-label">信息自由流通</div></div>
-        <div class="stat-item"><div class="stat-number">0</div><div class="stat-label">外来干扰</div></div>
-        <div class="stat-item"><div class="stat-number">100%</div><div class="stat-label">校内专属</div></div>
+        <div class="stat-item"><div class="stat-number"></div><div class="stat-label">淇℃伅鑷敱娴侀€?/div></div>
+        <div class="stat-item"><div class="stat-number">0</div><div class="stat-label">澶栨潵骞叉壈</div></div>
+        <div class="stat-item"><div class="stat-number">100%</div><div class="stat-label">鏍″唴涓撳睘</div></div>
       </div>
       <p class="lead mt-3" style="max-width:50vw;opacity:.75">
-        我们不只是做一个平台<br>
-        我们是在构建池州学院的数字校园生态
-      </p>
-      <div class="campus-badge mt-4"><span></span><span>专属于池州学院学子的数字家园</span></div>
+        鎴戜滑涓嶅彧鏄仛涓€涓钩鍙?br>
+        鎴戜滑鏄湪鏋勫缓姹犲窞瀛﹂櫌鐨勬暟瀛楁牎鍥敓鎬?      </p>
+      <div class="campus-badge mt-4"><span></span><span>涓撳睘浜庢睜宸炲闄㈠瀛愮殑鏁板瓧瀹跺洯</span></div>
     </div>
 
     <div class="foot">
-      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span class="title">鏍″洯澧?路 姹犲窞瀛﹂櫌涓撳睘鐢熸椿骞冲彴</span>
       <span>07 / 08</span>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════
-       Slide 8: 结尾
-  ═══════════════════════════════════════════════════════ -->
+  <!-- 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?       Slide 8: 缁撳熬
+  鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?-->
   <section class="slide light" data-anim="fade-up">
     <div class="chrome">
-      <div class="left"><span>07</span><span class="sep"></span><span>加入我们</span></div>
+      <div class="left"><span>07</span><span class="sep"></span><span>鍔犲叆鎴戜滑</span></div>
       <div class="right"><span>JOIN US</span></div>
     </div>
 
     <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:3.5vh">
       <div class="kicker">GET STARTED</div>
       <h2 class="display-zh" style="font-size:min(6vw,10vh)">
-        校园墙<br><span class="accent-text">等你加入</span>
+        鏍″洯澧?br><span class="accent-text">绛変綘鍔犲叆</span>
       </h2>
 
       <p class="lead" style="max-width:45vw;opacity:.75">
-        无论你是想发布二手、寻找失物<br>
-        还是参与社团活动、表白心仪的同学<br>
-        校园墙都是你最好的选择
+        鏃犺浣犳槸鎯冲彂甯冧簩鎵嬨€佸鎵惧け鐗?br>
+        杩樻槸鍙備笌绀惧洟娲诲姩銆佽〃鐧藉績浠殑鍚屽<br>
+        鏍″洯澧欓兘鏄綘鏈€濂界殑閫夋嫨
       </p>
 
       <div class="grid-3 mt-4" style="max-width:50vw">
         <div class="text-center">
           <div class="h1-zh accent-text"></div>
-          <div class="body-zh mt-2">扫码注册</div>
+          <div class="body-zh mt-2">鎵爜娉ㄥ唽</div>
         </div>
         <div class="text-center">
           <div class="h1-zh accent-text"></div>
-          <div class="body-zh mt-2">学生认证</div>
+          <div class="body-zh mt-2">瀛︾敓璁よ瘉</div>
         </div>
         <div class="text-center">
           <div class="h1-zh accent-text"></div>
-          <div class="body-zh mt-2">开始使用</div>
+          <div class="body-zh mt-2">寮€濮嬩娇鐢?/div>
         </div>
       </div>
 
       <div class="campus-badge mt-4">
         <span></span>
-        <span>专属于池州学院学子 · 欢迎加入</span>
+        <span>涓撳睘浜庢睜宸炲闄㈠瀛?路 娆㈣繋鍔犲叆</span>
       </div>
 
-      <!-- 插入二维码/联系方式图片 -->
+      <!-- 鎻掑叆浜岀淮鐮?鑱旂郴鏂瑰紡鍥剧墖 -->
       <div class="img-frame mt-4" style="width:min(15vw,140px);height:min(15vw,140px);border-radius:12px">
         <div class="img-placeholder">
           <div class="icon"></div>
-          <div>二维码</div>
+          <div>浜岀淮鐮?/div>
         </div>
       </div>
     </div>
 
     <div class="foot">
-      <span class="title">校园墙 · 池州学院专属生活平台</span>
+      <span class="title">鏍″洯澧?路 姹犲窞瀛﹂櫌涓撳睘鐢熸椿骞冲彴</span>
       <span>08 / 08</span>
     </div>
   </section>
 </div>
 
 <div class="nav-hint">
-  <kbd>←</kbd> <kbd>→</kbd> 翻页 · <kbd>ESC</kbd> 索引
+  <kbd>鈫?/kbd> <kbd>鈫?/kbd> 缈婚〉 路 <kbd>ESC</kbd> 绱㈠紩
 </div>
 
 <script>
-// ============ WebGL 背景 ============
+// ============ WebGL 鑳屾櫙 ============
 (function(){
   const canvas = document.getElementById('bg-dark');
   const ctx = canvas.getContext('2d');
@@ -579,7 +564,7 @@
   draw();
 })();
 
-// ============ 翻页 ============
+// ============ 缈婚〉 ============
 (function(){
   const deck = document.getElementById('deck');
   const slides = deck.querySelectorAll('.slide');

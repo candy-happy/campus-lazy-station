@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>校园圈 - 专属池州学院学子的校园社区</title>
-  <meta name="description" content="池州学院专属校园社区平台，校园墙、二手市场、跑腿服务、社团活动，让你的大学生活更精彩" />
+  <title>鏍″洯鍦?- 涓撳睘姹犲窞瀛﹂櫌瀛﹀瓙鐨勬牎鍥ぞ鍖?/title>
+  <meta name="description" content="姹犲窞瀛﹂櫌涓撳睘鏍″洯绀惧尯骞冲彴锛屾牎鍥銆佷簩鎵嬪競鍦恒€佽窇鑵挎湇鍔°€佺ぞ鍥㈡椿鍔紝璁╀綘鐨勫ぇ瀛︾敓娲绘洿绮惧僵" />
   
   
   <style>
@@ -192,7 +192,7 @@
 
     .hero-bg {
       position: absolute;
-      inset: 0;
+      top:0;right:0;bottom:0;left:0;
       z-index: 0;
     }
 
@@ -211,7 +211,7 @@
 
     .hero-pattern {
       position: absolute;
-      inset: 0;
+      top:0;right:0;bottom:0;left:0;
       z-index: 0;
       opacity: 0.05;
       background-image: 
@@ -442,8 +442,8 @@
       border-radius: var(--radius-lg);
       overflow: hidden;
       aspect-ratio: 4/3;
-      min-height: 220px; /* QQ浏览器 aspect-ratio 降级 */
-      min-width: 0; /* 允许 Grid 收缩，防止图片撑破容器 */
+      min-height: 220px; /* QQ娴忚鍣?aspect-ratio 闄嶇骇 */
+      min-width: 0; /* 鍏佽 Grid 鏀剁缉锛岄槻姝㈠浘鐗囨拺鐮村鍣?*/
       cursor: pointer;
       transition: all 0.4s ease;
       box-shadow: var(--shadow-sm);
@@ -469,7 +469,7 @@
 
     .campus-card-overlay {
       position: absolute;
-      inset: 0;
+      top:0;right:0;bottom:0;left:0;
       background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%);
       display: flex;
       align-items: flex-end;
@@ -491,7 +491,7 @@
     .campus-card.large {
       grid-column: span 2;
       aspect-ratio: 16/9;
-      min-height: 250px; /* QQ浏览器 aspect-ratio 降级 */
+      min-height: 250px; /* QQ娴忚鍣?aspect-ratio 闄嶇骇 */
     }
 
     .features-section {
@@ -722,7 +722,7 @@
     .cta-section::before {
       content: '';
       position: absolute;
-      inset: 0;
+      top:0;right:0;bottom:0;left:0;
       background: 
         radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 50%),
         radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1) 0%, transparent 40%);
@@ -886,7 +886,7 @@
       color: var(--primary-light);
     }
 
-    /* 汉堡菜单按钮（仅移动端显示） */
+    /* 姹夊牎鑿滃崟鎸夐挳锛堜粎绉诲姩绔樉绀猴級 */
     .nav-hamburger {
       display: none;
       flex-direction: column;
@@ -919,11 +919,11 @@
       transform: translateY(-7.5px) rotate(-45deg);
     }
 
-    /* 移动端导航抽屉 */
+    /* 绉诲姩绔鑸娊灞?*/
     .nav-mobile-overlay {
       display: none;
       position: fixed;
-      inset: 0;
+      top:0;right:0;bottom:0;left:0;
       background: rgba(0,0,0,0.4);
       z-index: 999;
     }
@@ -959,14 +959,14 @@
       color: var(--primary);
     }
 
-    /* ===== 响应式 ===== */
+    /* ===== 鍝嶅簲寮?===== */
     @media (max-width: 900px) {
       .nav-links { display: none; }
       .nav-hamburger { display: flex; }
       .hero-stats { gap: 24px; }
       .campus-card.large {
         grid-column: span 1;
-        aspect-ratio: auto; /* 移动端不强制宽高比，避免 min-height 撑破 Grid */
+        aspect-ratio: auto; /* 绉诲姩绔笉寮哄埗瀹介珮姣旓紝閬垮厤 min-height 鎾戠牬 Grid */
       }
     }
 
@@ -992,7 +992,7 @@
       .features-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
       .safety-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
 
-      /* 触屏：校园照片标题始终可见 */
+      /* 瑙﹀睆锛氭牎鍥収鐗囨爣棰樺缁堝彲瑙?*/
       .campus-card-overlay { opacity: 1; background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.65) 100%); }
 
       .cta-section { padding: 56px 16px; }
@@ -1042,33 +1042,33 @@
 <body>
   <nav id="navbar">
     <a href="#" class="nav-logo">
-      <img class="nav-logo-icon" src="images/xy-logo-circle.png" alt="校园圈">
-      <span class="nav-logo-text">校园圈</span>
-      <span class="nav-logo-tag">专属</span>
+      <img class="nav-logo-icon" src="images/xy-logo-circle.png" alt="鏍″洯鍦?>
+      <span class="nav-logo-text">鏍″洯鍦?/span>
+      <span class="nav-logo-tag">涓撳睘</span>
     </a>
 
     <ul class="nav-links">
-      <li><a href="#campus">校园风光</a></li>
-      <li><a href="#wall">校园墙</a></li>
-      <li><a href="#features">功能特色</a></li>
-      <li><a href="#safety">安全保障</a></li>
+      <li><a href="#campus">鏍″洯椋庡厜</a></li>
+      <li><a href="#wall">鏍″洯澧?/a></li>
+      <li><a href="#features">鍔熻兘鐗硅壊</a></li>
+      <li><a href="#safety">瀹夊叏淇濋殰</a></li>
     </ul>
 
-    <a href="app.html" class="nav-cta">进入平台 →</a>
+    <a href="app.html" class="nav-cta">杩涘叆骞冲彴 鈫?/a>
 
-    <button class="nav-hamburger" id="navHamburger" aria-label="菜单">
+    <button class="nav-hamburger" id="navHamburger" aria-label="鑿滃崟">
       <span></span><span></span><span></span>
     </button>
   </nav>
 
-  <!-- 移动端导航遮罩 -->
+  <!-- 绉诲姩绔鑸伄缃?-->
   <div class="nav-mobile-overlay" id="navMobileOverlay"></div>
   <div class="nav-mobile-drawer" id="navMobileDrawer">
-    <a href="#campus">🏫 校园风光</a>
-    <a href="#wall">💬 校园墙</a>
-    <a href="#features">✨ 功能特色</a>
-    <a href="#safety">🛡️ 安全保障</a>
-    <a href="app.html" style="color: var(--primary); border-bottom: none; margin-top: 8px; font-weight: 700;">📱 进入平台 →</a>
+    <a href="#campus">馃彨 鏍″洯椋庡厜</a>
+    <a href="#wall">馃挰 鏍″洯澧?/a>
+    <a href="#features">鉁?鍔熻兘鐗硅壊</a>
+    <a href="#safety">馃洝锔?瀹夊叏淇濋殰</a>
+    <a href="app.html" style="color: var(--primary); border-bottom: none; margin-top: 8px; font-weight: 700;">馃摫 杩涘叆骞冲彴 鈫?/a>
   </div>
 
   <section class="hero">
@@ -1078,42 +1078,42 @@
     <div class="hero-content">
       <div class="hero-badge">
         <div class="hero-badge-dot"></div>
-        <span class="hero-badge-text">专属于池州学院学子</span>
+        <span class="hero-badge-text">涓撳睘浜庢睜宸炲闄㈠瀛?/span>
       </div>
 
       <h1 class="hero-title">
-        校园圈<br/>
-        <span class="hero-title-gradient">装下你的整个大学生活</span>
+        鏍″洯鍦?br/>
+        <span class="hero-title-gradient">瑁呬笅浣犵殑鏁翠釜澶у鐢熸椿</span>
       </h1>
 
       <p class="hero-subtitle">
-        <strong>校园墙</strong>分享生活、表白倾诉、急事求助<br/>
-        <strong>二手市场</strong>安全交易、全是同学、无外来干扰<br/>
-        <strong>跑腿服务</strong>代取快递、代买饭、明码标价<br/>
-        <strong>社团活动</strong>招新宣传、报名参与、扫码签到
+        <strong>鏍″洯澧?/strong>鍒嗕韩鐢熸椿銆佽〃鐧藉€捐瘔銆佹€ヤ簨姹傚姪<br/>
+        <strong>浜屾墜甯傚満</strong>瀹夊叏浜ゆ槗銆佸叏鏄悓瀛︺€佹棤澶栨潵骞叉壈<br/>
+        <strong>璺戣吙鏈嶅姟</strong>浠ｅ彇蹇€掋€佷唬涔伴キ銆佹槑鐮佹爣浠?br/>
+        <strong>绀惧洟娲诲姩</strong>鎷涙柊瀹ｄ紶銆佹姤鍚嶅弬涓庛€佹壂鐮佺鍒?
       </p>
 
       <div class="hero-actions">
-        <a href="app.html" class="btn-primary">📱 立即体验</a>
-        <a href="#features" class="btn-secondary">了解更多 ↓</a>
+        <a href="app.html" class="btn-primary">馃摫 绔嬪嵆浣撻獙</a>
+        <a href="#features" class="btn-secondary">浜嗚В鏇村 鈫?/a>
       </div>
 
       <div class="hero-stats">
         <div class="stat-item">
           <div class="stat-value">5000+</div>
-          <div class="stat-label">在校学子</div>
+          <div class="stat-label">鍦ㄦ牎瀛﹀瓙</div>
         </div>
         <div class="stat-item">
           <div class="stat-value">20000+</div>
-          <div class="stat-label">校园墙帖子</div>
+          <div class="stat-label">鏍″洯澧欏笘瀛?/div>
         </div>
         <div class="stat-item">
           <div class="stat-value">80+</div>
-          <div class="stat-label">学生社团</div>
+          <div class="stat-label">瀛︾敓绀惧洟</div>
         </div>
         <div class="stat-item">
           <div class="stat-value">100%</div>
-          <div class="stat-label">校内认证</div>
+          <div class="stat-label">鏍″唴璁よ瘉</div>
         </div>
       </div>
     </div>
@@ -1122,57 +1122,57 @@
   <section class="campus-section" id="campus">
     <div class="section-header">
       <div class="section-badge">Campus</div>
-      <h2 class="section-title">美丽池院 · 温馨家园</h2>
-      <p class="section-desc">坐落于池州的美丽校园，青山绿水环绕，现代化的教学楼、图书馆、体育馆，是我们共同的家园。</p>
+      <h2 class="section-title">缇庝附姹犻櫌 路 娓╅Θ瀹跺洯</h2>
+      <p class="section-desc">鍧愯惤浜庢睜宸炵殑缇庝附鏍″洯锛岄潚灞辩豢姘寸幆缁曪紝鐜颁唬鍖栫殑鏁欏妤笺€佸浘涔﹂銆佷綋鑲查锛屾槸鎴戜滑鍏卞悓鐨勫鍥€?/p>
     </div>
 
     <div class="campus-grid">
       <div class="campus-card large">
-        <img src="images/校门.jpg" alt="池州学院校门" />
+        <img src="images/鏍￠棬.jpg" alt="姹犲窞瀛﹂櫌鏍￠棬" />
         <div class="campus-card-overlay">
-        <span class="campus-card-title">池州学院校门</span>
+        <span class="campus-card-title">姹犲窞瀛﹂櫌鏍￠棬</span>
         </div>
       </div>
 
       <div class="campus-card">
-        <img src="images/博古楼礼堂.jpg" alt="博古楼礼堂" />
+        <img src="images/鍗氬彜妤肩ぜ鍫?jpg" alt="鍗氬彜妤肩ぜ鍫? />
         <div class="campus-card-overlay">
-        <span class="campus-card-title">博古楼礼堂</span>
+        <span class="campus-card-title">鍗氬彜妤肩ぜ鍫?/span>
         </div>
       </div>
 
       <div class="campus-card">
-        <img src="images/教学楼.jpg" alt="教学楼" />
+        <img src="images/鏁欏妤?jpg" alt="鏁欏妤? />
         <div class="campus-card-overlay">
-        <span class="campus-card-title">教学楼</span>
+        <span class="campus-card-title">鏁欏妤?/span>
         </div>
       </div>
 
       <div class="campus-card">
-        <img src="images/地图.jpeg" alt="校园地图" />
+        <img src="images/鍦板浘.jpeg" alt="鏍″洯鍦板浘" />
         <div class="campus-card-overlay">
-        <span class="campus-card-title">校园地图</span>
+        <span class="campus-card-title">鏍″洯鍦板浘</span>
         </div>
       </div>
 
       <div class="campus-card">
-        <img src="images/实验楼.webp" alt="实验楼" />
+        <img src="images/瀹為獙妤?webp" alt="瀹為獙妤? />
         <div class="campus-card-overlay">
-        <span class="campus-card-title">实验楼</span>
+        <span class="campus-card-title">瀹為獙妤?/span>
         </div>
       </div>
 
       <div class="campus-card">
-        <img src="images/校园美景.jpg" alt="校园美景" />
+        <img src="images/鏍″洯缇庢櫙.jpg" alt="鏍″洯缇庢櫙" />
         <div class="campus-card-overlay">
-        <span class="campus-card-title">校园美景</span>
+        <span class="campus-card-title">鏍″洯缇庢櫙</span>
         </div>
       </div>
 
       <div class="campus-card">
-        <img src="images/校园美景2.jpg" alt="校园美景2" />
+        <img src="images/鏍″洯缇庢櫙2.jpg" alt="鏍″洯缇庢櫙2" />
         <div class="campus-card-overlay">
-        <span class="campus-card-title">校园美景2</span>
+        <span class="campus-card-title">鏍″洯缇庢櫙2</span>
         </div>
       </div>
     </div>
@@ -1181,68 +1181,68 @@
   <section class="wall-section" id="wall">
     <div class="section-header">
       <div class="section-badge">Campus Wall</div>
-      <h2 class="section-title">校园墙 · 真实声音</h2>
-      <p class="section-desc">有问题发墙，找人帮忙；有好东西分享；想表白就大声说出来；急事广告全速传播</p>
+      <h2 class="section-title">鏍″洯澧?路 鐪熷疄澹伴煶</h2>
+      <p class="section-desc">鏈夐棶棰樺彂澧欙紝鎵句汉甯繖锛涙湁濂戒笢瑗垮垎浜紱鎯宠〃鐧藉氨澶у０璇村嚭鏉ワ紱鎬ヤ簨骞垮憡鍏ㄩ€熶紶鎾?/p>
     </div>
 
     <div class="wall-showcase">
       <div class="wall-card">
         <div class="wall-card-header">
-          <div class="wall-avatar">小</div>
+          <div class="wall-avatar">灏?/div>
           <div class="wall-card-meta">
-            <div class="wall-card-name">小池同学</div>
-            <div class="wall-card-time">3分钟前 · 浏览 321次</div>
+            <div class="wall-card-name">灏忔睜鍚屽</div>
+            <div class="wall-card-time">3鍒嗛挓鍓?路 娴忚 321娆?/div>
           </div>
         </div>
-        <div class="wall-card-content">今天在图书馆门口看到一个男生给女生送了一束向日葵，女生笑得特别好看。突然觉得大学里最美好的事情就是这些不经意的小浪漫...</div>
+        <div class="wall-card-content">浠婂ぉ鍦ㄥ浘涔﹂闂ㄥ彛鐪嬪埌涓€涓敺鐢熺粰濂崇敓閫佷簡涓€鏉熷悜鏃ヨ懙锛屽コ鐢熺瑧寰楃壒鍒ソ鐪嬨€傜獊鐒惰寰楀ぇ瀛﹂噷鏈€缇庡ソ鐨勪簨鎯呭氨鏄繖浜涗笉缁忔剰鐨勫皬娴极...</div>
         <div class="wall-card-tags">
-          <span class="wall-tag">#校园</span>
-          <span class="wall-tag hot">#表白</span>
+          <span class="wall-tag">#鏍″洯</span>
+          <span class="wall-tag hot">#琛ㄧ櫧</span>
         </div>
         <div class="wall-card-footer">
-          <div class="wall-action">❤️ 186</div>
-          <div class="wall-action">💬 42</div>
-          <div class="wall-action">🔗 分享</div>
+          <div class="wall-action">鉂わ笍 186</div>
+          <div class="wall-action">馃挰 42</div>
+          <div class="wall-action">馃敆 鍒嗕韩</div>
         </div>
       </div>
 
       <div class="wall-card">
         <div class="wall-card-header">
-          <div class="wall-avatar" style="background: linear-gradient(135deg, #9B59B6, #BB8FCE);">考</div>
+          <div class="wall-avatar" style="background: linear-gradient(135deg, #9B59B6, #BB8FCE);">鑰?/div>
           <div class="wall-card-meta">
-            <div class="wall-card-name">考研人A</div>
-            <div class="wall-card-time">18分钟前 · 浏览 112次</div>
+            <div class="wall-card-name">鑰冪爺浜篈</div>
+            <div class="wall-card-time">18鍒嗛挓鍓?路 娴忚 112娆?/div>
           </div>
         </div>
-        <div class="wall-card-content">考研倒计时198天！今天完成了高数第三章的复习，做了80道题错了23道，正确率71%。坚持就是胜利，有一起加油的研友吗？</div>
+        <div class="wall-card-content">鑰冪爺鍊掕鏃?98澶╋紒浠婂ぉ瀹屾垚浜嗛珮鏁扮涓夌珷鐨勫涔狅紝鍋氫簡80閬撻閿欎簡23閬擄紝姝ｇ‘鐜?1%銆傚潥鎸佸氨鏄儨鍒╋紝鏈変竴璧峰姞娌圭殑鐮斿弸鍚楋紵</div>
         <div class="wall-card-tags">
-          <span class="wall-tag">#学习</span>
-          <span class="wall-tag">#考研加油</span>
+          <span class="wall-tag">#瀛︿範</span>
+          <span class="wall-tag">#鑰冪爺鍔犳补</span>
         </div>
         <div class="wall-card-footer">
-          <div class="wall-action">❤️ 72</div>
-          <div class="wall-action">💬 15</div>
-          <div class="wall-action">🔗 分享</div>
+          <div class="wall-action">鉂わ笍 72</div>
+          <div class="wall-action">馃挰 15</div>
+          <div class="wall-action">馃敆 鍒嗕韩</div>
         </div>
       </div>
 
       <div class="wall-card">
         <div class="wall-card-header">
-          <div class="wall-avatar" style="background: linear-gradient(135deg, #F97316, #FB923C);">急</div>
+          <div class="wall-avatar" style="background: linear-gradient(135deg, #F97316, #FB923C);">鎬?/div>
           <div class="wall-card-meta">
-            <div class="wall-card-name">匿名同学</div>
-            <div class="wall-card-time">26分钟前 · 浏览 456次</div>
+            <div class="wall-card-name">鍖垮悕鍚屽</div>
+            <div class="wall-card-time">26鍒嗛挓鍓?路 娴忚 456娆?/div>
           </div>
         </div>
-        <div class="wall-card-content">【急】有谁在5号楼看到一个灰色双肩包吗？里面有课本和U盘，对我很重要，麻烦了🙏🙏</div>
+        <div class="wall-card-content">銆愭€ャ€戞湁璋佸湪5鍙锋ゼ鐪嬪埌涓€涓伆鑹插弻鑲╁寘鍚楋紵閲岄潰鏈夎鏈拰U鐩橈紝瀵规垜寰堥噸瑕侊紝楹荤儲浜嗮煓忦煓?/div>
         <div class="wall-card-tags">
-          <span class="wall-tag urgent">#急事</span>
-          <span class="wall-tag">#寻物</span>
+          <span class="wall-tag urgent">#鎬ヤ簨</span>
+          <span class="wall-tag">#瀵荤墿</span>
         </div>
         <div class="wall-card-footer">
-          <div class="wall-action">❤️ 28</div>
-          <div class="wall-action">💬 36</div>
-          <div class="wall-action">🔗 分享</div>
+          <div class="wall-action">鉂わ笍 28</div>
+          <div class="wall-action">馃挰 36</div>
+          <div class="wall-action">馃敆 鍒嗕韩</div>
         </div>
       </div>
     </div>
@@ -1251,45 +1251,45 @@
   <section class="features-section" id="features">
     <div class="section-header">
       <div class="section-badge">Features</div>
-      <h2 class="section-title">功能特色</h2>
-      <p class="section-desc">一站式校园服务平台，满足你大学生活的所有需求</p>
+      <h2 class="section-title">鍔熻兘鐗硅壊</h2>
+      <p class="section-desc">涓€绔欏紡鏍″洯鏈嶅姟骞冲彴锛屾弧瓒充綘澶у鐢熸椿鐨勬墍鏈夐渶姹?/p>
     </div>
 
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feature-icon">🧡</div>
-        <div class="feature-title">校园墙</div>
-        <div class="feature-desc">分享生活、表白倾诉、急事求助、找人帮忙，校园墙是每个池院学子最真实的声音</div>
+        <div class="feature-icon">馃А</div>
+        <div class="feature-title">鏍″洯澧?/div>
+        <div class="feature-desc">鍒嗕韩鐢熸椿銆佽〃鐧藉€捐瘔銆佹€ヤ簨姹傚姪銆佹壘浜哄府蹇欙紝鏍″洯澧欐槸姣忎釜姹犻櫌瀛﹀瓙鏈€鐪熷疄鐨勫０闊?/div>
       </div>
 
       <div class="feature-card">
-        <div class="feature-icon">🛒</div>
-        <div class="feature-title">二手市场</div>
-        <div class="feature-desc">教材、电子产品、生活用品，买卖双方都是同学，诚信评级让交易更安心</div>
+        <div class="feature-icon">馃洅</div>
+        <div class="feature-title">浜屾墜甯傚満</div>
+        <div class="feature-desc">鏁欐潗銆佺數瀛愪骇鍝併€佺敓娲荤敤鍝侊紝涔板崠鍙屾柟閮芥槸鍚屽锛岃瘹淇¤瘎绾ц浜ゆ槗鏇村畨蹇?/div>
       </div>
 
       <div class="feature-card">
-        <div class="feature-icon">🏃</div>
-        <div class="feature-title">跑腿服务</div>
-        <div class="feature-desc">代取快递、代买饭、代打印，明码标价，服务有保障，骑手80%分成</div>
+        <div class="feature-icon">馃弮</div>
+        <div class="feature-title">璺戣吙鏈嶅姟</div>
+        <div class="feature-desc">浠ｅ彇蹇€掋€佷唬涔伴キ銆佷唬鎵撳嵃锛屾槑鐮佹爣浠凤紝鏈嶅姟鏈変繚闅滐紝楠戞墜80%鍒嗘垚</div>
       </div>
 
       <div class="feature-card">
-        <div class="feature-icon">🎪</div>
-        <div class="feature-title">社团活动</div>
-        <div class="feature-desc">浏览社团、加入协会、报名活动，扫码签到，丰富多彩的校园生活</div>
+        <div class="feature-icon">馃帾</div>
+        <div class="feature-title">绀惧洟娲诲姩</div>
+        <div class="feature-desc">娴忚绀惧洟銆佸姞鍏ュ崗浼氥€佹姤鍚嶆椿鍔紝鎵爜绛惧埌锛屼赴瀵屽褰╃殑鏍″洯鐢熸椿</div>
       </div>
 
       <div class="feature-card">
-        <div class="feature-icon">👨‍🏫</div>
-        <div class="feature-title">师说评价</div>
-        <div class="feature-desc">匿名评价教师，选课不踩坑，11个学院1000+教师信息供你参考</div>
+        <div class="feature-icon">馃懆鈥嶐煆?/div>
+        <div class="feature-title">甯堣璇勪环</div>
+        <div class="feature-desc">鍖垮悕璇勪环鏁欏笀锛岄€夎涓嶈俯鍧戯紝11涓闄?000+鏁欏笀淇℃伅渚涗綘鍙傝€?/div>
       </div>
 
       <div class="feature-card">
-        <div class="feature-icon">🐱</div>
-        <div class="feature-title">猫狗日记</div>
-        <div class="feature-desc">记录校园流浪猫狗，目击打卡，健康状态上报，守护校园萌宠</div>
+        <div class="feature-icon">馃惐</div>
+        <div class="feature-title">鐚嫍鏃ヨ</div>
+        <div class="feature-desc">璁板綍鏍″洯娴佹氮鐚嫍锛岀洰鍑绘墦鍗★紝鍋ュ悍鐘舵€佷笂鎶ワ紝瀹堟姢鏍″洯钀屽疇</div>
       </div>
     </div>
   </section>
@@ -1297,45 +1297,45 @@
   <section class="safety-section" id="safety">
     <div class="section-header">
       <div class="section-badge">Security</div>
-      <h2 class="section-title">安全保障</h2>
-      <p class="section-desc">全方位安全防护，让你安心使用</p>
+      <h2 class="section-title">瀹夊叏淇濋殰</h2>
+      <p class="section-desc">鍏ㄦ柟浣嶅畨鍏ㄩ槻鎶わ紝璁╀綘瀹夊績浣跨敤</p>
     </div>
 
     <div class="safety-grid">
       <div class="safety-card">
-        <div class="safety-icon">🔒</div>
-        <div class="safety-title">纯校内社区</div>
-        <div class="safety-desc">仅池州学院学生可注册，拒绝外来人员干扰</div>
+        <div class="safety-icon">馃敀</div>
+        <div class="safety-title">绾牎鍐呯ぞ鍖?/div>
+        <div class="safety-desc">浠呮睜宸炲闄㈠鐢熷彲娉ㄥ唽锛屾嫆缁濆鏉ヤ汉鍛樺共鎵?/div>
       </div>
 
       <div class="safety-card">
-        <div class="safety-icon">✅</div>
-        <div class="safety-title">身份认证</div>
-        <div class="safety-desc">学号+校园卡认证，确保每一位用户都是真实同学</div>
+        <div class="safety-icon">鉁?/div>
+        <div class="safety-title">韬唤璁よ瘉</div>
+        <div class="safety-desc">瀛﹀彿+鏍″洯鍗¤璇侊紝纭繚姣忎竴浣嶇敤鎴烽兘鏄湡瀹炲悓瀛?/div>
       </div>
 
       <div class="safety-card">
-        <div class="safety-icon">🤖</div>
-        <div class="safety-title">AI内容审核</div>
-        <div class="safety-desc">智能审核系统，实时过滤不良信息</div>
+        <div class="safety-icon">馃</div>
+        <div class="safety-title">AI鍐呭瀹℃牳</div>
+        <div class="safety-desc">鏅鸿兘瀹℃牳绯荤粺锛屽疄鏃惰繃婊や笉鑹俊鎭?/div>
       </div>
 
       <div class="safety-card">
-        <div class="safety-icon">📝</div>
-        <div class="safety-title">会话留证</div>
-        <div class="safety-desc">聊天记录全程留存，交易纠纷有据可查</div>
+        <div class="safety-icon">馃摑</div>
+        <div class="safety-title">浼氳瘽鐣欒瘉</div>
+        <div class="safety-desc">鑱婂ぉ璁板綍鍏ㄧ▼鐣欏瓨锛屼氦鏄撶籂绾锋湁鎹彲鏌?/div>
       </div>
     </div>
   </section>
 
   <section class="cta-section">
     <div class="cta-content">
-      <h2 class="cta-title">加入校园圈</h2>
-      <p class="cta-desc">专属于池州学院学子的校园社区，让你的大学生活更加便捷精彩</p>
+      <h2 class="cta-title">鍔犲叆鏍″洯鍦?/h2>
+      <p class="cta-desc">涓撳睘浜庢睜宸炲闄㈠瀛愮殑鏍″洯绀惧尯锛岃浣犵殑澶у鐢熸椿鏇村姞渚挎嵎绮惧僵</p>
       
       <div class="cta-buttons">
-        <a href="app.html" class="cta-btn">📱 立即进入</a>
-        <a href="#campus" class="cta-btn cta-btn-outline">了解详情</a>
+        <a href="app.html" class="cta-btn">馃摫 绔嬪嵆杩涘叆</a>
+        <a href="#campus" class="cta-btn cta-btn-outline">浜嗚В璇︽儏</a>
       </div>
     </div>
   </section>
@@ -1344,49 +1344,49 @@
     <div class="footer-content">
       <div class="footer-brand">
         <div class="footer-logo">
-          <img class="footer-logo-icon" src="images/xy-logo-circle.png" alt="校园圈">
-          <span class="footer-logo-text">校园圈</span>
+          <img class="footer-logo-icon" src="images/xy-logo-circle.png" alt="鏍″洯鍦?>
+          <span class="footer-logo-text">鏍″洯鍦?/span>
         </div>
-        <p class="footer-desc">专属于池州学院学子的校园社区平台，致力于让校园生活更便捷、更精彩。</p>
+        <p class="footer-desc">涓撳睘浜庢睜宸炲闄㈠瀛愮殑鏍″洯绀惧尯骞冲彴锛岃嚧鍔涗簬璁╂牎鍥敓娲绘洿渚挎嵎銆佹洿绮惧僵銆?/p>
       </div>
 
       <div class="footer-links-group">
         <div class="footer-links">
-          <h4>功能服务</h4>
+          <h4>鍔熻兘鏈嶅姟</h4>
           <ul>
-            <li><a href="#wall">校园墙</a></li>
-            <li><a href="#features">二手市场</a></li>
-            <li><a href="#features">跑腿服务</a></li>
-            <li><a href="#features">社团活动</a></li>
+            <li><a href="#wall">鏍″洯澧?/a></li>
+            <li><a href="#features">浜屾墜甯傚満</a></li>
+            <li><a href="#features">璺戣吙鏈嶅姟</a></li>
+            <li><a href="#features">绀惧洟娲诲姩</a></li>
           </ul>
         </div>
 
         <div class="footer-links">
-          <h4>关于我们</h4>
+          <h4>鍏充簬鎴戜滑</h4>
           <ul>
-            <li><a href="#">平台介绍</a></li>
-            <li><a href="#">用户协议</a></li>
-            <li><a href="#">隐私政策</a></li>
-            <li><a href="#">联系我们</a></li>
+            <li><a href="#">骞冲彴浠嬬粛</a></li>
+            <li><a href="#">鐢ㄦ埛鍗忚</a></li>
+            <li><a href="#">闅愮鏀跨瓥</a></li>
+            <li><a href="#">鑱旂郴鎴戜滑</a></li>
           </ul>
         </div>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <span>© 2024 校园圈 · 专属于池州学院学子</span>
-      <span><a href="#">用户协议</a> · <a href="#">隐私政策</a></span>
+      <span>漏 2024 鏍″洯鍦?路 涓撳睘浜庢睜宸炲闄㈠瀛?/span>
+      <span><a href="#">鐢ㄦ埛鍗忚</a> 路 <a href="#">闅愮鏀跨瓥</a></span>
     </div>
   </footer>
 
   <script>
-    // 导航栏滚动阴影
+    // 瀵艰埅鏍忔粴鍔ㄩ槾褰?
     window.addEventListener('scroll', function() {
       var navbar = document.getElementById('navbar');
       navbar.classList.toggle('scrolled', window.scrollY > 50);
     });
 
-    // 移动端汉堡菜单
+    // 绉诲姩绔眽鍫¤彍鍗?
     (function() {
       var btn = document.getElementById('navHamburger');
       var overlay = document.getElementById('navMobileOverlay');
