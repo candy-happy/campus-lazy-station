@@ -28,11 +28,16 @@ router.get('/captcha', captchaRateLimit, (req, res) => {
 const loginRateLimit = rateLimit(5, 60 * 1000);
 
 router.post('/user/login', loginRateLimit, (req, res) => JSON_RES(res, () => {
-  const { student_id, password } = req.body;
+  const { student_id, password, captcha: captchaInput, captchaKey } = req.body;
 
   // 输入验证
   if (!student_id || !/^\d{9}$/.test(student_id)) return makeError('请输入正确的9位学号', ErrorCode.PARAM_INVALID);
   if (!password) return makeError('请输入密码', ErrorCode.PARAM_MISSING);
+
+  // 验证码验证
+  if (!captchaInput) return makeError('请输入验证码', ErrorCode.PARAM_MISSING);
+  const key = captchaKey || student_id;
+  if (!captcha.verify(key, captchaInput)) return makeError('验证码错误或已过期', ErrorCode.CAPTCHA_INVALID);
 
   let user = db.prepare('SELECT * FROM users WHERE student_id = ?').get(student_id);
 

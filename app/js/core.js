@@ -395,7 +395,7 @@
       }
     };
 
-    let _lang = localStorage.getItem('lazyLang') || 'zh';
+    var _lang = localStorage.getItem('lazyLang') || 'zh';
 
     function _t(key) { return (I18N[_lang] && I18N[_lang][key]) || (I18N.zh[key]) || key; }
 
@@ -459,28 +459,28 @@
     // ══════ 状态══════
     // JS加载成功标记（页面加载后会在控制台输出）
     console.log('[校园圈] JS加载成功 v2.1-' + new Date().toISOString().slice(0,10));
-    let currentUser = null;
-    let orders = [];
-    let coupons = [];
-    let userPoints = { total: 0, history: [] };
-    let notifications = [];
-    let addresses = [];
-    let currentTip = 0;
+    var currentUser = null;
+    var orders = [];
+    var coupons = [];
+    var userPoints = { total: 0, history: [] };
+    var notifications = [];
+    var addresses = [];
+    var currentTip = 0;
 
     // ═══ 二手市场状态 ═══
-    let marketItems = [];
-    let marketCategory = 'all';
-    let marketPage = 1;
-    let marketHasMore = false;
-    let publishImages = []; // 已选图片File对象
-    let publishImgUrls = []; // 预览URL
-    let publishCategory = 'other';
-    let publishCondition = '9成新';
-    let tradeTab = 'all';
+    var marketItems = [];
+    var marketCategory = 'all';
+    var marketPage = 1;
+    var marketHasMore = false;
+    var publishImages = []; // 已选图片File对象
+    var publishImgUrls = []; // 预览URL
+    var publishCategory = 'other';
+    var publishCondition = '9成新';
+    var tradeTab = 'all';
 
     // ═══ 子页面栈管理 ═══
-    let _pageStack = [];
-    let _subPageZBase = 1000;
+    var _pageStack = [];
+    var _subPageZBase = 1000;
 
     function openSubPage(id) {
       const el = document.getElementById(id);
@@ -509,8 +509,8 @@
     // 物理返回键支持
     window.addEventListener('popstate', () => goBack());
 
-    let currentService = 'delivery';
-    let currentTab = 'all';
+    var currentService = 'delivery';
+    var currentTab = 'all';
 
     // ══════ 工具 ══════
     const phoneRegex = /^1[3-9]\d{9}$/;
@@ -541,9 +541,9 @@
     };
 
     // ══════ 加载数据 ══════
-    let adsList = [];
-    let adsIdx = 0, adsTimer = null;
-    let adsImpressionSent = new Set(); // 避免重复记录展示
+    var adsList = [];
+    var adsIdx = 0, adsTimer = null;
+    var adsImpressionSent = new Set(); // 避免重复记录展示
     // 触摸滑动状态
     let bannerTouchX0 = 0, bannerTouchY0 = 0;
 

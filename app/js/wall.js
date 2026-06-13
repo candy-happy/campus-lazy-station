@@ -49,9 +49,9 @@
     // ═══════════════════════════════════════════════════════
     // 🧱 校园墙
     // ═══════════════════════════════════════════════════════
-    let wallTab = 'latest';
-    let wallPosts = [];
-    let wallTagFilter = ''; // 当前标签筛选
+    var wallTab = 'latest';
+    var wallPosts = [];
+    var wallTagFilter = ''; // 当前标签筛选
 
 
     function switchWallTab(tab) {

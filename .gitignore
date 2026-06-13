@@ -20,3 +20,4 @@ _patch*.js
 .env
 *.bak-shm
 *.bak-wal
+uploads/

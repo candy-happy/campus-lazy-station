@@ -74,10 +74,17 @@
                 <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">学号</label>
                 <input id="loginStudentId" type="text" placeholder="请输入9位学号" maxlength="9" inputmode="numeric" pattern="[0-9]*" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
               </div>
-              <div style="text-align:left;margin-bottom:24px">
+              <div style="text-align:left;margin-bottom:16px">
                 <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">密码</label>
                 <input id="loginPassword" type="password" placeholder="请输入密码" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
                 <p style="font-size:11px;color:var(--text-secondary);margin-top:4px">首次登录默认密码：shoujihao</p>
+              </div>
+              <div style="text-align:left;margin-bottom:24px">
+                <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">验证码</label>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <input id="loginCaptcha" type="text" placeholder="4位数字" maxlength="4" style="flex:1;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box;min-width:0" />
+                  <img id="captchaImg" src="" alt="验证码" onclick="refreshCaptcha()" style="height:44px;border-radius:10px;cursor:pointer;border:2px solid var(--border);flex-shrink:0" title="点击刷新验证码" />
+                </div>
               </div>
               <button id="loginBtn" onclick="doLogin()" style="width:100%;padding:14px;border:none;border-radius:14px;background:var(--gradient);color:white;font-size:16px;font-weight:700;cursor:pointer">
                 登录 / 注册
@@ -98,14 +105,15 @@
       }
       overlay.style.display = 'flex';
       setTimeout(() => updateLoginBtn(), 0);
+      setTimeout(() => refreshCaptcha(), 100);
     }
 
     var _captchaKey = '';
     function refreshCaptcha() {
-      const phone = document.getElementById('loginPhone')?.value?.trim() || 'default';
-      _captchaKey = phone;
+      const sid = document.getElementById('loginStudentId')?.value?.trim() || 'default';
+      _captchaKey = sid;
       const img = document.getElementById('captchaImg');
-      if (img) img.src = '/api/captcha?phone=' + encodeURIComponent(phone) + '&t=' + Date.now();
+      if (img) img.src = '/api/captcha?phone=' + encodeURIComponent(sid) + '&t=' + Date.now();
     }
 
 
@@ -167,13 +175,16 @@
       const btn = document.getElementById('loginBtn');
       const studentId = document.getElementById('loginStudentId').value.trim();
       const password = document.getElementById('loginPassword').value.trim();
+      const captchaInput = document.getElementById('loginCaptcha').value.trim();
       if (!/^\d{9}$/.test(studentId)) { showToast('请输入正确的9位学号'); return; }
       if (!password) { showToast('请输入密码'); return; }
+      if (!captchaInput) { showToast('请输入验证码'); return; }
+      if (captchaInput.length !== 4) { showToast('请输入4位验证码'); return; }
       if (!document.getElementById('agreeTerms').checked) { showToast('请先阅读并同意服务条款和隐私协议'); return; }
       btn.textContent = '登录中...';
       btn.disabled = true;
       try {
-        const res = await API.userLogin(studentId, password);
+        const res = await API.userLogin(studentId, password, captchaInput, _captchaKey);
         currentUser = { student_id: studentId, phone: res.phone || studentId, name: res.name || '同学' };
         localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', student_id: studentId, phone: res.phone || studentId, name: res.name || '同学' }));
         document.getElementById('loginOverlay').style.display = 'none';
@@ -183,6 +194,7 @@
         startOrderPolling();
         showToast(res.isNewUser ? '🎉 首次登录，默认密码为 shoujihao，记得去设置修改哦' : '欢迎回来！');
       } catch(e) {
+        if (e.message && e.message.includes('验证码')) { refreshCaptcha(); document.getElementById('loginCaptcha').value = ''; }
         showToast('登录失败: ' + (e.message || '请重试'));
         console.error('doLogin error:', e);
       } finally {
