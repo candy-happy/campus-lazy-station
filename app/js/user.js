@@ -67,7 +67,7 @@
         overlay.innerHTML = `
           <div style="width:100%;max-width:380px;text-align:center">
             <div style="font-size:56px;margin-bottom:8px">🦥</div>
-            <h1 style="font-size:22px;font-weight:900;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px">校园圈</h1>
+            <h1 style="font-size:22px;font-weight:900;color:var(--primary);background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px">校园圈</h1>
             <p style="color:var(--text-secondary);font-size:13px;margin-bottom:32px">随时随地，帮我干活</p>
             <div style="background:var(--card);border-radius:20px;padding:28px 24px;box-shadow:var(--shadow)">
               <div style="text-align:left;margin-bottom:20px">
