@@ -3,9 +3,7 @@
 // 新功能请添加为独立JS模块，不要在骨架文件中添加代码
 
 
-// 兜底：防止 escHtml 未定义导致整个模块崩溃
-if (typeof window.escHtml !== 'function') { window.escHtml = function(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }; }
-var escHtml = function(s) { return window.escHtml(s); };
+// escHtml 由 core.js 的 function escHtml(){} 声明提供（全局函数，所有脚本共用）
 
 // ═══ 教师留言系统 ═══
 let _teacherPage = 1;

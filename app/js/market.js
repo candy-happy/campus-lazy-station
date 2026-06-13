@@ -196,8 +196,8 @@
 
 
     // ─── 商品留言评论 ───────────────────────────────────
-    let _replyToCommentId = null;
-    let _replyToCommentName = '';
+    var _replyToCommentId = null;
+    var _replyToCommentName = '';
 
 
     async function loadMarketComments(itemId) {

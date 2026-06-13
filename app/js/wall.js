@@ -2546,7 +2546,6 @@ window.showReportMenu = showReportMenu;
 window.shareComment = shareComment;
 window.showPostMoreMenu = showPostMoreMenu;
 window.doSharePost = doSharePost;
-window.sendShareMessage = sendShareMessage;
 window.doDeletePost = doDeletePost;
 window.doBlockUser = doBlockUser;
 window.doReport = doReport;
