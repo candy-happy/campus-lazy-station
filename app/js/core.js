@@ -857,7 +857,6 @@
             <button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button>
             <button class="wall-action" onclick="showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button>
             <button class="wall-action" onclick="event.stopPropagation();doSharePost(${p.id})">📤 <span>${p.share_count||0}</span></button>
-            <button class="wall-action" onclick="event.stopPropagation();var s=this.parentElement.parentElement.querySelector('.wall-more-btn');s&&s.click()" title="更多">⋯</button>
           </div>
         </div>
       `;
