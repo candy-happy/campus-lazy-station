@@ -102,18 +102,9 @@ router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res
     const videoUrls = files.filter(f => f.mimetype.startsWith('video/')).map(f => '/uploads/wall/' + f.filename);
     const images = [...imageUrls, ...videoUrls].join(',');
 
-    // ── 标签提取：从前端传来的tags + 从内容中自动提取 #话题# ──────
-    const userTags = Array.isArray(tags) ? tags : (tags ? tags.split(',').filter(Boolean) : []);
-    const hashTags = [];
-    const hashRegex = /#([^#\s]{1,20})#/g;
-    let m;
-    while ((m = hashRegex.exec(content)) !== null) {
-      const t = m[1].trim();
-      if (t && !hashTags.includes(t)) hashTags.push(t);
-    }
-    // 合并去重，用户选的标签 + #话题#提取
-    const allTags = [...new Set([...userTags, ...hashTags])];
-    const tagsStr = allTags.join(',');
+    // ── 标签提取：只使用前端传来的标签（前端已处理选择逻辑）──────
+    const tagsList = Array.isArray(tags) ? tags : (tags ? tags.split(',').filter(Boolean) : []);
+    const tagsStr = tagsList.join(',');
 
     // 清理内容中的#话题#标记（保留纯文本）
     const cleanContent = content.replace(/#([^#\s]{1,20})#/g, '$1');
