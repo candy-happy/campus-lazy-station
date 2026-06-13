@@ -925,6 +925,10 @@
         document.getElementById('homePage').classList.add('active');
         document.querySelectorAll('.nav-item')[0]?.classList.add('active');
         if (currentUser) loadWallFeed();
+      } else if (page === 'wallPage') {
+        // 全站搜索或标签筛选进入：切换到首页但不刷新帖子流
+        document.getElementById('homePage').classList.add('active');
+        document.querySelectorAll('.nav-item')[0]?.classList.add('active');
       } else if (page === 'message') {
         document.getElementById('messagePage').classList.add('active');
         document.querySelectorAll('.nav-item')[1]?.classList.add('active');
