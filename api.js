@@ -357,6 +357,8 @@ const API = {
     method: 'POST', headers: this._headers(), body: JSON.stringify({ phone })
   }).then(r => r.json()); },
   async wallDeletePost(id) { return fetch('/api/wall/posts/' + id, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
+  async wallEditPost(id, content) { return fetch('/api/wall/posts/' + id, { method: 'PUT', headers: this._headers(), body: JSON.stringify({ content }) }).then(r => r.json()); },
+  async wallSharePost(id) { return fetch('/api/wall/share/' + id, { method: 'POST', headers: this._headers() }).then(r => r.json()); },
   async wallBlockUser(blockedPhone) { return fetch('/api/wall/users/block', { method: 'POST', headers: this._headers(), body: JSON.stringify({ blockedPhone }) }).then(r => r.json()); },
   async wallUnblockUser(phone) { return fetch('/api/wall/users/block/' + phone, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
   async wallGetBlocks() { return fetch('/api/wall/users/blocks', { headers: this._headers() }).then(r => r.json()); },

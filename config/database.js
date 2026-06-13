@@ -569,6 +569,7 @@ db.exec(`
 // ─── 数据库迁移 ─────────────────────────────────────────
 try { db.exec('ALTER TABLE riders ADD COLUMN avatar TEXT'); } catch(e) { /* 列已存在则忽略 */ }
 try { db.exec('ALTER TABLE wall_posts ADD COLUMN is_pinned INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE wall_posts ADD COLUMN share_count INTEGER DEFAULT 0'); } catch(e) {}
 try { db.exec('ALTER TABLE wall_posts ADD COLUMN is_featured INTEGER DEFAULT 0'); } catch(e) {}
 try { db.exec('ALTER TABLE users ADD COLUMN chat_privacy TEXT DEFAULT \'all\''); } catch(e) {}
 try { db.exec('ALTER TABLE users ADD COLUMN bg_image TEXT DEFAULT NULL'); } catch(e) {}

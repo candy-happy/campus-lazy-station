@@ -831,12 +831,12 @@
         }).join('') + '</div>' : '';
         const aiTagsHtml = (p.ai_tags && p.ai_tags.length) ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' + p.ai_tags.map(at => '<span onclick="event.stopPropagation();filterByTag(\''+at+'\')" style="display:inline-flex;align-items:center;gap:2px;padding:1px 7px;border-radius:9px;font-size:10px;background:#8E44AD12;color:#8E44AD;cursor:pointer">🤖 '+escHtml(at)+'</span>').join('') + '</div>' : '';
         const badgeHtml = (p.is_pinned ? '<span style="display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:8px;font-size:10px;background:#E74C3C18;color:#E74C3C;font-weight:600;margin-right:4px">📌 置顶</span>' : '') + (p.is_featured ? '<span style="display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:8px;font-size:10px;background:#F39C1218;color:#F39C12;font-weight:600">⭐ 精华</span>' : '');
-        // 内联操作按钮（分享/举报/拉黑/删除）
-        const actionShareBtn = '<button onclick="event.stopPropagation();doSharePost('+p.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">📤 分享</button>';
+        // 内联操作按钮（编辑/举报/拉黑/删除）
+        const actionEditBtn = (currentUser && p.phone === currentUser.phone) ? '<button onclick="event.stopPropagation();doEditWallPost('+p.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">✏️ 编辑</button>' : '';
         const actionReportBtn = '<button onclick="event.stopPropagation();showReportMenu(\'post\','+p.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">🚫 举报</button>';
         const actionBlockBtn = (currentUser && p.phone !== currentUser.phone) ? '<button onclick="event.stopPropagation();doBlockUser(\''+escHtml(p.phone)+'\')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🚷 拉黑</button>' : '';
         const actionDeleteBtn = ((currentUser && p.phone === currentUser.phone) || (currentUser && (currentUser.role==='admin'||currentUser.role==='super'))) ? '<button onclick="event.stopPropagation();doDeletePost('+p.id+')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:8px 16px;border-radius:8px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🗑️ 删除</button>' : '';
-        const inlineActionsHtml = actionShareBtn + actionReportBtn + actionBlockBtn + actionDeleteBtn;
+        const inlineActionsHtml = actionEditBtn + actionReportBtn + actionBlockBtn + actionDeleteBtn;
         return `
         <div class="wall-card" style="border-radius:14px;overflow:hidden;${p.is_pinned ? 'border-left:3px solid #E74C3C' : ''}${p.is_featured ? 'border-left:3px solid #F39C12' : ''}">
           <div class="wall-card-header" style="position:relative">
@@ -856,6 +856,7 @@
           <div class="wall-actions" style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px">
             <button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button>
             <button class="wall-action" onclick="showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button>
+            <button class="wall-action" onclick="event.stopPropagation();doSharePost(${p.id})">📤 <span>${p.share_count||0}</span></button>
             <button class="wall-action" onclick="event.stopPropagation();var s=this.parentElement.parentElement.querySelector('.wall-more-btn');s&&s.click()" title="更多">⋯</button>
           </div>
         </div>

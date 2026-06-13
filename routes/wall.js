@@ -510,6 +510,25 @@ router.delete('/posts/:id', requireAuth, (req, res) => JSON_RES(res, () => {
   return { ok: true };
 }));
 
+// ─── 编辑帖子（仅帖主） ──────────────────────────────
+router.put('/posts/:id', requireAuth, (req, res) => JSON_RES(res, () => {
+  const post = db.prepare('SELECT phone, content FROM wall_posts WHERE id = ?').get(req.params.id);
+  if (!post) return makeError('帖子不存在', ErrorCode.NOT_FOUND);
+  if (post.phone !== req.user.phone) return makeError('只能编辑自己的帖子', ErrorCode.FORBIDDEN);
+  const { content } = req.body;
+  if (!content || !content.trim()) return makeError('内容不能为空', ErrorCode.PARAM_MISSING);
+  db.prepare("UPDATE wall_posts SET content = ?, updated_at = datetime('now','localtime') WHERE id = ?").run(content.trim(), req.params.id);
+  return { ok: true };
+}));
+
+// ─── 分享帖子（增加分享计数） ─────────────────────────
+router.post('/share/:id', (req, res) => JSON_RES(res, () => {
+  const post = db.prepare('SELECT id FROM wall_posts WHERE id = ?').get(req.params.id);
+  if (!post) return makeError('帖子不存在', ErrorCode.NOT_FOUND);
+  db.prepare('UPDATE wall_posts SET share_count = share_count + 1 WHERE id = ?').run(req.params.id);
+  return { ok: true };
+}));
+
 // ─── 搜索帖子 ──────────────────────────────────────────
 router.get('/search', (req, res) => JSON_RES(res, () => {
   const { q, phone, page, limit } = req.query;

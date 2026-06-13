@@ -545,12 +545,12 @@
 
       const aiTagsHtml = (data.ai_tags && data.ai_tags.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${data.ai_tags.map(at => `<span onclick="filterByTag('${at}');closeSubPage('wallDetailPage_sub')" style="display:inline-flex;align-items:center;gap:3px;padding:4px 12px;border-radius:14px;font-size:11px;font-weight:600;background:linear-gradient(135deg,#8E44AD0A,#8E44AD18);color:#8E44AD;cursor:pointer;transition:all 0.2s;border:1px solid #8E44AD18" onmouseover="this.style.background='linear-gradient(135deg,#8E44AD18,#8E44AD2A)';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='linear-gradient(135deg,#8E44AD0A,#8E44AD18)';this.style.transform='translateY(0)'">🤖 ${escHtml(at)}</span>`).join('')}</div>` : '';
 
-      // 内联操作按钮（分享/举报/拉黑/删除）
-      var detailShareBtn = '<button onclick="event.stopPropagation();doSharePost('+data.id+')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:9px 16px;border-radius:10px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap;color:var(--text);width:100%" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">📤 分享</button>';
+      // 内联操作按钮（编辑/举报/拉黑/删除）
+      var detailEditBtn = (currentUser && data.phone === currentUser.phone) ? '<button onclick="event.stopPropagation();doEditWallPost('+data.id+')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:9px 16px;border-radius:10px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap;color:var(--text);width:100%" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">✏️ 编辑</button>' : '';
       var detailReportBtn = '<button onclick="event.stopPropagation();showReportMenu(\''+('post')+'\','+data.id+')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:9px 16px;border-radius:10px;transition:all 0.15s;display:flex;align-items:center;gap:8px;white-space:nowrap;color:var(--text);width:100%" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'transparent\'">🚫 举报</button>';
       var detailBlockBtn = (currentUser && data.phone !== currentUser.phone) ? '<button onclick="event.stopPropagation();doBlockUser(\''+escHtml(data.phone)+'\')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:9px 16px;border-radius:10px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap;width:100%" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🚷 拉黑</button>' : '';
       var detailDeleteBtn = ((currentUser && data.phone === currentUser.phone) || (currentUser && (currentUser.role==='admin'||currentUser.role==='super'))) ? '<button onclick="event.stopPropagation();doDeletePost('+data.id+')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:9px 16px;border-radius:10px;transition:all 0.15s;color:#E74C3C;display:flex;align-items:center;gap:8px;white-space:nowrap;width:100%" onmouseover="this.style.background=\'rgba(231,76,60,0.08)\'" onmouseout="this.style.background=\'transparent\'">🗑️ 删除</button>' : '';
-      var detailInlineActions = detailShareBtn + detailReportBtn + detailBlockBtn + detailDeleteBtn;
+      var detailInlineActions = detailEditBtn + detailReportBtn + detailBlockBtn + detailDeleteBtn;
 
       const el = document.getElementById('wallDetailContent');
       el.innerHTML = `
@@ -582,6 +582,7 @@
           <div style="display:flex;align-items:center;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
             <button onclick="event.stopPropagation();doWallLike(${data.id},this)" style="display:flex;align-items:center;gap:6px;padding:9px 18px;border-radius:24px;border:1px solid rgba(231,76,60,0.2);background:rgba(231,76,60,0.04);color:#E74C3C;font-size:14px;cursor:pointer;transition:all 0.2s;font-weight:600" onmouseover="this.style.background='rgba(231,76,60,0.12)';this.style.transform='scale(1.03)'" onmouseout="this.style.background='rgba(231,76,60,0.04)';this.style.transform='scale(1)'">❤️ <span>${data.like_count||0}</span></button>
             <button style="display:flex;align-items:center;gap:6px;padding:9px 18px;border-radius:24px;border:1px solid rgba(69,183,209,0.2);background:rgba(69,183,209,0.04);color:#45B7D1;font-size:14px;cursor:default;font-weight:600">💬 <span>${comments.length}</span></button>
+            <button onclick="event.stopPropagation();doSharePost(${data.id})" style="display:flex;align-items:center;gap:6px;padding:9px 18px;border-radius:24px;border:1px solid rgba(255,107,43,0.2);background:rgba(255,107,43,0.04);color:#FF6B2B;font-size:14px;cursor:pointer;transition:all 0.2s;font-weight:600" onmouseover="this.style.background='rgba(255,107,43,0.12)';this.style.transform='scale(1.03)'" onmouseout="this.style.background='rgba(255,107,43,0.04)';this.style.transform='scale(1)'">📤 <span>${data.share_count||0}</span></button>
             <div style="flex:1"></div>
             <button onclick="showReportMenu('post',${data.id})" style="display:flex;align-items:center;gap:4px;padding:8px 14px;border-radius:24px;border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);font-size:13px;cursor:pointer;transition:all 0.2s;opacity:0.5" onmouseover="this.style.opacity='1';this.style.borderColor='#d0d0d0';this.style.color='#666'" onmouseout="this.style.opacity='0.5';this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">🚫 举报</button>
           </div>
@@ -1482,7 +1483,7 @@
             <div style="font-size:17px;font-weight:700">更多操作</div>
             <button onclick="document.getElementById('postMoreOverlay').remove()" style="background:none;border:none;font-size:22px;color:var(--text-secondary);cursor:pointer">✕</button>
           </div>
-          <button onclick="doSharePost(${postId})" style="display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--bg);border:none;cursor:pointer;font-size:15px;color:var(--text);text-align:left;width:100%" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='var(--bg)'">📤 分享</button>
+          ${isOwn ? `<button onclick="document.getElementById('postMoreOverlay').remove();doEditWallPost(${postId})" style="display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--bg);border:none;cursor:pointer;font-size:15px;color:var(--text);text-align:left;width:100%" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='var(--bg)'">✏️ 编辑</button>` : ''}
           <button onclick="document.getElementById('postMoreOverlay').remove();showReportMenu('post',${postId})" style="display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--bg);border:none;cursor:pointer;font-size:15px;color:var(--text);text-align:left;width:100%" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='var(--bg)'">🚫 举报</button>
           ${blockBtn}
           ${deleteBtn}
@@ -1786,6 +1787,8 @@
               } else { fail++; }
             } catch(e) { fail++; }
           }
+          // 增加分享计数
+          if (success > 0) { API.wallSharePost(postId).catch(() => {}); }
           overlay.remove();
           showToast(success > 0 ? '✅ 已分享给 ' + success + ' 人' + (fail > 0 ? '（' + fail + ' 人失败）' : '') : '❌ 发送失败');
         };
@@ -1809,6 +1812,57 @@
         if (data.ok) { showToast('已删除'); loadWallFeed(); }
         else { showToast(data.error || '删除失败'); }
       } catch(e) { showToast('删除失败，请重试'); }
+    }
+
+    // ══════ 编辑帖子 ══════
+    async function doEditWallPost(postId) {
+      const ov = document.getElementById('postMoreOverlay');
+      if (ov) ov.remove();
+      document.querySelectorAll('.wall-inline-actions.open').forEach(el => el.classList.remove('open'));
+      if (!currentUser) { showToast('请先登录'); return; }
+
+      // 获取当前帖子内容
+      var post;
+      try { post = await API.wallPostDetail(postId); } catch(e) { showToast('加载失败'); return; }
+      if (!post || post.error) { showToast('帖子不存在'); return; }
+
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10001;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s';
+      overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+      overlay.innerHTML = '<div style="background:var(--card);border-radius:20px;width:90%;max-width:420px;padding:24px;animation:slideUp 0.3s">' +
+        '<div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px">✏️ 编辑帖子</div>' +
+        '<textarea id="editPostTextarea" style="width:100%;min-height:120px;padding:12px;border:1px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);resize:vertical;outline:none;font-family:inherit;box-sizing:border-box" onfocus="this.style.borderColor=\'var(--primary)\'" onblur="this.style.borderColor=\'var(--border)\'" placeholder="编辑内容...">' + escHtml(post.content || '') + '</textarea>' +
+        '<div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">' +
+        '<button id="editCancelBtn" style="padding:10px 20px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;cursor:pointer;font-weight:500">取消</button>' +
+        '<button id="editSaveBtn" style="padding:10px 24px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;font-size:14px;cursor:pointer;font-weight:600">保存</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+
+      var textarea = document.getElementById('editPostTextarea');
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+      document.getElementById('editCancelBtn').onclick = function() { overlay.remove(); };
+      document.getElementById('editSaveBtn').onclick = async function() {
+        var content = textarea.value.trim();
+        if (!content) { showToast('内容不能为空'); return; }
+        var btn = document.getElementById('editSaveBtn');
+        btn.disabled = true;
+        btn.textContent = '保存中...';
+        try {
+          var res = await API.wallEditPost(postId, content);
+          if (res.ok) {
+            overlay.remove();
+            showToast('✅ 已更新');
+            loadWallFeed();
+          } else {
+            showToast(res.error || '保存失败');
+          }
+        } catch(e) { showToast('保存失败，请重试'); }
+        btn.disabled = false;
+        btn.textContent = '保存';
+      };
     }
 
     // ══════ P0-1: 举报功能（支持 wall/market/pets/teachers） ══════
@@ -2540,6 +2594,7 @@ window.shareComment = shareComment;
 window.showPostMoreMenu = showPostMoreMenu;
 window.doSharePost = doSharePost;
 window.doDeletePost = doDeletePost;
+window.doEditWallPost = doEditWallPost;
 window.doBlockUser = doBlockUser;
 window.doReport = doReport;
 window.loadMoreWallPosts = loadMoreWallPosts;
