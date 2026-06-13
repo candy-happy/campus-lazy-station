@@ -1,4 +1,4 @@
-// user.js - 用户/登录/设置
+﻿// user.js - 用户/登录/设置
 // 依赖: core.js (需先加载)
 // 新功能请添加为独立JS模块，不要在骨架文件中添加代码
 
@@ -63,7 +63,7 @@
         const app = document.querySelector('.app');
         overlay = document.createElement('div');
         overlay.id = 'loginOverlay';
-        overlay.style.cssText = 'position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+        overlay.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
         overlay.innerHTML = `
           <div style="width:100%;max-width:380px;text-align:center">
             <div style="font-size:56px;margin-bottom:8px">🦥</div>
@@ -132,7 +132,7 @@
       if (old) old.remove();
       const overlay = document.createElement('div');
       overlay.id = 'termsOverlay';
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column';
+      overlay.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column';
       overlay.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0"><div style="display:flex;gap:0"><button id="termsTabTerms" style="padding:8px 16px;border:none;background:none;font-size:14px;font-weight:600;color:var(--primary);border-bottom:2px solid var(--primary);cursor:pointer;font-family:inherit" onclick="switchTermsTab(\'terms\')">服务条款</button><button id="termsTabPrivacy" style="padding:8px 16px;border:none;background:none;font-size:14px;font-weight:600;color:var(--text-light);cursor:pointer;font-family:inherit" onclick="switchTermsTab(\'privacy\')">隐私协议</button></div><button onclick="closeTermsModal()" style="width:32px;height:32px;border-radius:50%;border:none;background:var(--bg);font-size:16px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;justify-content:center">✕</button></div><iframe id="termsFrame" src="/public/terms.html" style="flex:1;width:100%;border:none"></iframe>';
       document.body.appendChild(overlay);
       // 初始tab
@@ -288,7 +288,7 @@
       _verifiedOldPwd = '';
       const overlay = document.createElement('div');
       overlay.id = 'changePwdOverlay';
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
+      overlay.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
       overlay.innerHTML = `
         <div class="change-pwd-card" style="background:var(--card);border-radius:20px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
           <h3 style="font-size:18px;font-weight:700;margin-bottom:20px;text-align:center">🔑 修改密码</h3>
@@ -639,7 +639,7 @@ window.showTermsModal = showTermsModal;
           : '<div style="text-align:center;padding:40px 20px;color:var(--text-secondary);font-size:14px">📭 黑名单为空</div>';
         const overlay = document.createElement('div');
         overlay.id = 'blockListOverlay';
-        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
+        overlay.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px';
         overlay.innerHTML = `
           <div style="background:var(--card);border-radius:20px;padding:0;width:100%;max-width:400px;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 20px 12px">
