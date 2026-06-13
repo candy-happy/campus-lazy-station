@@ -277,7 +277,12 @@
       outline: none;
     }
     .search-bar input::placeholder { color: #999 !important; }
-    .search-icon { color: var(--text-secondary); font-size: 16px; }
+    .search-icon { font-size: 18px; color: #333 !important; }
+    /* 暗色模式下强制搜索框白底黑字，对抗 body.dark input 全局规则 */
+    body.dark .search-bar { background: rgba(255,255,255,0.95) !important; }
+    body.dark .search-bar input { color: #000 !important; background: transparent !important; }
+    body.dark .search-bar input::placeholder { color: #999 !important; }
+    body.dark .search-icon { color: #333 !important; }
 
     /* ═══════════════════════════════════════════════════════
        🎠 轮播Banner
