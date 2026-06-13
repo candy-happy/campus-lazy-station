@@ -273,10 +273,10 @@
       border: none;
       background: transparent;
       font-size: 14px;
-      color: var(--text);
+      color: #333;
       outline: none;
     }
-    .search-bar input::placeholder { color: var(--text-light); }
+    .search-bar input::placeholder { color: #999; }
     .search-icon { color: var(--text-secondary); font-size: 16px; }
 
     /* ═══════════════════════════════════════════════════════

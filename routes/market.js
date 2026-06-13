@@ -85,6 +85,7 @@ router.get('/categories', (req, res) => JSON_RES(res, () => {
 // ─── 商品列表 ─────────────────────────────────────────────
 router.get('/items', (req, res) => JSON_RES(res, () => {
   const { category, keyword, sort, page, limit, seller } = req.query;
+  const searchKeyword = keyword || req.query.search; // 兼容 keyword 和 search 两种参数名
   const p = Math.max(1, parseInt(page) || 1);
   const l = Math.min(50, Math.max(1, parseInt(limit) || 20));
   const offset = (p - 1) * l;
@@ -96,9 +97,9 @@ router.get('/items', (req, res) => JSON_RES(res, () => {
     where += ' AND mi.category = ?';
     params.push(category);
   }
-  if (keyword) {
+  if (searchKeyword) {
     where += ' AND (mi.title LIKE ? OR mi.description LIKE ?)';
-    params.push('%' + keyword + '%', '%' + keyword + '%');
+    params.push('%' + searchKeyword + '%', '%' + searchKeyword + '%');
   }
   if (seller) {
     where += ' AND mi.seller_phone = ?';
