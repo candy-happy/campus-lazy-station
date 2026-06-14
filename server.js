@@ -2,6 +2,7 @@
 // 本文件只负责启动，所有业务逻辑在 routes/ 目录下
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const config = require('./config');
 const { securityHeaders, adminFallback } = require('./middleware/security');
 const rateLimit = require('./middleware/rateLimit');
@@ -60,11 +61,19 @@ app.use(express.static(path.join(__dirname), {
 }));
 
 // ─── uploads 目录静态服务 ────────────────────────────────
-// 先添加路径遍历防护中间件
+// 先添加路径遍历防护 + 文件缺失fallback中间件
 app.use('/uploads', (req, res, next) => {
   // 防止路径遍历攻击
   if (req.url.includes('..') || req.url.includes('%2e%2e') || req.url.includes('%252e')) {
     return res.status(403).json({ error: '非法路径' });
+  }
+  // 文件缺失 fallback：返回1x1透明PNG，避免404刷屏
+  const filePath = path.join(__dirname, 'uploads', decodeURIComponent(req.path).split('?')[0]);
+  if (!fs.existsSync(filePath) && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(req.path)) {
+    const placeholder = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.send(placeholder);
   }
   next();
 });
