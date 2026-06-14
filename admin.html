@@ -54,6 +54,7 @@
 <div class="nav-item" data-page="ai" onclick="switchPage('ai')"><span class="nav-item-icon">🤖</span><span class="nav-item-label">AI审核</span><span class="pending-badge" id="aiBadge" style="display:none">0</span></div>
 <div class="nav-item" data-page="wall" onclick="switchPage('wall')"><span class="nav-item-icon">📝</span><span class="nav-item-label">校园墙管理</span><span class="pending-badge" id="wallBadge" style="display:none">0</span></div>
 <div class="nav-item" data-page="pets" onclick="switchPage('pets')"><span class="nav-item-icon">🐱</span><span class="nav-item-label">猫狗管理</span><span class="pending-badge" id="petBadge" style="display:none">0</span></div>
+<div class="nav-item" data-page="teachers" onclick="switchPage('teachers')"><span class="nav-item-icon">👨‍🏫</span><span class="nav-item-label">师说管理</span></div>
 <div class="nav-item" data-page="withdraw" onclick="switchPage('withdraw')"><span class="nav-item-icon">💸</span><span class="nav-item-label">提现审核</span><span class="pending-badge" id="withdrawBadge" style="display:none">0</span></div>
 <div class="nav-item" data-page="feedback" onclick="switchPage('feedback')"><span class="nav-item-icon">💬</span><span class="nav-item-label">问题反馈</span><span class="pending-badge" id="feedbackBadge" style="display:none">0</span></div>
 <div class="nav-item" data-page="reports" onclick="switchPage('reports')"><span class="nav-item-icon">🚫</span><span class="nav-item-label">举报管理</span><span class="pending-badge" id="reportBadge" style="display:none">0</span></div>
@@ -579,6 +580,123 @@
   </div>
 </div>
 
+<div class="page-section" id="page-teachers">
+  <div class="page-header" style="background:linear-gradient(135deg,#FFF3E0,#FFE0B2,#FFCC80);border-radius:16px;padding:28px 32px;margin-bottom:20px">
+    <h1 class="page-title" style="font-size:1.6rem;background:linear-gradient(135deg,#E65100,#FF6D00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">👨‍🏫 师说管理</h1>
+    <p class="page-desc" style="color:#BF360C;margin-top:4px">管理教师信息：添加 / 编辑 / 删除</p>
+  </div>
+  <div class="market-admin-toolbar" style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border-color:#FFE0B2">
+    <button class="btn btn-primary" onclick="showTeacherModal()" style="background:linear-gradient(135deg,#E65100,#FF6D00);box-shadow:0 4px 14px rgba(230,81,0,0.3)">👨‍🏫 添加教师</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm" onclick="exportTeachers()" style="background:#fff;border:1.5px solid #FFCC80;color:#E65100;font-size:0.85rem">📥 导出</button>
+      <button class="btn btn-sm" onclick="showImportModal()" style="background:#fff;border:1.5px solid #FFCC80;color:#E65100;font-size:0.85rem">📤 导入</button>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <select id="teacherFilterCollege" onchange="loadTeachersAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFCC80;background:#fff;font-size:0.9rem;cursor:pointer">
+        <option value="全部">🏫 全部学院</option>
+      </select>
+      <input type="text" id="teacherSearchInput" placeholder="🔍 搜索姓名 / 学院 / 毕业院校..." oninput="loadTeachersAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFCC80;background:#fff;width:250px;font-size:0.9rem">
+    </div>
+  </div>
+  <div class="table-card" style="border-color:#FFE0B2">
+    <table class="data-table"><thead><tr><th>头像</th><th>姓名</th><th>学院</th><th>职称</th><th>学历</th><th>👍点赞</th><th>💬评价</th><th>⭐评分</th><th>操作</th></tr></thead>
+    <tbody id="teachersTable"></tbody></table>
+  </div>
+  <div style="display:flex;justify-content:center;gap:8px;align-items:center;padding:16px;font-size:13px;color:var(--text-secondary)" id="teachersPager"></div>
+</div>
+
+<!-- 教师编辑弹窗 -->
+<div class="modal-overlay" id="teacherModal">
+  <div class="modal-content" style="max-width:700px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#E65100,#FF6D00);border-radius:12px 12px 0 0;padding:20px 24px">
+      <span class="modal-title" id="teacherModalTitle" style="color:#fff;font-size:1.15rem">👨‍🏫 添加教师</span>
+      <button class="modal-close" onclick="closeModal('teacherModal')" style="color:#fff;background:rgba(255,255,255,0.2)">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:24px;max-height:70vh;overflow-y:auto">
+      <input type="hidden" id="teacherEditId">
+      <!-- 头像上传 -->
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px">
+        <div style="width:70px;height:70px;border-radius:50%;overflow:hidden;background:var(--card-bg);border:2px dashed #FFCC80;display:flex;align-items:center;justify-content:center;flex-shrink:0" id="teacherAvatarPreview">
+          <span style="font-size:2rem;opacity:0.3">👤</span>
+        </div>
+        <div>
+          <input type="file" id="teacherAvatarFile" accept="image/*" style="display:none" onchange="uploadTeacherAvatar()">
+          <input type="hidden" id="teacherAvatarUrl">
+          <button type="button" class="btn btn-sm" onclick="document.getElementById('teacherAvatarFile').click()" style="background:#FFF8E1;border:1.5px solid #FFCC80;color:#E65100;font-size:0.85rem">📷 上传头像</button>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">支持 JPG/PNG，≤5MB</div>
+        </div>
+      </div>
+      <!-- 姓名 + 学院 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">👤 姓名 *</label><input type="text" id="teacherName" class="form-input" placeholder="教师姓名" style="border-color:#FFCC80"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">🏫 学院 *</label><input type="text" id="teacherCollege" class="form-input" placeholder="所属学院" style="border-color:#FFCC80"></div>
+      </div>
+      <!-- 职称 + 学历 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">🎓 职称</label><input type="text" id="teacherTitle" class="form-input" placeholder="教授 / 副教授 / 讲师" style="border-color:#FFCC80"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">📚 最高学历</label><input type="text" id="teacherEducation" class="form-input" placeholder="博士研究生 / 硕士研究生" style="border-color:#FFCC80"></div>
+      </div>
+      <!-- 本科院校 + 毕业院校 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">🏛 本科院校</label><input type="text" id="teacherUndergraduate" class="form-input" placeholder="本科毕业院校" style="border-color:#FFCC80"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">🎓 毕业院校</label><input type="text" id="teacherGraduate" class="form-input" placeholder="最高学历毕业院校" style="border-color:#FFCC80"></div>
+      </div>
+      <!-- 研究方向 + 主讲课程 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">🔬 研究方向</label><input type="text" id="teacherResearch" class="form-input" placeholder="研究方向" style="border-color:#FFCC80"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">📖 主讲课程</label><input type="text" id="teacherCourses" class="form-input" placeholder="主讲课程" style="border-color:#FFCC80"></div>
+      </div>
+      <!-- 论文 + 项目 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">📄 论文</label><input type="text" id="teacherPapers" class="form-input" placeholder="代表性论文" style="border-color:#FFCC80"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">🏗 科研项目</label><input type="text" id="teacherProjects" class="form-input" placeholder="主持/参与项目" style="border-color:#FFCC80"></div>
+      </div>
+      <!-- 成果 + 社会职务 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">🏆 成果奖项</label><input type="text" id="teacherAchievements" class="form-input" placeholder="获奖与成果" style="border-color:#FFCC80"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">👥 社会职务</label><input type="text" id="teacherSocialRoles" class="form-input" placeholder="社会兼职 / 学会职务" style="border-color:#FFCC80"></div>
+      </div>
+      <!-- 简介 -->
+      <div class="form-group" style="margin-bottom:14px"><label class="form-label" style="color:#E65100">📝 简介</label><textarea id="teacherBio" class="form-input" rows="4" placeholder="教师个人简介..." style="border-color:#FFCC80;resize:vertical"></textarea></div>
+      <!-- 统计 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">👍 点赞数</label><input type="number" id="teacherLikeCount" class="form-input" value="0" style="border-color:#FFCC80"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">💬 评价数</label><input type="number" id="teacherReviewCount" class="form-input" value="0" style="border-color:#FFCC80"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="color:#E65100">⭐ 评分</label><input type="number" id="teacherAvgRating" class="form-input" value="0" step="0.1" min="0" max="5" style="border-color:#FFCC80"></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="background:linear-gradient(180deg,#FFF8E1,#fff);border-top:1px solid #FFE0B2">
+      <button class="btn" onclick="closeModal('teacherModal')" style="border-radius:10px">取消</button>
+      <button class="btn btn-danger" id="teacherDeleteBtn" onclick="deleteTeacher()" style="display:none;border-radius:10px;margin-right:auto">🗑️ 删除此教师</button>
+      <button class="btn btn-primary" onclick="saveTeacher()" style="background:linear-gradient(135deg,#E65100,#FF6D00);border-radius:10px;padding:10px 28px">✅ 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导入弹窗 -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal-content" style="max-width:500px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#E65100,#FF6D00);border-radius:12px 12px 0 0;padding:20px 24px">
+      <span class="modal-title" style="color:#fff;font-size:1.15rem">📤 导入教师数据</span>
+      <button class="modal-close" onclick="closeModal('importModal')" style="color:#fff;background:rgba(255,255,255,0.2)">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:24px">
+      <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:16px">导入 CSV 文件。有 id 列的行将更新对应教师，无 id 的行将新增。</p>
+      <div style="background:#FFF8E1;border:1px solid #FFE0B2;border-radius:10px;padding:12px;margin-bottom:16px;font-size:0.83rem;line-height:1.6">
+        <b>CSV 模板格式：</b><br>
+        id,name,college,title,research,avatar,bio,education,undergraduate,graduate,courses,papers,projects,achievements,social_roles,like_count,review_count,avg_rating
+      </div>
+      <input type="file" id="importFile" accept=".csv" style="display:none" onchange="handleImportFile(this)">
+      <button class="btn btn-primary" onclick="document.getElementById('importFile').click()" style="width:100%;background:linear-gradient(135deg,#E65100,#FF6D00);border-radius:10px;padding:12px">📁 选择 CSV 文件</button>
+      <div id="importStatus" style="margin-top:16px;font-size:0.9rem"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('importModal')">关闭</button>
+      <button class="btn btn-primary" onclick="execImport()" id="importExecBtn" disabled style="background:linear-gradient(135deg,#E65100,#FF6D00);border-radius:10px">✅ 执行导入</button>
+    </div>
+  </div>
+</div>
+
 <div class="page-section" id="page-feedback">
  <div class="page-header"><h1 class="page-title">问题反馈</h1><p class="page-desc">查看和回复用户反馈</p></div>
  <div class="stats-cards">
@@ -1043,5 +1161,6 @@
  <script src="admin/js/feedback.js?v=202606082310"></script>
  <script src="admin/js/reports.js?v=20260609"></script>
 <script src="admin/js/wall.js?v=202606121830"></script>
+<script src="admin/js/teachers.js?v=202606150135"></script>
 </body>
 </html>

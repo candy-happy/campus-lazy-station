@@ -3,7 +3,7 @@ const { Router } = require('express');
 const { JSON_RES, makeError } = require('../utils/response');
 const { withCompress } = require('../utils/upload');
 const db = require('../config/database');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const aiChecker = require('./ai');
 const multer = require('multer');
 const path = require('path');
@@ -251,6 +251,80 @@ router.post('/upload-media', withCompress(reviewUpload.array('files', 6)), (req,
   res.json({ urls });
 });
 
+// ─── 教师头像上传 ──────────────────────────────────
+const AVATAR_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'teacher_avatars');
+if (!fs.existsSync(AVATAR_UPLOAD_DIR)) fs.mkdirSync(AVATAR_UPLOAD_DIR, { recursive: true });
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, AVATAR_UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, 'teacher_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + ext);
+  }
+});
+const avatarUpload = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => cb(null, /^image\//.test(file.mimetype))
+});
+
+// ── 管理端：上传教师头像 ──────────────────────────
+router.post('/upload-avatar', requireAdmin, avatarUpload.single('avatar'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '请选择图片文件' });
+  res.json({ url: '/uploads/teacher_avatars/' + req.file.filename });
+});
+
+// ── 管理端：获取所有教师（分页+搜索）────────────
+router.get('/admin/list', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { page = 1, limit = 30, search, college } = req.query;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  let where = '1=1'; const params = [];
+  if (college && college !== '全部') { where += ' AND college = ?'; params.push(college); }
+  if (search) {
+    where += ' AND (name LIKE ? OR college LIKE ? OR graduate LIKE ? OR title LIKE ?)';
+    const kw = '%' + search + '%'; params.push(kw, kw, kw, kw);
+  }
+  const total = db.prepare('SELECT COUNT(*) as c FROM teachers WHERE ' + where).get(...params).c;
+  const teachers = db.prepare('SELECT * FROM teachers WHERE ' + where + ' ORDER BY id DESC LIMIT ? OFFSET ?').all(...params, parseInt(limit), offset);
+  return { teachers, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) };
+}));
+
+// ── 管理端：创建教师 ──────────────────────────────
+router.post('/', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { name, college, title, research, avatar, bio, education, undergraduate, graduate, courses, papers, projects, achievements, social_roles, like_count, review_count, avg_rating } = req.body;
+  if (!name || !college) return { error: '姓名和学院为必填项', code: 'TEACHER_002', status: 400 };
+  const r = db.prepare('INSERT INTO teachers (name,college,title,research,avatar,bio,education,undergraduate,graduate,courses,papers,projects,achievements,social_roles,like_count,review_count,avg_rating) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(
+    name, college, title||'', research||'', avatar||'', bio||'', education||'', undergraduate||'', graduate||'', courses||'', papers||'', projects||'', achievements||'', social_roles||'', like_count||0, review_count||0, avg_rating||0);
+  return { ok: true, id: r.lastInsertRowid };
+}));
+
+// ── 管理端：更新教师 ──────────────────────────────
+router.put('/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const t = db.prepare('SELECT id FROM teachers WHERE id = ?').get(req.params.id);
+  if (!t) return { error: '教师不存在', code: 'TEACHER_001', status: 404 };
+  const keys = ['name','college','title','research','avatar','bio','education','undergraduate','graduate','courses','papers','projects','achievements','social_roles','like_count','review_count','avg_rating'];
+  const fields = []; const values = [];
+  for (const k of keys) { if (req.body[k] !== undefined) { fields.push(k + ' = ?'); values.push(req.body[k]); } }
+  if (fields.length === 0) return { error: '没有要更新的字段', code: 'TEACHER_003', status: 400 };
+  fields.push("updated_at = datetime('now','localtime')");
+  values.push(req.params.id);
+  db.prepare('UPDATE teachers SET ' + fields.join(', ') + ' WHERE id = ?').run(...values);
+  return { ok: true };
+}));
+
+// ── 管理端：删除教师（级联删评价/点赞/举报）──────
+router.delete('/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const t = db.prepare('SELECT id, name FROM teachers WHERE id = ?').get(req.params.id);
+  if (!t) return { error: '教师不存在', code: 'TEACHER_001', status: 404 };
+  const tx = db.transaction((id) => {
+    db.prepare('DELETE FROM teacher_likes WHERE teacher_id = ?').run(id);
+    db.prepare('DELETE FROM teacher_reviews WHERE teacher_id = ?').run(id);
+    db.prepare("DELETE FROM reports WHERE source='teacher' AND target_id = ?").run(id);
+    db.prepare('DELETE FROM teachers WHERE id = ?').run(id);
+  });
+  tx(req.params.id);
+  return { ok: true, deleted: t.name };
+}));
+
 // ─── 举报教师评价 ───────────────────────────────────────
 router.post('/report', requireAuth, (req, res) => JSON_RES(res, () => {
   const { target_type, target_id, target_content, reason, detail } = req.body;
@@ -265,3 +339,138 @@ router.post('/report', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 module.exports = router;
+
+// ── 管理端：导出教师数据(CSV) ─────────────────────
+router.get('/admin/export', requireAdmin, (req, res) => {
+  const teachers = db.prepare('SELECT * FROM teachers ORDER BY id').all();
+  const cols = ['id','name','college','title','research','avatar','bio','education','undergraduate','graduate','courses','papers','projects','achievements','social_roles','like_count','review_count','avg_rating'];
+  const csvEscape = (val) => {
+    if (val === null || val === undefined) return '';
+    const s = String(val);
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  };
+  const rows = [cols.join(',')];
+  for (const t of teachers) {
+    rows.push(cols.map(c => csvEscape(t[c])).join(','));
+  }
+  const csv = '\uFEFF' + rows.join('\n'); // UTF-8 BOM for Excel
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="teachers_export.csv"');
+  res.send(csv);
+});
+
+// ── 管理端：导入教师数据(CSV) ──────────────────────
+const importUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => cb(null, /\.csv$/i.test(file.originalname) || file.mimetype === 'text/csv' || file.mimetype === 'application/vnd.ms-excel')
+});
+
+router.post('/admin/import', requireAdmin, importUpload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '请选择CSV文件' });
+  
+  try {
+    // 解码 CSV（自动处理 BOM）
+    let text = req.file.buffer.toString('utf-8');
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // strip BOM
+    
+    // 按行解析（处理引号内换行）
+    const lines = []; let current = '', inQuote = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (inQuote) {
+        if (ch === '"') { text[i+1] === '"' ? (current += '"', i++) : inQuote = false; }
+        else current += ch;
+      } else {
+        if (ch === '"') inQuote = true;
+        else if (ch === '\n') { lines.push(current); current = ''; }
+        else if (ch !== '\r') current += ch;
+      }
+    }
+    if (current) lines.push(current);
+    
+    if (lines.length < 2) return res.json({ error: 'CSV文件为空或只有表头' });
+    
+    // CSV 行切分（处理引号内逗号）
+    const splitCsvRow = (line) => {
+      const vals = []; let cur = '', inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (inQ) {
+          if (c === '"') { line[i+1] === '"' ? (cur += '"', i++) : inQ = false; }
+          else cur += c;
+        } else {
+          if (c === '"') inQ = true;
+          else if (c === ',') { vals.push(cur.trim()); cur = ''; }
+          else cur += c;
+        }
+      }
+      vals.push(cur.trim());
+      return vals;
+    };
+    
+    const headers = splitCsvRow(lines[0]).map(h => h.trim());
+    const nameIdx = headers.indexOf('name');
+    const collegeIdx = headers.indexOf('college');
+    if (nameIdx === -1 || collegeIdx === -1) return res.json({ error: 'CSV缺少必填列: name, college' });
+    
+    const idIdx = headers.indexOf('id');
+    
+    // 列映射
+    const fieldMap = {};
+    for (const h of headers) {
+      const col = h.trim();
+      if (['id','name','college','title','research','avatar','bio','education','undergraduate','graduate','courses','papers','projects','achievements','social_roles','like_count','review_count','avg_rating'].includes(col)) {
+        fieldMap[col] = col;
+      }
+    }
+    if (!fieldMap.name || !fieldMap.college) return res.json({ error: 'CSV缺少必填列: name, college' });
+    
+    let created = 0, updated = 0, skipped = 0, errors = [];
+    
+    const insertStmt = db.prepare('INSERT INTO teachers (name,college,title,research,avatar,bio,education,undergraduate,graduate,courses,papers,projects,achievements,social_roles,like_count,review_count,avg_rating) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    const updateStmt = db.prepare('UPDATE teachers SET name=?,college=?,title=?,research=?,avatar=?,bio=?,education=?,undergraduate=?,graduate=?,courses=?,papers=?,projects=?,achievements=?,social_roles=?,like_count=?,review_count=?,avg_rating=?,updated_at=datetime(\'now\',\'localtime\') WHERE id=?');
+    
+    for (let i = 1; i < lines.length; i++) {
+      const vals = splitCsvRow(lines[i]);
+      const row = {};
+      for (let j = 0; j < headers.length; j++) {
+        const h = headers[j].trim();
+        if (fieldMap[h]) row[fieldMap[h]] = vals[j] || '';
+      }
+      
+      const name = (row.name || '').trim();
+      const college = (row.college || '').trim();
+      if (!name || !college) { skipped++; errors.push('第' + (i + 1) + '行: 姓名或学院为空'); continue; }
+      
+      const data = [
+        name, college,
+        row.title || '', row.research || '', row.avatar || '', row.bio || '',
+        row.education || '', row.undergraduate || '', row.graduate || '',
+        row.courses || '', row.papers || '', row.projects || '',
+        row.achievements || '', row.social_roles || '',
+        parseInt(row.like_count) || 0, parseInt(row.review_count) || 0, parseFloat(row.avg_rating) || 0
+      ];
+      
+      if (row.id) {
+        const existing = db.prepare('SELECT id FROM teachers WHERE id = ?').get(parseInt(row.id));
+        if (existing) {
+          updateStmt.run(...data, parseInt(row.id));
+          updated++;
+        } else {
+          // id 存在但数据库中无此记录，按新增处理
+          insertStmt.run(...data);
+          created++;
+        }
+      } else {
+        insertStmt.run(...data);
+        created++;
+      }
+    }
+    
+    res.json({ ok: true, created, updated, skipped, errors: errors.slice(0, 20) });
+  } catch (e) {
+    res.status(500).json({ error: '导入失败: ' + e.message });
+  }
+});

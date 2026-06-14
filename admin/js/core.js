@@ -128,6 +128,7 @@ function switchPage(page) {
   if (page === 'pets') { loadPetsAdmin(); }
   if (page === 'reports') { loadReports(); }
   if (page === 'wall') { loadWallPosts(); }
+  if (page === 'teachers') { loadTeachersAdmin(); }
 }
 
 function showModal(id) { document.getElementById(id).classList.add('active'); }

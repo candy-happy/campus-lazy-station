@@ -48,6 +48,15 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ limit: '1mb', extended: false }));
 app.use(rateLimit());
 
+// ─── 敏感文件拦截：禁止暴露数据库/配置/备份等文件 ────────
+app.use((req, res, next) => {
+  const blocked = /\.(db|env|bak|wal|shm|gitignore|dockerignore|editorconfig)(\.|$)/i;
+  if (blocked.test(req.path)) {
+    return res.status(404).send('Not Found');
+  }
+  next();
+});
+
 // ─── 静态文件服务（禁用缓存） ────────────────────────────
 app.use(express.static(path.join(__dirname), {
   etag: true,
