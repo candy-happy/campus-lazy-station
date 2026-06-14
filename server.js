@@ -25,6 +25,8 @@ const corsOptions = {
           'http://127.0.0.1:3000',
           'http://localhost',
           'http://campus-lazy-station.local',
+          'http://124.221.67.29',
+          'https://124.221.67.29',
           null, // 允许 file:// 等无 origin 的请求
           undefined
         ];
@@ -50,21 +52,10 @@ app.use(express.static(path.join(__dirname), {
   etag: true,
   maxAge: config.NODE_ENV === 'production' ? 3600000 : 0,
   setHeaders: (res, filePath) => {
-    if (config.NODE_ENV === 'production') {
-      // 生产环境：HTML 短期缓存，图片/字体/CDN 资源长期缓存
-      if (/\.(html)$/i.test(filePath)) {
-        res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
-      } else if (/\.(css|js)$/i.test(filePath)) {
-        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
-      } else {
-        res.setHeader('Cache-Control', 'public, max-age=86400');
-      }
-    } else {
-      // 开发环境：禁用缓存，方便调试
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-    }
+    // 统一禁用缓存（生产/开发一致），方便调试和迭代
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
   }
 }));
 
@@ -96,7 +87,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 app.use(optionalAuth);
 
 // ─── 根路径返回宣传页面 ──────────────────────────────────
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/', (req, res) => res.redirect('/app.html'));
 
 // ─── API 路由挂载 ────────────────────────────────────────
 // 认证
@@ -171,6 +162,7 @@ app.use('/api/clubs', require('./routes/clubs'));
 // 活动
 app.use('/api/activities', require('./routes/activities'));
 app.use('/api/reports', require('./routes/reports'));
+app.use('/api/audit', require('./routes/audit'));
 
 // ─── 404 + SPA 兜底 ───────────────────────────────────
 app.use('/api', (req, res) => {

@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { auditFromReq } = require('../utils/audit');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 
 // ─── 骑手钱包概览 ──────────────────────────────────────
@@ -65,6 +66,8 @@ router.post('/admin/withdraw/:id', requireAdmin, (req, res) => JSON_RES(res, () 
   if (!log) throw new Error('记录不存在');
   if (log.status !== 'pending') throw new Error('该申请已处理');
   db.prepare('UPDATE withdraw_logs SET status = ?, reason = ?, processed_at = datetime(\'now\') WHERE id = ?').run(status, reason || '', req.params.id);
+  auditFromReq(req, status === 'approved' ? 'withdraw.approve' : 'withdraw.reject',
+    { type: 'withdraw', id: req.params.id }, `${status === 'approved' ? '批准' : '拒绝'}提现 #${req.params.id} ¥${log.amount}`);
   return { ok: true };
 }));
 

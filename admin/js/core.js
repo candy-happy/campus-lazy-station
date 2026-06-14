@@ -146,8 +146,7 @@ function toggleDark(isDark) {
 // ─── 登录 ───
 async function login(e) {
   e.preventDefault();
-  const username = document.getElementById('loginUsername').value;
-  const password = document.getElementById('loginPassword').value;
+  const apiKey = document.getElementById('loginApiKey').value;
   
   // 检查数据库连接
   const isConnected = await API.checkConnection();
@@ -158,11 +157,11 @@ async function login(e) {
   }
   
   try {
-    const admin = await API.adminLogin(username, password);
+    const admin = await API.adminLogin(apiKey);
     currentAdmin = admin;
     await showDashboard();
   } catch (err) {
-    document.getElementById('loginError').textContent = err.message || '用户名或密码错误';
+    document.getElementById('loginError').textContent = err.message || '管理密钥无效';
     document.getElementById('loginError').style.display = 'block';
   }
 }

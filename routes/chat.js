@@ -4,6 +4,7 @@ const router = express.Router();
 const db = require('../config/database');
 const { requireAuth } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
+const { withCompress } = require('../utils/upload');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -53,7 +54,7 @@ const chatUpload = multer({
 });
 
 // ─── 聊天文件上传 ──────────────────────────────────────────
-router.post('/upload', requireAuth, chatUpload.single('file'), (req, res) => JSON_RES(res, () => {
+router.post('/upload', requireAuth, withCompress(chatUpload.single('file')), (req, res) => JSON_RES(res, () => {
   if (!req.file) return makeError('请选择文件', ErrorCode.PARAM_MISSING);
   const url = '/uploads/chat/' + req.file.filename;
   const type = req.file.mimetype.startsWith('video/') ? 'video' : 'image';

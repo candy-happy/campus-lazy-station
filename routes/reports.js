@@ -1,93 +1,53 @@
-// routes/reports.js - 统一举报管理（校园墙/二手市场/猫狗日记/教师评价/社团/活动）
+// routes/reports.js
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
-const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
+const { JSON_RES, makeError } = require('../utils/response');
+const { auditFromReq } = require('../utils/audit');
 
-// ─── 提交举报（各模块共用） ──────────────────────────
-// POST /api/reports
-// body: { source: 'wall'|'market'|'pet'|'teacher'|'club'|'activity', target_type, target_id, target_content?, reason, detail? }
+// ─── 提交举报 ─────────────────────────────────────────────
 router.post('/', requireAuth, (req, res) => JSON_RES(res, () => {
-  const { source, target_type, target_id, target_content, reason, detail } = req.body;
-  const phone = req.user.phone;
-  if (!source || !target_type || !target_id || !reason) return makeError('参数不完整');
+  const { source, target_type, target_id, reason } = req.body;
+  const phone = req.user.phone || req.user.student_id || '';
 
-  const validSources = ['wall', 'market', 'pet', 'teacher', 'club', 'activity'];
-  if (!validSources.includes(source)) return makeError('举报来源无效');
-
-  // 防止重复举报
-  const existing = db.prepare(
-    'SELECT id FROM reports WHERE source=? AND target_type=? AND target_id=? AND reporter_phone=?'
-  ).get(source, target_type, target_id, phone);
-  if (existing) return makeError('您已举报过该内容');
-
-  db.prepare(
-    `INSERT INTO reports (source, target_type, target_id, target_content, reporter_phone, reason, detail, status, created_at)
-     VALUES (?,?,?,?,?,?,?,'pending',datetime('now','localtime'))`
-  ).run(source, target_type, target_id, (target_content || '').slice(0, 200), phone, reason, detail || '');
-
+  db.prepare(`INSERT INTO reports (source, target_type, target_id, reason, reporter_phone, status, created_at)
+    VALUES (?, ?, ?, ?, ?, 'pending', datetime('now','localtime'))`)
+    .run(source, target_type, target_id, reason, phone);
   return { ok: true };
 }));
 
-// ─── 管理端：举报列表（聚合所有来源） ───────────────
-// GET /api/reports?source=wall&status=pending&page=1&limit=20
+// ─── 管理端：举报列表 ────────────────────────────────────
 router.get('/', requireAdmin, (req, res) => JSON_RES(res, () => {
-  const { source, status, page = 1, limit = 20 } = req.query;
-  const p = Math.max(1, parseInt(page));
-  const l = Math.min(50, parseInt(limit));
-  const offset = (p - 1) * l;
-
-  const conditions = [];
-  const params = [];
-
-  if (source && source !== 'all') {
-    conditions.push('source = ?');
-    params.push(source);
-  }
-  if (status && status !== 'all') {
-    conditions.push('status = ?');
-    params.push(status);
-  }
-
-  const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
-
-  const total = db.prepare(`SELECT COUNT(*) as c FROM reports ${whereClause}`).get(...params).c;
-  const rows = db.prepare(
-    `SELECT * FROM reports ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`
-  ).all(...params, l, offset);
-
-  return { reports: rows, total, page: p, limit: l, totalPages: Math.ceil(total / l) };
+  const { page = 1, limit = 20, status, source } = req.query;
+  const l = Math.min(parseInt(limit) || 20, 100);
+  const offset = (Math.max(1, parseInt(page) || 1) - 1) * l;
+  let where = []; let params = [];
+  if (status && status !== 'all') { where.push('r.status = ?'); params.push(status); }
+  if (source && source !== 'all') { where.push('r.source = ?'); params.push(source); }
+  const whereClause = where.length ? 'WHERE ' + where.join(' AND ') : '';
+  const total = db.prepare(`SELECT COUNT(*) as c FROM reports r ${whereClause}`).get(...params).c;
+  const reports = db.prepare(`SELECT * FROM reports r ${whereClause} ORDER BY r.created_at DESC LIMIT ? OFFSET ?`).all(...params, l, offset);
+  return { reports, total, page: parseInt(page) };
 }));
 
-// ─── 管理端：按来源统计（用于badge） ────────────────
+// ─── 举报统计 ───────────────────────────────────────────
 router.get('/stats', requireAdmin, (req, res) => JSON_RES(res, () => {
-  const bySource = db.prepare(
-    "SELECT source, status, COUNT(*) as cnt FROM reports GROUP BY source, status"
-  ).all();
-
-  const stats = {};
-  for (const r of bySource) {
-    if (!stats[r.source]) stats[r.source] = { total: 0, pending: 0 };
-    stats[r.source].total += r.cnt;
-    if (r.status === 'pending') stats[r.source].pending += r.cnt;
-  }
-
-  const totalPending = db.prepare(
-    "SELECT COUNT(*) as c FROM reports WHERE status='pending'"
-  ).get().c;
-
-  return { bySource: stats, totalPending };
+  const total = db.prepare('SELECT COUNT(*) as c FROM reports').get().c;
+  const pending = db.prepare("SELECT COUNT(*) as c FROM reports WHERE status = 'pending'").get().c;
+  const resolved = db.prepare("SELECT COUNT(*) as c FROM reports WHERE status = 'resolved'").get().c;
+  const dismissed = db.prepare("SELECT COUNT(*) as c FROM reports WHERE status = 'dismissed'").get().c;
+  return { total, pending, resolved, dismissed };
 }));
 
-// ─── 管理端：处理举报 ──────────────────────────────
+// ─── 处理举报 ───────────────────────────────────────────
 router.post('/:id/handle', requireAdmin, (req, res) => JSON_RES(res, () => {
   const { action, admin_note } = req.body; // action: 'dismiss' | 'remove'
   const report = db.prepare('SELECT * FROM reports WHERE id = ?').get(req.params.id);
   if (!report) return makeError('举报不存在');
 
+  let detailMsg = '';
   if (action === 'remove') {
-    // 根据来源和目标类型删除内容
     const src = report.source;
     const type = report.target_type;
     const tid = report.target_id;
@@ -98,50 +58,30 @@ router.post('/:id/handle', requireAdmin, (req, res) => JSON_RES(res, () => {
         db.prepare('DELETE FROM wall_comments WHERE post_id=?').run(tid);
         db.prepare('DELETE FROM wall_likes WHERE post_id=?').run(tid);
         db.prepare('DELETE FROM wall_posts WHERE id=?').run(tid);
+        detailMsg = `删除帖子 #${tid}`;
       } else if (type === 'comment') {
         db.prepare('DELETE FROM wall_reports WHERE target_type=? AND target_id=?').run('comment', tid);
-        db.prepare('DELETE FROM wall_likes WHERE comment_id=?').run(tid);
         db.prepare('DELETE FROM wall_comments WHERE id=?').run(tid);
+        detailMsg = `删除评论 #${tid}`;
       }
     } else if (src === 'market') {
-      if (type === 'item') {
-        db.prepare('UPDATE market_items SET status=? WHERE id=?').run('removed', tid);
-      } else if (type === 'comment') {
-        db.prepare('DELETE FROM market_comments WHERE id=?').run(tid);
-      }
-    } else if (src === 'pet') {
-      if (type === 'comment') {
-        db.prepare('DELETE FROM pet_comments WHERE id=?').run(tid);
-      } else if (type === 'post') {
-        db.prepare('DELETE FROM pet_comments WHERE pet_id=?').run(tid);
-        db.prepare('DELETE FROM pet_likes WHERE pet_id=?').run(tid);
-        db.prepare('DELETE FROM pet_sightings WHERE pet_id=?').run(tid);
-        db.prepare('DELETE FROM pets WHERE id=?').run(tid);
-      }
-    } else if (src === 'teacher') {
-      if (type === 'review') {
-        db.prepare('DELETE FROM teacher_reviews WHERE id=?').run(tid);
-      }
-    } else if (src === 'club') {
-      if (type === 'post') {
-        db.prepare('DELETE FROM club_posts WHERE id=?').run(tid);
-      }
-    } else if (src === 'activity') {
-      if (type === 'post') {
-        db.prepare('DELETE FROM activities WHERE id=?').run(tid);
-      }
+      if (type === 'item') { db.prepare('DELETE FROM market_items WHERE id=?').run(tid); detailMsg = `删除二手商品 #${tid}`; }
+      if (type === 'comment') { db.prepare('DELETE FROM market_comments WHERE id=?').run(tid); detailMsg = `删除二手评论 #${tid}`; }
+    } else if (src === 'pets') {
+      if (type === 'comment') { db.prepare('DELETE FROM pet_comments WHERE id=?').run(tid); detailMsg = `删除猫狗评论 #${tid}`; }
+    } else if (src === 'teachers') {
+      if (type === 'review') { db.prepare('DELETE FROM teacher_reviews WHERE id=?').run(tid); detailMsg = `删除教师评价 #${tid}`; }
     }
-
-    db.prepare(
-      "UPDATE reports SET status='resolved', admin_note=?, handled_at=datetime('now','localtime') WHERE id=?"
-    ).run(admin_note || '已删除违规内容', req.params.id);
   } else {
-    // dismiss
-    db.prepare(
-      "UPDATE reports SET status='dismissed', admin_note=?, handled_at=datetime('now','localtime') WHERE id=?"
-    ).run(admin_note || '举报不成立', req.params.id);
+    detailMsg = `驳回举报 #${report.id}`;
   }
 
+  const status = action === 'remove' ? 'resolved' : 'dismissed';
+  db.prepare('UPDATE reports SET status = ?, admin_note = ?, handled_at = datetime(\'now\',\'localtime\') WHERE id = ?')
+    .run(status, admin_note || '', report.id);
+
+  auditFromReq(req, action === 'remove' ? 'report.remove' : 'report.dismiss',
+    { type: report.target_type, id: report.target_id }, detailMsg);
   return { ok: true };
 }));
 

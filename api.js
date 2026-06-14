@@ -138,16 +138,16 @@ const API = {
   },
 
   // ─── 管理员 ───
-  async adminLogin(username, password) {
+  async adminLogin(api_key) {
     const res = await fetch('/api/admin/login', {
       method: 'POST', headers: this._headers(),
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ api_key })
     }).then(r => r.json());
     if (res.error) throw new Error(res.error);
     this._admin = res.admin;
     this._role = 'admin';
     if (res.token) { this._token = res.token; localStorage.setItem('lazy_admin_token', res.token); }
-    localStorage.setItem('lazy_session', JSON.stringify({ role: 'admin', username }));
+    localStorage.setItem('lazy_session', JSON.stringify({ role: 'admin', username: res.admin.username || 'admin' }));
     return this._admin;
   },
 
@@ -321,6 +321,12 @@ const API = {
     method: 'PATCH', headers: this._headers(),
     body: JSON.stringify({ status })
   }).then(r => r.json()); },
+  // 审计日志
+  async getAuditLogs(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return fetch('/api/audit?' + qs, { headers: this._headers() }).then(r => r.json());
+  },
+  async getAuditStats() { return fetch('/api/audit/stats', { headers: this._headers() }).then(r => r.json()); },
 
   // ─── 校园墙 ───
   async wallPost(data, files) {

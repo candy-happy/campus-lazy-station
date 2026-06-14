@@ -5,6 +5,7 @@ const db = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { fmtPhone } = require('../utils/helpers');
+const { withCompress } = require('../utils/upload');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -86,7 +87,7 @@ router.put('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 用户头像上传 ──────────────────────────────────────────
-router.post('/:phone/avatar', requireAuth, avatarUpload.single('avatar'), (req, res) => JSON_RES(res, () => {
+router.post('/:phone/avatar', requireAuth, withCompress(avatarUpload.single('avatar')), (req, res) => JSON_RES(res, () => {
   // IDOR防护：只能上传自己的头像（管理员除外）
   if (req.user.type !== 'admin' && req.user.phone !== req.params.phone) {
     return makeError('无权修改他人资料', 'FORBIDDEN');
@@ -119,7 +120,7 @@ const bgUpload = multer({
 });
 
 // ─── 封面图上传 ──────────────────────────────────────────
-router.post('/:phone/cover', requireAuth, bgUpload.single('cover'), (req, res) => JSON_RES(res, () => {
+router.post('/:phone/cover', requireAuth, withCompress(bgUpload.single('cover')), (req, res) => JSON_RES(res, () => {
   if (req.user.type !== 'admin' && req.user.phone !== req.params.phone) {
     return makeError('无权修改他人资料', 'FORBIDDEN');
   }

@@ -1,6 +1,7 @@
 // routes/teachers.js - 池州学院教师评价系统
 const { Router } = require('express');
 const { JSON_RES, makeError } = require('../utils/response');
+const { withCompress } = require('../utils/upload');
 const db = require('../config/database');
 const { requireAuth } = require('../middleware/auth');
 const aiChecker = require('./ai');
@@ -244,7 +245,7 @@ router.delete('/admin/reviews/:id', (req, res) => JSON_RES(res, () => {
 }));
 
 // ── 评价媒体上传 ──────────────────────────────────
-router.post('/upload-media', reviewUpload.array('files', 6), (req, res) => {
+router.post('/upload-media', withCompress(reviewUpload.array('files', 6)), (req, res) => {
   if (!req.files || req.files.length === 0) return res.status(400).json({ error: '请选择文件' });
   const urls = req.files.map(f => '/uploads/teacher_reviews/' + f.filename);
   res.json({ urls });

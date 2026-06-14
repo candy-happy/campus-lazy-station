@@ -8,6 +8,7 @@ const db = require('../config/database');
 const { optionalAuth, requireAuth, requireAdmin } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { safeJSON, parseImageUrls, validateUploadFile } = require('../utils/helpers');
+const { withCompress } = require('../utils/upload');
 const aiChecker = require('./ai');
 
 // ─── 批量头像加载（避免 N+1 查询） ──────────────────────
@@ -80,7 +81,7 @@ function cleanupUploadedFiles(files) {
 }
 
 // ─── 发帖（含AI自动审核） ────────────────────────────────
-router.post('/posts', requireAuth, wallUpload.array('files', 9), async (req, res) => {
+router.post('/posts', requireAuth, withCompress(withCompress(wallUpload.array('files', 9))), async (req, res) => {
   try {
     const { phone, nickname, avatar, content, gif_urls, tags } = req.body;
     if (!phone || !content) {
@@ -939,6 +940,9 @@ router.delete('/admin/posts/:id', requireAdmin, (req, res) => JSON_RES(res, () =
   db.prepare('DELETE FROM wall_likes WHERE post_id = ?').run(req.params.id);
   db.prepare('DELETE FROM wall_reports WHERE target_type = ? AND target_id = ?').run('post', req.params.id);
   db.prepare('DELETE FROM wall_posts WHERE id = ?').run(req.params.id);
+
+  const { auditFromReq } = require('../utils/audit');
+  auditFromReq(req, 'post.delete', { type: 'post', id: req.params.id }, `删除帖子 #${post.id} (${(post.content || '').substring(0, 30)})`);
   return { ok: true };
 }));
 

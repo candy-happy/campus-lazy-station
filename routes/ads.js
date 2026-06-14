@@ -6,7 +6,9 @@ const path = require('path');
 const fs = require('fs');
 const db = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { auditFromReq } = require('../utils/audit');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
+const { withCompress } = require('../utils/upload');
 
 // ─── 广告媒体上传配置 ────────────────────────────────────
 const ADS_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'ads');
@@ -40,7 +42,7 @@ router.get('/admin', requireAdmin, (req, res) => JSON_RES(res, () =>
 ));
 
 // ─── 管理员：上传广告媒体（图片/视频） ─────────────────────
-router.post('/admin/upload', requireAdmin, adUpload.single('media'), (req, res) => JSON_RES(res, () => {
+router.post('/admin/upload', requireAdmin, withCompress(adUpload.single('media')), (req, res) => JSON_RES(res, () => {
   if (!req.file) return makeError('请选择文件', ErrorCode.PARAM_MISSING);
   const url = '/uploads/ads/' + req.file.filename;
   const isVideo = req.file.mimetype.startsWith('video/');
@@ -54,6 +56,7 @@ router.post('/admin', requireAdmin, (req, res) => JSON_RES(res, () => {
   db.prepare(`INSERT INTO ads (title, description, image, media_url, link_url, link_type, link_value, sort_order, status, start_time, end_time, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'), datetime('now','localtime'))`)
     .run(title, description||'', image||'', media_url||'', link_url||'', link_type||'none', link_value||'', sort_order||0, status||'active', start_time||null, end_time||null);
+  auditFromReq(req, 'ad.create', { type: 'ad', id: '' }, `创建广告: ${title}`);
   return { ok: true };
 }));
 
@@ -80,6 +83,7 @@ router.delete('/admin/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
     if (fs.existsSync(fp)) fs.unlinkSync(fp);
   }
   db.prepare('DELETE FROM ads WHERE id = ?').run(req.params.id);
+  auditFromReq(req, 'ad.delete', { type: 'ad', id: req.params.id }, `删除广告 #${req.params.id}`);
   return { ok: true };
 }));
 

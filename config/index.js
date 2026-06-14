@@ -22,6 +22,9 @@ module.exports = {
   })(),
   JWT_EXPIRES_MS: 86400000, // 24小时
 
+  // 管理员API密钥（密钥登录）
+  ADMIN_API_KEY: process.env.ADMIN_API_KEY || '',
+
   // 文件上传
   UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
   MAX_FILE_SIZE: 20 * 1024 * 1024, // 20MB

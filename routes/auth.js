@@ -3,13 +3,15 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
 const db = require('../config/database');
+const config = require('../config');
 const { generateToken } = require('../utils/jwt');
 const { fmtPhone, sanitizeString, isValidPhone } = require('../utils/helpers');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const captcha = require('../utils/captcha');
 const crypto = require('crypto');
-const { optionalAuth, requireAuth, requireAdmin } = require('../middleware/auth');
+const { optionalAuth, requireAuth, requireAdmin, bruteForceGuard, recordLoginFailure, clearLoginFailures } = require('../middleware/auth');
 const rateLimit = require('../middleware/rateLimit');
+const { auditFromReq } = require('../utils/audit');
 
 // ─── 获取图形验证码 ─────────────────────────────────────────
 // 用 phone 作为 key，同一手机号一段时间内只能有一个有效验证码
@@ -171,14 +173,40 @@ router.post('/rider/login', loginRateLimit, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 管理员登录 ───────────────────────────────────────────
-// 管理员登录更严格限速：每IP每分钟最多3次
-const adminRateLimit = rateLimit(3, 60 * 1000);
+// 暴力破解防护：5次失败封IP 15分钟 + 频率限速
 
-router.post('/admin/login', adminRateLimit, (req, res) => JSON_RES(res, () => {
-  const { username, password } = req.body;
+router.post('/admin/login', bruteForceGuard, (req, res) => JSON_RES(res, () => {
+  const { username, password, api_key } = req.body;
+
+  // ── API Key 登录（优先） ──
+  if (api_key) {
+    if (!config.ADMIN_API_KEY) {
+      recordLoginFailure(req.ip);
+      return makeError('服务器未配置管理密钥', ErrorCode.FORBIDDEN);
+    }
+    if (api_key !== config.ADMIN_API_KEY) {
+      recordLoginFailure(req.ip);
+      return makeError('管理密钥无效', ErrorCode.FORBIDDEN);
+    }
+    clearLoginFailures(req.ip);
+    auditFromReq(req, 'admin.login', { type: 'admin' }, 'API密钥登录');
+    return {
+      ok: true,
+      admin: { id: 'key', username: 'admin', role: 'super' },
+      token: generateToken({ type: 'admin', id: 'key', username: 'admin', role: 'super' })
+    };
+  }
+
+  // ── 传统用户名密码登录 ──
   const admin = db.prepare('SELECT * FROM admins WHERE username = ?').get(username);
-  if (!admin) return makeError('账号或密码错误', ErrorCode.FORBIDDEN);
-  if (admin.status !== 'active') return makeError('账号已被禁用', ErrorCode.FORBIDDEN);
+  if (!admin) {
+    recordLoginFailure(req.ip);
+    return makeError('账号或密码错误', ErrorCode.FORBIDDEN);
+  }
+  if (admin.status !== 'active') {
+    recordLoginFailure(req.ip);
+    return makeError('账号已被禁用', ErrorCode.FORBIDDEN);
+  }
 
   let matched = false;
   if (admin.password.startsWith('$2a$') || admin.password.startsWith('$2b$')) {
@@ -190,8 +218,12 @@ router.post('/admin/login', adminRateLimit, (req, res) => JSON_RES(res, () => {
       db.prepare('UPDATE admins SET password = ? WHERE id = ?').run(hash, admin.id);
     }
   }
-  if (!matched) return makeError('账号或密码错误', ErrorCode.FORBIDDEN);
+  if (!matched) {
+    recordLoginFailure(req.ip);
+    return makeError('账号或密码错误', ErrorCode.FORBIDDEN);
+  }
 
+  clearLoginFailures(req.ip);
   return {
     ok: true,
     admin: { ...admin, password: undefined },

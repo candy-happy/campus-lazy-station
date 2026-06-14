@@ -6,8 +6,10 @@ const fs = require('fs');
 const router = express.Router();
 const db = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { auditFromReq } = require('../utils/audit');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { safeJSON, parseImageUrls } = require('../utils/helpers');
+const { withCompress } = require('../utils/upload');
 const aiChecker = require('./ai');
 
 // ─── AI审核记录写入辅助 ────────────────────────────────
@@ -346,6 +348,7 @@ router.post('/admin/add', requireAdmin, upload.array('images', 6), (req, res) =>
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const result = stmt.run(code_name, species || 'cat', breed || '', gender || 'unknown', age || '', color || '', location || '', personality || '', tags || '', avatar, imagePaths.join(',') || '', bio || '', health_status || 'healthy', health_note || '');
+  auditFromReq(req, 'pet.create', { type: 'pet', id: result.lastInsertRowid }, `添加猫狗: ${code_name}`);
   return { id: result.lastInsertRowid, message: '添加成功' };
 }));
 
@@ -376,12 +379,14 @@ router.put('/admin/update/:id', requireAdmin, upload.array('images', 6), (req, r
   return { message: '更新成功' };
 }));
 
-// ─── 管理端：删除猫狗 ────────────────────────────────────
+  // ─── 管理端：删除猫狗 ────────────────────────────────────
 router.delete('/admin/delete/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const pet = db.prepare('SELECT code_name FROM pets WHERE id = ?').get(req.params.id);
   db.prepare('DELETE FROM pet_comments WHERE pet_id = ?').run(req.params.id);
   db.prepare('DELETE FROM pet_likes WHERE pet_id = ?').run(req.params.id);
   db.prepare('DELETE FROM pet_sightings WHERE pet_id = ?').run(req.params.id);
   db.prepare('DELETE FROM pets WHERE id = ?').run(req.params.id);
+  auditFromReq(req, 'pet.delete', { type: 'pet', id: req.params.id }, `删除猫狗: ${pet?.code_name || '#' + req.params.id}`);
   return { message: '已删除' };
 }));
 

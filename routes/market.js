@@ -5,6 +5,7 @@ const db = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError, notFound } = require('../utils/response');
 const { fmtPhone } = require('../utils/helpers');
+const { withCompress } = require('../utils/upload');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
@@ -466,7 +467,7 @@ const commentUpload = multer({
   }
 });
 
-router.post('/items/:id/comments', requireAuth, commentUpload.single('media'), async (req, res) => {
+router.post('/items/:id/comments', requireAuth, withCompress(commentUpload.single('media')), async (req, res) => {
   try {
     const phone = req.user.phone;
     if (!phone) return res.status(401).json({ error: '请先登录', code: 'AUTH_001' });

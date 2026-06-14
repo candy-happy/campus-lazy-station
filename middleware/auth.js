@@ -2,6 +2,77 @@
 const { verifyToken } = require('../utils/jwt');
 const { ErrorCode } = require('../utils/response');
 const db = require('../config/database');
+const config = require('../config');
+
+// ─── 登录暴力破解防护 ───────────────────────────────────
+const loginFailures = new Map(); // Map<ip, {count, firstFailTime, blockedUntil}>
+const BRUTE_FORCE_MAX = 5;       // 5次失败即封
+const BRUTE_FORCE_WINDOW = 15 * 60 * 1000; // 15分钟窗口
+const BRUTE_FORCE_BLOCK = 15 * 60 * 1000;  // 封15分钟
+
+// 定期清理过期记录
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of loginFailures) {
+    if (now > record.blockedUntil && now - record.firstFailTime > BRUTE_FORCE_WINDOW) {
+      loginFailures.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000).unref();
+
+// 检查是否已被封禁
+function isLoginBlocked(ip) {
+  const record = loginFailures.get(ip);
+  if (!record) return false;
+  const now = Date.now();
+  if (record.blockedUntil && now < record.blockedUntil) return true;
+  // 窗口过期则自动清除
+  if (now - record.firstFailTime > BRUTE_FORCE_WINDOW) {
+    loginFailures.delete(ip);
+    return false;
+  }
+  return false;
+}
+
+// 获取封禁剩余秒数
+function getLoginBlockSeconds(ip) {
+  const record = loginFailures.get(ip);
+  if (!record || !record.blockedUntil) return 0;
+  return Math.ceil((record.blockedUntil - Date.now()) / 1000);
+}
+
+// 记录登录失败
+function recordLoginFailure(ip) {
+  const now = Date.now();
+  let record = loginFailures.get(ip);
+  if (!record || now - record.firstFailTime > BRUTE_FORCE_WINDOW) {
+    record = { count: 0, firstFailTime: now, blockedUntil: 0 };
+    loginFailures.set(ip, record);
+  }
+  record.count++;
+  if (record.count >= BRUTE_FORCE_MAX) {
+    record.blockedUntil = now + BRUTE_FORCE_BLOCK;
+  }
+}
+
+// 登录成功清除记录
+function clearLoginFailures(ip) {
+  loginFailures.delete(ip);
+}
+
+// 暴力破解检查中间件（放在登录路由前）
+function bruteForceGuard(req, res, next) {
+  if (isLoginBlocked(req.ip)) {
+    const retryAfter = getLoginBlockSeconds(req.ip);
+    res.set('Retry-After', String(retryAfter));
+    return res.status(429).json({
+      error: `登录失败次数过多，请${Math.ceil(retryAfter / 60)}分钟后重试`,
+      code: 'AUTH_BRUTE',
+      retryAfter
+    });
+  }
+  next();
+}
 
 // ─── 骑手冻结缓存 ──────────────────────────────────────
 let frozenRiders = new Set();
@@ -66,6 +137,13 @@ function requireAuth(req, res, next) {
 // ─── 管理员认证 ───────────────────────────────────────────
 // 必须是登录状态 + type === 'admin'
 function requireAdmin(req, res, next) {
+  // API Key 认证：X-Admin-Key 头匹配即通过
+  const apiKey = req.headers['x-admin-key'];
+  if (config.ADMIN_API_KEY && apiKey === config.ADMIN_API_KEY) {
+    req.user = { type: 'admin', id: 'api-key', username: 'admin' };
+    return next();
+  }
+  // 常规 JWT 认证
   if (!req.user) {
     return makeError(res, 401, AUTH_ERRORS.NO_TOKEN);
   }
@@ -94,4 +172,4 @@ function requireRider(req, res, next) {
   next();
 }
 
-module.exports = { optionalAuth, requireAuth, requireAdmin, requireRole, requireRider };
+module.exports = { optionalAuth, requireAuth, requireAdmin, requireRole, requireRider, bruteForceGuard, recordLoginFailure, clearLoginFailures };

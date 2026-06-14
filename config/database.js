@@ -626,6 +626,24 @@ const initData = db.transaction(() => {
   const bcrypt = require('bcryptjs');
   const insertAdmin = db.prepare(`INSERT OR IGNORE INTO admins (id, username, password, role) VALUES (?, ?, ?, ?)`);
   insertAdmin.run(1, '1973344674', bcrypt.hashSync('Dwx52593344@', 10), 'super');
+
+  // 操作审计日志
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS admin_audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      admin_id INTEGER DEFAULT 0,
+      admin_username TEXT NOT NULL DEFAULT '',
+      action TEXT NOT NULL,
+      target_type TEXT DEFAULT '',
+      target_id TEXT DEFAULT '',
+      detail TEXT DEFAULT '',
+      ip TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_audit_action ON admin_audit_logs(action)'); } catch(e) {}
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_audit_admin ON admin_audit_logs(admin_username)'); } catch(e) {}
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_audit_time ON admin_audit_logs(created_at)'); } catch(e) {}
 });
 initData();
 

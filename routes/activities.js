@@ -8,6 +8,7 @@ const db = require('../config/database');
 const { requireAuth } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { fmtPhone, validateUploadFile } = require('../utils/helpers');
+const { withCompress } = require('../utils/upload');
 const aiChecker = require('./ai');
 
 // ─── 活动封面图上传配置 ──────────────────────────────────
@@ -35,7 +36,7 @@ function logAiReview(source, sourceId, phone, content, aiResult, action) {
 }
 
 // ─── 创建活动 ─────────────────────────────────────────────
-router.post('/', requireAuth, actUpload.single('cover'), async (req, res) => JSON_RES(res, async () => {
+router.post('/', requireAuth, withCompress(actUpload.single('cover')), async (req, res) => JSON_RES(res, async () => {
   const { title, description, location, start_time, end_time, signup_deadline, max_participants, category, publisher_type, publisher_id, publisher_name } = req.body;
   const phone = req.user.phone;
 
@@ -237,7 +238,7 @@ router.get('/:id/participants', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 更新活动 ─────────────────────────────────────────────
-router.put('/:id', requireAuth, actUpload.single('cover'), (req, res) => JSON_RES(res, () => {
+router.put('/:id', requireAuth, withCompress(actUpload.single('cover')), (req, res) => JSON_RES(res, () => {
   const phone = req.user.phone;
   const activity = db.prepare('SELECT * FROM activities WHERE id = ?').get(req.params.id);
   if (!activity) return makeError('活动不存在', ErrorCode.ORDER_NOT_FOUND, 404);

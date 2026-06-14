@@ -8,6 +8,7 @@ const db = require('../config/database');
 const { requireAuth } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
 const { fmtPhone, validateUploadFile } = require('../utils/helpers');
+const { withCompress } = require('../utils/upload');
 const aiChecker = require('./ai');
 
 // ─── 社团logo上传配置 ──────────────────────────────────
@@ -35,7 +36,7 @@ function logAiReview(source, sourceId, phone, content, aiResult, action) {
 }
 
 // ─── 创建社团 ─────────────────────────────────────────────
-router.post('/', requireAuth, clubUpload.single('logo'), async (req, res) => JSON_RES(res, async () => {
+router.post('/', requireAuth, withCompress(clubUpload.single('logo')), async (req, res) => JSON_RES(res, async () => {
   const { name, category, description } = req.body;
   const phone = req.user.phone;
   if (!name) return makeError('社团名称不能为空', ErrorCode.PARAM_MISSING);
@@ -281,7 +282,7 @@ router.post('/:id/leave', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 更新社团信息 ─────────────────────────────────────────
-router.put('/:id', requireAuth, clubUpload.single('logo'), (req, res) => JSON_RES(res, () => {
+router.put('/:id', requireAuth, withCompress(clubUpload.single('logo')), (req, res) => JSON_RES(res, () => {
   const phone = req.user.phone;
   const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, phone, 'owner', 'admin');
   if (!member) return makeError('无权修改社团信息', ErrorCode.FORBIDDEN);
@@ -350,7 +351,7 @@ router.put('/:id/members/:phone/role', requireAuth, (req, res) => JSON_RES(res, 
 const MAX_POST_PHOTOS = 4;
 
 // 发公告（owner/admin）
-router.post('/:id/posts', requireAuth, clubUpload.array('photos', MAX_POST_PHOTOS), (req, res) => JSON_RES(res, () => {
+router.post('/:id/posts', requireAuth, withCompress(clubUpload.array('photos', MAX_POST_PHOTOS)), (req, res) => JSON_RES(res, () => {
   const phone = req.user.phone;
   const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, phone, 'owner', 'admin');
   if (!member) return makeError('只有社长或管理员可以发布公告', ErrorCode.FORBIDDEN);

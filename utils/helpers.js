@@ -169,4 +169,26 @@ function sanitizePath(path) {
   return path.replace(/\.\./g, '').replace(/[<>:"|?*]/g, '');
 }
 
-module.exports = { fmtPhone, maskPhone, maskPhoneList, genOrderNo, safeJSON, calcRiderLevel, normalizePagination, escHtml, parseImageUrls, validateUploadFile, isValidPhone, sanitizeString, sanitizeNumber, isValidEmail, sanitizePath };
+// ─── 图片压缩（上传后自动缩放，最大1200px） ──────────────
+let _sharp = null;
+try { _sharp = require('sharp'); } catch(e) {}
+
+async function compressImage(filePath, maxSize = 1200) {
+  if (!_sharp) return; // sharp 未安装则跳过
+  const ext = require('path').extname(filePath).toLowerCase();
+  if (!['.jpg','.jpeg','.png','.webp'].includes(ext)) return;
+  try {
+    const img = _sharp(filePath);
+    const meta = await img.metadata();
+    const longest = Math.max(meta.width || 0, meta.height || 0);
+    if (longest <= maxSize) return; // 已足够小，不处理
+    const tmpPath = filePath + '.tmp';
+    await img
+      .resize(maxSize, maxSize, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 80, progressive: true })
+      .toFile(tmpPath);
+    require('fs').renameSync(tmpPath, filePath);
+  } catch(e) { /* 压缩失败静默跳过，不影响上传 */ }
+}
+
+module.exports = { fmtPhone, maskPhone, maskPhoneList, genOrderNo, safeJSON, calcRiderLevel, normalizePagination, escHtml, parseImageUrls, validateUploadFile, compressImage, isValidPhone, sanitizeString, sanitizeNumber, isValidEmail, sanitizePath };
