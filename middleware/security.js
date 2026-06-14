@@ -52,10 +52,9 @@ function staticFiles(app) {
 
 // ─── 404 兜底 ─────────────────────────────────────────────
 // 防止后台 admin.html 被扫描发现
-// 如果请求不是以 /admin.html 结尾，返回 index.html（前端路由兜底）
-// 注意：这里不直接暴露 admin.html 路径，只在显式请求时提供
+// 根路径和 /index.html 已删除，统一重定向到 /app.html
 function adminFallback(req, res, next) {
-  if (req.path === '/' || req.path === '/index.html') {
+  if (req.path === '/' || req.path === '/index.html' || req.path === '/index') {
     res.redirect('/app.html');
   } else {
     next();

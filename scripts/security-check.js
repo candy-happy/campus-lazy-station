@@ -96,10 +96,11 @@ for (const dir of uploadDirs) {
   if (fs.existsSync(dirPath)) {
     pass(`${dir} 目录存在`);
     
-    // 检查是否有.htaccess或index.html防止目录浏览
+    // 检查是否有.htaccess或index.html/app.html防止目录浏览
     const htaccess = path.join(dirPath, '.htaccess');
     const indexHtml = path.join(dirPath, 'index.html');
-    if (fs.existsSync(htaccess) || fs.existsSync(indexHtml)) {
+    const appHtml = path.join(dirPath, 'app.html');
+    if (fs.existsSync(htaccess) || fs.existsSync(indexHtml) || fs.existsSync(appHtml)) {
       pass(`${dir} 目录已配置防浏览保护`);
     } else {
       warn(`${dir} 目录缺少防浏览保护文件`);
