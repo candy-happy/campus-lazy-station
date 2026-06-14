@@ -22,11 +22,11 @@ function securityHeaders(req, res, next) {
   res.setHeader('Content-Security-Policy',
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline'; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "img-src 'self' data: blob: http://localhost:* http://127.0.0.1:*; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data: blob:; " +
     "media-src 'self' blob:; " +
-    "connect-src 'self' http://localhost:* http://127.0.0.1:*; " +
-    "font-src 'self' https://fonts.gstatic.com; " +
+    "connect-src 'self'; " +
+    "font-src 'self' data:; " +
     "object-src 'none'; " +
     frameSrc +
     "base-uri 'self'; " +
