@@ -231,6 +231,16 @@ process.on('unhandledRejection', (reason) => {
   gracefulShutdown(new Error('unhandledRejection: ' + String(reason)));
 });
 
+// ─── 确保上传目录存在 ──────────────────────────────────
+(() => {
+  const fs = require('fs');
+  const dirs = ['uploads', 'uploads/wall', 'uploads/market', 'uploads/pets', 'uploads/wall_originals', 'uploads/avatars'];
+  for (const d of dirs) {
+    const full = path.join(__dirname, d);
+    if (!fs.existsSync(full)) { fs.mkdirSync(full, { recursive: true }); console.log(`[init] 创建目录: ${d}`); }
+  }
+})();
+
 // ─── 启动 ───────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`\n🦥 校园圈 v3.0 已启动！`);

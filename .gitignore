@@ -3,8 +3,15 @@ node_modules/
 *.db-journal
 *.db-wal
 *.db-shm
+*.bak
+*.bak-shm
+*.bak-wal
 .DS_Store
 Thumbs.db
+.env
+
+# 临时文件 / 测试脚本
+_*
 _p*.cjs
 _*.cjs
 _test*.js
@@ -17,7 +24,51 @@ _clear*.js
 _migrate*.js
 _schema*.js
 _patch*.js
-.env
-*.bak-shm
-*.bak-wal
+test-*.html
+test_*.js
+
+# 任务 artifact
+*-fix*.md
+*-fix_*.md
+*_修复*.md
+*_修复_v2*.md
+*_功能实现*.md
+*_功能修复*.md
+*_功能_*.md
+*_功能完善*.md
+*_机制*.md
+*_改造*.md
+*_合并*.md
+*_重做*.md
+*_重构*.md
+*_搜索*.md
+*_后续步骤*.md
+*_数据校验*.md
+*_恢复*.md
+code-audit*.md
+code-review*.md
+homepage_notif*.md
+market_chat*.md
+posts_menu*.md
+profile-enhance*.md
+search-restrict*.md
+share-post*.md
+split_post*.md
+teacher-*.md
+wall-comment*.md
+wall-data*.md
+wall-privacy*.md
+
+# 上传目录（不跟踪用户内容）
 uploads/
+
+# 日志
+logs/*.log
+logs/*.log.*
+
+# Python
+*.py
+!scripts/*.py
+
+# Windows 垃圾
+desktop.ini
