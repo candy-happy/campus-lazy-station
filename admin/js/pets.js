@@ -10,17 +10,16 @@
       if (status !== 'all') url += '&status=' + status;
       const [petsRes, alertRes] = await Promise.all([
         fetch(url, { headers: AUTH() }).then(r => r.json()),
-        fetch('/api/pets/alert-check', { headers: AUTH() }).then(r => r.json()).catch(function() { return { summary: { warning: 0, urgent: 0, critical: 0 } }; })
+        fetch('/api/pets/alert-check', { headers: AUTH() }).then(r => r.json()).catch(function() { return { summary: { warning: 0, urgent: 0 } }; })
       ]);
       var pets = petsRes;
       if (search) pets = pets.filter(function(p) { return (p.code_name + p.breed + p.location + (p.health_note||'')).includes(search); });
       if (health !== 'all') pets = pets.filter(function(p) { return p.health_status === health; });
 
       // 更新告警统计卡片
-      var s = alertRes.summary || { warning: 0, urgent: 0, critical: 0 };
+      var s = alertRes.summary || { warning: 0, urgent: 0 };
       document.getElementById('petAlertWarning').textContent = s.warning;
       document.getElementById('petAlertUrgent').textContent = s.urgent;
-      document.getElementById('petAlertCritical').textContent = s.critical;
 
       // 更新守护者告警详情
       if (typeof updateGuardianAlert === 'function') updateGuardianAlert(alertRes);
@@ -37,7 +36,7 @@
           badge.style.display = 'none';
         }
         // 更新猫狗管理导航badge：失联告警数+待审核目击数
-        var petNavCount = (s.warning || 0) + (s.urgent || 0) + (s.critical || 0) + (pendingList ? pendingList.length : 0);
+        var petNavCount = (s.warning || 0) + (s.urgent || 0) + (pendingList ? pendingList.length : 0);
         var petBadgeEl = document.getElementById('petBadge');
         if (petBadgeEl) {
           if (petNavCount > 0) { petBadgeEl.textContent = petNavCount; petBadgeEl.style.display = 'inline'; }
@@ -54,8 +53,7 @@
       };
       var alertBadge = {
         warning: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFF3E0;color:#E65100;border:1px solid #FFE0B2">\u26A0\uFE0F 7天</span>',
-        urgent: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FBE9E7;color:#BF360C;border:1px solid #FFAB91">\u{1F7E0} 15天</span>',
-        critical: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FFEBEE;color:#B71C1C;border:1px solid #EF9A9A;animation:pulse 2s infinite">\u{1F534} 30天</span>'
+        urgent: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#FBE9E7;color:#BF360C;border:1px solid #FFAB91">\u{1F7E0} 15天</span>'
       };
       var healthBadge = {
         healthy: '<span style="padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;background:#E8F5E9;color:#2E7D32">💚 健康</span>',
@@ -70,11 +68,11 @@
       for (var i = 0; i < pets.length; i++) {
         var p = pets[i];
         var seenDays = p.daysSinceSeen;
-        var seenText = seenDays === 0 ? '<span style="color:#4CAF50;font-weight:600">今日已见</span>' : seenDays !== null ? '<span style="color:' + (seenDays >= 30 ? '#B71C1C' : seenDays >= 15 ? '#BF360C' : seenDays >= 7 ? '#E65100' : '#666') + ';font-weight:600">' + seenDays + '天前</span>' : '-';
+        var seenText = seenDays === 0 ? '<span style="color:#4CAF50;font-weight:600">今日已见</span>' : seenDays !== null ? '<span style="color:' + (seenDays >= 15 ? '#BF360C' : seenDays >= 7 ? '#E65100' : '#666') + ';font-weight:600">' + seenDays + '天前</span>' : '-';
         var alert = alertBadge[p.alert_level] || '<span style="color:#4CAF50;font-size:12px">\u2705</span>';
-        var rowBg = p.alert_level === 'critical' ? 'background:#FFF5F5;' : p.alert_level === 'urgent' ? 'background:#FFF8F0;' : '';
-        var avatarBorder = p.alert_level === 'critical' ? '#EF5350' : p.alert_level === 'urgent' ? '#FF9800' : '#FFE0B2';
-        var nameColor = p.alert_level === 'critical' ? '#B71C1C' : '#E65100';
+        var rowBg = p.alert_level === 'urgent' ? 'background:#FFF8F0;' : '';
+        var avatarBorder = p.alert_level === 'urgent' ? '#FF9800' : '#FFE0B2';
+        var nameColor = '#E65100';
         var avatarHtml = (p.avatar && p.avatar.charAt(0) === '/') ? '<img src="' + esc(p.avatar) + '" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ' + avatarBorder + '">' : '<span style="font-size:1.8rem">' + (speciesEmoji[p.species] || '\u{1F43E}') + '</span>';
         var statusHtml = statusMap[p.status] || statusMap.active;
         var sightingBtn = '<button class="btn" style="padding:4px 8px;font-size:0.75rem;border-color:#81C784;color:#2E7D32;border-radius:8px" onclick="showSightings(' + p.id + ',\'' + esc(p.code_name).replace(/'/g, "\\'") + '\')">\u{1F4CD}</button>';
@@ -295,8 +293,8 @@
     }
 
     function updateGuardianAlert(alertRes) {
-      var s = alertRes.summary || { warning: 0, urgent: 0, critical: 0 };
-      var total = s.warning + s.urgent + s.critical;
+      var s = alertRes.summary || { warning: 0, urgent: 0 };
+      var total = s.warning + s.urgent;
       var el = document.getElementById('petGuardianAlert');
       var summary = document.getElementById('petGuardianSummary');
       var detail = document.getElementById('petGuardianDetail');
@@ -312,9 +310,6 @@
       summary.textContent = '共 ' + total + ' 只猫狗失联';
 
       var html = '';
-      if (alertRes.critical && alertRes.critical.length > 0) {
-        html += '<div style="margin-bottom:6px"><strong style="color:#B71C1C">🔴 30天失联：</strong>' + alertRes.critical.map(function(p) { return '<span style="background:#FFEBEE;padding:2px 8px;border-radius:8px;margin:2px;display:inline-block;font-weight:600;color:#B71C1C">' + p.speciesEmoji + esc(p.code_name) + '</span>'; }).join('') + '</div>';
-      }
       if (alertRes.urgent && alertRes.urgent.length > 0) {
         html += '<div style="margin-bottom:6px"><strong style="color:#BF360C">🟠 15天未现：</strong>' + alertRes.urgent.map(function(p) { return '<span style="background:#FBE9E7;padding:2px 8px;border-radius:8px;margin:2px;display:inline-block;font-weight:600;color:#BF360C">' + p.speciesEmoji + esc(p.code_name) + '</span>'; }).join('') + '</div>';
       }

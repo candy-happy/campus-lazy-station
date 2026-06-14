@@ -22,12 +22,23 @@ for (const [name, defaults] of Object.entries(DEFAULTS)) {
 // 滑动窗口存储: Map<"ip:category", number[]>
 const windows = new Map();
 
+// 路由已有专用限流器 → 全局限流不再重复计数
+const DEDICATED_LIMITERS = [
+  /^\/api\/user\/login/,   // routes/auth.js → loginRateLimit (5/min)
+  /^\/api\/rider\/login/,  // routes/auth.js → loginRateLimit (5/min)
+  /^\/api\/admin\/login/,  // routes/auth.js → bruteForceGuard
+  /^\/api\/captcha/,        // routes/auth.js → captchaRateLimit (10/min)
+];
+
 // 自动推断请求所属分类
 function classify(req) {
   const method = req.method.toUpperCase();
   const url = req.originalUrl || req.url;
 
-  if (url.includes('/login') || url.includes('/auth/login')) return 'login';
+  // 已有专用限流器的路由跳过
+  for (const pattern of DEDICATED_LIMITERS) {
+    if (pattern.test(url)) return null;
+  }
   if (method === 'POST' && (url.includes('/upload') || url.match(/\.(png|jpg|jpeg|gif|webp)/i))) return 'upload';
   if (url.startsWith('/api/admins') || url.startsWith('/api/admin')) return 'admin';
   if (method === 'POST' || method === 'PUT' || method === 'DELETE') return 'post';
@@ -93,6 +104,8 @@ function createLimiter(overrideConfig, category) {
       windowMs = overrideConfig.windowMs;
     } else {
       cat = category || classify(req);
+      // 返回 null 表示此路由有专用限流器，全局跳过
+      if (cat === null) return next();
       const cfg = CATEGORIES[cat] || CATEGORIES.post;
       max = cfg.max;
       windowMs = cfg.windowMs;

@@ -1,4 +1,4 @@
-﻿// scripts/security-check.js - 安全检查脚本
+// scripts/security-check.js - 安全检查脚本
 // 用于验证生产环境的安全配置是否正确
 
 const fs = require('fs');

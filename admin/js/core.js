@@ -203,12 +203,12 @@ async function showDashboard() {
 async function updateNavBadges() {
   try {
     const [alertRes, pendingRes] = await Promise.all([
-      fetch('/api/pets/alert-check', { headers: AUTH() }).then(r => r.json()).catch(() => ({ summary: { warning:0, urgent:0, critical:0 } })),
+      fetch('/api/pets/alert-check', { headers: AUTH() }).then(r => r.json()).catch(() => ({ summary: { warning:0, urgent:0 } })),
       fetch('/api/pets/admin/pending-sightings', { headers: AUTH() }).then(r => r.json()).catch(() => [])
     ]);
-    var as = alertRes.summary || { warning:0, urgent:0, critical:0 };
+    var as = alertRes.summary || { warning:0, urgent:0 };
     var pl = Array.isArray(pendingRes) ? pendingRes : [];
-    var petNavCount = (as.warning||0) + (as.urgent||0) + (as.critical||0) + pl.length;
+    var petNavCount = (as.warning||0) + (as.urgent||0) + pl.length;
     var petBadgeEl = document.getElementById('petBadge');
     if (petBadgeEl) {
       if (petNavCount > 0) { petBadgeEl.textContent = petNavCount; petBadgeEl.style.display = 'inline'; }

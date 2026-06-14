@@ -71,7 +71,7 @@ router.post('/user/login', loginRateLimit, (req, res) => JSON_RES(res, () => {
   // 已有账号 → 验证密码
   if (!user.password) {
     // 老用户还没有设置密码 → 首次迁移，使用默认密码验证
-    if (password !== 'shoujihao') return makeError('密码错误', ErrorCode.FORBIDDEN);
+    if (password !== 'shoujihao') return makeError('密码错误', ErrorCode.PASSWORD_WRONG);
     // 自动给老用户设置默认密码hash
     const defaultHash = bcrypt.hashSync('shoujihao', 10);
     db.prepare('UPDATE users SET password = ? WHERE id = ?').run(defaultHash, user.id);
@@ -79,7 +79,7 @@ router.post('/user/login', loginRateLimit, (req, res) => JSON_RES(res, () => {
   }
 
   const matched = bcrypt.compareSync(password, user.password);
-  if (!matched) return makeError('密码错误', ErrorCode.FORBIDDEN);
+  if (!matched) return makeError('密码错误', ErrorCode.PASSWORD_WRONG);
 
   // 记录登录日志
   db.prepare(`INSERT INTO login_logs (phone, type, ip, user_agent, created_at) VALUES (?, 'user', ?, ?, datetime('now','localtime'))`)
@@ -133,7 +133,7 @@ router.post('/user/change-password', requireAuth, (req, res) => JSON_RES(res, ()
     // 老用户未设置密码 → 默认密码
     matched = (oldPassword === 'shoujihao');
   }
-  if (!matched) return makeError('旧密码不正确', ErrorCode.FORBIDDEN);
+  if (!matched) return makeError('旧密码不正确', ErrorCode.PASSWORD_WRONG);
 
   // 更新密码
   const newHash = bcrypt.hashSync(newPassword, 10);

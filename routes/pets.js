@@ -39,7 +39,7 @@ db.exec(`
     images TEXT DEFAULT '',
     bio TEXT DEFAULT '',
     last_seen_at TEXT DEFAULT '',
-    alert_level TEXT DEFAULT 'none' CHECK(alert_level IN ('none','warning','urgent','critical')),
+    alert_level TEXT DEFAULT 'none' CHECK(alert_level IN ('none','warning','urgent')),
     like_count INTEGER DEFAULT 0,
     comment_count INTEGER DEFAULT 0,
     status TEXT DEFAULT 'active' CHECK(status IN ('active','missing','adopted','graduated')),
@@ -119,7 +119,7 @@ router.get('/list', (req, res) => JSON_RES(res, () => {
   if (species && species !== 'all') { sql += ' AND species = ?'; params.push(species); }
   if (status) { sql += ' AND status = ?'; params.push(status); }
   if (search) { sql += ' AND code_name LIKE ?'; const kw = '%' + search + '%'; params.push(kw); }
-  sql += ` ORDER BY CASE WHEN alert_level = 'critical' THEN 0 WHEN alert_level = 'urgent' THEN 1 WHEN alert_level = 'warning' THEN 2 ELSE 3 END, updated_at DESC`;
+  sql += ` ORDER BY CASE WHEN alert_level = 'urgent' THEN 0 WHEN alert_level = 'warning' THEN 1 ELSE 2 END, updated_at DESC`;
   if (limit) { sql += ' LIMIT ?'; params.push(parseInt(limit)); }
   const pets = db.prepare(sql).all(...params);
   const now = Date.now();
@@ -128,8 +128,7 @@ router.get('/list', (req, res) => JSON_RES(res, () => {
     let displayAlert = p.alert_level;
     if (p.last_seen_at) {
       daysSinceSeen = Math.floor((now - new Date(p.last_seen_at).getTime()) / (1000*60*60*24));
-      if (daysSinceSeen >= 30) displayAlert = 'critical';
-      else if (daysSinceSeen >= 15) displayAlert = 'urgent';
+      if (daysSinceSeen >= 15) displayAlert = 'urgent';
       else if (daysSinceSeen >= 7) displayAlert = 'warning';
       else displayAlert = 'none';
     }
@@ -472,7 +471,7 @@ router.post('/sight/:id', requireAuth, upload.single('photo'), (req, res) => JSO
 router.get('/alert-check', (req, res) => JSON_RES(res, () => {
   const pets = db.prepare(`SELECT id, code_name, species, last_seen_at, alert_level, status FROM pets WHERE status = 'active'`).all();
   const now = Date.now();
-  const alerts = { warning: [], urgent: [], critical: [] };
+  const alerts = { warning: [], urgent: [] };
 
   pets.forEach(p => {
     if (!p.last_seen_at) return;
@@ -480,15 +479,12 @@ router.get('/alert-check', (req, res) => JSON_RES(res, () => {
     const daysSince = (now - lastSeen) / (1000 * 60 * 60 * 24);
 
     let newLevel = 'none';
-    if (daysSince >= 30) newLevel = 'critical';
-    else if (daysSince >= 15) newLevel = 'urgent';
+    if (daysSince >= 15) newLevel = 'urgent';
     else if (daysSince >= 7) newLevel = 'warning';
 
     // 更新告警等级（只升不降，打卡时重置）
     if (newLevel !== 'none') {
-      if (newLevel === 'critical' || p.alert_level !== 'critical') {
-        db.prepare('UPDATE pets SET alert_level = ? WHERE id = ?').run(newLevel, p.id);
-      }
+      db.prepare('UPDATE pets SET alert_level = ? WHERE id = ?').run(newLevel, p.id);
       const speciesEmoji = p.species === 'cat' ? '🐱' : '🐶';
       const info = { id: p.id, code_name: p.code_name, species: p.species, speciesEmoji, last_seen_at: p.last_seen_at, daysSince: Math.round(daysSince), alert_level: newLevel };
       alerts[newLevel].push(info);
@@ -498,12 +494,10 @@ router.get('/alert-check', (req, res) => JSON_RES(res, () => {
   return {
     total: pets.length,
     warning: alerts.warning,    // 7-14天
-    urgent: alerts.urgent,      // 15-29天
-    critical: alerts.critical,  // 30天+
+    urgent: alerts.urgent,      // 15天+
     summary: {
       warning: alerts.warning.length,
-      urgent: alerts.urgent.length,
-      critical: alerts.critical.length
+      urgent: alerts.urgent.length
     }
   };
 }));

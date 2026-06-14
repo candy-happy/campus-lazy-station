@@ -1,4 +1,4 @@
-﻿// server.js - 校园圈 v3.0 (模块化架构)
+// server.js - 校园圈 v3.0 (模块化架构)
 // 本文件只负责启动，所有业务逻辑在 routes/ 目录下
 const express = require('express');
 const path = require('path');

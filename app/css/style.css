@@ -1,4 +1,4 @@
-﻿    :root {
+    :root {
       --primary: #FF6B35;
       --primary-light: #FF8C5A;
       --primary-dark: #E55A25;
@@ -484,9 +484,7 @@
     .pet-filter-btn.active { background:linear-gradient(135deg,#ff9a56,#ff6a88); color:#fff; border-color:transparent; }
     .pet-card { background:#fff; border-radius:16px; overflow:hidden; margin-bottom:12px; box-shadow:var(--shadow); cursor:pointer; transition:transform .2s; }
     .pet-card:active { transform:scale(0.97); }
-    .pet-card-critical { border:2px solid #EF5350; animation:petCriticalPulse 2s infinite; }
     .pet-card-urgent { border:2px solid #FF9800; }
-    @keyframes petCriticalPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,83,80,0.4)} 50%{box-shadow:0 0 0 8px rgba(239,83,80,0)} }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
     .pet-card-avatar { width:100%; height:180px; object-fit:cover; display:block; }
     .pet-card-avatar-placeholder { width:100%; height:180px; display:flex; align-items:center; justify-content:center; font-size:80px; background:linear-gradient(135deg,#fff5f0,#fff0f5); }
@@ -3594,3 +3592,12 @@
 #discoverHotClubs::-webkit-scrollbar { display: none; }
 
 
+
+
+/* ─── 登录错误反馈动画 ─── */
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  50% { transform: translateX(8px); }
+  75% { transform: translateX(-4px); }
+}

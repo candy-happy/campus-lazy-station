@@ -1,4 +1,4 @@
-﻿// modals.js - 弹窗/设置/帮助
+// modals.js - 弹窗/设置/帮助
 
  function closeModal(id) { $(id).classList.remove('active'); document.body.style.overflow = ''; }
 

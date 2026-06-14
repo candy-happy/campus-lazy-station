@@ -1,4 +1,4 @@
-﻿// 校园圈 - 前端API桥接层
+// 校园圈 - 前端API桥接层
 // 所有前端页面引入此文件后，自动从localStorage模式切换为数据库模式
 
 const API = {
@@ -96,7 +96,7 @@ const API = {
       method: 'POST', headers: this._headers(),
       body: JSON.stringify({ student_id, password, captcha, captchaKey })
     }).then(r => r.json());
-    if (res.error) throw new Error(res.error);
+    if (res.error) { const e = new Error(res.error); e.code = res.code; e.retryAfter = res.retryAfter; throw e; }
     this._user = Object.assign({}, res.user, { phone_original: res.user?.phone || student_id });
     this._role = 'user';
     if (res.token) { this._token = res.token; localStorage.setItem('lazy_token', res.token); }

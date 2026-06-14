@@ -1,4 +1,4 @@
-﻿// user.js - 用户/登录/设置
+// user.js - 用户/登录/设置
 // 依赖: core.js (需先加载)
 // 新功能请添加为独立JS模块，不要在骨架文件中添加代码
 
@@ -194,8 +194,32 @@
         startOrderPolling();
         showToast(res.isNewUser ? '🎉 首次登录，默认密码为 shoujihao，记得去设置修改哦' : '欢迎回来！');
       } catch(e) {
-        if (e.message && e.message.includes('验证码')) { refreshCaptcha(); document.getElementById('loginCaptcha').value = ''; }
-        showToast('登录失败: ' + (e.message || '请重试'));
+        const msg = e.message || '';
+        const code = e.code || '';
+        // 密码错误 → 抖动密码框
+        if (msg.includes('密码') && !msg.includes('验证码')) {
+          const pwEl = document.getElementById('loginPassword');
+          if (pwEl) { pwEl.style.borderColor = '#e74c3c'; pwEl.style.animation = 'shake 0.4s ease'; setTimeout(() => { pwEl.style.borderColor = ''; pwEl.style.animation = ''; }, 500); }
+          if (msg.includes('首次登录')) { showToast(msg + '，请重试', 4500); }
+          else { showToast('密码错误，请重试'); }
+          document.getElementById('loginPassword').value = '';
+        }
+        // 验证码错误 → 刷新验证码
+        else if (msg.includes('验证码')) {
+          const cpEl = document.getElementById('loginCaptcha');
+          if (cpEl) { cpEl.style.borderColor = '#e74c3c'; cpEl.style.animation = 'shake 0.4s ease'; setTimeout(() => { cpEl.style.borderColor = ''; cpEl.style.animation = ''; }, 500); }
+          refreshCaptcha();
+          document.getElementById('loginCaptcha').value = '';
+          showToast('验证码错误，请重新输入');
+        }
+        // 请求频繁 → 显示重试倒计时
+        else if (code === 'RATE_001' && e.retryAfter) {
+          showToast('登录尝试过多，请 ' + e.retryAfter + ' 秒后重试', 4000);
+        }
+        // 其他错误
+        else {
+          showToast(msg || '网络异常，请重试');
+        }
         console.error('doLogin error:', e);
       } finally {
         btn.textContent = '登录 / 注册';
