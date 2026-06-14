@@ -1,7 +1,5 @@
 // teachers.js - 教师留言
 // 依赖: core.js (需先加载)
-// 新功能请添加为独立JS模块，不要在骨架文件中添加代码
-
 
 // escHtml 由 core.js 的 function escHtml(){} 声明提供（全局函数，所有脚本共用）
 
@@ -10,7 +8,6 @@ let _teacherPage = 1;
 let _teacherCollege = '全部';
 let _teacherSearch = '';
 let _selectedTeacherRating = 5;
-
 
 async function loadTeacherColleges() {
   try {
@@ -22,7 +19,6 @@ async function loadTeacherColleges() {
         html += '<div class="teacher-college-tag" data-college="' + escHtml(c.college) + '" onclick="filterTeacherCollege(\'' + escHtml(c.college) + '\')">' + escHtml(c.college) + '(' + escHtml(String(c.count)) + ')</div>';
       });
       bar.innerHTML = html;
-      // 设置滚动监听更新箭头
       setTimeout(updateTeacherCollegeArrows, 50);
       bar.onscroll = updateTeacherCollegeArrows;
     }
@@ -49,8 +45,6 @@ function scrollTeacherCollege(dir) {
   el.scrollBy({ left: dir * 200, behavior: 'smooth' });
 }
 
-
-
 function filterTeacherCollege(college) {
   _teacherCollege = college;
   _teacherPage = 1;
@@ -58,15 +52,27 @@ function filterTeacherCollege(college) {
   loadTeachers(true);
 }
 
-
-
 function searchTeachers() {
   _teacherSearch = document.getElementById('teacherSearchInput').value.trim();
   _teacherPage = 1;
   loadTeachers(true);
 }
 
+// ── 辅助：提取学位标签 ──
+function getDegreeLabel(t) {
+  const parts = [];
+  if (t.graduate && t.graduate.includes('博士')) parts.push('博士');
+  else if (t.education && t.education.includes('博士')) parts.push('博士');
+  if (t.graduate && t.graduate.includes('硕士')) parts.push('硕士');
+  else if (t.education && t.education.includes('硕士')) parts.push('硕士');
+  return parts.length > 0 ? parts[0] : ''; // 只显示最高学位
+}
 
+// ── 辅助：截断文本 ──
+function truncateText(text, maxLen) {
+  if (!text) return '';
+  return text.length > maxLen ? text.substring(0, maxLen) + '…' : text;
+}
 
 async function loadTeachers(reset = true) {
   try {
@@ -81,24 +87,57 @@ async function loadTeachers(reset = true) {
     if (res.teachers && res.teachers.length > 0) {
       let html = '';
       res.teachers.forEach(t => {
-        const ratingClass = t.avg_rating >= 4 ? 'teacher-rating-high' : t.avg_rating >= 3 ? 'teacher-rating-mid' : 'teacher-rating-low';
-        const titleTag = t.title ? '<span style="font-size:11px;color:#FF6B35;background:#FFF3E0;padding:1px 6px;border-radius:4px;margin-left:6px">' + escHtml(t.title) + '</span>' : '';
-        const gradTag = t.graduate ? '<span style="font-size:10px;color:#7B1FA2;background:#F3E5F5;padding:1px 6px;border-radius:4px;margin-left:4px">' + (t.graduate.includes('博士') ? '博士' : '硕士') + '</span>' : (t.education && t.education.includes('博士') ? '<span style="font-size:10px;color:#7B1FA2;background:#F3E5F5;padding:1px 6px;border-radius:4px;margin-left:4px">博士</span>' : '');
+        const degree = getDegreeLabel(t);
+        const title = t.title || '';
+
+        // 学位徽章
+        const degreeBadge = degree
+          ? '<span class="t-degree-badge">🎓 ' + escHtml(degree) + '</span>'
+          : '';
+
+        // 职称标签
+        const titleTag = title
+          ? '<span class="t-title-tag">' + escHtml(title) + '</span>'
+          : '';
+
+        // 研究方向标签（最多2个）
+        let researchTags = '';
+        if (t.research) {
+          const items = t.research.split(/[，,、；;]/).filter(c => c.trim()).slice(0, 2);
+          if (items.length > 0) {
+            researchTags = '<div class="t-tags-row">' +
+              items.map(c => '<span class="t-research-tag">' + escHtml(c.trim().substring(0, 12)) + '</span>').join('') +
+              '</div>';
+          }
+        }
+
         // 课程标签（最多3个）
         let courseTags = '';
         if (t.courses) {
           const cList = t.courses.split(/[，,、；;]/).filter(c => c.trim()).slice(0, 3);
-          courseTags = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' +
-            cList.map(c => '<span style="font-size:10px;color:#FF6B35;background:#FFF3E0;padding:1px 6px;border-radius:4px">' + escHtml(c.trim()) + '</span>').join('') + '</div>';
+          if (cList.length > 0) {
+            courseTags = '<div class="t-tags-row">' +
+              cList.map(c => '<span class="t-course-tag">📖 ' + escHtml(c.trim().substring(0, 10)) + '</span>').join('') +
+              '</div>';
+          }
         }
+
+        // 评分星星
+        const stars = t.avg_rating ? '⭐'.repeat(Math.round(t.avg_rating)) : '';
+
         html += '<div class="teacher-card" onclick="openTeacherDetail(' + t.id + ')">' +
-          '<div class="teacher-avatar-lg">' + t.name.charAt(0) + '</div>' +
+          '<div class="teacher-avatar-lg">' + escHtml(t.name.charAt(0)) + '</div>' +
           '<div class="teacher-info">' +
-            '<div class="teacher-name">' + escHtml(t.name) + titleTag + gradTag + '</div>' +
+            '<div class="teacher-name-row">' +
+              '<span class="teacher-name">' + escHtml(t.name) + '</span>' +
+              degreeBadge +
+              titleTag +
+            '</div>' +
             '<div class="teacher-meta">' + escHtml(t.college) + '</div>' +
-            (t.research ? '<div class="teacher-meta" style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔬 ' + escHtml(t.research.substring(0, 28)) + (t.research.length > 28 ? '...' : '') + '</div>' : '') +
+            researchTags +
             courseTags +
             '<div class="teacher-stats">' +
+              '<span class="teacher-stat">' + stars + '</span>' +
               '<span class="teacher-stat">👍 ' + (t.like_count||0) + '</span>' +
               '<span class="teacher-stat">💬 ' + (t.review_count||0) + '</span>' +
             '</div>' +
@@ -106,9 +145,7 @@ async function loadTeachers(reset = true) {
         '</div>';
       });
       container.innerHTML += html;
-      // 显示/隐藏加载更多
       document.getElementById('teacherLoadMore').style.display = res.page < res.totalPages ? 'block' : 'none';
-      // 不再在此处重新加载学院标签，避免覆盖用户选中的学院
     } else {
       if (reset) container.innerHTML = '<div style="text-align:center;padding:40px 0;color:#999"><div style="font-size:48px;margin-bottom:12px">👨‍🏫</div>暂无教师数据</div>';
       document.getElementById('teacherLoadMore').style.display = 'none';
@@ -117,163 +154,141 @@ async function loadTeachers(reset = true) {
   } catch(e) { console.error('loadTeachers:', e); }
 }
 
-
-
 async function openTeacherDetail(id) {
   try {
     const res = await API.getTeacherDetail(id);
     const t = res.teacher;
     if (!t) return showToast('教师不存在');
 
-    // ── 教师信息头部卡片（渐变背景） ──
+    // ── 头部卡片 ──
     document.getElementById('teacherInfoHeader').innerHTML =
-      '<div style="background:linear-gradient(135deg,#FF6B35,#FF8C5A);padding:28px 16px 22px;color:#fff;text-align:center">' +
-        '<div style="width:76px;height:76px;font-size:32px;margin:0 auto 12px;background:rgba(255,255,255,.2);color:#fff;border:3px solid rgba(255,255,255,.4);border-radius:50%;display:flex;align-items:center;justify-content:center">' + t.name.charAt(0) + '</div>' +
-        '<div style="font-size:22px;font-weight:700">' + escHtml(t.name) + '</div>' +
-        '<div style="font-size:13px;opacity:.85;margin-top:6px">' + escHtml(t.college) + (t.title ? ' · ' + escHtml(t.title) : '') + '</div>' +
-        '<div style="display:flex;gap:24px;justify-content:center;margin-top:16px">' +
-          '<div style="text-align:center"><div style="font-size:22px;font-weight:700">' + (t.like_count||0) + '</div><div style="font-size:10px;opacity:.7">点赞</div></div>' +
-          '<div style="width:1px;height:30px;background:rgba(255,255,255,.3)"></div>' +
-          '<div style="text-align:center"><div style="font-size:22px;font-weight:700">' + (t.review_count||0) + '</div><div style="font-size:10px;opacity:.7">留言</div></div>' +
+      '<div class="t-detail-header">' +
+        '<div class="t-detail-avatar">' + escHtml(t.name.charAt(0)) + '</div>' +
+        '<div class="t-detail-name">' + escHtml(t.name) + '</div>' +
+        '<div class="t-detail-sub">' + escHtml(t.college) + (t.title ? ' · ' + escHtml(t.title) : '') + '</div>' +
+        '<div class="t-detail-stats">' +
+          '<div class="t-detail-stat"><div class="t-ds-num">' + (t.like_count||0) + '</div><div class="t-ds-label">点赞</div></div>' +
+          '<div class="t-ds-divider"></div>' +
+          '<div class="t-detail-stat"><div class="t-ds-num">' + (t.review_count||0) + '</div><div class="t-ds-label">留言</div></div>' +
+          (t.avg_rating ? '<div class="t-ds-divider"></div><div class="t-detail-stat"><div class="t-ds-num">' + Number(t.avg_rating).toFixed(1) + '</div><div class="t-ds-label">评分</div></div>' : '') +
         '</div>' +
       '</div>';
 
-    // ── 结构化信息区块 ──
-    const infoParts = [];
+    // ── 结构化信息 ──
+    const sections = [];
 
-    // 个人简介（放在最前面）
-    if (t.bio) {
-      let cleanBio = t.bio;
-      cleanBio = cleanBio.replace(/^(教授|副教授|讲师|助教|高级工程师)[。，;]/, '');
-      cleanBio = cleanBio.replace(/研究方向[：:][^。]+。?/, '');
-      cleanBio = cleanBio.replace(/主讲课程[：:][^]+$/, '');
-      cleanBio = cleanBio.replace(/(\d{4}年|年)(博士|硕士)毕业于[^。]+。?/g, '');
-      cleanBio = cleanBio.replace(/(本科|硕士|博士|硕士研究生|博士研究生|大学本科)[。，;]*/g, '');
-      cleanBio = cleanBio.replace(/邮箱[：:]?\s*[^\s，。;]+/g, '');
-      cleanBio = cleanBio.replace(/\S+@\S+\.\S+/g, '');
-      cleanBio = cleanBio.trim();
-      if (cleanBio.length > 5) {
-        infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📝 个人简介</div>' +
-          '<div class="teacher-info-item" style="color:#555;line-height:1.7">' + escHtml(cleanBio) + '</div></div>');
-      }
+    // 学位信息
+    const degree = getDegreeLabel(t);
+    const gradSchool = t.graduate ? t.graduate.replace(/^(教授|副教授|讲师|助教)[。，;]*/g, '').trim() : '';
+    if (degree || gradSchool) {
+      let eduHtml = '<div class="t-info-section"><div class="t-info-title">🎓 学历背景</div><div class="t-info-tags">';
+      if (degree) eduHtml += '<span class="t-info-badge degree">' + escHtml(degree) + '</span>';
+      if (gradSchool && gradSchool.length > 2 && gradSchool.length < 50) eduHtml += '<span class="t-info-badge school">' + escHtml(gradSchool) + '</span>';
+      eduHtml += '</div></div>';
+      sections.push(eduHtml);
     }
 
-    // 毕业院校
-    const eduParts = [];
-    if (t.undergraduate) eduParts.push('<div class="teacher-info-item">🎓 本科：' + escHtml(t.undergraduate) + '</div>');
-    if (t.graduate) eduParts.push('<div class="teacher-info-item">🎓 研究生：' + escHtml(t.graduate) + '</div>');
-    if (t.education && eduParts.length === 0) eduParts.push('<div class="teacher-info-item">🏫 ' + escHtml(t.education) + '</div>');
-    if (eduParts.length > 0) {
-      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🎓 毕业院校</div>' +
-        eduParts.join('') + '</div>');
+    // 研究方向
+    if (t.research) {
+      const items = t.research.split(/[，,、；;]/).filter(c => c.trim());
+      sections.push('<div class="t-info-section"><div class="t-info-title">🔬 研究方向</div><div class="t-info-tags">' +
+        items.map(c => '<span class="t-info-badge research">' + escHtml(c.trim()) + '</span>').join('') +
+        '</div></div>');
     }
 
     // 主讲课程
     if (t.courses) {
-      const courseList = t.courses.split(/[，,、；;]/).filter(c => c.trim()).map(c => c.replace(/《/g,'').replace(/》/g,'').trim());
-      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📖 主讲课程</div>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
-          courseList.map(c => '<span class="teacher-course-tag">' + escHtml(c) + '</span>').join('') +
+      const items = t.courses.split(/[，,、；;]/).filter(c => c.trim()).map(c => c.replace(/《/g,'').replace(/》/g,'').trim());
+      sections.push('<div class="t-info-section"><div class="t-info-title">📖 主讲课程</div><div class="t-info-tags">' +
+        items.map(c => '<span class="t-info-badge course">' + escHtml(c) + '</span>').join('') +
         '</div></div>');
     }
 
-    // 学术论文
-    if (t.papers) {
-      const paperLines = t.papers.split(/[；;]/).filter(l => l.trim());
-      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">📄 学术论文</div>' +
-        paperLines.map(p => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">• ' + escHtml(p.trim()) + '</div>').join('') +
-      '</div>');
+    // 个人简介（精简版，只保留核心描述）
+    if (t.bio) {
+      let cleanBio = t.bio;
+      // 去掉导航文本
+      if (/学校首页|网站首页|学院概况|师资结构|教师简介|教师风采|党建工作|团学工作|辅导员队伍|招生就业|下载专区/.test(cleanBio)) {
+        cleanBio = '';
+      } else {
+        // 提取第一段有意义的话（跳过姓名+职称开头）
+        cleanBio = cleanBio.replace(/^[^。]{1,8}[。，;]/, '');
+        cleanBio = cleanBio.replace(/研究方向[：:][^。；;]+[。；;]?/g, '');
+        cleanBio = cleanBio.replace(/主讲课程[：:][^。；;]+[。；;]?/g, '');
+        cleanBio = cleanBio.replace(/邮箱[：:]?\s*\S+@\S+\.\S+/g, '');
+        cleanBio = cleanBio.replace(/\S+@\S+\.\S+/g, '');
+        cleanBio = cleanBio.replace(/^[,，。；;、\s]+/, '');
+        cleanBio = cleanBio.trim();
+      }
+      if (cleanBio.length > 10) {
+        // 截取前150字
+        const shortBio = cleanBio.length > 150 ? cleanBio.substring(0, 150) + '…' : cleanBio;
+        sections.push('<div class="t-info-section"><div class="t-info-title">📝 简介</div>' +
+          '<div class="t-bio-text">' + escHtml(shortBio) + '</div></div>');
+      }
     }
 
-    // 科研项目
-    if (t.projects) {
-      const projLines = t.projects.split(/[；;]/).filter(l => l.trim());
-      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🔬 科研项目</div>' +
-        projLines.map(p => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">• ' + escHtml(p.trim()) + '</div>').join('') +
-      '</div>');
-    }
+    document.getElementById('teacherDetailInfo').innerHTML = sections.length > 0
+      ? sections.join('')
+      : '<div style="text-align:center;padding:20px;color:#999;font-size:13px">暂无详细信息</div>';
 
-    // 主要成果
-    if (t.achievements) {
-      const achLines = t.achievements.split('\n').filter(l => l.trim());
-      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🏆 主要成果</div>' +
-        achLines.map(a => '<div class="teacher-info-item" style="padding:6px 0;border-bottom:1px solid #f0f0f0">🏅 ' + escHtml(a) + '</div>').join('') +
-      '</div>');
-    }
-
-    // 社会兼职
-    if (t.social_roles) {
-      const roleLines = t.social_roles.split(/[；;]/).filter(l => l.trim());
-      infoParts.push('<div class="teacher-info-section"><div class="teacher-info-title">🌐 社会兼职</div>' +
-        roleLines.map(r => '<div class="teacher-info-item">• ' + escHtml(r.trim()) + '</div>').join('') +
-      '</div>');
-    }
-    
-    document.getElementById('teacherDetailInfo').innerHTML = infoParts.length > 0
-      ? infoParts.join('')
-      : '<div style="text-align:center;padding:12px;color:#999;font-size:13px">暂无详细信息</div>';
-    
     // 操作区
     const likeDisabled = res.todayLiked ? 'opacity:.5;pointer-events:none' : '';
     const likeText = res.todayLiked ? _t('teacherLiked') : _t('teacherLike');
     const reviewDisabled = res.todayReviewed ? 'opacity:.5;pointer-events:none' : '';
     document.getElementById('teacherActionArea').innerHTML =
-      '<div style="display:flex;gap:12px;justify-content:center">' +
-        '<button onclick="likeTeacher(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#FFF3E0;color:#FF6B35;font-size:14px;font-weight:600;cursor:pointer;' + likeDisabled + '">👍 ' + likeText + '</button>' +
-        '<button onclick="showTeacherReviewForm(' + t.id + ')" style="flex:1;padding:10px;border-radius:12px;border:none;background:#FFF8E1;color:#F57F17;font-size:14px;font-weight:600;cursor:pointer;' + reviewDisabled + '">✍️ ' + (res.todayReviewed ? '已留言' : '写留言') + '</button>' +
+      '<div class="t-action-row">' +
+        '<button onclick="likeTeacher(' + t.id + ')" class="t-action-btn like" style="' + likeDisabled + '">👍 ' + likeText + '</button>' +
+        '<button onclick="showTeacherReviewForm(' + t.id + ')" class="t-action-btn review" style="' + reviewDisabled + '">✍️ ' + (res.todayReviewed ? '已留言' : '写留言') + '</button>' +
       '</div>' +
-      (res.todayLiked ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">✅ 今天已给这位老师点赞</div>' : '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">💡 每位老师每天可点赞一次</div>') +
-      (res.todayReviewed ? '<div style="text-align:center;font-size:11px;color:#999;margin-top:6px">✅ 今天已给这位老师留言</div>' : '');
-    
+      (res.todayLiked ? '<div class="t-action-hint">✅ 今天已给这位老师点赞</div>' : '<div class="t-action-hint">💡 每位老师每天可点赞一次</div>') +
+      (res.todayReviewed ? '<div class="t-action-hint">✅ 今天已给这位老师留言</div>' : '');
+
     // 留言列表
     const reviewList = document.getElementById('teacherReviewList');
     if (res.reviews && res.reviews.length > 0) {
       reviewList.innerHTML = res.reviews.map(r => {
         const displayName = r.is_anonymous ? '匿名' : escHtml(r.nickname || '匿名');
         const avatarHtml = r.is_anonymous
-          ? '<div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999">🕵</div>'
-          : (r.avatar ? '<img src="' + r.avatar + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover;cursor:pointer" onclick="showWallUser(\'' + r.phone + '\')">' : '<div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999;cursor:pointer" onclick="showWallUser(\'' + r.phone + '\')">' + (r.nickname||'匿').charAt(0) + '</div>');
-        // 媒体展示
+          ? '<div class="t-review-avatar anon">🕵</div>'
+          : (r.avatar ? '<img src="' + r.avatar + '" class="t-review-avatar" onclick="showWallUser(\'' + r.phone + '\')">' : '<div class="t-review-avatar" onclick="showWallUser(\'' + r.phone + '\')">' + (r.nickname||'匿').charAt(0) + '</div>');
         let mediaHtml = '';
         if (r.media_url) {
           try {
             const media = JSON.parse(r.media_url);
             if (Array.isArray(media) && media.length > 0) {
-              mediaHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' +
+              mediaHtml = '<div class="t-review-media">' +
                 media.map(m => {
                   const isVideo = /\.mp4|\.mov|\.webm/i.test(m);
                   return isVideo
-                    ? '<video src="' + m + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px" muted preload="metadata" onclick="this.paused?this.play():this.pause()"></video>'
-                    : '<img src="' + m + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer" onclick="previewImage(this.src)">';
+                    ? '<video src="' + m + '" muted preload="metadata" onclick="this.paused?this.play():this.pause()"></video>'
+                    : '<img src="' + m + '" onclick="previewImage(this.src)">';
                 }).join('') + '</div>';
             }
           } catch(e) {
-            // 单个URL
             const isVideo = /\.mp4|\.mov|\.webm/i.test(r.media_url);
             mediaHtml = isVideo
-              ? '<div style="margin-top:8px"><video src="' + r.media_url + '" style="max-width:200px;border-radius:8px" muted controls></video></div>'
-              : '<div style="margin-top:8px"><img src="' + r.media_url + '" style="max-width:200px;border-radius:8px;cursor:pointer" onclick="previewImage(this.src)"></div>';
+              ? '<div class="t-review-media"><video src="' + r.media_url + '" muted controls></video></div>'
+              : '<div class="t-review-media"><img src="' + r.media_url + '" onclick="previewImage(this.src)"></div>';
           }
         }
         return '<div class="teacher-review-card">' +
           '<div class="teacher-review-header">' + avatarHtml + '<span class="teacher-review-user">' + displayName + '</span><span class="teacher-review-date">' + (r.created_at||'').slice(0,10) + '</span></div>' +
           '<div class="teacher-review-content">' + escHtml(r.content) + '</div>' +
           mediaHtml +
-          '<div style="margin-top:6px;display:flex;gap:6px">' +
-            '<button onclick="shareComment(\'teacher\',\'师说\',\'' + escHtml((r.content||'').replace(/'/g,"\\'").replace(/"/g,'&quot;')) + '\',\'' + escHtml((r.nickname||'用户').replace(/'/g,"\\'")) + '\')" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:3px 8px;border-radius:10px;opacity:0.45;transition:opacity 0.15s" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.45\'">📤</button>' +
-            '<button onclick="showReportMenu(\'comment\',' + r.id + ',\'teacher\')" style="background:none;border:none;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:3px 8px;border-radius:10px;opacity:0.45;transition:opacity 0.15s" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.45\'">🚫</button>' +
+          '<div class="t-review-actions">' +
+            '<button onclick="shareComment(\'teacher\',\'师说\',\'' + escHtml((r.content||'').replace(/'/g,"\\'").replace(/"/g,'&quot;')) + '\',\'' + escHtml((r.nickname||'用户').replace(/'/g,"\\'")) + '\')" class="t-review-btn">📤</button>' +
+            '<button onclick="showReportMenu(\'comment\',' + r.id + ',\'teacher\')" class="t-review-btn">🚫</button>' +
           '</div>' +
         '</div>';
       }).join('');
     } else {
       reviewList.innerHTML = '<div style="text-align:center;padding:20px;color:#999;font-size:13px">暂无留言，来做第一个留言者吧！</div>';
     }
-    
+
     openSubPage('teacherDetailPage_sub');
   } catch(e) { console.error('openTeacherDetail:', e); showToast(_t('loadFailed')); }
 }
-
-
 
 async function likeTeacher(id) {
   if (!API._token) return showToast('请先登录');
@@ -281,14 +296,12 @@ async function likeTeacher(id) {
     const res = await API.likeTeacher(id);
     if (res.liked) {
       showToast('👍 点赞成功！');
-      openTeacherDetail(id); // 刷新详情
+      openTeacherDetail(id);
     } else {
       showToast(res.error || '点赞失败');
     }
   } catch(e) { showToast(e.message || '点赞失败'); }
 }
-
-
 
 function showTeacherReviewForm(teacherId) {
   _selectedTeacherRating = 5;
@@ -297,7 +310,6 @@ function showTeacherReviewForm(teacherId) {
   const form = document.createElement('div');
   form.id = 'teacherReviewOverlay';
   form.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:flex-end;justify-content:center';
-  // emoji面板
   const emojis = ['😊','😂','🤣','😍','🥰','😘','😜','🤔','😮','😢','😡','👍','👎','❤️','🔥','💯','✨','🎉','👏','🙏','💪','😎','🥳','😴','🤯','🤩','💕','👋','✅','⭐'];
   const emojiGrid = emojis.map(e => '<span style="font-size:22px;padding:4px;cursor:pointer" onclick="insertReviewEmoji(\''+e+'\')">'+e+'</span>').join('');
   form.innerHTML = '<div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:500px;padding:20px;max-height:75vh;overflow-y:auto">' +
@@ -314,7 +326,6 @@ function showTeacherReviewForm(teacherId) {
         '<span onclick="selectTeacherRating(5)" style="color:#FFC107">★</span>' +
       '</div>' +
     '</div>' +
-    // 匿名/公开切换
     '<div style="margin-bottom:12px;display:flex;align-items:center;gap:12px">' +
       '<span style="font-size:13px;color:#666">显示方式：</span>' +
       '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px"><input type="radio" name="reviewAnon" value="0" checked onchange="_reviewAnonymous=false;document.getElementById(\'anonHint\').style.display=\'none\'"> ' + _t('teacherReviewPublic') + '</label>' +
@@ -325,12 +336,10 @@ function showTeacherReviewForm(teacherId) {
       '<textarea id="teacherReviewContent" rows="4" maxlength="500" placeholder="分享你对这位老师的真实感受..." style="width:100%;padding:10px;border-radius:10px;border:1px solid #ddd;font-size:14px;resize:none;outline:none"></textarea>' +
       '<div style="text-align:right;font-size:11px;color:#999"><span id="teacherReviewCharCount">0</span>/500</div>' +
     '</div>' +
-    // Emoji面板
     '<div style="margin-bottom:10px">' +
       '<button onclick="document.getElementById(\'reviewEmojiPanel\').style.display=document.getElementById(\'reviewEmojiPanel\').style.display===\'none\'?\'block\':\'none\'" style="background:none;border:1px solid #ddd;border-radius:8px;padding:4px 10px;font-size:13px;cursor:pointer">' + _t('teacherReviewEmoji') + '</button>' +
       '<div id="reviewEmojiPanel" style="display:none;margin-top:8px;padding:8px;background:#f9f9f9;border-radius:10px;display:none;flex-wrap:wrap;gap:2px">' + emojiGrid + '</div>' +
     '</div>' +
-    // 媒体上传
     '<div style="margin-bottom:12px">' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
         '<label style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;border:1px solid #ddd;cursor:pointer;font-size:13px;color:#666">' +
@@ -346,20 +355,14 @@ function showTeacherReviewForm(teacherId) {
   document.getElementById('teacherReviewContent').addEventListener('input', function() {
     document.getElementById('teacherReviewCharCount').textContent = this.value.length;
   });
-  // 修复emoji面板display
   document.getElementById('reviewEmojiPanel').style.display = 'none';
 }
-
-
 
 function selectTeacherRating(n) {
   _selectedTeacherRating = n;
   const stars = document.querySelectorAll('#teacherStarSelect span');
   stars.forEach((s, i) => { s.style.color = i < n ? '#FFC107' : '#ddd'; });
 }
-
-
-// 插入emoji到评价输入框
 
 function insertReviewEmoji(emoji) {
   const ta = document.getElementById('teacherReviewContent');
@@ -372,15 +375,12 @@ function insertReviewEmoji(emoji) {
   document.getElementById('teacherReviewCharCount').textContent = ta.value.length;
 }
 
-
-// 处理评价媒体文件
-
 async function handleReviewMedia(input) {
   const files = Array.from(input.files).slice(0, 6 - _reviewMediaUrls.length);
   if (files.length === 0) return;
   const preview = document.getElementById('reviewMediaPreview');
   const countEl = document.getElementById('reviewMediaCount');
-  
+
   for (const file of files) {
     const fd = new FormData();
     fd.append('files', file);
@@ -406,15 +406,11 @@ async function handleReviewMedia(input) {
   input.value = '';
 }
 
-
-
 function removeReviewMedia(index, el) {
   _reviewMediaUrls.splice(index, 1);
   el.parentElement.remove();
   document.getElementById('reviewMediaCount').textContent = _reviewMediaUrls.length + '/6';
 }
-
-
 
 async function submitTeacherReview(teacherId) {
   if (!API._token) return showToast('请先登录');
@@ -427,7 +423,7 @@ async function submitTeacherReview(teacherId) {
       showToast('✅ 评价提交成功！');
       const overlay = document.getElementById('teacherReviewOverlay');
       if (overlay) overlay.remove();
-      openTeacherDetail(teacherId); // 刷新详情
+      openTeacherDetail(teacherId);
     } else {
       showToast(res.error || '评价失败');
     }

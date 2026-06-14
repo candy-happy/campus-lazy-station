@@ -3601,3 +3601,43 @@
   50% { transform: translateX(8px); }
   75% { transform: translateX(-4px); }
 }
+/* ═══ 师说卡片美化 v3.4 ═══ */
+.teacher-name-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px}
+.t-degree-badge{font-size:10px;font-weight:600;color:#7B1FA2;background:#F3E5F5;padding:1px 7px;border-radius:10px;white-space:nowrap}
+.t-title-tag{font-size:10px;font-weight:500;color:#FF6B35;background:#FFF3E0;padding:1px 7px;border-radius:10px;white-space:nowrap}
+.t-tags-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.t-research-tag{font-size:10px;color:#1565C0;background:#E3F2FD;padding:2px 8px;border-radius:8px;white-space:nowrap}
+.t-course-tag{font-size:10px;color:#2E7D32;background:#E8F5E9;padding:2px 8px;border-radius:8px;white-space:nowrap}
+.t-detail-header{background:linear-gradient(135deg,#FF6B35,#FF8C5A);padding:28px 16px 22px;color:#fff;text-align:center;position:relative;overflow:hidden}
+.t-detail-header::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.08)}
+.t-detail-header::before{content:'';position:absolute;bottom:-20px;left:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.05)}
+.t-detail-avatar{width:72px;height:72px;font-size:30px;margin:0 auto 10px;background:rgba(255,255,255,.2);color:#fff;border:3px solid rgba(255,255,255,.35);border-radius:20px;display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
+.t-detail-name{font-size:22px;font-weight:700;position:relative;z-index:1}
+.t-detail-sub{font-size:13px;opacity:.85;margin-top:6px;position:relative;z-index:1}
+.t-detail-stats{display:flex;gap:20px;justify-content:center;margin-top:16px;position:relative;z-index:1}
+.t-detail-stat{text-align:center}
+.t-ds-num{font-size:22px;font-weight:700}
+.t-ds-label{font-size:10px;opacity:.7}
+.t-ds-divider{width:1px;height:30px;background:rgba(255,255,255,.3);align-self:center}
+.t-info-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.t-info-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px}
+.t-info-tags{display:flex;flex-wrap:wrap;gap:6px}
+.t-info-badge{font-size:12px;padding:5px 12px;border-radius:8px;font-weight:500;white-space:nowrap}
+.t-info-badge.degree{background:#F3E5F5;color:#7B1FA2}
+.t-info-badge.school{background:#E8EAF6;color:#283593}
+.t-info-badge.research{background:#E3F2FD;color:#1565C0}
+.t-info-badge.course{background:#E8F5E9;color:#2E7D32}
+.t-bio-text{font-size:13px;color:#555;line-height:1.7;padding:10px 12px;background:#FAFAFA;border-radius:10px}
+.t-action-row{display:flex;gap:12px;padding:16px}
+.t-action-btn{flex:1;padding:11px;border-radius:12px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.t-action-btn.like{background:#FFF3E0;color:#FF6B35}
+.t-action-btn.review{background:#FFF8E1;color:#F57F17}
+.t-action-btn:active{transform:scale(.96)}
+.t-action-hint{text-align:center;font-size:11px;color:#999;margin-top:2px}
+.t-review-actions{margin-top:6px;display:flex;gap:4px}
+.t-review-btn{background:none;border:none;font-size:12px;cursor:pointer;padding:3px 8px;border-radius:10px;opacity:.45;transition:opacity .15s;color:var(--text-secondary)}
+.t-review-btn:hover{opacity:1}
+.t-review-avatar{width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999;object-fit:cover;cursor:pointer;flex-shrink:0}
+.t-review-avatar.anon{background:#e0e0e0}
+.t-review-media{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.t-review-media img,.t-review-media video{width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer}
