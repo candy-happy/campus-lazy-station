@@ -1193,6 +1193,7 @@ const _prevOpenSubPage = window.openSubPage;
 window.openSubPage = function(id) {
   _prevOpenSubPage(id);
   if (id === 'petListPage_sub') loadPets('all');
+  if (id === 'reviewPage_sub') loadReviewMaterials(1);
 };
 
 

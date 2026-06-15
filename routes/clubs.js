@@ -74,12 +74,17 @@ router.post('/', requireAuth, withCompress(clubUpload.single('logo')), async (re
   const info = db.prepare('INSERT INTO clubs (name, logo, category, description, president_phone) VALUES (?,?,?,?,?)')
     .run(name, logo, category || '其他', description || '', phone);
 
+  const clubId = info.lastInsertRowid;
   // 创建者自动成为owner
   db.prepare('INSERT INTO club_members (club_id, phone, role) VALUES (?,?,?)')
-    .run(info.lastInsertRowid, phone, 'owner');
+    .run(clubId, phone, 'owner');
 
-  logAiReview('club', info.lastInsertRowid, phone, reviewContent, aiResult, 'pass');
-  return { ok: true, club_id: info.lastInsertRowid };
+  // 自动创建社团群聊
+  const roomInfo = db.prepare('INSERT INTO club_rooms (club_id, name) VALUES (?,?)')
+    .run(clubId, name + '群聊');
+
+  logAiReview('club', clubId, phone, reviewContent, aiResult, 'pass');
+  return { ok: true, club_id: clubId };
 }));
 
 // ─── 社团列表（公开可访问） ─────────────────────────────────────────────
@@ -350,11 +355,11 @@ router.put('/:id/members/:phone/role', requireAuth, (req, res) => JSON_RES(res, 
 // ─── 社团公告/动态 ──────────────────────────────────────
 const MAX_POST_PHOTOS = 4;
 
-// 发公告（owner/admin）
+// 发帖（所有成员可发帖，owner/admin可置顶）
 router.post('/:id/posts', requireAuth, withCompress(clubUpload.array('photos', MAX_POST_PHOTOS)), (req, res) => JSON_RES(res, () => {
   const phone = req.user.phone;
-  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, phone, 'owner', 'admin');
-  if (!member) return makeError('只有社长或管理员可以发布公告', ErrorCode.FORBIDDEN);
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(req.params.id, phone);
+  if (!member) return makeError('请先加入社团再发帖', ErrorCode.FORBIDDEN);
 
   const { content } = req.body;
   if (!content || !content.trim()) return makeError('公告内容不能为空', ErrorCode.PARAM_INVALID);
@@ -490,6 +495,272 @@ router.post('/report', requireAuth, (req, res) => JSON_RES(res, () => {
   db.prepare(`INSERT INTO reports (source,target_type,target_id,target_content,reporter_phone,reason,detail,status,created_at) VALUES ('club',?,?,?,?,?,?,'pending',datetime('now','localtime'))`)
     .run(target_type, target_id, (target_content||'').slice(0,200), phone, reason, detail||'');
   return { ok: true };
+}));
+
+// ─── 社团帖子点赞/取消点赞（toggle） ───────────────
+router.post('/posts/:postId/like', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const post = db.prepare('SELECT * FROM club_posts WHERE id = ?').get(req.params.postId);
+  if (!post) return makeError('帖子不存在');
+  const existing = db.prepare('SELECT * FROM club_post_likes WHERE post_id = ? AND phone = ?').get(req.params.postId, phone);
+  if (existing) {
+    db.prepare('DELETE FROM club_post_likes WHERE post_id = ? AND phone = ?').run(req.params.postId, phone);
+    return { ok: true, liked: false, count: db.prepare('SELECT COUNT(*) as cnt FROM club_post_likes WHERE post_id = ?').get(req.params.postId).cnt };
+  }
+  db.prepare('INSERT INTO club_post_likes (post_id, phone) VALUES (?,?)').run(req.params.postId, phone);
+  return { ok: true, liked: true, count: db.prepare('SELECT COUNT(*) as cnt FROM club_post_likes WHERE post_id = ?').get(req.params.postId).cnt };
+}));
+
+// ─── 社团帖子评论列表 ───────────────────────────────
+router.get('/posts/:postId/comments', requireAuth, (req, res) => JSON_RES(res, () => {
+  const comments = db.prepare(`
+    SELECT c.*, u.name, u.avatar FROM club_post_comments c
+    LEFT JOIN users u ON c.phone = u.phone
+    WHERE c.post_id = ? ORDER BY c.created_at ASC
+  `).all(req.params.postId);
+  return comments.map(c => ({
+    ...c,
+    reply_to_name: c.reply_to_phone ? (db.prepare('SELECT name FROM users WHERE phone = ?').get(c.reply_to_phone)?.name || '') : ''
+  }));
+}));
+
+// ─── 社团帖子发表评论 ─────────────────────────────────
+router.post('/posts/:postId/comments', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const { content, parent_id, reply_to_phone } = req.body;
+  if (!content || !content.trim()) return makeError('评论内容不能为空');
+  const post = db.prepare('SELECT * FROM club_posts WHERE id = ?').get(req.params.postId);
+  if (!post) return makeError('帖子不存在');
+  const info = db.prepare('INSERT INTO club_post_comments (post_id, phone, parent_id, reply_to_phone, content) VALUES (?,?,?,?,?)').run(
+    req.params.postId, phone, parent_id || null, reply_to_phone || null, content.trim()
+  );
+  const user = db.prepare('SELECT name, avatar FROM users WHERE phone = ?').get(phone);
+  return { ok: true, id: info.lastInsertRowid, name: user?.name || '', avatar: user?.avatar || '' };
+}));
+
+// ─── 删除评论 ─────────────────────────────────────────
+router.delete('/posts/comments/:commentId', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const comment = db.prepare('SELECT * FROM club_post_comments WHERE id = ?').get(req.params.commentId);
+  if (!comment) return makeError('评论不存在');
+  if (comment.phone !== phone) {
+    // 检查是否是社团管理
+    const post = db.prepare('SELECT club_id FROM club_posts WHERE id = ?').get(comment.post_id);
+    if (post) {
+      const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(post.club_id, phone, 'owner', 'admin');
+      if (!member) return makeError('无权删除', ErrorCode.FORBIDDEN);
+    }
+  }
+  db.prepare('DELETE FROM club_post_comments WHERE id = ?').run(req.params.commentId);
+  // 级联删除子回复
+  db.prepare('DELETE FROM club_post_comments WHERE parent_id = ?').run(req.params.commentId);
+  return { ok: true };
+}));
+
+// ─── 社团动态时间线（公告+帖子+新成员+活动） ───────
+router.get('/:id/timeline', requireAuth, (req, res) => JSON_RES(res, () => {
+  const clubId = req.params.id;
+  const limit = Math.min(30, parseInt(req.query.limit) || 20);
+  
+  const posts = db.prepare(`
+    SELECT id, phone, content, images, pinned, created_at, 'post' as type FROM club_posts WHERE club_id = ?
+  `).all(clubId);
+  
+  const members = db.prepare(`
+    SELECT cm.phone, cm.joined_at as created_at, u.name, 'join' as type 
+    FROM club_members cm LEFT JOIN users u ON cm.phone = u.phone 
+    WHERE cm.club_id = ? ORDER BY cm.joined_at DESC LIMIT 10
+  `).all(clubId);
+  
+  const activities = db.prepare(`
+    SELECT id, title, start_time as created_at, 'activity' as type 
+    FROM activities WHERE publisher_type='club' AND publisher_id=? AND status!='cancelled' 
+    ORDER BY created_at DESC LIMIT 10
+  `).all(clubId);
+  
+  // 合并排序
+  const timeline = [...posts, ...members, ...activities]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, limit);
+  
+  // 批量获取作者名和点赞数
+  const authorPhones = [...new Set(timeline.filter(t => t.phone).map(t => t.phone))];
+  const authorMap = {};
+  if (authorPhones.length > 0) {
+    db.prepare(`SELECT phone, name, avatar FROM users WHERE phone IN (${authorPhones.map(() => '?').join(',')})`).all(...authorPhones).forEach(a => { authorMap[a.phone] = a; });
+  }
+  
+  return timeline.map(t => {
+    const item = { ...t };
+    if (authorMap[t.phone]) {
+      item.author_name = authorMap[t.phone].name || '';
+      item.author_avatar = authorMap[t.phone].avatar || '';
+    }
+    if (t.type === 'post') {
+      item.images = JSON.parse(t.images || '[]');
+      item.like_count = db.prepare('SELECT COUNT(*) as cnt FROM club_post_likes WHERE post_id = ?').get(t.id).cnt;
+      item.comment_count = db.prepare('SELECT COUNT(*) as cnt FROM club_post_comments WHERE post_id = ?').get(t.id).cnt;
+    }
+    return item;
+  });
+}));
+
+// ─── 开启/关闭招新季 ──────────────────────────────────
+router.put('/:id/recruitment', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ? AND role IN (?,?)').get(req.params.id, phone, 'owner', 'admin');
+  if (!member) return makeError('无权操作', ErrorCode.FORBIDDEN);
+  const current = db.prepare('SELECT recruitment_open FROM clubs WHERE id = ?').get(req.params.id);
+  const newVal = current.recruitment_open ? 0 : 1;
+  db.prepare('UPDATE clubs SET recruitment_open = ? WHERE id = ?').run(newVal, req.params.id);
+  return { ok: true, recruitment_open: newVal };
+}));
+
+// ─── 推荐社团（同分类 + 热门） ──────────────────────
+router.get('/meta/recommendations', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const myClubs = db.prepare('SELECT club_id FROM club_members WHERE phone = ?').all(phone).map(c => c.club_id);
+  const excludeIds = myClubs.length ? myClubs : [-1];
+  const placeholders = excludeIds.map(() => '?').join(',');
+  
+  // 获取用户所在社团的分类
+  let myCats = [];
+  if (myClubs.length) {
+    myCats = db.prepare(`SELECT DISTINCT category FROM clubs WHERE id IN (${placeholders})`).all(...excludeIds).map(c => c.category);
+  }
+  
+  let recs = [];
+  if (myCats.length) {
+    const catPlaceholders = myCats.map(() => '?').join(',');
+    recs = db.prepare(`SELECT * FROM clubs WHERE status='active' AND id NOT IN (${placeholders}) AND category IN (${catPlaceholders}) ORDER BY recruitment_open DESC, member_count DESC LIMIT 10`).all(...excludeIds, ...myCats);
+  } else {
+    recs = db.prepare(`SELECT * FROM clubs WHERE status='active' AND id NOT IN (${placeholders}) ORDER BY recruitment_open DESC, member_count DESC LIMIT 10`).all(...excludeIds);
+  }
+  return { list: recs, total: recs.length };
+}));
+
+// ─── 我的社团列表 ─────────────────────────────────────────────
+router.get('/my', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = getAuthPhone(req);
+  const clubs = db.prepare(`
+    SELECT c.*, cm.role, cm.joined_at as my_joined_at,
+      cr.id as room_id
+    FROM clubs c
+    JOIN club_members cm ON cm.club_id = c.id AND cm.phone = ?
+    LEFT JOIN club_rooms cr ON cr.club_id = c.id
+    WHERE c.status = 'active'
+    ORDER BY cm.role = 'owner' DESC, cm.joined_at DESC
+  `).all(phone);
+  return { list: clubs };
+}));
+
+// ─── 社团群聊房间（获取或创建） ───────────────────────────────
+router.get('/:id/room', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = getAuthPhone(req);
+  const clubId = parseInt(req.params.id);
+  // 验证是社团成员
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(clubId, phone);
+  if (!member) return makeError('你不是该社团成员', ErrorCode.PERMISSION_DENIED);
+
+  let room = db.prepare('SELECT * FROM club_rooms WHERE club_id = ?').get(clubId);
+  if (!room) {
+    const club = db.prepare('SELECT name FROM clubs WHERE id = ?').get(clubId);
+    if (!club) return makeError('社团不存在', ErrorCode.NOT_FOUND);
+    const info = db.prepare('INSERT INTO club_rooms (club_id, name) VALUES (?,?)').run(clubId, club.name + '群聊');
+    room = db.prepare('SELECT * FROM club_rooms WHERE id = ?').get(info.lastInsertRowid);
+  }
+
+  // 获取群成员角色
+  const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(clubId);
+  room.club_name = club.name;
+  room.my_role = member.role;
+  room.owner_phone = club.president_phone;
+  return room;
+}));
+
+// ─── 群聊消息列表 ─────────────────────────────────────────────
+router.get('/:id/room/messages', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = getAuthPhone(req);
+  const clubId = parseInt(req.params.id);
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(clubId, phone);
+  if (!member) return makeError('你不是该社团成员', ErrorCode.PERMISSION_DENIED);
+
+  const room = db.prepare('SELECT id FROM club_rooms WHERE club_id = ?').get(clubId);
+  if (!room) return makeError('群聊不存在', ErrorCode.NOT_FOUND);
+
+  const limit = parseInt(req.query.limit) || 50;
+  const before = parseInt(req.query.before) || 0;
+  let sql = 'SELECT * FROM club_room_messages WHERE room_id = ?';
+  const params = [room.id];
+  if (before) { sql += ' AND id < ?'; params.push(before); }
+  sql += ' ORDER BY id DESC LIMIT ?';
+  params.push(limit);
+  const messages = db.prepare(sql).all(...params).reverse();
+
+  // 获取发送者信息
+  const phones = [...new Set(messages.map(m => m.sender_phone))];
+  const userMap = {};
+  if (phones.length) {
+    const ph = phones.map(() => '?').join(',');
+    db.prepare(`SELECT phone, name, avatar FROM users WHERE phone IN (${ph})`).all(...phones).forEach(u => {
+      userMap[u.phone] = u;
+    });
+  }
+  const list = messages.map(m => ({
+    ...m,
+    sender_name: userMap[m.sender_phone]?.name || '',
+    sender_avatar: userMap[m.sender_phone]?.avatar || ''
+  }));
+  return { list };
+}));
+
+// ─── 发送群聊消息 ─────────────────────────────────────────────
+router.post('/:id/room/messages', requireAuth, (req, res) => JSON_RES(res, async () => {
+  const phone = getAuthPhone(req);
+  const clubId = parseInt(req.params.id);
+  const { content } = req.body;
+  if (!content || !content.trim()) return makeError('消息不能为空', ErrorCode.PARAM_INVALID);
+
+  const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(clubId, phone);
+  if (!member) return makeError('你不是该社团成员', ErrorCode.PERMISSION_DENIED);
+
+  let room = db.prepare('SELECT * FROM club_rooms WHERE club_id = ?').get(clubId);
+  if (!room) {
+    const club = db.prepare('SELECT name FROM clubs WHERE id = ?').get(clubId);
+    if (!club) return makeError('社团不存在', ErrorCode.NOT_FOUND);
+    const info = db.prepare('INSERT INTO club_rooms (club_id, name) VALUES (?,?)').run(clubId, club.name + '群聊');
+    room = db.prepare('SELECT * FROM club_rooms WHERE id = ?').get(info.lastInsertRowid);
+  }
+
+  // AI审核
+  try {
+    const check = await aiChecker.checkWallPost({ title: '', content: content, topic: '', images: '[]' });
+    if (check.violation && check.level === 'high') {
+      return makeError('消息不符合平台规范：' + (check.reason || ''), 'AI_001');
+    }
+  } catch(e) { /* 审核失败放行 */ }
+
+  const info = db.prepare('INSERT INTO club_room_messages (room_id, sender_phone, content) VALUES (?,?,?)')
+    .run(room.id, phone, content.trim());
+
+  // 更新最后消息
+  db.prepare('UPDATE club_rooms SET last_message = ?, last_message_at = datetime(\'now\',\'localtime\') WHERE id = ?')
+    .run(content.trim().slice(0, 100), room.id);
+
+  const user = db.prepare('SELECT name, avatar FROM users WHERE phone = ?').get(phone);
+  return {
+    ok: true,
+    message: {
+      id: info.lastInsertRowid,
+      room_id: room.id,
+      sender_phone: phone,
+      sender_name: user?.name || '',
+      sender_avatar: user?.avatar || '',
+      content: content.trim(),
+      type: 'text',
+      created_at: new Date().toISOString()
+    }
+  };
 }));
 
 module.exports = router;

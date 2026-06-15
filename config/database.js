@@ -577,7 +577,27 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_club_members_club ON club_members(club_id);
   CREATE INDEX IF NOT EXISTS idx_club_members_phone ON club_members(phone);
   CREATE INDEX IF NOT EXISTS idx_club_posts_club ON club_posts(club_id);
+  CREATE TABLE IF NOT EXISTS club_post_likes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(post_id, phone)
+  );
+
+  CREATE TABLE IF NOT EXISTS club_post_comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    parent_id INTEGER DEFAULT NULL,
+    reply_to_phone TEXT DEFAULT NULL,
+    content TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
   CREATE INDEX IF NOT EXISTS idx_club_applications_club ON club_applications(club_id);
+  CREATE INDEX IF NOT EXISTS idx_club_post_likes_post ON club_post_likes(post_id);
+  CREATE INDEX IF NOT EXISTS idx_club_post_comments_post ON club_post_comments(post_id);
   -- 活动
   CREATE INDEX IF NOT EXISTS idx_activities_status ON activities(status);
   CREATE INDEX IF NOT EXISTS idx_activities_category ON activities(category);
@@ -613,6 +633,8 @@ try { db.exec('ALTER TABLE teachers ADD COLUMN papers TEXT DEFAULT \'\''); } cat
 try { db.exec('ALTER TABLE teachers ADD COLUMN projects TEXT DEFAULT \'\''); } catch(e) {}
 try { db.exec('ALTER TABLE teachers ADD COLUMN achievements TEXT DEFAULT \'\''); } catch(e) {}
 try { db.exec('ALTER TABLE teachers ADD COLUMN social_roles TEXT DEFAULT \'\''); } catch(e) {}
+try { db.exec('ALTER TABLE clubs ADD COLUMN recruitment_open INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE clubs ADD COLUMN activity_count INTEGER DEFAULT 0'); } catch(e) {}
 
 // ─── 基础数据初始化 ─────────────────────────────────────
 const initData = db.transaction(() => {
@@ -668,6 +690,68 @@ const initData = db.transaction(() => {
   try { db.exec('CREATE INDEX IF NOT EXISTS idx_audit_action ON admin_audit_logs(action)'); } catch(e) {}
   try { db.exec('CREATE INDEX IF NOT EXISTS idx_audit_admin ON admin_audit_logs(admin_username)'); } catch(e) {}
   try { db.exec('CREATE INDEX IF NOT EXISTS idx_audit_time ON admin_audit_logs(created_at)'); } catch(e) {}
+
+  // === 校花校草月度选举 ===
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS campus_stars (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      student_id TEXT DEFAULT '',
+      name TEXT NOT NULL,
+      photos TEXT NOT NULL DEFAULT '',
+      intro TEXT DEFAULT '',
+      month TEXT NOT NULL,
+      votes INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'active' CHECK(status IN ('active','champion','runner_up','archived')),
+      created_at TEXT DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_campus_stars_month ON campus_stars(month, status)'); } catch(e) {}
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_campus_stars_votes ON campus_stars(month, votes DESC)'); } catch(e) {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS star_votes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      candidate_id INTEGER NOT NULL,
+      voter_phone TEXT NOT NULL,
+      month TEXT NOT NULL,
+      vote_date TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_star_votes_date ON star_votes(voter_phone, vote_date)'); } catch(e) {}
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_star_votes_candidate ON star_votes(candidate_id, month)'); } catch(e) {}
+
+  // === 社团群聊 ===
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS club_rooms (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      club_id INTEGER NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      last_message TEXT,
+      last_message_at TEXT,
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY (club_id) REFERENCES clubs(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS club_room_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      room_id INTEGER NOT NULL,
+      sender_phone TEXT NOT NULL,
+      content TEXT NOT NULL,
+      type TEXT DEFAULT 'text',
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY (room_id) REFERENCES club_rooms(id) ON DELETE CASCADE
+    )
+  `);
+
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_crm_room ON club_room_messages(room_id, created_at)'); } catch(e) {}
+
+  // 补充 clubs 表可能缺失的列 (ALM 增量迁移)
+  try { db.exec("ALTER TABLE clubs ADD COLUMN recruitment_open INTEGER DEFAULT 0"); } catch(e) {}
+  try { db.exec("ALTER TABLE clubs ADD COLUMN activity_count INTEGER DEFAULT 0"); } catch(e) {}
 });
 initData();
 

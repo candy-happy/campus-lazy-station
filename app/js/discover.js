@@ -336,19 +336,65 @@ async function loadDiscoverClubs() {
     // 推荐社团横向滚动
     renderHotClubs(list.slice(0, 5));
 
+    // 加载我的社团
+    loadMyClubs();
+
     if (!list.length) {
       container.innerHTML = '<div class="discover-empty"><div class="discover-empty-icon">🎭</div><p>暂无社团</p></div>';
       return;
     }
-    container.innerHTML = list.map(c => renderClubCard(c)).join('');
+    container.innerHTML = list.map(c => renderClubCard(c)).join(''); loadClubRecommendations();
   } catch(e) {
     container.innerHTML = '<div class="discover-empty"><p>加载失败</p></div>';
     console.error('loadDiscoverClubs error:', e);
   }
 }
 
+// 加载我的社团（横向滚动）
+async function loadMyClubs() {
+  const section = document.getElementById('discoverMyClubsSection');
+  const container = document.getElementById('discoverMyClubs');
+  if (!section || !container) return;
+  if (!currentUser || !currentUser.phone) { section.style.display = 'none'; return; }
+
+  try {
+    const res = await API.getMyClubs();
+    const list = res && res.list ? res.list : (Array.isArray(res) ? res : []);
+    if (!list.length) { section.style.display = 'none'; return; }
+    section.style.display = '';
+    container.innerHTML = list.map(c => `
+      <div class="discover-hot-club" onclick="showClubDetail(${c.id})">
+        <div class="discover-club-avatar">${c.logo ? '<img src="' + c.logo + '" />' : '🎭'}</div>
+        <div class="discover-club-name">${escHtml(c.name)}</div>
+        <div class="discover-club-count">${c.role === 'owner' ? '👑 ' : ''}${c.member_count || 0}人</div>
+      </div>
+    `).join('');
+  } catch(e) {
+    section.style.display = 'none';
+    console.error('loadMyClubs error:', e);
+  }
+}
+
 function onClubSortChange() {
   loadDiscoverClubs();
+}
+
+// ─── 推荐社团 ──────────────────────────────────────────
+async function loadClubRecommendations() {
+  const el = document.getElementById('clubRecommendations');
+  if (!el) return;
+  try {
+    const list = await API.getClubRecommendations(3);
+    if (!list || !list.length) {
+      el.innerHTML = '';
+      return;
+    }
+    el.innerHTML = '<div style="font-size:13px;font-weight:600;margin:12px 0 8px;color:var(--text)">💡 推荐社团</div>' +
+      list.map(c => {
+        const recruitBadge = c.recruitment_open ? '<span style="background:#E74C3C;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:4px">🔥招新</span>' : '';
+        return renderClubCard(c);
+      }).join('');
+  } catch(e) { /* ignore */ }
 }
 
 async function toggleClubRanking() {
@@ -404,12 +450,13 @@ function renderHotClubs(list) {
 }
 
 function renderClubCard(c) {
+  const recruitBadge = c.recruitment_open ? '<span style="background:#E74C3C;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:4px">🔥招新</span>' : '';
   return `<div class="discover-card discover-club-card" onclick="showClubDetail(${c.id})">
     <div class="discover-club-card-left">
       <div class="discover-club-avatar-lg">${c.logo ? '<img src="' + c.logo + '" />' : '🎭'}</div>
     </div>
     <div class="discover-club-card-right">
-      <div class="discover-card-title">${escHtml(c.name)}</div>
+      <div class="discover-card-title">${escHtml(c.name)}${recruitBadge}</div>
       <div class="discover-club-category">${escHtml(c.category || '其他')}</div>
       <div class="discover-club-desc">${escHtml((c.description || '').slice(0, 50))}</div>
       <div class="discover-card-footer">
@@ -419,9 +466,11 @@ function renderClubCard(c) {
   </div>`;
 }
 
+
 let _currentClubId = null;
 let _currentClubDetail = null; // 用于海报生成
-let _currentActivityDetail = null; // 用于活动海报 // 当前查看的社团ID
+let _currentActivityDetail = null; // 用于活动海报
+let _clubReplyTo = {}; // { postId: { commentId, name } }
 
 async function showClubDetail(id) {
   try {
@@ -437,7 +486,6 @@ async function showClubDetail(id) {
     if (myRole) {
       if (myRole === 'owner') {
         actionBtn = '<div class="discover-detail-badge">👑 社长</div>';
-        // 社长可见管理入口
         actionBtn += '<button onclick="showClubManagePanel()" class="discover-btn" style="background:var(--gradient);color:#fff">⚙️ 社团管理</button>';
       } else if (myRole === 'admin') {
         actionBtn = '<div class="discover-detail-badge">⭐ 管理员</div>';
@@ -458,65 +506,184 @@ async function showClubDetail(id) {
       return `<div class="discover-member-item"><span>${roleLabel} ${escHtml(m.name || m.phone)}</span><span class="discover-member-role">${m.role === 'owner' ? '社长' : m.role === 'admin' ? '管理员' : '成员'}</span></div>`;
     }).join('');
 
-    const activitiesHtml = (c.activities || []).map(a => {
-      const statusMap = { open: '报名中', closed: '已截止', cancelled: '已取消', ended: '已结束' };
-      return `<div class="discover-club-activity" onclick="event.stopPropagation();showActivityDetail(${a.id})">
-        <span>${escHtml(a.title)}</span><span style="color:#2ECC71;font-size:12px">${statusMap[a.status] || a.status}</span>
-      </div>`;
-    }).join('') || '<div style="color:var(--text-muted);font-size:13px;padding:8px 0">暂无活动</div>';
+    const postAreaHtml = myRole
+      ? `<div style="margin-bottom:12px"><button onclick="openClubPostModal()" style="width:100%;padding:10px;border-radius:10px;background:var(--card);border:1px dashed var(--border);color:var(--text-muted);font-size:14px;cursor:pointer;text-align:left">✏️ 分享社团动态...</button></div>`
+      : '';
 
-    // 社团公告/动态
-    let postsHtml = '';
-    if (c.posts && c.posts.length > 0) {
-      postsHtml = c.posts.map(p => {
-        const pinnedBadge = p.pinned ? '<span style="color:#F39C12;font-size:11px">📌置顶</span> ' : '';
-        const imgsHtml = (p.images && p.images.length > 0)
-          ? '<div style="display:flex;gap:4px;margin-top:6px">' + p.images.map(img => `<img src="${img}" style="width:60px;height:60px;border-radius:6px;object-fit:cover" onclick="window.open('${img}')" />`).join('') + '</div>'
-          : '';
-        const canDelete = (myRole === 'owner' || myRole === 'admin' || p.phone === phone);
-        const deleteBtn = canDelete ? `<button onclick="event.stopPropagation();deleteClubPost(${c.id},${p.id})" style="background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:2px 4px">🗑️</button>` : '';
-        return `<div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div style="font-size:13px;font-weight:600">${escHtml(p.author_name || p.phone)}</div>
-            <div style="display:flex;align-items:center;gap:4px">${pinnedBadge}<span style="font-size:11px;color:var(--text-muted)">${fmtTime(p.created_at)}</span>${deleteBtn}</div>
-          </div>
-          <div style="font-size:14px;margin-top:4px;line-height:1.5">${escHtml(p.content).replace(/\n/g, '<br>')}</div>
-          ${imgsHtml}
-        </div>`;
-      }).join('');
-    } else {
-      postsHtml = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0">暂无公告</div>';
-    }
-
-    // 社长/管理员可发公告
-    const canPost = myRole === 'owner' || myRole === 'admin';
-    const postBtnHtml = canPost ? `<button onclick="openClubPostModal()" style="width:100%;padding:10px;border-radius:10px;background:var(--bg);border:1px dashed var(--border);color:var(--text);font-size:14px;cursor:pointer;margin-top:8px">✏️ 发布公告</button>` : '';
+    const recruitBadge = c.recruitment_open ? '<span style="background:#E74C3C;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px">🔥招新中</span>' : '';
 
     const content = document.getElementById('discoverDetailContent');
     if (!content) return;
     content.innerHTML = `
       <div class="discover-detail-hero" style="background:var(--gradient)">
         <div class="discover-club-avatar-xl">${c.logo ? '<img src="' + c.logo + '" />' : '🎭'}</div>
-        <div class="discover-detail-title">${escHtml(c.name)}</div>
-        <div style="color:rgba(255,255,255,0.8);font-size:13px">${escHtml(c.category || '其他')} · ${c.member_count || 0}人</div>
+        <div class="discover-detail-title">${escHtml(c.name)}${recruitBadge}</div>
+        <div style="color:rgba(255,255,255,0.8);font-size:13px">${escHtml(c.category || '其他')} · ${c.member_count || 0}人 · ${c.activity_count || 0}活动</div>
       </div>
       <div class="discover-detail-body">
         ${c.description ? '<div class="discover-detail-desc"><div class="discover-detail-section-title">社团简介</div><div class="discover-detail-text">' + escHtml(c.description).replace(/\\n/g, '<br>') + '</div></div>' : ''}
-        <div class="discover-detail-section-title">📢 社团公告</div>
-        <div class="discover-club-posts">${postsHtml}</div>
-        ${postBtnHtml}
-        <div class="discover-detail-section-title" style="margin-top:16px">社团活动</div>
-        <div class="discover-club-activities">${activitiesHtml}</div>
-        <div class="discover-detail-section-title">社团成员 (${c.members ? c.members.length : 0})</div>
+        <div class="discover-detail-section-title">📣 最新动态</div>
+        ${postAreaHtml}
+        <div id="clubTimeline" style="min-height:60px"><div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">加载中...</div></div>
+        <div class="discover-detail-section-title" style="margin-top:16px">👥 社团成员 (${c.members ? c.members.length : 0})</div>
         <div class="discover-members-list">${membersHtml}</div>
         <div class="discover-detail-actions">${actionBtn}</div>
         <button onclick="openClubPoster()" style="width:100%;padding:10px;border-radius:10px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;cursor:pointer;margin-top:8px">📤 分享海报</button>
       </div>
     `;
     openSubPage('discoverDetail_sub');
+    loadClubTimeline(id);
   } catch(e) { showToast('加载失败'); }
 }
 
+// ══════ 社团时间线 ══════
+async function loadClubTimeline(clubId) {
+  const el = document.getElementById('clubTimeline');
+  if (!el) return;
+  try {
+    const timeline = await API.getClubTimeline(clubId, 20);
+    const items = Array.isArray(timeline) ? timeline : (timeline.list || []);
+    if (!items.length) {
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">暂无动态，快来发第一条吧~</div>';
+      return;
+    }
+    const phone = currentUser?.phone;
+    el.innerHTML = items.map(item => {
+      if (item.type === 'post') return renderTimelinePost(item, phone);
+      if (item.type === 'join') return renderTimelineJoin(item);
+      if (item.type === 'activity') return renderTimelineActivity(item);
+      return '';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">加载失败</div>';
+  }
+}
+
+function renderTimelinePost(p, phone) {
+  const pinnedBadge = p.pinned ? '<span style="color:#F39C12;font-size:11px">📌置顶</span> ' : '';
+  const imgsHtml = (p.images && p.images.length > 0)
+    ? '<div style="display:flex;gap:4px;margin-top:8px;overflow-x:auto">' + p.images.map(img => '<img src="' + img + '" style="width:80px;height:80px;border-radius:8px;object-fit:cover;flex-shrink:0"  />').join('') + '</div>'
+    : '';
+  const canDelete = (p.phone === phone) || (_currentClubDetail?.my_role === 'owner' || _currentClubDetail?.my_role === 'admin');
+  const deleteBtn = canDelete ? '<button onclick="event.stopPropagation();deleteClubPost(' + _currentClubId + ',' + p.id + ')" style="background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;padding:2px 4px">🗑️</button>' : '';
+  return '<div class="timeline-post" style="background:var(--bg);border-radius:12px;padding:12px;margin-bottom:10px" data-pid="' + p.id + '">\n    <div style="display:flex;align-items:center;margin-bottom:8px">\n      <div style="width:32px;height:32px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;margin-right:8px">' + (p.author_avatar ? '<img src="' + p.author_avatar + '" style="width:100%;height:100%;object-fit:cover" />' : '👤') + '</div>\n      <div style="flex:1;min-width:0">\n        <div style="font-size:13px;font-weight:600">' + escHtml(p.author_name || p.phone) + '</div>\n        <div style="font-size:11px;color:var(--text-muted)">' + fmtTime(p.created_at) + '</div>\n      </div>\n      ' + pinnedBadge + deleteBtn + '\n    </div>\n    <div style="font-size:14px;line-height:1.6;white-space:pre-wrap">' + escHtml(p.content) + '</div>\n    ' + imgsHtml + '\n    <div style="display:flex;gap:16px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">\n      <button onclick="toggleClubPostLike(' + p.id + ', this)" class="timeline-action-btn" style="background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px">\n        ' + (p.liked ? '❤️' : '🤍') + ' <span class="like-count">' + (p.like_count || 0) + '</span>\n      </button>\n      <button onclick="toggleClubPostComments(' + p.id + ', this)" class="timeline-action-btn" style="background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px">\n        💬 <span class="comment-count">' + (p.comment_count || 0) + '</span>\n      </button>\n    </div>\n    <div class="club-post-comments" id="clubComments_' + p.id + '" style="display:none;margin-top:8px"></div>\n  </div>';
+}
+
+function renderTimelineJoin(item) {
+  return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;margin-bottom:8px;background:var(--card);border-radius:10px;font-size:13px">\n    <span>🆕</span><span style="font-weight:500">' + escHtml(item.name || item.phone) + '</span><span style="color:var(--text-muted)">加入了社团</span>\n    <span style="margin-left:auto;font-size:11px;color:var(--text-muted)">' + fmtTime(item.created_at) + '</span>\n  </div>';
+}
+
+function renderTimelineActivity(item) {
+  return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;margin-bottom:8px;background:var(--card);border-radius:10px;font-size:13px;cursor:pointer" onclick="showActivityDetail(' + item.id + ')">\n    <span>📅</span><span style="font-weight:500">' + escHtml(item.title) + '</span><span style="color:#2ECC71">即将开始</span>\n    <span style="margin-left:auto;font-size:11px;color:var(--text-muted)">' + fmtTime(item.created_at) + '</span>\n  </div>';
+}
+
+// ══════ 帖子点赞 ══════
+async function toggleClubPostLike(postId, btn) {
+  if (!currentUser) return showToast('请先登录');
+  try {
+    const res = await API.likeClubPost(postId);
+    if (res.ok) {
+      const likeSpan = btn.querySelector('.like-count');
+      if (likeSpan) likeSpan.textContent = res.count || 0;
+      btn.innerHTML = (res.liked ? '❤️' : '🤍') + ' <span class="like-count">' + (res.count || 0) + '</span>';
+    } else if (res.error) showToast(res.error);
+  } catch(e) { /* ignore */ }
+}
+
+// ══════ 评论展开 ══════
+async function toggleClubPostComments(postId, btn) {
+  const container = document.getElementById('clubComments_' + postId);
+  if (!container) return;
+  if (container.style.display === 'block') { container.style.display = 'none'; return; }
+  container.style.display = 'block';
+  container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px">加载中...</div>';
+  try {
+    const comments = await API.getClubPostComments(postId);
+    renderClubComments(postId, Array.isArray(comments) ? comments : [], container);
+  } catch(e) { container.innerHTML = '<div style="text-align:center;padding:8px;color:var(--text-muted);font-size:12px">加载失败</div>'; }
+}
+
+function renderClubComments(postId, comments, container) {
+  const phone = currentUser?.phone;
+  if (!comments.length) {
+    container.innerHTML = '<div style="text-align:center;padding:10px;color:var(--text-muted);font-size:12px">暂无评论</div>' + renderClubCommentInput(postId);
+    return;
+  }
+  const commentMap = {};
+  const roots = [];
+  comments.forEach(c => { c.children = []; commentMap[c.id] = c; });
+  comments.forEach(c => {
+    if (c.parent_id && commentMap[c.parent_id]) { commentMap[c.parent_id].children.push(c); }
+    else if (!c.parent_id) { roots.push(c); }
+    else { roots.push(c); }
+  });
+  let html = '';
+  function render(c, depth) {
+    const canDel = (c.phone === phone) || (_currentClubDetail?.my_role === 'owner' || _currentClubDetail?.my_role === 'admin');
+    const pad = depth * 16;
+    html += '<div style="margin-left:' + pad + 'px;padding:6px 0;border-bottom:1px solid var(--border)">\n      <div style="display:flex;align-items:flex-start;gap:6px">\n        <div style="width:24px;height:24px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;overflow:hidden">' + (c.avatar ? '<img src="' + c.avatar + '" style="width:100%;height:100%;object-fit:cover" />' : '👤') + '</div>\n        <div style="flex:1;min-width:0">\n          <div style="font-size:12px"><span style="font-weight:600">' + escHtml(c.name || c.phone) + '</span>' + (c.reply_to_name ? '<span style="color:var(--text-muted)"> 回复 </span><span style="color:var(--gradient-start)">@' + escHtml(c.reply_to_name) + '</span>' : '') + '</div>\n          <div style="font-size:13px;margin:2px 0;word-break:break-word">' + escHtml(c.content) + '</div>\n          <div style="font-size:10px;color:var(--text-muted)">' + fmtTime(c.created_at) + '\n            <span style="margin-left:6px;cursor:pointer;color:var(--gradient-start)" onclick="_clubReplySet(' + postId + ',' + c.id + ',\'' + escHtml(c.name || c.phone) + '\')">回复</span>\n            ' + (canDel ? '<span style="margin-left:6px;cursor:pointer;color:#E74C3C" onclick="deleteClubComment(' + postId + ',' + c.id + ',this)">删除</span>' : '') + '\n          </div>\n        </div>\n      </div>\n    </div>';
+    if (c.children.length) c.children.forEach(ch => render(ch, depth + 1));
+  }
+  roots.forEach(c => render(c, 0));
+  container.innerHTML = html + renderClubCommentInput(postId);
+}
+
+function renderClubCommentInput(postId) {
+  return '<div style="display:flex;gap:6px;align-items:center;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">\n    <input type="text" id="clubCommentText_' + postId + '" placeholder="写评论..." style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card);font-size:13px;color:var(--text);outline:none" maxlength="500" />\n    <button onclick="submitClubComment(' + postId + ')" style="padding:8px 14px;border-radius:8px;background:var(--gradient);color:#fff;border:none;font-size:13px;cursor:pointer;flex-shrink:0">发送</button>\n  </div>\n  <span id="clubReplyHint_' + postId + '" style="font-size:11px;color:var(--text-muted);margin-top:4px;display:none;cursor:pointer"></span>';
+}
+
+function _clubReplySet(postId, commentId, name) {
+  _clubReplyTo[postId] = { commentId, name };
+  const hint = document.getElementById('clubReplyHint_' + postId);
+  const input = document.getElementById('clubCommentText_' + postId);
+  if (hint) { hint.style.display = 'block'; hint.textContent = '回复 ' + name + ' (点击取消)'; hint.onclick = function() { _clubReplyClear(postId); }; }
+  if (input) { input.placeholder = '回复 ' + name + '...'; input.focus(); }
+}
+
+function _clubReplyClear(postId) {
+  delete _clubReplyTo[postId];
+  const hint = document.getElementById('clubReplyHint_' + postId);
+  const input = document.getElementById('clubCommentText_' + postId);
+  if (hint) { hint.style.display = 'none'; hint.textContent = ''; }
+  if (input) { input.placeholder = '写评论...'; }
+}
+
+async function submitClubComment(postId) {
+  if (!currentUser) return showToast('请先登录');
+  const input = document.getElementById('clubCommentText_' + postId);
+  if (!input) return;
+  const content = input.value.trim();
+  if (!content) return;
+  const reply = _clubReplyTo[postId];
+  try {
+    const res = await API.commentClubPost(postId, content, reply?.commentId || null, null);
+    if (res.ok) {
+      input.value = '';
+      _clubReplyClear(postId);
+      const container = document.getElementById('clubComments_' + postId);
+      if (container) {
+        const comments = await API.getClubPostComments(postId);
+        renderClubComments(postId, Array.isArray(comments) ? comments : [], container);
+      }
+      const countBtn = document.querySelector('.timeline-post[data-pid="' + postId + '"] .comment-count');
+      if (countBtn) countBtn.textContent = (parseInt(countBtn.textContent) || 0) + 1;
+    } else if (res.error) showToast(res.error);
+  } catch(e) { showToast('评论失败'); }
+}
+
+async function deleteClubComment(postId, commentId, el) {
+  if (!confirm('确定删除这条评论？')) return;
+  try {
+    const res = await API.deleteClubComment(commentId);
+    if (res.ok) {
+      const container = document.getElementById('clubComments_' + postId);
+      if (container) {
+        const comments = await API.getClubPostComments(postId);
+        renderClubComments(postId, Array.isArray(comments) ? comments : [], container);
+      }
+    } else if (res.error) showToast(res.error);
+  } catch(e) { showToast('删除失败'); }
+}
 // ─── 申请加入弹窗 ──────────────────────────────────────
 function applyJoinClub(id) {
   if (!currentUser) return showToast('请先登录');
@@ -602,6 +769,24 @@ function filterClubCategory(cat) {
     c.classList.toggle('active', c.dataset.cat === discoverClubCategory);
   });
   loadDiscoverClubs();
+}
+
+// ─── 推荐社团 ──────────────────────────────────────────
+async function loadClubRecommendations() {
+  const el = document.getElementById('clubRecommendations');
+  if (!el) return;
+  try {
+    const list = await API.getClubRecommendations(3);
+    if (!list || !list.length) {
+      el.innerHTML = '';
+      return;
+    }
+    el.innerHTML = '<div style="font-size:13px;font-weight:600;margin:12px 0 8px;color:var(--text)">💡 推荐社团</div>' +
+      list.map(c => {
+        const recruitBadge = c.recruitment_open ? '<span style="background:#E74C3C;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:4px">🔥招新</span>' : '';
+        return renderClubCard(c);
+      }).join('');
+  } catch(e) { /* ignore */ }
 }
 
 // ─── 社团管理面板 ──────────────────────────────────────
@@ -810,6 +995,7 @@ function renderClubSettings(c) {
       <div class="discover-detail-row"><span>创建时间</span><span>${fmtTime(c.created_at)}</span></div>
     </div>
     <button onclick="openEditClubModal()" style="width:100%;padding:12px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">✏️ 编辑社团信息</button>
+    <button onclick="toggleClubRecruitment()" style="width:100%;padding:12px;border-radius:10px;background:${c.recruitment_open ? '#2ECC71' : '#E74C3C'};color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">${c.recruitment_open ? '🔒 关闭招新' : '🔓 开启招新'}</button>
     <div class="discover-detail-section-title" style="margin-top:16px">危险操作</div>
     <button onclick="transferClubOwner()" style="width:100%;padding:12px;border-radius:10px;background:#F39C12;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">🔄 转让社长</button>
     <button onclick="dissolveClub()" style="width:100%;padding:12px;border-radius:10px;background:#E74C3C;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">💀 解散社团</button>
@@ -896,6 +1082,23 @@ async function dissolveClub() {
     closeSubPage('clubManageSub');
     closeSubPage('discoverDetail_sub');
     loadDiscoverClubs();
+  } catch(e) { showToast(e.message || '操作失败'); }
+}
+
+// ══════ 招新开关 ══════
+async function toggleClubRecruitment() {
+  try {
+    const c = _currentClubDetail;
+    if (!c) return;
+    const newState = c.recruitment_open ? 0 : 1;
+    const label = c.recruitment_open ? '关闭招新' : '开启招新';
+    if (!confirm('确定' + label + '？')) return;
+    const res = await API.toggleClubRecruitment(_currentClubId, newState);
+    if (res.error) return showToast(res.error);
+    showToast(res.message || (label + '成功'));
+    // 刷新本地数据
+    c.recruitment_open = newState;
+    showClubManagePanel();
   } catch(e) { showToast(e.message || '操作失败'); }
 }
 
@@ -1279,4 +1482,13 @@ function initDiscoverPage() {
   window.onClubSortChange = onClubSortChange;
   window.toggleClubRanking = toggleClubRanking;
   window.initDiscoverPage = initDiscoverPage;
+  // 社团时间线+社交
+  window.toggleClubPostLike = toggleClubPostLike;
+  window.toggleClubPostComments = toggleClubPostComments;
+  window.submitClubComment = submitClubComment;
+  window.deleteClubComment = deleteClubComment;
+  window.toggleClubRecruitment = toggleClubRecruitment;
+  window._clubReplySet = _clubReplySet;
+  window._clubReplyClear = _clubReplyClear;
+window.loadMyClubs = loadMyClubs;
 })();

@@ -223,6 +223,7 @@ app.use('/api/activities', require('./routes/activities'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/audit', require('./routes/audit'));
 app.use('/api/review-materials', require('./routes/review-materials'));
+app.use('/api/campus-star', require('./routes/campus-star'));
 
 // ─── 404 + SPA 兜底 ───────────────────────────────────
 app.use('/api', (req, res) => {

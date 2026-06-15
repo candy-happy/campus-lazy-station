@@ -588,6 +588,18 @@ const API = {
   async getClubRanking(top = 10) { return fetch('/api/clubs/ranking?top=' + top).then(r => r.json()); },
   async transferClub(clubId, targetPhone) { return fetch('/api/clubs/' + clubId + '/transfer', { method: 'POST', headers: this._headers(), body: JSON.stringify({ target_phone: targetPhone }) }).then(r => r.json()); },
   async dissolveClub(clubId) { return fetch('/api/clubs/' + clubId, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
+  // 社团社交
+  async likeClubPost(postId) { return fetch('/api/clubs/posts/' + postId + '/like', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
+  async getClubPostComments(postId) { return fetch('/api/clubs/posts/' + postId + '/comments', { headers: this._headers() }).then(r => r.json()); },
+  async commentClubPost(postId, content, parentId, replyToPhone) { return fetch('/api/clubs/posts/' + postId + '/comments', { method: 'POST', headers: this._headers(), body: JSON.stringify({ content, parent_id: parentId, reply_to_phone: replyToPhone }) }).then(r => r.json()); },
+  async deleteClubComment(commentId) { return fetch('/api/clubs/posts/comments/' + commentId, { method: 'DELETE', headers: this._headers() }).then(r => r.json()); },
+  async getClubTimeline(clubId, limit) { return fetch('/api/clubs/' + clubId + '/timeline?limit=' + (limit || 20), { headers: this._headers() }).then(r => r.json()); },
+  async toggleClubRecruitment(clubId) { return fetch('/api/clubs/' + clubId + '/recruitment', { method: 'PUT', headers: this._headers() }).then(r => r.json()); },
+  async getClubRecommendations() { return fetch('/api/clubs/meta/recommendations', { headers: this._headers() }).then(r => r.json()); },
+  async getMyClubs() { return fetch('/api/clubs/my', { headers: this._headers() }).then(r => r.json()); },
+  async getClubRoom(clubId) { return fetch('/api/clubs/' + clubId + '/room', { headers: this._headers() }).then(r => r.json()); },
+  async getClubRoomMessages(clubId, params = {}) { const qs = new URLSearchParams(params).toString(); return fetch('/api/clubs/' + clubId + '/room/messages' + (qs ? '?' + qs : ''), { headers: this._headers() }).then(r => r.json()); },
+  async sendClubRoomMessage(clubId, content) { return fetch('/api/clubs/' + clubId + '/room/messages', { method: 'POST', headers: this._headers(), body: JSON.stringify({ content }) }).then(r => r.json()); },
 
   // ─── 活动 ───
   async getActivities(params = {}) {

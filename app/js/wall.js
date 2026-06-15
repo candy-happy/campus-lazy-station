@@ -1,4 +1,4 @@
-// wall.js - 校园墙
+// wall.js - 校园墙 v3.0.33
 // 依赖: core.js (需先加载)
 // 新功能请添加为独立JS模块，不要在骨架文件中添加代码
 
@@ -1108,12 +1108,14 @@
 
     async function loadChatList() {
       const el = document.getElementById('chatListBody');
-      // 并行拉取私信和通知
-      const [list, notifs] = await Promise.all([
+      // 并行拉取私信 + 通知 + 我的社团群聊
+      const [list, notifs, clubs] = await Promise.all([
         API.chatConversations(currentUser.phone),
-        API.getNotifications(currentUser.phone).catch(() => [])
+        API.getNotifications(currentUser.phone).catch(() => []),
+        API.getMyClubs().catch(() => [])
       ]);
       const notifArr = Array.isArray(notifs) ? notifs : [];
+      const clubsArr = (clubs && clubs.list) ? clubs.list : (Array.isArray(clubs) ? clubs : []);
       // 同步到 core.js 闭包，确保徽章准确
       if (typeof setNotifications === 'function') setNotifications(notifArr);
       // 分享横幅（内嵌在列表顶部，不是弹窗）
@@ -1121,7 +1123,9 @@
       if (window._pendingSharePostId) {
         shareBanner = '<div id="shareHint" style="background:linear-gradient(135deg,#FF6B2B,#FF8F5E);color:white;padding:10px 16px;margin-bottom:8px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;font-size:14px"><span>📤 点击下方好友分享帖子</span><button onclick="window._pendingSharePostId=null;loadChatList()" style="background:rgba(255,255,255,0.25);border:none;color:white;padding:3px 10px;border-radius:10px;cursor:pointer;font-size:12px">取消</button></div>';
       }
-      if ((!list || !list.length) && !notifArr.length) {
+      // 社团群聊条目（由 club-chat.js 渲染）
+      var clubChatItems = typeof renderClubChatItems === 'function' ? renderClubChatItems(clubsArr) : '';
+      if ((!list || !list.length) && !notifArr.length && !clubChatItems) {
         el.innerHTML = shareBanner + '<div style="padding:40px;text-align:center;color:var(--text-secondary)">暂无消息</div>';
         return;
       }
@@ -1161,8 +1165,8 @@
           </div>
         </div>
       `);
-      // 通知在前，私信在后
-      el.innerHTML = shareBanner + notifItem + chatItemsHtml;
+      // 通知在前，社团群聊在中间，私信在后
+      el.innerHTML = shareBanner + notifItem + clubChatItems + chatItems.join('');
       // 导出分享+打开会话的组合函数
       window.shareAndOpenConv = function(convId, otherPhone, otherName) {
         if (window._pendingSharePostId) {

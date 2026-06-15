@@ -7,6 +7,7 @@ const fs = require('fs');
 const db = require('../config/database');
 const { optionalAuth, requireAdmin } = require('../middleware/auth');
 const { error } = require('../utils/response');
+const { compressFile } = require('../utils/compress');
 
 // ─── 文件上传配置 ────────────────────────────────────
 const uploadDir = path.join(__dirname, '..', 'uploads', 'review');
@@ -92,8 +93,18 @@ router.post('/', optionalAuth, upload.single('file'), (req, res) => {
       return error(res, 'PARAM_MISSING', '请填写科目和标题');
     }
 
-    const fileUrl = req.file ? '/uploads/review/' + req.file.filename : '';
-    const fileSize = req.file ? req.file.size : 0;
+    // 文件上传后自动压缩
+    let fileUrl = req.file ? '/uploads/review/' + req.file.filename : '';
+    let fileSize = req.file ? req.file.size : 0;
+    if (req.file) {
+      compressFile(req.file.path).then(r => {
+        if (r.saved > 0) {
+          console.log(`[复习资料] 压缩完成: ${path.basename(r.path)} -${(r.saved/1024).toFixed(1)}KB (${(r.originalSize/1024).toFixed(1)}→${(r.compressedSize/1024).toFixed(1)}KB)`);
+          // 更新数据库中的文件大小
+          db.prepare('UPDATE review_materials SET file_size=? WHERE file_url=?').run(r.compressedSize, fileUrl);
+        }
+      }).catch(e => console.error('[复习资料] 压缩失败:', e.message));
+    }
 
     const result = db.prepare(`
       INSERT INTO review_materials (subject, title, description, file_url, file_size, uploader_name, uploader_phone, status, created_at)
@@ -195,8 +206,17 @@ router.post('/admin', requireAdmin, upload.single('file'), (req, res) => {
       return error(res, 'PARAM_MISSING', '请填写科目和标题');
     }
 
-    const fileUrl = req.file ? '/uploads/review/' + req.file.filename : '';
-    const fileSize = req.file ? req.file.size : 0;
+    // 管理员上传也自动压缩
+    let fileUrl = req.file ? '/uploads/review/' + req.file.filename : '';
+    let fileSize = req.file ? req.file.size : 0;
+    if (req.file) {
+      compressFile(req.file.path).then(r => {
+        if (r.saved > 0) {
+          console.log(`[复习资料] 压缩完成: ${path.basename(r.path)} -${(r.saved/1024).toFixed(1)}KB`);
+          db.prepare('UPDATE review_materials SET file_size=? WHERE file_url=?').run(r.compressedSize, fileUrl);
+        }
+      }).catch(e => console.error('[复习资料] 压缩失败:', e.message));
+    }
 
     const result = db.prepare(`
       INSERT INTO review_materials (subject, title, description, file_url, file_size, uploader_name, uploader_phone, status, created_at, approved_at)
@@ -259,7 +279,31 @@ router.delete('/:id', requireAdmin, (req, res) => {
   }
 });
 
-// ─── 用户端：增加下载计数 ─────────────────────────
+// ─── 用户端：下载文件（触发浏览器下载） ──────────
+router.get('/:id/download', (req, res) => {
+  try {
+    const { id } = req.params;
+    const row = db.prepare('SELECT file_url, title FROM review_materials WHERE id=? AND status=?').get(id, 'approved');
+    if (!row || !row.file_url) return error(res, 'NOT_FOUND', '资料不存在');
+
+    const filePath = path.join(__dirname, '..', row.file_url);
+    if (!fs.existsSync(filePath)) return error(res, 'NOT_FOUND', '文件不存在');
+
+    // 增加下载计数
+    db.prepare('UPDATE review_materials SET download_count = download_count + 1 WHERE id=?').run(id);
+
+    // 强制下载（Content-Disposition: attachment）
+    const ext = path.extname(row.file_url);
+    const filename = row.title + ext;
+    res.setHeader('Content-Disposition', 'attachment; filename="' + encodeURIComponent(filename) + '"');
+    res.sendFile(filePath);
+  } catch (e) {
+    console.error('[复习资料] 下载失败:', e);
+    error(res, 'SERVER_ERROR');
+  }
+});
+
+// ─── 用户端：增加下载计数（仅计数，不下载文件） ───
 router.post('/:id/download', optionalAuth, (req, res) => {
   try {
     const { id } = req.params;

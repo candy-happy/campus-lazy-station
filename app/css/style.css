@@ -1033,6 +1033,14 @@
       color: white;
       border-color: transparent;
     }
+
+    /* 校花校草 Tab */
+    .star-tab.active {
+      background: linear-gradient(135deg, #e91e63, #ff6f91) !important;
+      color: #fff !important;
+      box-shadow: 0 2px 12px rgba(233,30,99,0.25);
+    }
+
     .discover-act-cat-chip,
     .discover-club-cat-chip {
       display: inline-block;
@@ -1529,7 +1537,7 @@
     body.dark #reviewPage_sub input,
     body.dark #reviewPage_sub select { background: #2a2a40; color: #ddd; border-color: #3a3a50; }
     body.dark #reviewPage_sub input:focus,
-    body.dark #reviewPage_sub select:focus { border-color: #667eea; background: #2a2a40; }
+    body.dark #reviewPage_sub select:focus { border-color: #FF6B35; background: #2a2a40; }
     body.dark .review-card { background: #1e1e30 !important; border-color: #2a2a40 !important; }
     body.dark .review-card > div:first-child > div:last-child > div:first-child { color: #ddd !important; }
 
@@ -3955,3 +3963,30 @@
 .chat-settings-btn-icon:active {
   transform: scale(0.9);
 }
+
+/* ====== 复习资料 - focus/hover 效果 ====== */
+#reviewSearchInput:focus {
+  border-color: #FF6B35 !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(255,107,53,0.1) !important;
+}
+#uploadMaterialModal input:focus,
+#uploadMaterialModal textarea:focus {
+  border-color: #FF6B35 !important;
+  box-shadow: 0 0 0 3px rgba(255,107,53,0.1) !important;
+}
+#reviewPage_sub button[onclick="openUploadMaterial()"]:hover { background: rgba(255,255,255,0.35) !important; }
+#uploadMaterialModal .modal-close:hover { background: rgba(255,255,255,0.3) !important; }
+#uploadMaterialModal button[onclick="doUploadMaterial()"]:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(255,107,53,0.4) !important;
+}
+#uploadMaterialModal label[for="uploadFile"]:hover {
+  border-color: #FF6B35 !important;
+  background: #fff5f0 !important;
+}
+
+/* 上传弹窗暗色模式 */
+body.dark #uploadMaterialModal .modal-body { background: #1e1e30 !important; }
+body.dark #uploadMaterialModal label[for="uploadFile"] { background: #2a2a40; border-color: #3a3a50; }
+body.dark #uploadMaterialModal label[for="uploadFile"]:hover { background: #3d2a1a !important; border-color: #FF6B35 !important; }

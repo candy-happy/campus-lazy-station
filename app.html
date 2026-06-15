@@ -22,6 +22,7 @@
   <script src="app/js/discover.js?v=3.0.31"></script>
   <script src="app/js/review.js?v=3.0.1"></script>
   <script src="app/js/wall-share.js?v=3.0.1"></script>
+  <script src="app/js/campus-star.js?v=3.0.0"></script>
 </head>
 <body>
   <div class="app">
@@ -184,76 +185,47 @@
 
     <!-- ========== 复习资料子页面 ========== -->
     <div class="sub-page" id="reviewPage_sub">
-      <div class="sub-page-header" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+      <div class="sub-page-header" style="background:var(--gradient)">
         <button class="sub-page-back" onclick="closeSubPage('reviewPage_sub')">←</button>
-        <span class="sub-page-title" style="display:flex;align-items:center;gap:8px"><span style="font-size:1.3rem">📚</span> 期末复习资料</span>
-        <button onclick="openUploadMaterial()" style="padding:6px 16px;border-radius:20px;background:rgba(255,255,255,0.22);color:#fff;border:1.5px solid rgba(255,255,255,0.3);font-size:13px;cursor:pointer;font-weight:500;backdrop-filter:blur(4px);transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.35)'" onmouseout="this.style.background='rgba(255,255,255,0.22)'">📤 上传资料</button>
+        <span class="sub-page-title">📚 期末复习资料</span>
+        <button onclick="openUploadMaterial()" style="padding:4px 12px;border-radius:16px;background:rgba(255,255,255,0.25);color:#fff;border:none;font-size:12px;cursor:pointer">+ 上传</button>
       </div>
-      <div class="sub-page-body" style="padding:0;background:#f5f5f5">
+      <div class="sub-page-body" style="padding:12px 16px">
       <!-- 搜索 + 科目筛选 -->
-      <div style="display:flex;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:5">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
         <div style="position:relative;flex:1">
-          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;z-index:1">🔍</span>
-          <input type="text" id="reviewSearchInput" placeholder="搜索资料名称、科目..." onkeydown="if(event.key==='Enter')loadReviewMaterials(1)" style="width:100%;padding:10px 36px 10px 38px;border:1.5px solid #e0e0e0;border-radius:24px;background:#f8f9fa;color:#333;font-size:13px;box-sizing:border-box;transition:all 0.2s;outline:none" onfocus="this.style.borderColor='#667eea';this.style.background='#fff';this.style.boxShadow='0 0 0 3px rgba(102,126,234,0.1)'" onblur="this.style.borderColor='#e0e0e0';this.style.background='#f8f9fa';this.style.boxShadow='none'" />
-          <button onclick="document.getElementById('reviewSearchInput').value='';loadReviewMaterials(1)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:14px;cursor:pointer;color:#999;display:none;width:24px;height:24px;border-radius:50%;line-height:24px;text-align:center" id="reviewSearchClear">✕</button>
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
+          <input type="text" id="reviewSearchInput" placeholder="搜索资料..." onkeydown="if(event.key==='Enter')loadReviewMaterials(1)" style="width:100%;padding:8px 30px 8px 32px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font-size:13px;box-sizing:border-box" />
+          <button onclick="document.getElementById('reviewSearchInput').value='';loadReviewMaterials(1)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:12px;cursor:pointer;color:var(--text-secondary);display:none" id="reviewSearchClear">✕</button>
         </div>
-        <select id="reviewSubjectFilter" onchange="loadReviewMaterials(1)" style="padding:10px 14px;border-radius:24px;border:1.5px solid #e0e0e0;background:#f8f9fa;color:#333;font-size:13px;max-width:130px;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22><path fill=%22%23999%22 d=%22M6 8L1 3h10z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;padding-right:28px">
-          <option value="">📖 全部科目</option>
+        <select id="reviewSubjectFilter" onchange="loadReviewMaterials(1)" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;max-width:120px">
+          <option value="">全部科目</option>
         </select>
       </div>
       <!-- 资料列表 -->
-      <div id="reviewMaterialsList" style="padding:12px 16px"></div>
-      <div id="reviewMaterialsPager" style="text-align:center;padding:20px;font-size:13px;color:#999"></div>
+      <div id="reviewMaterialsList"></div>
+      <div id="reviewMaterialsPager" style="text-align:center;padding:16px;font-size:13px;color:var(--text-secondary)"></div>
       </div>
     </div>
 
     <!-- 上传资料弹窗 -->
     <div class="modal-overlay" id="uploadMaterialModal" style="display:none">
-      <div class="modal-content" style="max-width:440px;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
-        <div class="modal-header" style="background:linear-gradient(135deg,#667eea,#764ba2);padding:20px 24px;display:flex;align-items:center;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;backdrop-filter:blur(4px)">📤</div>
-            <div>
-              <div style="color:#fff;font-size:1.1rem;font-weight:700">上传复习资料</div>
-              <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px">分享你的学习资料，帮助更多同学</div>
-            </div>
-          </div>
-          <button class="modal-close" onclick="closeModal('uploadMaterialModal')" style="color:#fff;background:rgba(255,255,255,0.15);width:32px;height:32px;border-radius:50%;border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">✕</button>
+      <div class="modal-content" style="max-width:420px">
+        <div class="modal-header" style="background:var(--gradient);border-radius:12px 12px 0 0;padding:16px 20px">
+          <span class="modal-title" style="color:#fff;font-size:1.05rem">📤 上传复习资料</span>
+          <button class="modal-close" onclick="closeModal('uploadMaterialModal')" style="color:#fff;background:rgba(255,255,255,0.2)">&times;</button>
         </div>
-        <div class="modal-body" style="padding:24px;background:#fff">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-            <div class="form-group" style="margin:0">
-              <label class="form-label" style="font-size:13px;font-weight:600;color:#555;margin-bottom:6px;display:flex;align-items:center;gap:4px"><span>📖</span> 科目 <span style="color:#e74c3c">*</span></label>
-              <input type="text" id="uploadSubject" placeholder="如：高等数学" maxlength="50" style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;transition:all 0.2s;box-sizing:border-box" onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102,126,234,0.1)'" onblur="this.style.borderColor='#e0e0e0';this.style.boxShadow='none'" />
-            </div>
-            <div class="form-group" style="margin:0">
-              <label class="form-label" style="font-size:13px;font-weight:600;color:#555;margin-bottom:6px;display:flex;align-items:center;gap:4px"><span>👤</span> 你的名字</label>
-              <input type="text" id="uploaderName" placeholder="选填" maxlength="30" style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;transition:all 0.2s;box-sizing:border-box" onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102,126,234,0.1)'" onblur="this.style.borderColor='#e0e0e0';this.style.boxShadow='none'" />
-            </div>
+        <div class="modal-body" style="padding:20px">
+          <div class="form-group"><label class="form-label">📖 科目 *</label><input type="text" id="uploadSubject" class="form-input" placeholder="如：高等数学、大学英语" maxlength="50" /></div>
+          <div class="form-group"><label class="form-label">📝 标题 *</label><input type="text" id="uploadTitle" class="form-input" placeholder="资料名称" maxlength="100" /></div>
+          <div class="form-group"><label class="form-label">📄 描述</label><textarea id="uploadDesc" class="form-input" rows="2" placeholder="简要描述（选填）" maxlength="500" style="resize:vertical"></textarea></div>
+          <div class="form-group"><label class="form-label">📎 文件</label>
+            <input type="file" id="uploadFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.7z,.txt,.md,.jpg,.jpeg,.png,.gif" style="display:block;margin-top:4px" />
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">支持 PDF/Word/PPT/Excel/压缩包/图片，≤50MB</div>
           </div>
-          <div class="form-group" style="margin:14px 0 0">
-            <label class="form-label" style="font-size:13px;font-weight:600;color:#555;margin-bottom:6px;display:flex;align-items:center;gap:4px"><span>📝</span> 标题 <span style="color:#e74c3c">*</span></label>
-            <input type="text" id="uploadTitle" placeholder="资料名称，如：高数期末真题2024" maxlength="100" style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;transition:all 0.2s;box-sizing:border-box" onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102,126,234,0.1)'" onblur="this.style.borderColor='#e0e0e0';this.style.boxShadow='none'" />
-          </div>
-          <div class="form-group" style="margin:14px 0 0">
-            <label class="form-label" style="font-size:13px;font-weight:600;color:#555;margin-bottom:6px;display:flex;align-items:center;gap:4px"><span>📄</span> 描述</label>
-            <textarea id="uploadDesc" rows="2" placeholder="简要描述资料内容（选填）" maxlength="500" style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;resize:vertical;transition:all 0.2s;box-sizing:border-box;font-family:inherit" onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102,126,234,0.1)'" onblur="this.style.borderColor='#e0e0e0';this.style.boxShadow='none'"></textarea>
-          </div>
-          <div class="form-group" style="margin:14px 0 0">
-            <label class="form-label" style="font-size:13px;font-weight:600;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:4px"><span>📎</span> 文件</label>
-            <label for="uploadFile" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;border:2px dashed #d0d0d0;border-radius:12px;cursor:pointer;transition:all 0.2s;background:#fafafa;text-align:center" onmouseover="this.style.borderColor='#667eea';this.style.background='#f5f3ff'" onmouseout="this.style.borderColor='#d0d0d0';this.style.background='#fafafa'">
-              <span style="font-size:1.5rem">📂</span>
-              <div>
-                <div style="font-size:13px;font-weight:600;color:#555">点击选择文件</div>
-                <div style="font-size:11px;color:#999;margin-top:2px">PDF / Word / PPT / Excel / 压缩包 / 图片 · ≤50MB</div>
-              </div>
-            </label>
-            <input type="file" id="uploadFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.7z,.txt,.md,.jpg,.jpeg,.png,.gif" style="display:none" onchange="var n=this.files[0];if(n){var l=this.parentNode.querySelector('label[for=uploadFile]');l.innerHTML='<span style=font-size:1.3rem>✅</span><div><div style=font-size:13px;font-weight:600;color:#27ae60>'+n.name+'</div><div style=font-size:11px;color:#999;margin-top:2px>'+((n.size/1024/1024).toFixed(1))+' MB</div></div>';l.style.borderColor='#27ae60';l.style.background='#f0fdf4'}" />
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:14px;padding:10px 14px;background:#fff8e1;border-radius:10px;font-size:12px;color:#b8860b">
-            <span>⚠️</span> 上传后需管理员审核，审核通过后才会公开展示
-          </div>
-          <button onclick="doUploadMaterial()" style="width:100%;padding:13px;border-radius:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px;transition:all 0.2s;box-shadow:0 4px 15px rgba(102,126,234,0.3)" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(102,126,234,0.4)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 15px rgba(102,126,234,0.3)'">✅ 提交审核</button>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">👤 你的名字</label><input type="text" id="uploaderName" class="form-input" placeholder="选填，显示在资料右下角" maxlength="30" /></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">上传后需管理员审核，审核通过后才会公开展示</div>
+          <button onclick="doUploadMaterial()" style="width:100%;padding:12px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px">提交审核</button>
         </div>
       </div>
     </div>
@@ -1192,6 +1164,84 @@
         <span class="sub-page-title">社团管理</span>
       </div>
       <div class="sub-page-body" id="clubManageContent"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+        🌸 校花校草 - 月度选举
+    ═══════════════════════════════════════════════════════ -->
+    <div class="sub-page" id="campusStarPage_sub">
+      <div class="sub-page-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91)">
+        <button class="sub-page-back" onclick="closeSubPage('campusStarPage_sub')" style="color:#fff">←</button>
+        <span class="sub-page-title" style="color:#fff">🌸 校花校草</span>
+        <button id="starJoinBtn" onclick="openStarJoin()" style="padding:6px 16px;border-radius:20px;background:rgba(255,255,255,0.22);color:#fff;border:1.5px solid rgba(255,255,255,0.3);font-size:13px;cursor:pointer;font-weight:500">📸 报名参加</button>
+      </div>
+      <div class="sub-page-body" style="padding:0">
+        <!-- Tab切换 -->
+        <div style="display:flex;background:#fff;padding:4px;margin:12px 16px;border-radius:12px;border:1px solid var(--border)">
+          <div class="star-tab active" data-tab="candidates" onclick="switchToCandidates()" style="flex:1;text-align:center;padding:10px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--text-secondary)">👥 候选人</div>
+          <div class="star-tab" data-tab="rank" onclick="switchToRank()" style="flex:1;text-align:center;padding:10px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--text-secondary)">🏆 排行榜</div>
+          <div class="star-tab" data-tab="hall" onclick="switchToHall()" style="flex:1;text-align:center;padding:10px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--text-secondary)">🏅 荣誉墙</div>
+        </div>
+        <!-- 提示条 -->
+        <div id="starVoteHint" style="margin:0 16px 12px;padding:10px 14px;background:linear-gradient(135deg,#fff3e0,#fce4ec);border-radius:10px;font-size:12px;color:#e65100;display:flex;align-items:center;gap:6px">
+          <span>💡</span> 每天可以投1票，投票结果实时更新！每月1号清空数据，上期冠军入驻荣誉墙
+        </div>
+        <!-- 列表容器 -->
+        <div id="starCandidatesList" style="padding:0 16px 20px">
+          <div style="text-align:center;padding:40px;color:var(--text-secondary)">加载中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 校花校草 - 候选人详情子页 -->
+    <div class="sub-page" id="starDetailPage_sub">
+      <div class="sub-page-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91)">
+        <button class="sub-page-back" onclick="closeSubPage('starDetailPage_sub')" style="color:#fff">←</button>
+        <span class="sub-page-title" style="color:#fff" id="starDetailTitle">候选人详情</span>
+      </div>
+      <div class="sub-page-body" id="starDetailBody" style="padding:0"></div>
+    </div>
+
+    <!-- 校花校草 - 报名弹窗 -->
+    <div class="modal-overlay" id="starJoinModal" style="display:none">
+      <div class="modal-content" style="max-width:440px;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+        <div class="modal-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91);padding:20px 24px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem">🌸</div>
+            <div>
+              <div style="color:#fff;font-size:1.1rem;font-weight:700">报名参加校花校草</div>
+              <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px">上传你的照片，让大家为你投票</div>
+            </div>
+          </div>
+          <button class="modal-close" onclick="closeStarJoin()" style="color:#fff;background:rgba(255,255,255,0.15);width:32px;height:32px;border-radius:50%;border:none;font-size:18px;cursor:pointer">✕</button>
+        </div>
+        <div class="modal-body" style="padding:24px;background:#fff">
+          <div class="form-group" style="margin:0 0 14px">
+            <label class="form-label" style="font-size:13px;font-weight:600;color:#555;margin-bottom:6px;display:flex;align-items:center;gap:4px"><span>👤</span> 你的名字 <span style="color:#e74c3c">*</span></label>
+            <input type="text" id="starJoinName" placeholder="输入展示名称" maxlength="30" style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;transition:all 0.2s;box-sizing:border-box" onfocus="this.style.borderColor='#e91e63';this.style.boxShadow='0 0 0 3px rgba(233,30,99,0.15)'" onblur="this.style.borderColor='#e0e0e0';this.style.boxShadow='none'" />
+          </div>
+          <div class="form-group" style="margin:0 0 14px">
+            <label class="form-label" style="font-size:13px;font-weight:600;color:#555;margin-bottom:6px;display:flex;align-items:center;gap:4px"><span>💬</span> 自我介绍 <span style="color:#e74c3c">*</span></label>
+            <textarea id="starJoinIntro" rows="2" placeholder="介绍一下自己，让大家了解你~" maxlength="200" style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;resize:vertical;transition:all 0.2s;box-sizing:border-box;font-family:inherit" onfocus="this.style.borderColor='#e91e63';this.style.boxShadow='0 0 0 3px rgba(233,30,99,0.15)'" onblur="this.style.borderColor='#e0e0e0';this.style.boxShadow='none'"></textarea>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label" style="font-size:13px;font-weight:600;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:4px"><span>📷</span> 照片（最多3张） <span style="color:#e74c3c">*</span></label>
+            <label for="starJoinPhotos" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;border:2px dashed #e0e0e0;border-radius:12px;cursor:pointer;transition:all 0.2s;background:#fafafa;text-align:center" onmouseover="this.style.borderColor='#e91e63';this.style.background='#fce4ec'" onmouseout="this.style.borderColor='#e0e0e0';this.style.background='#fafafa'">
+              <span style="font-size:1.5rem">📷</span>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:#555">点击选择照片</div>
+                <div style="font-size:11px;color:#999;margin-top:2px">jpg/png/webp/gif · 每张≤5MB · 最多3张</div>
+              </div>
+            </label>
+            <input type="file" id="starJoinPhotos" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none" onchange="previewStarPhotos(this)" />
+          </div>
+          <div id="starJoinPreview" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:14px;padding:10px 14px;background:#fff8e1;border-radius:10px;font-size:12px;color:#b8860b">
+            <span>⚠️</span> 照片需真实本人，审核不通过将被下架
+          </div>
+          <button onclick="submitStarJoin()" style="width:100%;padding:13px;border-radius:12px;background:linear-gradient(135deg,#e91e63,#ff6f91);color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px;transition:all 0.2s;box-shadow:0 4px 15px rgba(233,30,99,0.3)">🌸 提交报名</button>
+        </div>
+      </div>
     </div>
 
     <!-- 底部导航 -->

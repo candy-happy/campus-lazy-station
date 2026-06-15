@@ -159,6 +159,13 @@
         h += '<div class="errand-card-desc">' + s.desc + '</div>';
         h += '</div>';
       });
+      // 我的订单入口
+      h += '<div class="errand-card" onclick="closeSubPage(\'errandPage_sub\');openSubPage(\'orderPage\');refreshOrders().then(renderOrders)">';
+      h += '<div class="errand-card-icon" style="background:linear-gradient(135deg, #667eea, #764ba2)">📋</div>';
+      h += '<div class="errand-card-name">我的订单</div>';
+      h += '<div class="errand-card-price"></div>';
+      h += '<div class="errand-card-desc">查看和管理所有订单</div>';
+      h += '</div>';
       h += '</div>';
       el.querySelector('.sub-page-body').innerHTML = h;
       openSubPage('errandPage_sub');
