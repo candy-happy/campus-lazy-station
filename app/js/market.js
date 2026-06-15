@@ -853,7 +853,7 @@
       await loadMyListings();
     }
 
-    async function loadMyListings(filterCategory) {
+    async function loadMyListings(filterStatus) {
       const container = document.getElementById('marketMyListings');
       if (!container) return;
       container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">加载中...</div>';
@@ -864,28 +864,36 @@
           container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">📦</div><div class="sub-empty-text">暂无在售商品</div><button onclick="switchMarketCategory(\'all\');openPublishItem()" style="margin-top:16px;padding:10px 24px;border:2px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-weight:600;cursor:pointer">发布商品</button></div>';
           return;
         }
-        // 按分类分组 + 计数
-        const groups = {};
-        const catOrder = ['digital','textbook','daily','clothing','beauty','other'];
+        // 按状态统计
+        const statusOrder = [
+          { key: 'active',  label: '在售', icon: '🟢' },
+          { key: 'trading', label: '交易中', icon: '🔵' },
+          { key: 'sold',    label: '已售', icon: '🟣' },
+          { key: 'removed', label: '已下架', icon: '⚫' }
+        ];
+        const statusCounts = {};
         items.forEach(item => {
-          const cat = item.category || 'other';
-          if (!groups[cat]) groups[cat] = [];
-          groups[cat].push(item);
+          const s = item.status || 'active';
+          statusCounts[s] = (statusCounts[s] || 0) + 1;
         });
-        // 分类Tab HTML
-        let allCount = items.length;
-        const activeCat = filterCategory || '';
+        // 状态Tab
+        const activeStatus = filterStatus || '';
         const tabsHtml = '<div class="my-listings-tabs">' +
-          '<span class="my-listings-tab' + (!activeCat ? ' active' : '') + '" onclick="loadMyListings()">全部 (' + allCount + ')</span>' +
-          catOrder.filter(c => groups[c]).map(c =>
-            '<span class="my-listings-tab' + (activeCat === c ? ' active' : '') + '" onclick="loadMyListings(\'' + c + '\')">' + (CATEGORY_MAP[c] || c) + ' (' + groups[c].length + ')</span>'
+          '<span class="my-listings-tab' + (!activeStatus ? ' active' : '') + '" onclick="loadMyListings()">全部 (' + items.length + ')</span>' +
+          statusOrder.filter(s => statusCounts[s.key]).map(s =>
+            '<span class="my-listings-tab' + (activeStatus === s.key ? ' active' : '') + '" onclick="loadMyListings(\'' + s.key + '\')">' + s.icon + ' ' + s.label + ' (' + statusCounts[s.key] + ')</span>'
           ).join('') +
         '</div>';
         // 筛选
-        const filtered = activeCat && groups[activeCat] ? groups[activeCat] : items;
-        // 渲染
+        const filtered = activeStatus ? items.filter(i => (i.status || 'active') === activeStatus) : items;
+        if (!filtered.length) {
+          container.innerHTML = tabsHtml + '<div class="sub-empty"><div class="sub-empty-icon">📭</div><div class="sub-empty-text">该状态下暂无商品</div></div>';
+          return;
+        }
+        // 按状态分组显示（全部时分组）
         const statusLabel = { active:'在售', trading:'交易中', sold:'已售', removed:'已下架' };
-        const cardsHtml = filtered.map(item => {
+        const statusClass = { active:'completed', trading:'confirmed', sold:'paid', removed:'cancelled' };
+        const renderCard = (item) => {
           const img = (item.images && item.images[0]) || '';
           return '<div class="trade-card clickable" onclick="event.stopPropagation();openItemDetail(' + item.id + ')">' +
             '<div class="trade-card-top">' +
@@ -894,41 +902,24 @@
                 '<div class="trade-card-title">' + escHtml(item.title) + '</div>' +
                 '<div class="trade-card-meta">' + (CATEGORY_MAP[item.category] || item.category || '其他') + '</div>' +
                 '<div class="trade-card-price">¥' + (item.price || 0).toFixed(2) + '</div>' +
-                '<span class="trade-card-status ' + (item.status === 'active' ? 'completed' : item.status === 'trading' ? 'confirmed' : 'cancelled') + '">' + (statusLabel[item.status] || item.status) + '</span>' +
+                '<span class="trade-card-status ' + (statusClass[item.status] || 'cancelled') + '">' + (statusLabel[item.status] || item.status) + '</span>' +
               '</div>' +
             '</div>' +
-            (item.status === 'active' ? '<div class="trade-card-actions"><button class="trade-btn trade-btn-danger" onclick="event.stopPropagation();removeMyItem(' + item.id + ').then(function(){loadMyListings(\'' + (activeCat || '') + '\')})">下架</button></div>' : '') +
+            (item.status === 'active' ? '<div class="trade-card-actions"><button class="trade-btn trade-btn-danger" onclick="event.stopPropagation();removeMyItem(' + item.id + ').then(function(){loadMyListings(\'' + (activeStatus || '') + '\')})">下架</button></div>' : '') +
           '</div>';
-        }).join('');
-        if (!filtered.length) {
-          container.innerHTML = tabsHtml + '<div class="sub-empty"><div class="sub-empty-icon">📭</div><div class="sub-empty-text">该分类暂无商品</div></div>';
+        };
+        if (activeStatus) {
+          // 单状态：直接列出
+          container.innerHTML = tabsHtml + filtered.map(renderCard).join('');
         } else {
-          // 按分类分组显示标题
+          // 全部：按状态分组显示
           let groupedHtml = '';
-          if (!activeCat) {
-            catOrder.forEach(cat => {
-              if (groups[cat] && groups[cat].length) {
-                const catItems = groups[cat].map(item => {
-                  const img = (item.images && item.images[0]) || '';
-                  return '<div class="trade-card clickable" onclick="event.stopPropagation();openItemDetail(' + item.id + ')">' +
-                    '<div class="trade-card-top">' +
-                      (img ? '<img class="trade-card-img" src="' + img + '" loading="lazy" />' : '<div class="trade-card-noimg">🛒</div>') +
-                      '<div class="trade-card-info">' +
-                        '<div class="trade-card-title">' + escHtml(item.title) + '</div>' +
-                        '<div class="trade-card-price">¥' + (item.price || 0).toFixed(2) + '</div>' +
-                        '<span class="trade-card-status ' + (item.status === 'active' ? 'completed' : 'cancelled') + '">' + (statusLabel[item.status] || item.status) + '</span>' +
-                      '</div>' +
-                    '</div>' +
-                    (item.status === 'active' ? '<div class="trade-card-actions"><button class="trade-btn trade-btn-danger" onclick="event.stopPropagation();removeMyItem(' + item.id + ').then(function(){loadMyListings()})">下架</button></div>' : '') +
-                  '</div>';
-                }).join('');
-                groupedHtml += '<div class="my-listings-group"><div class="my-listings-group-title">' + (CATEGORY_MAP[cat] || cat) + ' <span class="my-listings-group-count">' + groups[cat].length + '件</span></div>' + catItems + '</div>';
-              }
-            });
-            container.innerHTML = tabsHtml + groupedHtml;
-          } else {
-            container.innerHTML = tabsHtml + cardsHtml;
-          }
+          statusOrder.forEach(s => {
+            const group = items.filter(i => (i.status || 'active') === s.key);
+            if (!group.length) return;
+            groupedHtml += '<div class="my-listings-group"><div class="my-listings-group-title">' + s.icon + ' ' + s.label + ' <span class="my-listings-group-count">' + group.length + '件</span></div>' + group.map(renderCard).join('') + '</div>';
+          });
+          container.innerHTML = tabsHtml + groupedHtml;
         }
       } catch(e) {
         container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger)">加载失败</div>';
