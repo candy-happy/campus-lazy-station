@@ -13,7 +13,7 @@
   <script src="app/js/wall.js?v=3.0.31"></script>
   <script src="app/js/order.js?v=3.0.28"></script>
   <script src="app/js/market.js?v=3.0.37"></script>
-  <script src="app/js/user.js?v=3.0.44"></script>
+  <script src="app/js/user.js?v=3.0.45"></script>
   <script src="app/js/address.js?v=3.0.28"></script>
   <script src="app/js/teachers.js?v=3.0.40"></script>
   <script src="app/js/pets.js?v=3.0.31"></script>
@@ -470,8 +470,37 @@
         <div class="chat-header">
           <button class="chat-back" onclick="backToChatList()">←</button>
           <span class="chat-title" id="chatConvTitle">对话</span>
+          <button class="chat-settings-btn-icon" onclick="openChatSettings()" title="聊天设置">⚙️</button>
         </div>
         <div class="chat-messages" id="chatMessages"></div>
+        <!-- 聊天设置子页面 -->
+        <div class="chat-settings-page" id="chatSettingsPage" style="display:none">
+          <div class="chat-settings-header">
+            <button class="chat-back" onclick="closeChatSettings()">←</button>
+            <span style="font-weight:600;font-size:16px">⚙️ 聊天设置</span>
+          </div>
+          <div class="chat-settings-body">
+            <div class="chat-settings-section">
+              <div class="chat-settings-label">📝 备注名称</div>
+              <div style="display:flex;gap:8px">
+                <input id="chatNicknameInput" class="chat-settings-input" placeholder="给对方设置备注..." onkeydown="if(event.key==='Enter')saveChatNickname()">
+                <button class="chat-settings-btn" onclick="saveChatNickname()">保存</button>
+                <button class="chat-settings-btn" style="background:transparent;border:1px solid var(--border);color:var(--text-secondary)" onclick="resetChatNickname()">重置</button>
+              </div>
+            </div>
+            <div class="chat-settings-section">
+              <div class="chat-settings-label">🖼️ 聊天背景</div>
+              <label class="chat-settings-btn" style="cursor:pointer">选择照片<input type="file" accept="image/*" style="display:none" onchange="handleChatBgUpload(this)"></label>
+            </div>
+            <div class="chat-settings-section">
+              <div class="chat-settings-label">🔍 查找聊天记录</div>
+              <input id="chatSearchInput" class="chat-settings-input" placeholder="输入关键词搜索..." oninput="searchChatMessages(this.value)">
+              <div id="chatSearchResults" style="margin-top:8px;max-height:300px;overflow-y:auto;border-radius:10px;background:var(--bg);padding:8px">
+                <div style="padding:12px;color:var(--text-secondary);font-size:13px;text-align:center">输入关键词开始搜索</div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="chat-input-bar">
           <span class="chat-attach-btn" onclick="toggleEmojiPicker()">😊</span>
           <label class="chat-attach-btn" title="发送图片/视频">

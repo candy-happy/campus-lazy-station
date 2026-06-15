@@ -38,7 +38,7 @@
           API.logout();
           showLoginPage();
         } else {
-          currentUser = { student_id: saved.student_id, phone: saved.phone || '', name: saved.name || '', nickname: saved.nickname || '', avatar: saved.avatar || '' };
+          currentUser = { student_id: saved.student_id, phone: saved.phone || '', name: saved.name || '', nickname: saved.nickname || '', avatar: saved.avatar || '', gender: saved.gender || '' };
           var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + (saved.nickname || saved.name || '...');
           showMainApp();
           await loadData();
@@ -439,6 +439,7 @@
         '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F464}</span><span class="profile-form-label">姓名</span><input type="text" class="profile-form-input" id="profileName" value="' + escHtml(u.name || '') + '" placeholder="选填" /></div>' +
         '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F4AD}</span><span class="profile-form-label">签名</span><input type="text" class="profile-form-input" id="profileBio" value="' + escHtml(u.bio || '') + '" placeholder="一句话介绍自己" maxlength="50" /></div>' +
         '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F4F1}</span><span class="profile-form-label">电话</span><input type="text" class="profile-form-input" id="profilePhone" value="' + escHtml(u.phone || '') + '" readonly style="opacity:0.7" /></div>' +
+        '<div class="profile-form-item with-icon"><span class="profile-form-icon">⚧</span><span class="profile-form-label">性别</span><div style="display:flex;gap:8px;flex:1;align-items:center"><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:14px;color:var(--text)"><input type="radio" name="profileGender" value="male" ' + (u.gender === 'male' ? 'checked' : '') + ' style="accent-color:var(--primary);margin:0"> 👦 男</label><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:14px;color:var(--text)"><input type="radio" name="profileGender" value="female" ' + (u.gender === 'female' ? 'checked' : '') + ' style="accent-color:var(--primary);margin:0"> 👧 女</label><label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:14px;color:var(--text)"><input type="radio" name="profileGender" value="" ' + (!u.gender ? 'checked' : '') + ' style="accent-color:var(--primary);margin:0"> 🤫 保密</label></div></div>' +
         
         '<div class="profile-form-item with-icon"><span class="profile-form-icon">\u{1F4AC}</span><span class="profile-form-label">微信号</span><input type="text" class="profile-form-input" id="profileWechat" value="' + escHtml(u.wechat || '') + '" placeholder="选填" maxlength="50" /></div>' +
         
@@ -473,6 +474,7 @@
         room: document.getElementById('profileRoom').value.trim(),
         avatar: document.getElementById('profileAvatar').value,
         bg_image: document.getElementById('profileBg').value,
+        gender: (document.querySelector('input[name="profileGender"]:checked') || {}).value || '',
 
         wechat: document.getElementById('profileWechat').value.trim(),
         qq: document.getElementById('profileQQ').value.trim(),
@@ -482,6 +484,13 @@
         const res = await API.updateUser(currentUser.phone, data);
         if (res.error) return showToast(res.error);
         showToast('\u2705 保存成功');
+        // 同步当前用户信息
+        if (currentUser) {
+          currentUser.gender = data.gender;
+          const s = JSON.parse(localStorage.getItem('lazy_session') || '{}');
+          s.gender = data.gender;
+          localStorage.setItem('lazy_session', JSON.stringify(s));
+        }
         closeSubPage('profilePage_sub');
         updateMePage();
       } catch(e) { showToast('保存失败'); }

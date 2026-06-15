@@ -28,6 +28,7 @@ db.exec(`
     room TEXT,
     bg_image TEXT,
     bg_color TEXT,
+    gender TEXT DEFAULT '',
     wechat TEXT,
     qq TEXT,
     show_phone_on_wall INTEGER DEFAULT 0,
@@ -620,6 +621,7 @@ const initData = db.transaction(() => {
   // ─── 学号+密码登录迁移 ───────────────────────────
   try { db.exec("ALTER TABLE users ADD COLUMN student_id TEXT"); } catch(e) { /* 已存在 */ }
   try { db.exec("ALTER TABLE users ADD COLUMN password TEXT"); } catch(e) { /* 已存在 */ }
+  try { db.exec("ALTER TABLE users ADD COLUMN gender TEXT DEFAULT ''"); } catch(e) { /* 已存在 */ }
   try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_student_id ON users(student_id)"); } catch(e) { /* 已存在 */ }
 
   // 总管理员

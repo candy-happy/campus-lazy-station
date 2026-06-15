@@ -61,7 +61,7 @@ router.put('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
     return makeError('无权修改他人资料', 'FORBIDDEN');
   }
 
-  const { nickname, name, avatar, bio, dormitory, room, bg_image, bg_color, wechat, qq, show_phone_on_wall, show_wechat_on_wall, show_qq_on_wall, wall_privacy } = req.body;
+  const { nickname, name, avatar, bio, dormitory, room, bg_image, bg_color, gender, wechat, qq, show_phone_on_wall, show_wechat_on_wall, show_qq_on_wall, wall_privacy } = req.body;
   const sets = [];
   const vals = [];
   if (nickname !== undefined) { sets.push('nickname=?'); vals.push(String(nickname).slice(0, 50)); }
@@ -72,6 +72,7 @@ router.put('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
   if (room !== undefined) { sets.push('room=?'); vals.push(String(room).slice(0, 20)); }
   if (bg_image !== undefined) { sets.push('bg_image=?'); vals.push(String(bg_image).slice(0, 500)); }
   if (bg_color !== undefined) { sets.push('bg_color=?'); vals.push(String(bg_color).slice(0, 20)); }
+  if (gender !== undefined) { sets.push('gender=?'); vals.push(String(gender).slice(0, 10)); }
   if (wechat !== undefined) { sets.push('wechat=?'); vals.push(String(wechat).slice(0, 50)); }
   if (qq !== undefined) { sets.push('qq=?'); vals.push(String(qq).slice(0, 20)); }
   if (show_phone_on_wall !== undefined) { sets.push('show_phone_on_wall=?'); vals.push(show_phone_on_wall ? 1 : 0); }
