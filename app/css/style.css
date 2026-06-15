@@ -1524,6 +1524,14 @@
       background: var(--bg);
     }
     body.dark .sub-page-header { background: linear-gradient(135deg, #1a1a2e, #16213e); }
+    body.dark #reviewPage_sub .sub-page-body { background: #1a1a2e; }
+    body.dark #reviewPage_sub .sub-page-body > div:first-child { background: #1e1e30; border-color: #2a2a40; }
+    body.dark #reviewPage_sub input,
+    body.dark #reviewPage_sub select { background: #2a2a40; color: #ddd; border-color: #3a3a50; }
+    body.dark #reviewPage_sub input:focus,
+    body.dark #reviewPage_sub select:focus { border-color: #667eea; background: #2a2a40; }
+    body.dark .review-card { background: #1e1e30 !important; border-color: #2a2a40 !important; }
+    body.dark .review-card > div:first-child > div:last-child > div:first-child { color: #ddd !important; }
 
     /* 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
        馃摑 鍏ㄥ眬琛ㄥ崟鏍峰紡锛堜笅鍗?鏈嶅姟瀛愰〉闈㈤€氱敤锛?

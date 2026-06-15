@@ -18,7 +18,7 @@
     var clearBtn = document.getElementById('reviewSearchClear');
     if (clearBtn) clearBtn.style.display = search ? 'inline' : 'none';
 
-    listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">加载中...</div>';
+    listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#999"><div style="font-size:2.5rem;margin-bottom:12px">⏳</div><div style="font-size:14px">加载中...</div></div>';
 
     var params = '?page=' + reviewPage + '&limit=20';
     if (subject) params += '&subject=' + encodeURIComponent(subject);
@@ -44,7 +44,7 @@
         }
 
         if (!data.list || data.list.length === 0) {
-          listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-secondary)"><div style="font-size:3rem;margin-bottom:12px">📭</div><div>暂无复习资料</div><div style="font-size:12px;margin-top:4px">点击右上角上传资料吧</div></div>';
+          listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#bbb"><div style="font-size:3.5rem;margin-bottom:16px">📭</div><div style="font-size:15px;font-weight:600;color:#999;margin-bottom:4px">暂无复习资料</div><div style="font-size:12px;color:#bbb">快来上传第一份资料吧 ✨</div></div>';
           pagerEl.innerHTML = '';
           return;
         }
@@ -55,25 +55,26 @@
           var uploader = m.uploader_name || m.nickname || m.name || '匿名';
           var fileIcon = getFileIcon(m.file_url);
           var fileSize = formatFileSize(m.file_size);
-          var desc = m.description ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px;line-height:1.4">' + escHtml(m.description) + '</div>' : '';
+          var desc = m.description ? '<div style="font-size:12px;color:#888;margin-top:6px;line-height:1.5">' + escHtml(m.description) + '</div>' : '';
 
-          html += '<div class="review-card" style="background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border);position:relative">' +
-            '<div style="display:flex;align-items:flex-start;gap:10px">' +
-              '<div style="font-size:2rem;flex-shrink:0;width:44px;text-align:center">' + fileIcon + '</div>' +
-              '<div style="flex:1;min-width:0">' +
-                '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">' +
-                  '<span style="font-size:11px;background:var(--primary);color:#fff;padding:2px 8px;border-radius:10px;white-space:nowrap">' + escHtml(m.subject) + '</span>' +
-                  '<span style="font-size:12px;color:var(--text-muted)">' + fileSize + '</span>' +
+          html += '<div class="review-card" style="background:#fff;border-radius:14px;padding:0;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #f0f0f0;transition:all 0.2s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 6px 20px rgba(0,0,0,0.1)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'0 2px 12px rgba(0,0,0,0.06)\'" >' +
+            '<div style="display:flex;align-items:stretch">' +
+              // 左侧色条 + 图标
+              '<div style="width:56px;flex-shrink:0;background:linear-gradient(180deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:1.8rem">' + fileIcon + '</div>' +
+              '<div style="flex:1;min-width:0;padding:14px 16px">' +
+                '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">' +
+                  '<span style="font-size:11px;background:linear-gradient(135deg,#667eea20,#764ba220);color:#667eea;padding:3px 10px;border-radius:12px;font-weight:600;white-space:nowrap">' + escHtml(m.subject) + '</span>' +
+                  '<span style="font-size:11px;color:#aaa">' + fileSize + '</span>' +
+                  '<span style="font-size:11px;color:#aaa">' + (m.download_count || 0) + ' 次下载</span>' +
                 '</div>' +
-                '<div style="font-weight:600;font-size:15px;margin:4px 0;word-break:break-all">' + escHtml(m.title) + '</div>' +
+                '<div style="font-weight:600;font-size:15px;color:#222;word-break:break-all;line-height:1.4">' + escHtml(m.title) + '</div>' +
                 desc +
-                '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">' +
-                  '<span style="font-size:11px;color:var(--text-muted)">' + time + ' · ' + (m.download_count || 0) + '次下载</span>' +
-                  (m.file_url ? '<a href="' + m.file_url + '" target="_blank" onclick="trackDownload(' + m.id + ')" style="font-size:12px;color:var(--primary);text-decoration:none;font-weight:500;padding:4px 10px;border:1px solid var(--primary);border-radius:14px">📥 下载</a>' : '<span style="font-size:12px;color:var(--text-muted)">无文件</span>') +
+                '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">' +
+                  '<span style="font-size:11px;color:#bbb">' + time + ' · ' + escHtml(uploader) + '</span>' +
+                  (m.file_url ? '<a href="' + m.file_url + '" target="_blank" onclick="trackDownload(' + m.id + ')" style="font-size:12px;color:#fff;text-decoration:none;font-weight:600;padding:6px 16px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:18px;transition:all 0.2s;box-shadow:0 2px 8px rgba(102,126,234,0.25)" onmouseover="this.style.transform=\'scale(1.05)\';this.style.boxShadow=\'0 4px 14px rgba(102,126,234,0.35)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'0 2px 8px rgba(102,126,234,0.25)\'" >📥 下载</a>' : '<span style="font-size:12px;color:#ccc">无文件</span>') +
                 '</div>' +
               '</div>' +
             '</div>' +
-            '<div style="text-align:right;font-size:11px;color:var(--text-muted);margin-top:6px">— ' + escHtml(uploader) + ' 上传</div>' +
           '</div>';
         });
 
@@ -92,7 +93,7 @@
       })
       .catch(function (e) {
         console.error('loadReviewMaterials error:', e);
-        listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">加载失败，请重试</div>';
+        listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#bbb"><div style="font-size:2.5rem;margin-bottom:12px">😢</div><div style="font-size:14px">加载失败，请重试</div></div>';
       });
   };
 
