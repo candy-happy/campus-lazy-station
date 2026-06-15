@@ -903,6 +903,28 @@
     body.dark .profile-card { background: var(--card); border-color: var(--border); }
     body.dark .settings-item { background: var(--card); border-color: var(--border); }
     body.dark .emoji-picker { background: var(--card); border-color: var(--border); }
+
+    /* ===== Toast提示 ===== */
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.82);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 10001;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+      max-width: 90vw;
+      text-align: center;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+    }
+    .toast.show { opacity: 1; }
     body.dark .toast { background: var(--card); color: var(--text); border-color: var(--border); }
     body.dark .error-banner { background: #3D1F1F; color: #FF8E8E; border-color: #5C2E2E; }
 
