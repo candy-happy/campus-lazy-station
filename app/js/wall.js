@@ -60,26 +60,19 @@
       _wallPage = 1;
       _wallHasMore = true;
       document.querySelectorAll('.wall-tab').forEach(t => t.classList.remove('active'));
-      const labels = { latest: '最新', hot: '热门', discover: '发现', following: '关注', mine: '我的' };
+      const labels = { latest: '最新', hot: '热门', following: '关注', mine: '我的' };
       document.querySelectorAll('.wall-tab').forEach(t => {
         if (t.textContent === labels[tab]) t.classList.add('active');
       });
 
-      // 切换发现页/帖子流显示
+      // 显示帖子流
       const wallFeed = document.getElementById('wallFeed');
       const discoverPage = document.getElementById('discoverPage');
       const wallFab = document.getElementById('wallFab');
-      if (tab === 'discover') {
-        if (wallFeed) wallFeed.style.display = 'none';
-        if (discoverPage) discoverPage.style.display = '';
-        if (wallFab) wallFab.style.display = 'none';
-        initDiscoverPage();
-      } else {
-        if (wallFeed) wallFeed.style.display = '';
-        if (discoverPage) discoverPage.style.display = 'none';
-        if (wallFab) wallFab.style.display = '';
-        loadWallFeed();
-      }
+      if (wallFeed) wallFeed.style.display = '';
+      if (discoverPage) discoverPage.style.display = 'none';
+      if (wallFab) wallFab.style.display = '';
+      loadWallFeed();
       renderWallChannels();
     }
 

@@ -862,16 +862,20 @@
         // 全站搜索或标签筛选进入：切换到首页但不刷新帖子流
         document.getElementById('homePage').classList.add('active');
         document.querySelectorAll('.nav-item')[0]?.classList.add('active');
+      } else if (page === 'discover') {
+        document.getElementById('discoverPage').classList.add('active');
+        document.querySelectorAll('.nav-item')[1]?.classList.add('active');
+        if (typeof initDiscoverPage === 'function') initDiscoverPage();
       } else if (page === 'message') {
         document.getElementById('messagePage').classList.add('active');
-        document.querySelectorAll('.nav-item')[1]?.classList.add('active');
+        document.querySelectorAll('.nav-item')[2]?.classList.add('active');
         initMessagePage();
       } else if (page === 'order') {
         document.getElementById('orderPage').classList.add('active');
         renderOrders();
       } else if (page === 'me') {
         document.getElementById('mePage').classList.add('active');
-        document.querySelectorAll('.nav-item')[2]?.classList.add('active');
+        document.querySelectorAll('.nav-item')[3]?.classList.add('active');
         updateMePage();
       }
     }
