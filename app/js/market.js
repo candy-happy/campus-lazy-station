@@ -533,19 +533,30 @@
     // 加载卖家统计信息
     async function loadSellerStats(phone, name, avatar) {
       try {
-        const stats = await API.getSellerStats(phone);
+        const [stats, wallProfile] = await Promise.all([
+          API.getSellerStats(phone),
+          API.wallUserProfile(phone).catch(() => ({}))
+        ]);
         const avgRating = parseFloat(stats.avg_rating) || 0;
         const ratingCount = stats.rating_count || 0;
         const itemCount = stats.item_count || 0;
         const wallCount = stats.wall_count || 0;
-        const sellerName = stats.seller_name || name || '';
-        const sellerAvatar = stats.seller_avatar || avatar || '';
+        // 同步校园墙头像和昵称
+        const sellerAvatar = wallProfile.avatar || stats.seller_avatar || avatar || '';
+        const sellerName = wallProfile.nickname || stats.seller_name || name || '';
+        // 同步校园墙背景
+        var bgStyle = '';
+        if (wallProfile.bg_image) {
+          bgStyle = 'style="background-image:url(' + escHtml(wallProfile.bg_image) + ');background-size:cover;background-position:center"';
+        } else if (wallProfile.bg_color) {
+          bgStyle = 'style="background:' + escHtml(wallProfile.bg_color) + '"';
+        }
         document.getElementById('sellerRatingCount').textContent = ratingCount + '条';
         // 渲染信息卡
         const starsHtml = renderStarRating(avgRating, false);
         const infoCard = document.getElementById('sellerInfoCard');
         infoCard.innerHTML = 
-          '<div class="seller-hero-bg"></div>' +
+          '<div class="seller-hero-bg" ' + bgStyle + '></div>' +
           '<div class="seller-hero-content">' +
             '<div class="seller-hero-avatar">' + renderAvatarHtml(sellerAvatar, sellerName) + '</div>' +
             '<div class="seller-hero-name">' + escHtml(sellerName || '卖家') + '</div>' +
