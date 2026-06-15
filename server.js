@@ -222,6 +222,7 @@ app.use('/api/clubs', require('./routes/clubs'));
 app.use('/api/activities', require('./routes/activities'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/audit', require('./routes/audit'));
+app.use('/api/review-materials', require('./routes/review-materials'));
 
 // ─── 404 + SPA 兜底 ───────────────────────────────────
 app.use('/api', (req, res) => {
@@ -293,7 +294,7 @@ process.on('unhandledRejection', (reason) => {
 // ─── 确保上传目录存在 ──────────────────────────────────
 (() => {
   const fs = require('fs');
-  const dirs = ['uploads', 'uploads/wall', 'uploads/market', 'uploads/pets', 'uploads/wall_originals', 'uploads/avatars'];
+  const dirs = ['uploads', 'uploads/wall', 'uploads/market', 'uploads/pets', 'uploads/wall_originals', 'uploads/avatars', 'uploads/review'];
   for (const d of dirs) {
     const full = path.join(__dirname, d);
     if (!fs.existsSync(full)) { fs.mkdirSync(full, { recursive: true }); console.log(`[init] 创建目录: ${d}`); }

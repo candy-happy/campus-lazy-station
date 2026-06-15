@@ -518,6 +518,27 @@ db.exec(`
   );
 `);
 
+  // ─── 校园期末复习资料 ───────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS review_materials (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      subject TEXT NOT NULL DEFAULT '',
+      title TEXT NOT NULL DEFAULT '',
+      description TEXT DEFAULT '',
+      file_url TEXT DEFAULT '',
+      file_size INTEGER DEFAULT 0,
+      uploader_name TEXT DEFAULT '',
+      uploader_phone TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
+      admin_remark TEXT DEFAULT '',
+      download_count INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      approved_at TEXT DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS idx_review_materials_status ON review_materials(status);
+    CREATE INDEX IF NOT EXISTS idx_review_materials_subject ON review_materials(subject);
+  `);
+
 // ─── 核心索引（性能优化，演示前必须添加） ─────────────
 db.exec(`
   -- 校园墙核心
@@ -622,6 +643,7 @@ const initData = db.transaction(() => {
   try { db.exec("ALTER TABLE users ADD COLUMN student_id TEXT"); } catch(e) { /* 已存在 */ }
   try { db.exec("ALTER TABLE users ADD COLUMN password TEXT"); } catch(e) { /* 已存在 */ }
   try { db.exec("ALTER TABLE users ADD COLUMN gender TEXT DEFAULT ''"); } catch(e) { /* 已存在 */ }
+  try { db.exec("ALTER TABLE review_materials ADD COLUMN download_count INTEGER DEFAULT 0"); } catch(e) { /* 已存在 */ }
   try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_student_id ON users(student_id)"); } catch(e) { /* 已存在 */ }
 
   // 总管理员

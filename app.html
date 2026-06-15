@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="app/css/style.css?v=3.0.44" />
   <script src="api.js?v=3.0.30"></script>
   <script src="app/js/core.js?v=3.0.43"></script>
-  <script src="app/js/wall.js?v=3.0.31"></script>
+  <script src="app/js/wall.js?v=3.0.32"></script>
   <script src="app/js/order.js?v=3.0.28"></script>
   <script src="app/js/market.js?v=3.0.37"></script>
   <script src="app/js/user.js?v=3.0.47"></script>
@@ -20,6 +20,7 @@
   <script src="app/js/feedback.js?v=3.0.28"></script>
   <script src="app/js/services.js?v=3.0.28"></script>
   <script src="app/js/discover.js?v=3.0.31"></script>
+  <script src="app/js/review.js?v=3.0.1"></script>
   <script src="app/js/wall-share.js?v=3.0.1"></script>
 </head>
 <body>
@@ -179,6 +180,50 @@
               <button onclick="openCreateClubModal()" style="width:100%;padding:12px;border-radius:12px;background:var(--gradient);color:white;border:none;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px">+ 创建社团</button>
             </div>
           
+    </div>
+
+    <!-- ========== 复习资料页 ========== -->
+    <div class="page" id="reviewPage" style="display:none;padding:12px 16px 80px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h2 style="font-size:1.2rem;margin:0">📚 期末复习资料</h2>
+        <button onclick="openUploadMaterial()" style="padding:6px 14px;border-radius:20px;background:var(--gradient);color:#fff;border:none;font-size:13px;cursor:pointer">+ 上传资料</button>
+      </div>
+      <!-- 搜索 + 科目筛选 -->
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="position:relative;flex:1">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px">🔍</span>
+          <input type="text" id="reviewSearchInput" placeholder="搜索资料..." onkeydown="if(event.key==='Enter')loadReviewMaterials(1)" style="width:100%;padding:8px 30px 8px 32px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font-size:13px;box-sizing:border-box" />
+          <button onclick="document.getElementById('reviewSearchInput').value='';loadReviewMaterials(1)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:12px;cursor:pointer;color:var(--text-secondary);display:none" id="reviewSearchClear">✕</button>
+        </div>
+        <select id="reviewSubjectFilter" onchange="loadReviewMaterials(1)" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;max-width:120px">
+          <option value="">全部科目</option>
+        </select>
+      </div>
+      <!-- 资料列表 -->
+      <div id="reviewMaterialsList"></div>
+      <div id="reviewMaterialsPager" style="text-align:center;padding:16px;font-size:13px;color:var(--text-secondary)"></div>
+    </div>
+
+    <!-- 上传资料弹窗 -->
+    <div class="modal-overlay" id="uploadMaterialModal" style="display:none">
+      <div class="modal-content" style="max-width:420px">
+        <div class="modal-header" style="background:var(--gradient);border-radius:12px 12px 0 0;padding:16px 20px">
+          <span class="modal-title" style="color:#fff;font-size:1.05rem">📤 上传复习资料</span>
+          <button class="modal-close" onclick="closeModal('uploadMaterialModal')" style="color:#fff;background:rgba(255,255,255,0.2)">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px">
+          <div class="form-group"><label class="form-label">📖 科目 *</label><input type="text" id="uploadSubject" class="form-input" placeholder="如：高等数学、大学英语" maxlength="50" /></div>
+          <div class="form-group"><label class="form-label">📝 标题 *</label><input type="text" id="uploadTitle" class="form-input" placeholder="资料名称" maxlength="100" /></div>
+          <div class="form-group"><label class="form-label">📄 描述</label><textarea id="uploadDesc" class="form-input" rows="2" placeholder="简要描述（选填）" maxlength="500" style="resize:vertical"></textarea></div>
+          <div class="form-group"><label class="form-label">📎 文件</label>
+            <input type="file" id="uploadFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.7z,.txt,.md,.jpg,.jpeg,.png,.gif" style="display:block;margin-top:4px" />
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">支持 PDF/Word/PPT/Excel/压缩包/图片，≤50MB</div>
+          </div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">👤 你的名字</label><input type="text" id="uploaderName" class="form-input" placeholder="选填，显示在资料右下角" maxlength="30" /></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">上传后需管理员审核，审核通过后才会公开展示</div>
+          <button onclick="doUploadMaterial()" style="width:100%;padding:12px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px">提交审核</button>
+        </div>
+      </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
@@ -1126,6 +1171,10 @@
       <div class="nav-item" onclick="switchPage('discover')">
         <span class="nav-icon">🔍</span>
         <span class="nav-text">发现</span>
+      </div>
+      <div class="nav-item" onclick="switchPage('review')">
+        <span class="nav-icon">📚</span>
+        <span class="nav-text">复习</span>
       </div>
       <div class="nav-item" onclick="switchPage('message')">
         <span class="nav-icon">💬<span id="chatBadge" style="display:none;position:absolute;top:-4px;right:-6px;min-width:16px;height:16px;background:#E74C3C;color:white;font-size:10px;font-weight:700;border-radius:8px;text-align:center;line-height:16px;padding:0 4px">0</span></span>

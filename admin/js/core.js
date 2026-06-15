@@ -129,6 +129,7 @@ function switchPage(page) {
   if (page === 'reports') { loadReports(); }
   if (page === 'wall') { loadWallPosts(); }
   if (page === 'teachers') { loadTeachersAdmin(); }
+  if (page === 'review-materials') { loadReviewMaterialsAdmin(1); }
 }
 
 function showModal(id) { document.getElementById(id).classList.add('active'); }

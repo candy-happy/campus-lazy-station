@@ -869,16 +869,20 @@
         document.getElementById('discoverPage').classList.add('active');
         document.querySelectorAll('.nav-item')[1]?.classList.add('active');
         if (typeof initDiscoverPage === 'function') initDiscoverPage();
+      } else if (page === 'review') {
+        document.getElementById('reviewPage').classList.add('active');
+        document.querySelectorAll('.nav-item')[2]?.classList.add('active');
+        if (typeof loadReviewMaterials === 'function') loadReviewMaterials(1);
       } else if (page === 'message') {
         document.getElementById('messagePage').classList.add('active');
-        document.querySelectorAll('.nav-item')[2]?.classList.add('active');
+        document.querySelectorAll('.nav-item')[3]?.classList.add('active');
         initMessagePage();
       } else if (page === 'order') {
         document.getElementById('orderPage').classList.add('active');
         renderOrders();
       } else if (page === 'me') {
         document.getElementById('mePage').classList.add('active');
-        document.querySelectorAll('.nav-item')[3]?.classList.add('active');
+        document.querySelectorAll('.nav-item')[4]?.classList.add('active');
         updateMePage();
       }
     }
