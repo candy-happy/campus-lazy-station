@@ -853,7 +853,7 @@
       await loadMyListings();
     }
 
-    async function loadMyListings() {
+    async function loadMyListings(filterCategory) {
       const container = document.getElementById('marketMyListings');
       if (!container) return;
       container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">加载中...</div>';
@@ -864,21 +864,72 @@
           container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">📦</div><div class="sub-empty-text">暂无在售商品</div><button onclick="switchMarketCategory(\'all\');openPublishItem()" style="margin-top:16px;padding:10px 24px;border:2px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-weight:600;cursor:pointer">发布商品</button></div>';
           return;
         }
+        // 按分类分组 + 计数
+        const groups = {};
+        const catOrder = ['digital','textbook','daily','clothing','beauty','other'];
+        items.forEach(item => {
+          const cat = item.category || 'other';
+          if (!groups[cat]) groups[cat] = [];
+          groups[cat].push(item);
+        });
+        // 分类Tab HTML
+        let allCount = items.length;
+        const activeCat = filterCategory || '';
+        const tabsHtml = '<div class="my-listings-tabs">' +
+          '<span class="my-listings-tab' + (!activeCat ? ' active' : '') + '" onclick="loadMyListings()">全部 (' + allCount + ')</span>' +
+          catOrder.filter(c => groups[c]).map(c =>
+            '<span class="my-listings-tab' + (activeCat === c ? ' active' : '') + '" onclick="loadMyListings(\'' + c + '\')">' + (CATEGORY_MAP[c] || c) + ' (' + groups[c].length + ')</span>'
+          ).join('') +
+        '</div>';
+        // 筛选
+        const filtered = activeCat && groups[activeCat] ? groups[activeCat] : items;
+        // 渲染
         const statusLabel = { active:'在售', trading:'交易中', sold:'已售', removed:'已下架' };
-        container.innerHTML = items.map(item => {
+        const cardsHtml = filtered.map(item => {
           const img = (item.images && item.images[0]) || '';
-          return '<div class="trade-card">' +
+          return '<div class="trade-card clickable" onclick="event.stopPropagation();openItemDetail(' + item.id + ')">' +
             '<div class="trade-card-top">' +
               (img ? '<img class="trade-card-img" src="' + img + '" loading="lazy" />' : '<div class="trade-card-noimg">🛒</div>') +
               '<div class="trade-card-info">' +
                 '<div class="trade-card-title">' + escHtml(item.title) + '</div>' +
+                '<div class="trade-card-meta">' + (CATEGORY_MAP[item.category] || item.category || '其他') + '</div>' +
                 '<div class="trade-card-price">¥' + (item.price || 0).toFixed(2) + '</div>' +
                 '<span class="trade-card-status ' + (item.status === 'active' ? 'completed' : item.status === 'trading' ? 'confirmed' : 'cancelled') + '">' + (statusLabel[item.status] || item.status) + '</span>' +
               '</div>' +
             '</div>' +
-            (item.status === 'active' ? '<div class="trade-card-actions"><button class="trade-btn trade-btn-danger" onclick="removeMyItem(' + item.id + ');loadMyListings()">下架</button></div>' : '') +
+            (item.status === 'active' ? '<div class="trade-card-actions"><button class="trade-btn trade-btn-danger" onclick="event.stopPropagation();removeMyItem(' + item.id + ').then(function(){loadMyListings(\'' + (activeCat || '') + '\')})">下架</button></div>' : '') +
           '</div>';
         }).join('');
+        if (!filtered.length) {
+          container.innerHTML = tabsHtml + '<div class="sub-empty"><div class="sub-empty-icon">📭</div><div class="sub-empty-text">该分类暂无商品</div></div>';
+        } else {
+          // 按分类分组显示标题
+          let groupedHtml = '';
+          if (!activeCat) {
+            catOrder.forEach(cat => {
+              if (groups[cat] && groups[cat].length) {
+                const catItems = groups[cat].map(item => {
+                  const img = (item.images && item.images[0]) || '';
+                  return '<div class="trade-card clickable" onclick="event.stopPropagation();openItemDetail(' + item.id + ')">' +
+                    '<div class="trade-card-top">' +
+                      (img ? '<img class="trade-card-img" src="' + img + '" loading="lazy" />' : '<div class="trade-card-noimg">🛒</div>') +
+                      '<div class="trade-card-info">' +
+                        '<div class="trade-card-title">' + escHtml(item.title) + '</div>' +
+                        '<div class="trade-card-price">¥' + (item.price || 0).toFixed(2) + '</div>' +
+                        '<span class="trade-card-status ' + (item.status === 'active' ? 'completed' : 'cancelled') + '">' + (statusLabel[item.status] || item.status) + '</span>' +
+                      '</div>' +
+                    '</div>' +
+                    (item.status === 'active' ? '<div class="trade-card-actions"><button class="trade-btn trade-btn-danger" onclick="event.stopPropagation();removeMyItem(' + item.id + ').then(function(){loadMyListings()})">下架</button></div>' : '') +
+                  '</div>';
+                }).join('');
+                groupedHtml += '<div class="my-listings-group"><div class="my-listings-group-title">' + (CATEGORY_MAP[cat] || cat) + ' <span class="my-listings-group-count">' + groups[cat].length + '件</span></div>' + catItems + '</div>';
+              }
+            });
+            container.innerHTML = tabsHtml + groupedHtml;
+          } else {
+            container.innerHTML = tabsHtml + cardsHtml;
+          }
+        }
       } catch(e) {
         container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger)">加载失败</div>';
       }
