@@ -1162,7 +1162,7 @@
         </div>
       `);
       // 通知在前，私信在后
-      el.innerHTML = shareBanner + notifItem + chatItems.join('');
+      el.innerHTML = shareBanner + notifItem + chatItemsHtml;
       // 导出分享+打开会话的组合函数
       window.shareAndOpenConv = function(convId, otherPhone, otherName) {
         if (window._pendingSharePostId) {
@@ -1226,12 +1226,168 @@
     async function openChatConv(convId, otherPhone, otherName) {
       currentConvId = convId;
       currentConvPhone = otherPhone;
-      document.getElementById('chatConvTitle').textContent = otherName || otherPhone;
+      // 加载已保存的备注和背景
+      var settings = loadChatSettings();
+      document.getElementById('chatConvTitle').textContent = settings.nickname || otherName || otherPhone;
       document.getElementById('chatConversation').style.display = 'flex';
       await loadChatMessages();
+      applyChatBg(settings.bg);
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
       chatRefreshTimer = setInterval(loadChatMessages, 5000);
     }
+
+    // ─── 聊天设置 ────────────────────────────────────────
+    function getChatSettingsKey() {
+      return 'chat_settings_' + (currentConvPhone || '');
+    }
+
+    function loadChatSettings() {
+      try {
+        return JSON.parse(localStorage.getItem(getChatSettingsKey()) || '{}');
+      } catch (e) { return {}; }
+    }
+
+    function saveChatSettings(settings) {
+      localStorage.setItem(getChatSettingsKey(), JSON.stringify(settings));
+      applyChatBg(settings.bg);
+      if (settings.nickname) {
+        document.getElementById('chatConvTitle').textContent = settings.nickname;
+      }
+    }
+
+    function applyChatBg(bgVal) {
+      var el = document.getElementById('chatMessages');
+      if (!el) return;
+      if (!bgVal) {
+        el.style.background = '';
+        el.style.backgroundImage = '';
+        el.style.backgroundSize = '';
+        el.style.color = '';
+        return;
+      }
+      if (bgVal.indexOf('url(') === 0 || bgVal.match(/^(https?:\/\/|data:image)/)) {
+        el.style.background = '';
+        el.style.backgroundImage = 'url(' + bgVal.replace(/^url\(["']?|["']?\)$/g, '') + ')';
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+        el.style.backgroundRepeat = 'no-repeat';
+      } else if (bgVal.indexOf('linear') === 0) {
+        el.style.background = bgVal;
+        el.style.backgroundImage = '';
+        el.style.backgroundSize = '';
+      } else {
+        el.style.background = bgVal;
+        el.style.backgroundImage = '';
+        el.style.backgroundSize = '';
+      }
+      if (bgVal && bgVal.indexOf('#2A') >= 0) {
+        el.style.color = '#eee';
+      } else {
+        el.style.color = '';
+      }
+    }
+
+    function openChatSettings() {
+      var settings = loadChatSettings();
+      var otherName = document.getElementById('chatConvTitle').textContent;
+      var origName = currentConvPhone || otherName;
+
+      var nickInput = document.getElementById('chatNicknameInput');
+      nickInput.value = settings.nickname || '';
+      nickInput.placeholder = origName || '输入备注';
+
+      document.getElementById('chatMessages').style.display = 'none';
+      document.querySelector('#chatConversation .chat-input-bar').style.display = 'none';
+      document.getElementById('chatSettingsPage').style.display = 'flex';
+
+      var searchInput = document.getElementById('chatSearchInput');
+      if (searchInput) searchInput.value = '';
+      var searchRes = document.getElementById('chatSearchResults');
+      if (searchRes) searchRes.innerHTML = '<div style="padding:12px;color:var(--text-secondary);font-size:13px;text-align:center">输入关键词开始搜索</div>';
+    }
+
+    function closeChatSettings() {
+      document.getElementById('chatSettingsPage').style.display = 'none';
+      document.getElementById('chatMessages').style.display = '';
+      var inputBar = document.querySelector('#chatConversation .chat-input-bar');
+      if (inputBar) inputBar.style.display = '';
+      var settings = loadChatSettings();
+      applyChatBg(settings.bg);
+    }
+
+    window.handleChatBgUpload = function(input) {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var dataUrl = e.target.result;
+        var settings = loadChatSettings();
+        settings.bg = dataUrl;
+        saveChatSettings(settings);
+        if (typeof showToast === 'function') showToast('背景已更新');
+      };
+      reader.readAsDataURL(file);
+      input.value = '';
+    };
+
+    window.saveChatNickname = function() {
+      var input = document.getElementById('chatNicknameInput');
+      if (!input) return;
+      var nickname = input.value.trim();
+      var settings = loadChatSettings();
+      settings.nickname = nickname;
+      saveChatSettings(settings);
+      if (nickname) {
+        document.getElementById('chatConvTitle').textContent = nickname;
+      } else {
+        document.getElementById('chatConvTitle').textContent = currentConvPhone || '对话';
+      }
+      closeChatSettings();
+      loadChatList();
+    };
+
+    window.resetChatNickname = function() {
+      var input = document.getElementById('chatNicknameInput');
+      if (input) input.value = '';
+      window.saveChatNickname();
+    };
+
+    window.searchChatMessages = function(query) {
+      var resultDiv = document.getElementById('chatSearchResults');
+      if (!resultDiv) return;
+      if (!query || query.trim().length < 1) {
+        resultDiv.innerHTML = '<div style="padding:12px;color:var(--text-secondary);font-size:13px;text-align:center">输入关键词开始搜索</div>';
+        return;
+      }
+      var bubbles = document.querySelectorAll('#chatMessages .message-bubble');
+      var q = query.toLowerCase();
+      var qEscaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var regex = new RegExp('(' + qEscaped + ')', 'gi');
+      var found = [];
+      bubbles.forEach(function(b) {
+        var text = (b.getAttribute('data-content') || b.textContent || '').toLowerCase();
+        if (text.indexOf(q) >= 0) {
+          found.push({
+            text: b.getAttribute('data-content') || (b.textContent || '').substring(0, 60),
+            time: b.getAttribute('data-time') || '',
+            el: b
+          });
+        }
+      });
+      if (found.length === 0) {
+        resultDiv.innerHTML = '<div style="padding:12px;color:var(--text-secondary);font-size:13px;text-align:center">未找到相关内容</div>';
+        return;
+      }
+      resultDiv.innerHTML = found.map(function(item, i) {
+        var preview = item.text.substring(0, 60) + (item.text.length > 60 ? '...' : '');
+        var highlight = preview.replace(regex, '<span class="chat-search-highlight">$1</span>');
+        var msgIdx = Array.from(document.querySelectorAll('#chatMessages .message-bubble')).indexOf(item.el);
+        return '<div class="chat-search-result" onclick="closeChatSettings();setTimeout(function(){var b=document.querySelectorAll(\'#chatMessages .message-bubble\')[' + msgIdx + '];if(b){b.scrollIntoView({behavior:\'smooth\',block:\'center\'});b.style.boxShadow=\'0 0 0 3px var(--primary, #FF6B2B)\';setTimeout(function(){b.style.boxShadow=\'\'},2500)}},100)">' +
+          '<div>' + highlight + '</div>' +
+          (item.time ? '<div class="chat-search-result-time">' + item.time + '</div>' : '') +
+        '</div>';
+      }).join('');
+    };
 
     // 发送分享消息到指定会话
     async function sendShareMessageToConv(convId, postId) {
@@ -1319,8 +1475,9 @@
         } else {
           content = escHtml(c);
         }
+        var dataContent = (c||'').replace(/(\[SHARE_POST\]|\[GIF\]|\[ANIM:[^\]]*\])/g,'[分享]');
         return `
-          <div class="message-bubble ${isMe?'me':'other'}">
+          <div class="message-bubble ${isMe?'me':'other'}" data-time="${time}" data-content="${escHtml(dataContent)}">
             <div class="message-content">${content}<div class="message-time">${time}</div></div>
           </div>
         `;
@@ -1720,7 +1877,7 @@
           }
         }
 
-        function bindUserClicks() {
+        async function bindUserClicks() {
           document.querySelectorAll('#shareUserList .share-user-item').forEach(function(item) {
             item.onclick = function() {
               var phone = this.dataset.phone;
@@ -2567,6 +2724,9 @@ window.openChatList = openChatList;
 window.initMessagePage = initMessagePage;
 window.loadChatList = loadChatList;
 window.openChatConv = openChatConv;
+window.toggleChatSettings = openChatSettings;
+window.openChatSettings = openChatSettings;
+window.closeChatSettings = closeChatSettings;
 window.backToChatList = backToChatList;
 window.openNotifConv = openNotifConv;
 window.backFromNotifConv = backFromNotifConv;

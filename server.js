@@ -107,6 +107,47 @@ app.use(optionalAuth);
 // ─── 根路径返回宣传页面 ──────────────────────────────────
 app.get('/', (req, res) => res.redirect('/app.html'));
 
+// ─── 分享页OG标签（QQ/微信预览卡片）────────────────────
+app.get('/share/:id', (req, res) => {
+  try {
+    const db = require('./config/database');
+    const post = db.prepare('SELECT id, content, nickname, images, created_at FROM wall_posts WHERE id = ?').get(req.params.id);
+    const appUrl = config.BASE_URL || ('http://localhost:' + PORT);
+    const postUrl = appUrl + '/app.html?post=' + req.params.id;
+    
+    if (post) {
+      var title = (post.nickname || '校园圈用户') + ' 的分享';
+      var desc = (post.content || '').slice(0, 120).replace(/[\n\r]/g, ' ');
+      var rawImg = post.images ? ((post.images + '').split(',')[0] || '') : '';
+      var imgUrl = rawImg ? appUrl + (rawImg.startsWith('/') ? '' : '/') + rawImg : '';
+
+      res.send('<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n<meta charset="UTF-8">\n' +
+        '<meta property="og:title" content="' + escAttr(title) + '" />\n' +
+        '<meta property="og:description" content="' + escAttr(desc) + '" />\n' +
+        '<meta property="og:url" content="' + escAttr(postUrl) + '" />\n' +
+        (imgUrl ? '<meta property="og:image" content="' + escAttr(imgUrl) + '" />\n' : '') +
+        '<meta property="og:type" content="article" />\n' +
+        '<meta property="og:site_name" content="校园懒人效率站" />\n' +
+        '<meta itemprop="name" content="' + escAttr(title) + '" />\n' +
+        '<meta itemprop="description" content="' + escAttr(desc) + '" />\n' +
+        (imgUrl ? '<meta itemprop="image" content="' + escAttr(imgUrl) + '" />\n' : '') +
+        '<meta http-equiv="refresh" content="0;url=' + escAttr(postUrl) + '" />\n' +
+        '<title>' + escAttr(title) + '</title>\n' +
+        '</head>\n<body style="text-align:center;padding-top:100px;font-family:sans-serif">\n' +
+        '<p>正在跳转到帖子...</p>\n<a href="' + escAttr(postUrl) + '">如果没有自动跳转，请点击这里</a>\n' +
+        '</body>\n</html>');
+    } else {
+      res.status(404).send('Post not found');
+    }
+  } catch (e) {
+    res.redirect('/app.html');
+  }
+});
+
+function escAttr(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // ─── API 路由挂载 ────────────────────────────────────────
 // 认证
 app.use('/api', require('./routes/auth'));

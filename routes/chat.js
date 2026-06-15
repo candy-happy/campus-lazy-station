@@ -105,10 +105,10 @@ router.get('/conversations', requireAuth, (req, res) => JSON_RES(res, () => {
   ).all(phone, phone, phone);
   return convs.map(c => {
     const otherPhone = c.user1_phone === phone ? c.user2_phone : c.user1_phone;
-    const otherUser = db.prepare('SELECT name,phone FROM users WHERE phone=?').get(otherPhone)
-      || db.prepare('SELECT name,phone FROM riders WHERE phone=?').get(otherPhone)
+    const otherUser = db.prepare('SELECT name,phone,avatar FROM users WHERE phone=?').get(otherPhone)
+      || db.prepare('SELECT name,phone,avatar FROM riders WHERE phone=?').get(otherPhone)
       || { name: '未知用户', phone: otherPhone };
-    return { ...c, other_name: otherUser.name, other_phone: otherPhone };
+    return { ...c, other_name: otherUser.name, other_phone: otherPhone, other_avatar: otherUser.avatar || '' };
   });
 }));
 

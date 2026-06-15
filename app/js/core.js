@@ -792,7 +792,7 @@
             <button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button>
             <button class="wall-action" onclick="showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button>
             <button class="wall-action" onclick="event.stopPropagation();doSharePost(${p.id})">📤 <span>${p.share_count||0}</span></button>
-            <button class="wall-action" onclick="event.stopPropagation();generateShareImage(${p.id})" title="生成精美卡片">📤外发</button>
+            <button class="wall-action" onclick="event.stopPropagation();generateShareImage(${p.id})" title="生成卡片分享到QQ/微信">📲</button>
           </div>
         </div>
       `;
