@@ -612,7 +612,6 @@
     async function openSellerWall(phone, name) {
       closeSubPage('sellerItemsPage_sub');
       switchPage('home');
-      setTimeout(function() { switchWallTab('latest'); }, 50);
     }
 
     async function loadSellerItems(sellerPhone) {
