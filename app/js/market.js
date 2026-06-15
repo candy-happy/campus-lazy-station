@@ -39,7 +39,6 @@
       // Reset to grid view
       document.getElementById('marketGrid').style.display = '';
       document.getElementById('marketMyListings').style.display = 'none';
-      document.getElementById('marketMyTrades').style.display = 'none';
       document.querySelectorAll('#marketTabs .market-tab').forEach(t => t.classList.toggle('active', t.textContent.includes(CATEGORY_MAP[cat] || '全部')));
       loadMarketItems(true);
     }
@@ -51,11 +50,9 @@
       const empty = document.getElementById('marketEmpty');
       const more = document.getElementById('marketMore');
       if (!grid) return;
-      // Hide inline listings/trades
+      // Hide inline listings
       const listings = document.getElementById('marketMyListings');
-      const trades = document.getElementById('marketMyTrades');
       if (listings) listings.style.display = 'none';
-      if (trades) trades.style.display = 'none';
       grid.style.display = '';
       if (!marketItems.length) {
         grid.innerHTML = '';
