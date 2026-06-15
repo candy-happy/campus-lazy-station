@@ -430,7 +430,7 @@
         '<div class="profile-avatar-big" id="profileAvatarPreview" onclick="document.getElementById(\'userAvatarInput\').click()">' + avatarPreviewHtml + '<div class="profile-avatar-hint">📷</div></div>' +
         '<div class="profile-hero-actions">' +
         '<label class="profile-hero-btn"><input type="file" id="userBgInput" style="display:none" onchange="uploadUserBg(this)" />🎨 更换封面</label>' +
-        '<label class="profile-hero-btn" style="background:transparent;border:1.5px solid rgba(255,255,255,0.55)"><input type="file" id="userAvatarInput" style="display:none" onchange="uploadUserAvatar(this)" />📷 上传头像</label>' +
+        '<label class="profile-hero-btn"><input type="file" id="userAvatarInput" style="display:none" onchange="uploadUserAvatar(this)" />📷 上传头像</label>' +
         '</div>' +
         '</div>' +
         '</div>';
