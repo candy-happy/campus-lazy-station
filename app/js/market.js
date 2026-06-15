@@ -658,36 +658,26 @@
     }
 
 
-    async function openMyTrades() {
-      if (!currentUser) { showToast('请先登录'); return; }
-      tradeTab = 'all';
-      // Show inline, hide grid
-      document.getElementById('marketGrid').style.display = 'none';
-      document.getElementById('marketEmpty').style.display = 'none';
-      document.getElementById('marketMore').style.display = 'none';
-      document.getElementById('marketMyListings').style.display = 'none';
-      document.getElementById('marketMyTrades').style.display = 'block';
-      // Activate tab
-      document.querySelectorAll('#marketTabs .market-tab').forEach(t => t.classList.remove('active'));
-      document.getElementById('marketTabTrades').classList.add('active');
-      await loadTradeList();
-    }
-
     function switchTradeTab(tab) {
       tradeTab = tab;
-      document.querySelectorAll('#tradeTabs .trade-tab').forEach(t => t.classList.remove('active'));
-      const map = { all:'tradeTabAll', buyer:'tradeTabBuy', seller:'tradeTabSell' };
-      const el = document.getElementById(map[tab]);
-      if (el) el.classList.add('active');
-      loadTradeList();
+      loadMyTradeList();
     }
 
-    async function loadTradeList() {
-      const container = document.getElementById('marketMyTrades');
+    // 子Tab公共HTML
+    function myMarketSubTabs() {
+      return '<div class="my-market-subtabs" style="display:flex;gap:6px;margin-bottom:12px">' +
+        '<span class="my-market-subtab' + (myMarketTab === 'items' ? ' active' : '') + '" onclick="switchMyMarketTab(\'items\')" style="padding:7px 16px;border-radius:18px;font-size:13px;font-weight:600;cursor:pointer;' + (myMarketTab === 'items' ? 'background:var(--gradient);color:#fff' : 'background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)') + '">📦 我的商品</span>' +
+        '<span class="my-market-subtab' + (myMarketTab === 'trades' ? ' active' : '') + '" onclick="switchMyMarketTab(\'trades\')" style="padding:7px 16px;border-radius:18px;font-size:13px;font-weight:600;cursor:pointer;' + (myMarketTab === 'trades' ? 'background:var(--gradient);color:#fff' : 'background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)') + '">🛒 我的交易</span>' +
+      '</div>';
+    }
+
+    async function loadMyTradeList() {
+      const container = document.getElementById('marketMyListings');
       if (!container) return;
-      // Render trade tabs inline
+      const subTabs = myMarketSubTabs();
+      // 交易角色Tab
       const tabLabels = { all:'全部', buyer:'买入', seller:'卖出' };
-      let tabsHtml = '<div id="tradeTabs" style="display:flex;gap:8px;margin-bottom:12px;padding-top:4px">';
+      let tabsHtml = subTabs + '<div id="tradeTabs" style="display:flex;gap:8px;margin-bottom:12px">';
       Object.entries(tabLabels).forEach(([k, v]) => {
         tabsHtml += '<div class="trade-tab' + (tradeTab === k ? ' active' : '') + '" id="tradeTab' + k.charAt(0).toUpperCase() + k.slice(1) + '" onclick="switchTradeTab(\'' + k + '\')" style="padding:6px 16px;border-radius:16px;font-size:13px;cursor:pointer;' + (tradeTab === k ? 'background:var(--gradient);color:#fff' : 'background:var(--bg);color:var(--text-secondary)') + '">' + v + '</div>';
       });
@@ -785,7 +775,7 @@
     async function confirmTrade(orderId) {
       try {
         const res = await API.updateMarketOrder(orderId, 'confirm');
-        if (res.ok) { showToast('已确认'); loadTradeList(); }
+        if (res.ok) { showToast('已确认'); loadMyTradeList(); }
         else showToast(res.error || '操作失败');
       } catch(e) { showToast('操作失败'); }
     }
@@ -796,7 +786,7 @@
       if (!confirm('确认完成交易？')) return;
       try {
         const res = await API.updateMarketOrder(orderId, 'complete');
-        if (res.ok) { showToast('交易完成 ✅'); loadTradeList(); }
+        if (res.ok) { showToast('交易完成 ✅'); loadMyTradeList(); }
         else showToast(res.error || '操作失败');
       } catch(e) { showToast('操作失败'); }
     }
@@ -807,7 +797,7 @@
       if (!confirm('确认取消交易？')) return;
       try {
         const res = await API.updateMarketOrder(orderId, 'cancel');
-        if (res.ok) { showToast('已取消'); loadTradeList(); }
+        if (res.ok) { showToast('已取消'); loadMyTradeList(); }
         else showToast(res.error || '操作失败');
       } catch(e) { showToast('操作失败'); }
     }
@@ -820,7 +810,7 @@
       const review = prompt('评价内容（选填）：') || '';
       try {
         const res = await API.reviewMarketOrder(orderId, parseInt(rating), review);
-        if (res.ok) { showToast('评价成功 ⭐'); loadTradeList(); }
+        if (res.ok) { showToast('评价成功 ⭐'); loadMyTradeList(); }
         else showToast(res.error || '评价失败');
       } catch(e) { showToast('操作失败'); }
     }
@@ -837,21 +827,34 @@
     }
 
 
-    // ─── 我的在售 ─────────────────────────────────────────
+    // ─── 我的（在售+交易合并） ─────────────────────────
+    let myMarketTab = 'items'; // 'items' | 'trades'
 
-    async function openMyListings() {
+    async function openMyMarket(activeTab) {
       if (!currentUser) { showToast('请先登录'); return; }
+      if (activeTab) myMarketTab = activeTab;
       // Show inline, hide grid
       document.getElementById('marketGrid').style.display = 'none';
       document.getElementById('marketEmpty').style.display = 'none';
       document.getElementById('marketMore').style.display = 'none';
-      document.getElementById('marketMyTrades').style.display = 'none';
       document.getElementById('marketMyListings').style.display = 'block';
       // Activate tab
       document.querySelectorAll('#marketTabs .market-tab').forEach(t => t.classList.remove('active'));
-      document.getElementById('marketTabListings').classList.add('active');
-      await loadMyListings();
+      document.getElementById('marketTabMine').classList.add('active');
+      // Switch sub-tab
+      switchMyMarketTab(myMarketTab);
     }
+
+    function switchMyMarketTab(tab) {
+      myMarketTab = tab;
+      if (tab === 'items') loadMyListings();
+      else loadMyTradeList();
+    }
+
+    // 向后兼容
+    window.openMyListings = () => openMyMarket('items');
+    window.openMyTrades = () => openMyMarket('trades');
+    window.switchMyMarketTab = switchMyMarketTab;
 
     async function loadMyListings(filterStatus) {
       const container = document.getElementById('marketMyListings');
@@ -861,7 +864,7 @@
         const res = await API.getMyMarketItems();
         const items = res.items || [];
         if (!items.length) {
-          container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">📦</div><div class="sub-empty-text">暂无在售商品</div><button onclick="switchMarketCategory(\'all\');openPublishItem()" style="margin-top:16px;padding:10px 24px;border:2px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-weight:600;cursor:pointer">发布商品</button></div>';
+          container.innerHTML = myMarketSubTabs() + '<div class="sub-empty"><div class="sub-empty-icon">📦</div><div class="sub-empty-text">暂无在售商品</div><button onclick="switchMarketCategory(\'all\');openPublishItem()" style="margin-top:16px;padding:10px 24px;border:2px solid var(--primary);border-radius:20px;background:transparent;color:var(--primary);font-weight:600;cursor:pointer">发布商品</button></div>';
           return;
         }
         // 按状态统计
@@ -877,8 +880,9 @@
           statusCounts[s] = (statusCounts[s] || 0) + 1;
         });
         // 状态Tab
+        const subTabs = myMarketSubTabs();
         const activeStatus = filterStatus || '';
-        const tabsHtml = '<div class="my-listings-tabs">' +
+        const tabsHtml = subTabs + '<div class="my-listings-tabs">' +
           '<span class="my-listings-tab' + (!activeStatus ? ' active' : '') + '" onclick="loadMyListings()">全部 (' + items.length + ')</span>' +
           statusOrder.filter(s => statusCounts[s.key]).map(s =>
             '<span class="my-listings-tab' + (activeStatus === s.key ? ' active' : '') + '" onclick="loadMyListings(\'' + s.key + '\')">' + s.icon + ' ' + s.label + ' (' + statusCounts[s.key] + ')</span>'
@@ -951,7 +955,7 @@ window.selectPublishCategory = selectPublishCategory;
 window.selectPublishCondition = selectPublishCondition;
 window.resetPublishSelectors = resetPublishSelectors;
 window.submitPublishItem = submitPublishItem;
-window.openMyTrades = openMyTrades;
+window.openMyTrades = openMyTrades;  // backward compat wrapper
 window.viewSeller = viewSeller;
 window.loadSellerItems = loadSellerItems;
 window.loadSellerStats = loadSellerStats;
@@ -959,12 +963,12 @@ window.loadSellerRatings = loadSellerRatings;
 window.renderStarRating = renderStarRating;
 window.openSellerWall = openSellerWall;
 window.switchTradeTab = switchTradeTab;
-window.loadTradeList = loadTradeList;
+window.loadMyTradeList = loadMyTradeList;
 window.renderTradeActions = renderTradeActions;
 window.confirmTrade = confirmTrade;
 window.completeTrade = completeTrade;
 window.cancelTrade = cancelTrade;
 window.rateTrade = rateTrade;
 window.chatWithTrader = chatWithTrader;
-window.openMyListings = openMyListings;
+window.openMyMarket = openMyMarket;
 window.loadMyListings = loadMyListings;

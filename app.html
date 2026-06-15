@@ -12,7 +12,7 @@
   <script src="app/js/core.js?v=3.0.43"></script>
   <script src="app/js/wall.js?v=3.0.31"></script>
   <script src="app/js/order.js?v=3.0.28"></script>
-  <script src="app/js/market.js?v=3.0.35"></script>
+  <script src="app/js/market.js?v=3.0.36"></script>
   <script src="app/js/user.js?v=3.0.44"></script>
   <script src="app/js/address.js?v=3.0.28"></script>
   <script src="app/js/teachers.js?v=3.0.40"></script>
@@ -569,8 +569,7 @@
           <div class="market-tab" onclick="switchMarketCategory('beauty')">💄 美妆</div>
           <div class="market-tab" onclick="switchMarketCategory('other')">📦 其他</div>
           <span style="color:var(--border);margin:0 4px">│</span>
-          <div class="market-tab market-tab-mine" id="marketTabListings" onclick="openMyListings()">📦 我的在售</div>
-          <div class="market-tab market-tab-mine" id="marketTabTrades" onclick="openMyTrades()">🛒 我的交易</div>
+          <div class="market-tab market-tab-mine" id="marketTabMine" onclick="openMyMarket()">📦 我的</div>
         </div>
         <!-- 商品网格 -->
         <div class="market-grid" id="marketGrid">
@@ -587,8 +586,6 @@
         </div>
         <!-- 我的在售（内联） -->
         <div id="marketMyListings" style="display:none;padding:0 12px"></div>
-        <!-- 我的交易（内联） -->
-        <div id="marketMyTrades" style="display:none;padding:0 12px"></div>
       </div>
     </div>
 
