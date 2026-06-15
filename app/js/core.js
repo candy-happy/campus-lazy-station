@@ -434,6 +434,8 @@
     // Apply saved language on load
     document.addEventListener('DOMContentLoaded', function() {
       if (_lang !== 'zh') applyLanguage();
+      // 检测分享链接参数：?post=xxx → 自动打开帖子详情
+      handleSharedPostUrl();
     });
 
     // 全局错误捕获 - 页面右上角显示JS错误
@@ -790,6 +792,7 @@
             <button class="wall-action" onclick="event.stopPropagation();doWallLike(${p.id},this)">❤️ <span>${p.like_count||0}</span></button>
             <button class="wall-action" onclick="showWallDetail(${p.id})">💬 <span>${p.comment_count||0}</span></button>
             <button class="wall-action" onclick="event.stopPropagation();doSharePost(${p.id})">📤 <span>${p.share_count||0}</span></button>
+            <button class="wall-action" onclick="event.stopPropagation();generateShareImage(${p.id})" title="生成精美卡片">📤外发</button>
           </div>
         </div>
       `;
@@ -880,6 +883,28 @@
       }
     }
 
+    // ══════ 分享链接检测：自动打开帖子 ══════
+    function handleSharedPostUrl() {
+      var params = new URLSearchParams(window.location.search);
+      var postId = params.get('post');
+      if (!postId) return;
+      // 延迟等待页面完全加载和登录状态就绪
+      setTimeout(function () {
+        if (typeof showWallDetail === 'function') {
+          showWallDetail(parseInt(postId));
+        } else {
+          var retries = 0;
+          var timer = setInterval(function () {
+            retries++;
+            if (typeof showWallDetail === 'function') {
+              clearInterval(timer);
+              showWallDetail(parseInt(postId));
+            }
+            if (retries > 20) clearInterval(timer);
+          }, 300);
+        }
+      }, 500);
+    }
 
     // ══════ 我的页面 ══════
 
@@ -907,6 +932,9 @@
         const phoneEl = document.getElementById('mePhone');
         const avatarEl = document.getElementById('meAvatar');
         if (nameEl) nameEl.textContent = pdata?.nickname || pdata?.name || '校园圈用户';
+        // 同步更新顶部问候语
+        const headerTitle = document.querySelector('.header .logo-text');
+        if (headerTitle && pdata?.nickname) headerTitle.textContent = '你好, ' + pdata.nickname;
         if (phoneEl) phoneEl.textContent = fmtPhone(currentUser.phone);
         if (avatarEl) {
           const av = pdata?.avatar || avatars[parseInt(currentUser.phone.slice(-2)) % avatars.length];
