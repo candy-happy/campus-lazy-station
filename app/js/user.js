@@ -66,7 +66,7 @@
         overlay.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
         overlay.innerHTML = `
           <div style="width:100%;max-width:380px;text-align:center">
-            <div style="font-size:56px;margin-bottom:8px">🦥</div>
+            <img src="/images/xy-logo-circle-256.png" alt="logo" style="width:72px;height:72px;border-radius:50%;margin-bottom:8px;object-fit:cover" onerror="this.style.display='none';this.parentElement.querySelector('div').style.display=''" /><div style="font-size:56px;margin-bottom:8px;display:none">🦥</div>
             <h1 style="font-size:22px;font-weight:900;color:var(--primary);background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px">校园圈</h1>
             <p style="color:var(--text-secondary);font-size:13px;margin-bottom:32px">随时随地，帮我干活</p>
             <div style="background:var(--card);border-radius:20px;padding:28px 24px;box-shadow:var(--shadow)">
