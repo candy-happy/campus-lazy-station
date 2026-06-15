@@ -1074,6 +1074,34 @@
     </div>
   </div>
 
+  <!-- 复习资料管理页面 -->
+  <div class="page-section" id="page-review-materials">
+    <div class="page-header" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9,#A5D6A7);border-radius:16px;padding:28px 32px;margin-bottom:20px">
+      <h1 class="page-title" style="font-size:1.6rem;background:linear-gradient(135deg,#2E7D32,#43A047);-webkit-background-clip:text;-webkit-text-fill-color:transparent">📚 复习资料管理</h1>
+      <p class="page-desc" style="color:#1B5E20;margin-top:4px">审核用户上传的复习资料 / 直接添加资料</p>
+    </div>
+    <div class="market-admin-toolbar" style="background:linear-gradient(135deg,#F1F8E9,#E8F5E9);border-color:#C8E6C9">
+      <button class="btn btn-primary" onclick="showReviewMaterialModal()" style="background:linear-gradient(135deg,#2E7D32,#43A047);box-shadow:0 4px 14px rgba(46,125,50,0.3)">📚 添加资料</button>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <select id="reviewAdminStatus" onchange="loadReviewMaterialsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #C8E6C9;background:#fff;font-size:0.9rem;cursor:pointer">
+          <option value="">📋 全部状态</option>
+          <option value="pending">⏳ 待审核</option>
+          <option value="approved">✅ 已通过</option>
+          <option value="rejected">❌ 已拒绝</option>
+        </select>
+        <select id="reviewAdminSubject" onchange="loadReviewMaterialsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #C8E6C9;background:#fff;font-size:0.9rem;cursor:pointer">
+          <option value="">📖 全部科目</option>
+        </select>
+        <input type="text" id="reviewAdminSearch" placeholder="🔍 搜索标题/科目/上传者..." oninput="loadReviewMaterialsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #C8E6C9;background:#fff;width:220px;font-size:0.9rem">
+      </div>
+    </div>
+    <div class="table-card" style="border-color:#C8E6C9">
+      <table class="data-table"><thead><tr><th>科目</th><th>标题</th><th>上传者</th><th>文件</th><th>状态</th><th>下载</th><th>时间</th><th>操作</th></tr></thead>
+      <tbody id="reviewMaterialsTable"></tbody></table>
+    </div>
+    <div style="display:flex;justify-content:center;gap:8px;align-items:center;padding:16px;font-size:13px;color:var(--text-secondary)" id="reviewMaterialsPager"></div>
+  </div>
+
  </main>
  </div>
  <div class="modal-overlay" id="addAdminModal">
@@ -1145,39 +1173,11 @@
    </div>
  </div>
 
-  <!-- 复习资料管理页面 -->
-  <div class="page-section" id="page-review-materials">
-    <div class="page-header" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9,#A5D6A7);border-radius:16px;padding:28px 32px;margin-bottom:20px">
-      <h1 class="page-title" style="font-size:1.6rem;background:linear-gradient(135deg,#2E7D32,#43A047);-webkit-background-clip:text;-webkit-text-fill-color:transparent">📚 复习资料管理</h1>
-      <p class="page-desc" style="color:#1B5E20;margin-top:4px">审核用户上传的复习资料 / 直接添加资料</p>
-    </div>
-    <div class="market-admin-toolbar" style="background:linear-gradient(135deg,#F1F8E9,#E8F5E9);border-color:#C8E6C9">
-      <button class="btn btn-primary" onclick="showReviewMaterialModal()" style="background:linear-gradient(135deg,#2E7D32,#43A047);box-shadow:0 4px 14px rgba(46,125,50,0.3)">📚 添加资料</button>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <select id="reviewAdminStatus" onchange="loadReviewMaterialsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #C8E6C9;background:#fff;font-size:0.9rem;cursor:pointer">
-          <option value="">📋 全部状态</option>
-          <option value="pending">⏳ 待审核</option>
-          <option value="approved">✅ 已通过</option>
-          <option value="rejected">❌ 已拒绝</option>
-        </select>
-        <select id="reviewAdminSubject" onchange="loadReviewMaterialsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #C8E6C9;background:#fff;font-size:0.9rem;cursor:pointer">
-          <option value="">📖 全部科目</option>
-        </select>
-        <input type="text" id="reviewAdminSearch" placeholder="🔍 搜索标题/科目/上传者..." oninput="loadReviewMaterialsAdmin()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #C8E6C9;background:#fff;width:220px;font-size:0.9rem">
-      </div>
-    </div>
-    <div class="table-card" style="border-color:#C8E6C9">
-      <table class="data-table"><thead><tr><th>科目</th><th>标题</th><th>上传者</th><th>文件</th><th>状态</th><th>下载</th><th>时间</th><th>操作</th></tr></thead>
-      <tbody id="reviewMaterialsTable"></tbody></table>
-    </div>
-    <div style="display:flex;justify-content:center;gap:8px;align-items:center;padding:16px;font-size:13px;color:var(--text-secondary)" id="reviewMaterialsPager"></div>
-  </div>
-
-  <!-- 添加/编辑资料弹窗 -->
+  <!-- 复习资料弹窗 -->
   <div class="modal-overlay" id="reviewMaterialModal">
     <div class="modal-content" style="max-width:500px">
       <div class="modal-header" style="background:linear-gradient(135deg,#2E7D32,#43A047);border-radius:12px 12px 0 0;padding:20px 24px">
-        <span class="modal-title" id="reviewMaterialModalTitle" style="color:#fff;font-size:1.15rem">📚 添加复习资料</span>
+        <span class="modal-title" style="color:#fff;font-size:1.15rem">📚 添加复习资料</span>
         <button class="modal-close" onclick="closeModal('reviewMaterialModal')" style="color:#fff;background:rgba(255,255,255,0.2)">&times;</button>
       </div>
       <div class="modal-body" style="padding:24px;max-height:70vh;overflow-y:auto">
