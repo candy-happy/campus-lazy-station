@@ -556,7 +556,8 @@
       <div class="sub-page-header">
         <button class="sub-page-back" onclick="closeSubPage('marketListPage_sub')">←</button>
         <span class="sub-page-title">🛒 二手市场</span>
-        <button onclick="openSubPage('publishItemPage_sub')" style="margin-left:auto;padding:4px 12px;border-radius:16px;background:var(--gradient);color:white;border:none;font-size:12px;cursor:pointer">✏️ 发布</button>
+        <button onclick="openMyMarket()" style="padding:4px 10px;border-radius:16px;background:var(--card);color:var(--primary);border:1.5px solid var(--primary);font-size:12px;cursor:pointer;font-weight:600">📦 我的</button>
+        <button onclick="openSubPage('publishItemPage_sub')" style="margin-left:4px;padding:4px 12px;border-radius:16px;background:var(--gradient);color:white;border:none;font-size:12px;cursor:pointer">✏️ 发布</button>
       </div>
       <div class="sub-page-body" style="padding:0">
         <!-- 分类标签 -->
@@ -568,8 +569,6 @@
           <div class="market-tab" onclick="switchMarketCategory('clothing')">👔 服饰</div>
           <div class="market-tab" onclick="switchMarketCategory('beauty')">💄 美妆</div>
           <div class="market-tab" onclick="switchMarketCategory('other')">📦 其他</div>
-          <span style="color:var(--border);margin:0 4px">│</span>
-          <div class="market-tab market-tab-mine" id="marketTabMine" onclick="openMyMarket()">📦 我的</div>
         </div>
         <!-- 商品网格 -->
         <div class="market-grid" id="marketGrid">
