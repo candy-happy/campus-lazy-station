@@ -608,9 +608,10 @@
     var _currentSellerPhone = '';
     var _currentSellerName = '';
 
-    // 打开卖家校园墙主页 → 关闭子页回首页校园墙（不需switchPage，已在首页）
+    // 打开卖家校园墙主页 → 关闭商品子页后跳转该用户个人墙
     async function openSellerWall(phone, name) {
       closeSubPage('sellerItemsPage_sub');
+      showWallUser(phone);
     }
 
     async function loadSellerItems(sellerPhone) {
