@@ -100,7 +100,7 @@ const API = {
     this._user = Object.assign({}, res.user, { phone_original: res.user?.phone || student_id });
     this._role = 'user';
     if (res.token) { this._token = res.token; localStorage.setItem('lazy_token', res.token); }
-    localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', student_id, phone: res.user?.phone || student_id, name: res.user?.name || '', avatar: res.user?.avatar || '' }));
+    localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', student_id, phone: res.user?.phone || student_id, name: res.user?.name || '', nickname: res.user?.nickname || '', avatar: res.user?.avatar || '' }));
     return { ...this._user, isNewUser: res.isNewUser };
   },
 

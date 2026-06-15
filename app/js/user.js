@@ -38,8 +38,8 @@
           API.logout();
           showLoginPage();
         } else {
-          currentUser = { student_id: saved.student_id, phone: saved.phone || '', name: saved.name || '', avatar: saved.avatar || '' };
-          var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + (saved.name || '...');
+          currentUser = { student_id: saved.student_id, phone: saved.phone || '', name: saved.name || '', nickname: saved.nickname || '', avatar: saved.avatar || '' };
+          var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + (saved.nickname || saved.name || '...');
           showMainApp();
           await loadData();
           startOrderPolling();
@@ -185,10 +185,10 @@
       btn.disabled = true;
       try {
         const res = await API.userLogin(studentId, password, captchaInput, _captchaKey);
-        currentUser = { student_id: studentId, phone: res.phone || studentId, name: res.name || '同学' };
-        localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', student_id: studentId, phone: res.phone || studentId, name: res.name || '同学' }));
+        currentUser = { student_id: studentId, phone: res.phone || studentId, name: res.name || '同学', nickname: res.nickname || '' };
+        localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', student_id: studentId, phone: res.phone || studentId, name: res.name || '同学', nickname: res.nickname || '' }));
         document.getElementById('loginOverlay').style.display = 'none';
-        var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + (res.name || '同学');
+        var h = document.querySelector('.header .logo-text'); if (h) h.textContent = '你好, ' + (res.nickname || res.name || '同学');
         showMainApp();
         await loadData();
         startOrderPolling();
