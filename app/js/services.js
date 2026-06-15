@@ -6,6 +6,7 @@ const ALL_SERVICES = [
   { key: 'teacher', icon: '👨‍🏫', name: '师说',     action: "openSubPage('teacherListPage_sub')" },
   { key: 'pet',     icon: '🐱', name: '猫狗日记', action: "openSubPage('petListPage_sub')" },
   { key: 'market',  icon: '🛒', name: '二手市场', action: "loadMarketItems(true);openSubPage('marketListPage_sub')" },
+  { key: 'review',  icon: '📚', name: '复习资料', action: "openSubPage('reviewPage_sub')" },
 ];
 
 const SERVICE_STORAGE_KEY = 'homeServicesOrder';
