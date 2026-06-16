@@ -1,4 +1,4 @@
-﻿// core.js - 核心工具/全局/初始化
+// core.js - 核心工具/全局/初始化
 // 包含: 全局变量、i18n、工具函数、页面切换、子页面、初始化
 // 新功能请添加为独立JS模块，不要在此骨架文件中添加代码
 
@@ -694,7 +694,7 @@
     function showMainApp() {
       document.getElementById('homePage').classList.add('active');
       document.querySelectorAll('.nav-item')[0].classList.add('active');
-      if (currentUser) loadWallFeed();
+      if (currentUser) { loadWallFeed(); }
     }
 
 
@@ -860,7 +860,7 @@
       if (page === 'home') {
         document.getElementById('homePage').classList.add('active');
         document.querySelectorAll('.nav-item')[0]?.classList.add('active');
-        if (currentUser) loadWallFeed();
+        if (currentUser) { loadWallFeed(); }
       } else if (page === 'wallPage') {
         // 全站搜索或标签筛选进入：切换到首页但不刷新帖子流
         document.getElementById('homePage').classList.add('active');
@@ -1356,12 +1356,12 @@ window.showToast = showToast;
       if (clubs.length > 0) {
         html += '<div style="padding:12px 0 8px;font-size:13px;color:var(--text-secondary);font-weight:600">🏘️ 相关社团 (' + clubs.length + '条)</div>';
         clubs.forEach(c => {
-          html += '<div class="wall-post" style="padding:12px;cursor:pointer;margin-bottom:8px;border:1px solid var(--border);border-radius:12px" onclick="closeSubPage(\'searchResultPage_sub\');switchPage(\'discoverPage\');switchDiscoverTab(\'clubs\')">' +
+          html += '<div class="wall-post" style="padding:12px;cursor:pointer;margin-bottom:8px;border:1px solid var(--border);border-radius:12px" onclick="closeSubPage(\'searchResultPage_sub\');showClubDetail(' + c.id + ')">' +
             '<div style="font-weight:600;font-size:14px">🏘️ ' + escHtml(c.name) + '</div>' +
             '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + escHtml(c.description||'') + ' · ' + (c.member_count||0) + ' 人</div>' +
             '</div>';
         });
-        if (clubs.length >= 50) { html += '<a onclick="closeSubPage(\'searchResultPage_sub\');switchPage(\'discoverPage\');switchDiscoverTab(\'clubs\')" style="display:block;padding:8px 12px;text-align:center;font-size:13px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部社团 →</a>'; }
+        if (clubs.length >= 50) { html += '<a onclick="closeSubPage(\'searchResultPage_sub\');openClubPage()" style="display:block;padding:8px 12px;text-align:center;font-size:13px;color:var(--text-secondary);cursor:pointer;border-top:1px solid var(--border)">查看全部社团 →</a>'; }
       }
 
       // 活动
@@ -1487,7 +1487,7 @@ window.showToast = showToast;
           if (clubs.length > 0) {
             html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-secondary);font-weight:600">🏘️ 社团</div>';
             clubs.slice(0, 5).forEach(c => {
-              html += '<div onclick="switchPage(\'discoverPage\');switchDiscoverTab(\'clubs\');hideGlobalSearchHints()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">🏘️ ' + escHtml(c.name) + ' <span style="font-size:10px;color:var(--text-secondary);opacity:0.6">' + (c.member_count||0) + ' 人</span></div>';
+              html += '<div onclick="showClubDetail(' + c.id + ');hideGlobalSearchHints()" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">🏘️ ' + escHtml(c.name) + ' <span style="font-size:10px;color:var(--text-secondary);opacity:0.6">' + (c.member_count||0) + ' 人</span></div>';
             });
           }
         } catch(e) {}

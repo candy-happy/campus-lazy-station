@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="app/css/style.css?v=3.0.44" />
   <script src="api.js?v=3.0.30"></script>
   <script src="app/js/core.js?v=3.0.43"></script>
-  <script src="app/js/wall.js?v=3.0.32"></script>
+  <script src="app/js/wall.js?v=1781584106854"></script>
   <script src="app/js/order.js?v=3.0.28"></script>
   <script src="app/js/market.js?v=3.0.37"></script>
   <script src="app/js/user.js?v=3.0.47"></script>
@@ -22,7 +22,7 @@
   <script src="app/js/discover.js?v=3.0.31"></script>
   <script src="app/js/review.js?v=3.0.1"></script>
   <script src="app/js/wall-share.js?v=3.0.1"></script>
-  <script src="app/js/campus-star.js?v=3.0.0"></script>
+  <script src="app/js/campus-star.js?v=1781589341676"></script>
 </head>
 <body>
   <div class="app">
@@ -183,7 +183,71 @@
           
     </div>
 
-    <!-- ========== 复习资料子页面 ========== -->
+    
+    <!-- ========== 社团子页面 ========== -->
+    <div class="sub-page" id="clubPage_sub">
+      <div class="sub-page-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91,#f06292)">
+        <button class="sub-page-back" onclick="closeSubPage('clubPage_sub')">←</button>
+        <span class="sub-page-title" style="color:#fff">🎭 校园社团</span>
+        <button onclick="openCreateClubModal()" style="padding:4px 12px;border-radius:16px;background:rgba(255,255,255,0.25);color:#fff;border:none;font-size:12px;cursor:pointer">+ 创建</button>
+        <button onclick="openCreateActivityModal()" style="padding:4px 12px;border-radius:16px;background:rgba(255,255,255,0.25);color:#fff;border:none;font-size:12px;cursor:pointer;margin-left:6px">发布活动</button>
+      </div>
+      <div class="sub-page-body" style="padding:12px 16px 24px">
+        <!-- 顶部Tab导航 -->
+        <div style="display:flex;gap:0;background:var(--bg);border-radius:14px;padding:4px;margin-bottom:16px;border:1px solid var(--border);position:sticky;top:0;z-index:5">
+          <div class="club-tab active" data-tab="my" onclick="switchClubTab('my')" style="flex:1;text-align:center;padding:9px 4px;border-radius:11px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;color:#e91e63;background:var(--card);box-shadow:0 2px 8px rgba(0,0,0,0.08)">🏘️ 我的社团</div>
+          <div class="club-tab" data-tab="activities" onclick="switchClubTab('activities')" style="flex:1;text-align:center;padding:9px 4px;border-radius:11px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;color:var(--text-muted)">📅 社团活动</div>
+          <div class="club-tab" data-tab="all" onclick="switchClubTab('all')" style="flex:1;text-align:center;padding:9px 4px;border-radius:11px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;color:var(--text-muted)">📋 所有社团</div>
+        </div>
+        <!-- Tab面板: 我的社团 -->
+        <div id="clubTabMy" class="club-tab-panel" style="display:block">
+          <div id="clubPageMyClubs" style="display:none;margin-bottom:16px">
+            <div style="font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+              <span>🏘️ 我的社团</span>
+              <span id="clubPageMyCount" style="font-size:11px;background:linear-gradient(135deg,#e91e63,#ff6f91);color:#fff;padding:1px 8px;border-radius:10px;font-weight:600"></span>
+            </div>
+            <div id="clubPageMyList" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none"></div>
+          </div>
+          <div id="clubTabMyEmpty" style="display:none;text-align:center;padding:40px 20px;color:var(--text-muted)">
+            <div style="font-size:40px;margin-bottom:12px">🏘️</div>
+            <div style="font-size:14px;margin-bottom:8px">还没有加入任何社团</div>
+            <div style="font-size:12px;margin-bottom:16px">去看看所有社团，找到你感兴趣的</div>
+            <button onclick="switchClubTab('all')" style="padding:8px 24px;border-radius:20px;background:linear-gradient(135deg,#e91e63,#ff6f91);color:#fff;border:none;font-size:13px;cursor:pointer">去看看 →</button>
+          </div>
+        </div>
+        <!-- Tab面板: 社团活动 -->
+        <div id="clubTabActivities" class="club-tab-panel" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:14px;font-weight:700">📅 社团活动</div>
+            <span onclick="openCreateActivityModal()" style="font-size:12px;color:#e91e63;cursor:pointer;font-weight:500;padding:4px 12px;border-radius:12px;background:rgba(233,30,99,0.08)">+ 发布</span>
+          </div>
+          <div id="clubPageActivities" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px;grid-column:1/-1">加载中...</div>
+          </div>
+        </div>
+        <!-- Tab面板: 所有社团 -->
+        <div id="clubTabAll" class="club-tab-panel" style="display:none">
+          <div style="font-size:14px;font-weight:700;margin-bottom:10px">📋 所有社团</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+            <span class="club-page-cat active" data-cat="" onclick="filterClubPageCategory('')" style="padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;background:linear-gradient(135deg,#e91e63,#ff6f91);color:#fff;transition:all 0.2s">全部</span>
+            <span class="club-page-cat" data-cat="文艺" onclick="filterClubPageCategory('文艺')" style="padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;background:var(--bg);color:var(--text-muted);border:1px solid var(--border);transition:all 0.2s">🎨 文艺</span>
+            <span class="club-page-cat" data-cat="体育" onclick="filterClubPageCategory('体育')" style="padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;background:var(--bg);color:var(--text-muted);border:1px solid var(--border);transition:all 0.2s">⚽ 体育</span>
+            <span class="club-page-cat" data-cat="学术" onclick="filterClubPageCategory('学术')" style="padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;background:var(--bg);color:var(--text-muted);border:1px solid var(--border);transition:all 0.2s">📚 学术</span>
+            <span class="club-page-cat" data-cat="科技" onclick="filterClubPageCategory('科技')" style="padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;background:var(--bg);color:var(--text-muted);border:1px solid var(--border);transition:all 0.2s">💻 科技</span>
+            <span class="club-page-cat" data-cat="音乐" onclick="filterClubPageCategory('音乐')" style="padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;background:var(--bg);color:var(--text-muted);border:1px solid var(--border);transition:all 0.2s">🎵 音乐</span>
+            <select id="clubPageSort" onchange="loadClubPageList()" style="margin-left:auto;padding:6px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:12px;color:var(--text)">
+              <option value="hot">🔥 最热</option>
+              <option value="new">🆕 最新</option>
+              <option value="active">📢 最活跃</option>
+            </select>
+          </div>
+          <div id="clubPageList"></div>
+        </div>
+      </div>
+    </div>
+
+
+<!-- ========== 复习资料子页面 ========== -->
     <div class="sub-page" id="reviewPage_sub">
       <div class="sub-page-header" style="background:var(--gradient)">
         <button class="sub-page-back" onclick="closeSubPage('reviewPage_sub')">←</button>
@@ -328,12 +392,7 @@
             <span class="me-menu-text" data-i18n="menuPoints">我的积分</span>
             <span class="me-menu-arrow">›</span>
           </div>
-          <div class="me-menu-item" onclick="openSubPage('orderPage')">
-            <span class="me-menu-icon">📋</span>
-            <span class="me-menu-text" data-i18n="menuOrders">我的订单</span>
-            <span class="me-menu-arrow">›</span>
-          </div>
-          <div class="me-menu-item" onclick="showAddresses()">
+<div class="me-menu-item" onclick="showAddresses()">
             <span class="me-menu-icon">📍</span>
             <span class="me-menu-text" data-i18n="menuAddresses">常用地址</span>
             <span class="me-menu-arrow">›</span>

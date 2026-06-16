@@ -35,30 +35,35 @@ function currentMonth() {
 // ─── 报名参加 ────────────────────────────────────────────
 // POST /api/campus-star/join
 router.post('/join', requireAuth, upload.array('photos', 3), (req, res) => {
-  JSON_RES(res, () => {
-    const { name, intro } = req.body;
-    const { phone, student_id } = req.user;
+    console.log('[CampusStar] 开始报名', { body: req.body, filesCount: req.files ? req.files.length : 0 });
+    JSON_RES(res, () => {
+      const { name, intro } = req.body;
+      const { phone, student_id } = req.user;
+      console.log('[CampusStar] 用户信息', { phone, student_id, name, intro });
 
-    if (!name || !name.trim()) return makeError('请填写姓名', 'PARAM_MISSING');
-    if (!intro || !intro.trim()) return makeError('请填写自我介绍', 'PARAM_MISSING');
-    if (!req.files || req.files.length === 0) return makeError('请至少上传1张照片', 'PARAM_MISSING');
+      if (!name || !name.trim()) return makeError('请填写姓名', 'PARAM_MISSING');
+      if (!intro || !intro.trim()) return makeError('请填写自我介绍', 'PARAM_MISSING');
+      if (!req.files || req.files.length === 0) return makeError('请至少上传1张照片', 'PARAM_MISSING');
 
-    const month = currentMonth();
+      const month = currentMonth();
+      console.log('[CampusStar] 当前月份', month);
 
-    // 检查本月是否已报名
-    const existing = db.prepare('SELECT id FROM campus_stars WHERE phone = ? AND month = ?').get(phone, month);
-    if (existing) return makeError('你本月已经报名了，请下个月再来', 'DUPLICATE');
+      // 检查本月是否已报名
+      const existing = db.prepare('SELECT id FROM campus_stars WHERE phone = ? AND month = ?').get(phone, month);
+      if (existing) return makeError('你本月已经报名了，请下个月再来', 'DUPLICATE');
 
-    const photos = req.files.map(f => '/uploads/stars/' + f.filename).join(',');
+      const photos = req.files.map(f => '/uploads/stars/' + f.filename).join(',');
+      console.log('[CampusStar] 准备插入', { phone, name, photos, month });
 
-    const result = db.prepare(`
-      INSERT INTO campus_stars (phone, student_id, name, photos, intro, month, votes)
-      VALUES (?, ?, ?, ?, ?, ?, 0)
-    `).run(phone, student_id || '', name.trim(), photos, intro.trim(), month);
+      const result = db.prepare(`
+        INSERT INTO campus_stars (phone, student_id, name, photos, intro, month, votes)
+        VALUES (?, ?, ?, ?, ?, ?, 0)
+      `).run(phone, student_id || '', name.trim(), photos, intro.trim(), month);
+      console.log('[CampusStar] 插入结果', { lastInsertRowid: result.lastInsertRowid, changes: result.changes });
 
-    return { ok: true, id: result.lastInsertRowid, message: '报名成功！' };
+      return { ok: true, id: result.lastInsertRowid, message: '报名成功！' };
+    });
   });
-});
 
 // ─── 候选人列表 ──────────────────────────────────────────
 // GET /api/campus-star/candidates?month=&sort=votes
@@ -97,7 +102,7 @@ router.get('/candidate/:id', (req, res) => {
   });
 });
 
-// ─── 投票 ────────────────────────────────────────────────
+// ─── 投票（每人每天限投3人，每人只能被同一人投一次）───
 // POST /api/campus-star/vote
 router.post('/vote', requireAuth, (req, res) => {
   JSON_RES(res, () => {
@@ -110,34 +115,31 @@ router.post('/vote', requireAuth, (req, res) => {
       .get(candidate_id, 'active');
     if (!candidate) return makeError('候选人不存在或已下架', 'NOT_FOUND', 404);
 
-    const today = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
+    const today = new Date().toISOString().slice(0, 10);
 
-    // 检查今天是否已投票（每人每天1票）
-    const todayVote = db.prepare(
-      'SELECT id FROM star_votes WHERE voter_phone = ? AND vote_date = ?'
+    // 是否已经给该候选人投过票
+    const dupVote = db.prepare(
+      'SELECT id FROM star_votes WHERE voter_phone = ? AND candidate_id = ?'
+    ).get(phone, candidate_id);
+    if (dupVote) return makeError('你已经给TA投过票了', 'DUPLICATE');
+
+    // 今日已投人数
+    const todayCount = db.prepare(
+      'SELECT COUNT(*) as cnt FROM star_votes WHERE voter_phone = ? AND vote_date = ?'
     ).get(phone, today);
+    if (todayCount.cnt >= 3) return makeError('你今天已经投满3票了，明天再来吧！', 'LIMIT_EXCEEDED');
 
-    if (todayVote) return makeError('你今天已经投过票了，明天再来吧！', 'DUPLICATE');
-
-    // 写入投票记录 + 更新票数
-    const insertVote = db.prepare(`
-      INSERT INTO star_votes (candidate_id, voter_phone, month, vote_date)
-      VALUES (?, ?, ?, ?)
-    `);
-
-    const updateVotes = db.prepare(`
-      UPDATE campus_stars SET votes = votes + 1 WHERE id = ?
-    `);
+    const insertVote = db.prepare('INSERT INTO star_votes (candidate_id, voter_phone, month, vote_date) VALUES (?, ?, ?, ?)');
+    const updateVotes = db.prepare('UPDATE campus_stars SET votes = votes + 1 WHERE id = ?');
 
     const transaction = db.transaction(() => {
       insertVote.run(candidate_id, phone, candidate.month, today);
       updateVotes.run(candidate_id);
     });
-
     transaction();
 
     const updated = db.prepare('SELECT votes FROM campus_stars WHERE id = ?').get(candidate_id);
-    return { ok: true, votes: updated.votes, message: '投票成功！' };
+    return { ok: true, votes: updated.votes, votesToday: todayCount.cnt + 1, message: '投票成功！' };
   });
 });
 
@@ -198,18 +200,19 @@ router.get('/my-status', requireAuth, (req, res) => {
       'SELECT * FROM campus_stars WHERE phone = ? AND month = ?'
     ).get(phone, month);
 
-    // 今天是否已投票
+    // 今日投票情况
     const today = new Date().toISOString().slice(0, 10);
-    const todayVote = db.prepare(
+    const todayVotes = db.prepare(
       'SELECT candidate_id FROM star_votes WHERE voter_phone = ? AND vote_date = ?'
-    ).get(phone, today);
+    ).all(phone, today);
 
     return {
       ok: true,
       hasJoined: !!myEntry,
       myEntry: myEntry || null,
-      votedToday: !!todayVote,
-      votedFor: todayVote ? todayVote.candidate_id : null
+      voteCountToday: todayVotes.length,
+      votedToday: todayVotes.length >= 3,
+      votedFor: todayVotes.map(v => v.candidate_id)
     };
   });
 });
@@ -250,6 +253,132 @@ router.post('/settle', (req, res) => {
       champions: top3,
       settled: true
     };
+  });
+});
+
+// ─── 删除自己的参赛记录 ────────────────────────────────
+// DELETE /api/campus-star/candidate/:id
+router.delete('/candidate/:id', requireAuth, (req, res) => {
+  JSON_RES(res, () => {
+    const { phone } = req.user;
+    const entry = db.prepare('SELECT * FROM campus_stars WHERE id = ? AND phone = ?').get(req.params.id, phone);
+    if (!entry) return makeError('参赛记录不存在或无权删除', 'NOT_FOUND', 404);
+
+    // 删除相关数据（评论+投票+参赛记录）
+    const transaction = db.transaction(() => {
+      db.prepare('DELETE FROM star_comments WHERE candidate_id = ?').run(entry.id);
+      db.prepare('DELETE FROM star_votes WHERE candidate_id = ?').run(entry.id);
+      db.prepare('DELETE FROM campus_stars WHERE id = ?').run(entry.id);
+    });
+    transaction();
+
+    return { ok: true, message: '已删除参赛记录' };
+  });
+});
+
+// ─── 分享（增加分享计数）────────────────────────────────
+// POST /api/campus-star/share/:id
+router.post('/share/:id', requireAuth, (req, res) => {
+  JSON_RES(res, () => {
+    const entry = db.prepare('SELECT id FROM campus_stars WHERE id = ?').get(req.params.id);
+    if (!entry) return makeError('参赛记录不存在', 'NOT_FOUND', 404);
+    db.prepare('UPDATE campus_stars SET share_count = share_count + 1 WHERE id = ?').run(entry.id);
+    return { ok: true };
+  });
+});
+
+// ─── 评论图片上传 ──────────────────────────────────────
+const commentImageUpload = multer({
+  storage: multer.diskStorage({
+    destination: path.join(__dirname, '..', 'uploads', 'stars'),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname) || '.jpg';
+      cb(null, 'comment_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + ext);
+    }
+  }),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (req, file, cb) => {
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)) {
+      return cb(new Error('只允许上传 jpg/png/webp/gif 格式的图片'));
+    }
+    cb(null, true);
+  }
+});
+
+// POST /api/campus-star/comment-image
+router.post('/comment-image', requireAuth, commentImageUpload.single('image'), (req, res) => {
+  JSON_RES(res, () => {
+    if (!req.file) return makeError('请上传图片', 'PARAM_MISSING');
+    return { ok: true, url: '/uploads/stars/' + req.file.filename };
+  });
+});
+
+// ─── 评论列表 ──────────────────────────────────────────
+// GET /api/campus-star/comments/:candidateId
+router.get('/comments/:candidateId', (req, res) => {
+  JSON_RES(res, () => {
+    const candidateId = req.params.candidateId;
+    const comments = db.prepare(`
+      SELECT sc.*, u.nickname, u.avatar, u.phone
+      FROM star_comments sc
+      LEFT JOIN users u ON sc.phone = u.phone
+      WHERE sc.candidate_id = ?
+      ORDER BY sc.created_at DESC
+    `).all(candidateId);
+
+    return { ok: true, comments };
+  });
+});
+
+// ─── 发表评论 ──────────────────────────────────────────
+// POST /api/campus-star/comments
+router.post('/comments', requireAuth, (req, res) => {
+  JSON_RES(res, () => {
+    const { candidate_id, content, image } = req.body;
+    const { phone } = req.user;
+
+    if (!candidate_id) return makeError('参数缺失', 'PARAM_MISSING');
+    if (!content || !content.trim()) return makeError('请输入评论内容', 'PARAM_MISSING');
+    if (content.trim().length > 500) return makeError('评论内容过长（最多500字）', 'PARAM_INVALID');
+
+    // 检查候选人是否存在
+    const candidate = db.prepare('SELECT id FROM campus_stars WHERE id = ?').get(candidate_id);
+    if (!candidate) return makeError('候选人不存在', 'NOT_FOUND', 404);
+
+    const result = db.prepare(
+      'INSERT INTO star_comments (candidate_id, phone, content, image) VALUES (?, ?, ?, ?)'
+    ).run(candidate_id, phone, content.trim(), image || null);
+
+    return { ok: true, id: result.lastInsertRowid, message: '评论成功' };
+  });
+});
+
+// ─── 删除评论 ──────────────────────────────────────────
+// DELETE /api/campus-star/comments/:id
+router.delete('/comments/:id', requireAuth, (req, res) => {
+  JSON_RES(res, () => {
+    const { phone } = req.user;
+    const comment = db.prepare('SELECT * FROM star_comments WHERE id = ? AND phone = ?').get(req.params.id, phone);
+    if (!comment) return makeError('评论不存在或无权删除', 'NOT_FOUND', 404);
+
+    db.prepare('DELETE FROM star_comments WHERE id = ?').run(req.params.id);
+
+    return { ok: true, message: '已删除评论' };
+  });
+
+  // ─── 举报候选人 ─────────────────────────────────────────
+  router.post('/report/:id', requireUser, async (req, res) => {
+    const { reason } = req.body || {};
+    const phone = req.user.phone;
+    const entry = db.prepare('SELECT * FROM campus_stars WHERE id = ?').get(req.params.id);
+    if (!entry) return makeError('候选人不存在', 'NOT_FOUND', 404);
+    if (entry.phone === phone) return makeError('不能举报自己', 'SELF_REPORT', 400);
+    // 检查是否已举报
+    const existing = db.prepare('SELECT id FROM ai_review_logs WHERE source = ? AND source_id = ? AND phone = ?').get('campus_star', req.params.id, phone);
+    if (existing) return makeError('已举报过该候选人', 'ALREADY_REPORTED', 400);
+    // 记录举报到审核日志
+    db.prepare('INSERT INTO ai_review_logs (source, source_id, phone, reason, action, level, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run('campus_star', req.params.id, phone, reason || '', 'report', 'pending', new Date().toISOString().replace('T',' ').substring(0,19));
+    return { ok: true, message: '举报已提交' };
   });
 });
 

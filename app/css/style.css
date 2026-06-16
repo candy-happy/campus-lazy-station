@@ -1041,6 +1041,93 @@
       box-shadow: 0 2px 12px rgba(233,30,99,0.25);
     }
 
+    /* ═══════════════════════════════════════════════════════
+       🌸 校花校草 - 紧凑卡片 & 详情
+    ═══════════════════════════════════════════════════════ */
+    /* 紧凑卡片 hover（2列网格） */
+    .star-compact-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12) !important;
+    }
+    .star-compact-card:active {
+      transform: scale(0.96);
+    }
+    body.dark .star-compact-card:hover {
+      box-shadow: 0 4px 16px rgba(255,255,255,0.08) !important;
+    }
+
+    /* 照片画廊横向滚动条隐藏 */
+    .star-gallery-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .star-gallery-scroll {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* 表情面板按钮hover效果 */
+    #starEmojiPanel button:hover {
+      background: linear-gradient(135deg, #fce4ec, #f3e5f5) !important;
+      border-color: #e91e63 !important;
+      transform: scale(1.15);
+    }
+    #starEmojiPanel button:active {
+      transform: scale(0.9);
+    }
+
+    /* 表情/图片按钮hover */
+    #starCommentInput ~ button:hover,
+    label[for="starCommentImageInput"]:hover {
+      border-color: #e91e63 !important;
+      color: #e91e63;
+    }
+
+    /* 详情页投票按钮hover */
+    #starDetailBody button[onclick*="starVote"]:not([disabled]):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(233,30,99,0.4) !important;
+    }
+
+    /* 评论图片hover */
+    #starCommentsList img:hover {
+      opacity: 0.85;
+      transform: scale(1.03);
+      transition: all 0.15s;
+    }
+
+    /* 照片查看器动画 */
+    #starPhotoViewer {
+      animation: starFadeIn 0.2s ease;
+    }
+    @keyframes starFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* 评论用户名hover效果 */
+    #starCommentsList span[onclick*="showWallUser"]:hover {
+      color: #e91e63 !important;
+    }
+    /* 评论头像hover效果 */
+    #starCommentsList div[onclick*="showWallUser"]:hover {
+      transform: scale(1.08);
+      transition: transform 0.15s;
+      box-shadow: 0 0 0 2px #e91e63;
+    }
+
+    /* 暗色模式适配 */
+    body.dark .star-compact-card {
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+    body.dark #starEmojiPanel button {
+      background: var(--card);
+      border-color: var(--border);
+    }
+    body.dark #starEmojiPanel button:hover {
+      background: rgba(233,30,99,0.15) !important;
+      border-color: #ff6f91 !important;
+    }
+
     .discover-act-cat-chip,
     .discover-club-cat-chip {
       display: inline-block;
@@ -3975,18 +4062,160 @@
   border-color: #FF6B35 !important;
   box-shadow: 0 0 0 3px rgba(255,107,53,0.1) !important;
 }
-#reviewPage_sub button[onclick="openUploadMaterial()"]:hover { background: rgba(255,255,255,0.35) !important; }
-#uploadMaterialModal .modal-close:hover { background: rgba(255,255,255,0.3) !important; }
-#uploadMaterialModal button[onclick="doUploadMaterial()"]:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 20px rgba(255,107,53,0.4) !important;
+/* ══════ 复习资料上传弹窗（美化版）══════ */
+/* 头部 */
+.review-upload-header {
+  position: relative;
+  background: linear-gradient(135deg, #FF6B35 0%, #F39C12 50%, #FF8C5A 100%);
+  padding: 28px 24px 24px;
+  overflow: hidden;
 }
-#uploadMaterialModal label[for="uploadFile"]:hover {
-  border-color: #FF6B35 !important;
-  background: #fff5f0 !important;
+.review-upload-header-decoration {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+}
+.review-upload-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+}
+.review-upload-dot.dot1 { width: 120px; height: 120px; top: -60px; right: -30px; }
+.review-upload-dot.dot2 { width: 60px; height: 60px; bottom: -20px; left: 20%; }
+.review-upload-dot.dot3 { width: 40px; height: 40px; top: 15px; left: 40%; }
+.review-upload-close {
+  position: absolute;
+  top: 12px; right: 14px;
+  width: 32px; height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+}
+.review-upload-close:hover {
+  background: rgba(255,255,255,0.35) !important;
+  transform: rotate(90deg);
 }
 
-/* 上传弹窗暗色模式 */
-body.dark #uploadMaterialModal .modal-body { background: #1e1e30 !important; }
-body.dark #uploadMaterialModal label[for="uploadFile"] { background: #2a2a40; border-color: #3a3a50; }
-body.dark #uploadMaterialModal label[for="uploadFile"]:hover { background: #3d2a1a !important; border-color: #FF6B35 !important; }
+/* 科目快捷标签 */
+.review-subject-chip {
+  padding: 4px 12px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  user-select: none;
+}
+.review-subject-chip:hover {
+  background: #FFF3ED;
+  border-color: #FF6B35;
+  color: #FF6B35;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255,107,53,0.15);
+}
+.review-subject-chip.selected {
+  background: linear-gradient(135deg, #FFF3ED, #FFE8DB);
+  border-color: #FF6B35;
+  color: #FF6B35;
+  font-weight: 600;
+}
+
+/* 文件上传区 */
+.review-file-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px 20px;
+  border: 2px dashed var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.25s;
+  background: var(--bg);
+  text-align: center;
+}
+.review-file-upload-zone:hover {
+  border-color: #FF6B35;
+  background: linear-gradient(135deg, rgba(255,107,53,0.03), rgba(255,140,90,0.03));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(255,107,53,0.08);
+}
+.review-file-upload-zone:active {
+  transform: scale(0.98);
+}
+.review-file-upload-icon {
+  font-size: 2.5rem;
+  transition: transform 0.3s;
+}
+.review-file-upload-zone:hover .review-file-upload-icon {
+  transform: translateY(-4px);
+}
+.review-file-upload-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.review-file-upload-text span:first-child {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.review-file-upload-hint {
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+/* 已选文件信息 */
+#fileSelectedInfo {
+  display: flex !important;
+}
+
+/* 暗色模式适配 */
+body.dark .review-upload-header {
+  background: linear-gradient(135deg, #c0392b, #e67e22, #d35400);
+}
+body.dark .review-file-upload-zone {
+  background: #1e1e2e;
+  border-color: #3a3a50;
+}
+body.dark .review-file-upload-zone:hover {
+  border-color: #FF6B35;
+  background: linear-gradient(135deg, rgba(255,107,53,0.06), rgba(255,140,90,0.06));
+}
+body.dark .review-subject-chip {
+  background: #2a2a40;
+  border-color: #3a3a50;
+  color: #aaa;
+}
+body.dark .review-subject-chip:hover,
+body.dark .review-subject-chip.selected {
+  background: #3d2a1a;
+  border-color: #FF6B35;
+  color: #FF8C5A;
+}
+body.dark .review-file-upload-text span:first-child { color: #ddd; }
+
+
+/* ═══ 社团子页面 ═══ */
+.club-page-cat { padding:5px 12px;border-radius:18px;font-size:12px;cursor:pointer;background:var(--card);border:1px solid var(--border);color:var(--text-secondary);transition:all 0.15s;white-space:nowrap; }
+.club-page-cat:hover { border-color:var(--primary);color:var(--primary); }
+.club-page-cat.active { background:var(--gradient);color:#fff;border-color:transparent; }
+.club-page-club-card { display:flex;gap:12px;padding:12px 14px;border-radius:14px;background:var(--card);margin-bottom:10px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;align-items:center; }
+.club-page-club-card:hover { transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+.club-page-avatar { width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:24px;background:linear-gradient(145deg,#fce4ec,#f8bbd0); }
+.club-page-avatar img { width:100%;height:100%;object-fit:cover; }
+body.dark .club-page-club-card:hover { box-shadow:0 4px 16px rgba(255,255,255,0.05); }
+body.dark .club-page-avatar { background:linear-gradient(145deg,#3a1a2a,#4a2030); }

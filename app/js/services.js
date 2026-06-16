@@ -7,7 +7,7 @@ const ALL_SERVICES = [
   { key: 'pet',     icon: '🐱', name: '猫狗日记', action: "openSubPage('petListPage_sub')" },
   { key: 'market',  icon: '🛒', name: '二手市场', action: "loadMarketItems(true);openSubPage('marketListPage_sub')" },
   { key: 'review',  icon: '📚', name: '复习资料', action: "openSubPage('reviewPage_sub')" },
-  { key: 'club',    icon: '🌟', name: '社团',     action: "closeSubPage('serviceManagePage_sub');setTimeout(function(){switchPage('discover');setTimeout(function(){switchDiscoverTab('clubs')},50)},100)" },
+  { key: 'club',    icon: '🌟', name: '社团',     action: "openClubPage()" },
   { key: 'star',    icon: '🌸', name: '校花校草', action: "openCampusStar()" },
 ];
 

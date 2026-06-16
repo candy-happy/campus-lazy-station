@@ -118,6 +118,21 @@ router.get('/ranking', (req, res) => JSON_RES(res, () => {
   return { list: clubs };
 }));
 
+// ─── 我的社团列表（必须在 /:id 之前注册！）────────────────
+router.get('/my', requireAuth, (req, res) => JSON_RES(res, () => {
+  const phone = req.user.phone;
+  const clubs = db.prepare(`
+    SELECT c.*, cm.role, cm.joined_at as my_joined_at,
+      cr.id as room_id
+    FROM clubs c
+    JOIN club_members cm ON cm.club_id = c.id AND cm.phone = ?
+    LEFT JOIN club_rooms cr ON cr.club_id = c.id
+    WHERE c.status = 'active'
+    ORDER BY cm.role = 'owner' DESC, cm.joined_at DESC
+  `).all(phone);
+  return { list: clubs };
+}));
+
 // ─── 社团详情 ─────────────────────────────────────────────
 router.get('/:id', requireAuth, (req, res) => JSON_RES(res, () => {
   const club = db.prepare('SELECT * FROM clubs WHERE id = ?').get(req.params.id);
@@ -639,24 +654,10 @@ router.get('/meta/recommendations', requireAuth, (req, res) => JSON_RES(res, () 
   return { list: recs, total: recs.length };
 }));
 
-// ─── 我的社团列表 ─────────────────────────────────────────────
-router.get('/my', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = getAuthPhone(req);
-  const clubs = db.prepare(`
-    SELECT c.*, cm.role, cm.joined_at as my_joined_at,
-      cr.id as room_id
-    FROM clubs c
-    JOIN club_members cm ON cm.club_id = c.id AND cm.phone = ?
-    LEFT JOIN club_rooms cr ON cr.club_id = c.id
-    WHERE c.status = 'active'
-    ORDER BY cm.role = 'owner' DESC, cm.joined_at DESC
-  `).all(phone);
-  return { list: clubs };
-}));
 
 // ─── 社团群聊房间（获取或创建） ───────────────────────────────
 router.get('/:id/room', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = getAuthPhone(req);
+  const phone = req.user.phone;
   const clubId = parseInt(req.params.id);
   // 验证是社团成员
   const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(clubId, phone);
@@ -680,7 +681,7 @@ router.get('/:id/room', requireAuth, (req, res) => JSON_RES(res, () => {
 
 // ─── 群聊消息列表 ─────────────────────────────────────────────
 router.get('/:id/room/messages', requireAuth, (req, res) => JSON_RES(res, () => {
-  const phone = getAuthPhone(req);
+  const phone = req.user.phone;
   const clubId = parseInt(req.params.id);
   const member = db.prepare('SELECT * FROM club_members WHERE club_id = ? AND phone = ?').get(clubId, phone);
   if (!member) return makeError('你不是该社团成员', ErrorCode.PERMISSION_DENIED);
@@ -716,7 +717,7 @@ router.get('/:id/room/messages', requireAuth, (req, res) => JSON_RES(res, () => 
 
 // ─── 发送群聊消息 ─────────────────────────────────────────────
 router.post('/:id/room/messages', requireAuth, (req, res) => JSON_RES(res, async () => {
-  const phone = getAuthPhone(req);
+  const phone = req.user.phone;
   const clubId = parseInt(req.params.id);
   const { content } = req.body;
   if (!content || !content.trim()) return makeError('消息不能为空', ErrorCode.PARAM_INVALID);

@@ -702,10 +702,13 @@ const initData = db.transaction(() => {
       intro TEXT DEFAULT '',
       month TEXT NOT NULL,
       votes INTEGER DEFAULT 0,
+      share_count INTEGER DEFAULT 0,
       status TEXT DEFAULT 'active' CHECK(status IN ('active','champion','runner_up','archived')),
       created_at TEXT DEFAULT (datetime('now','localtime'))
     )
   `);
+  // 迁移：添加 share_count 列（v3.4.1+）
+  try { db.exec('ALTER TABLE campus_stars ADD COLUMN share_count INTEGER DEFAULT 0'); } catch(e) {}
   try { db.exec('CREATE INDEX IF NOT EXISTS idx_campus_stars_month ON campus_stars(month, status)'); } catch(e) {}
   try { db.exec('CREATE INDEX IF NOT EXISTS idx_campus_stars_votes ON campus_stars(month, votes DESC)'); } catch(e) {}
 
@@ -721,6 +724,18 @@ const initData = db.transaction(() => {
   `);
   try { db.exec('CREATE INDEX IF NOT EXISTS idx_star_votes_date ON star_votes(voter_phone, vote_date)'); } catch(e) {}
   try { db.exec('CREATE INDEX IF NOT EXISTS idx_star_votes_candidate ON star_votes(candidate_id, month)'); } catch(e) {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS star_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      candidate_id INTEGER NOT NULL,
+      phone TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY (candidate_id) REFERENCES campus_stars(id) ON DELETE CASCADE
+    )
+  `);
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_star_comments_candidate ON star_comments(candidate_id)'); } catch(e) {}
 
   // === 社团群聊 ===
   db.exec(`

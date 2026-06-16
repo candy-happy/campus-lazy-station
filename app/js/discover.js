@@ -18,6 +18,7 @@
 
 // ─── 切换发现页Tab ──────────────────────────────────────
 function switchDiscoverTab(tab) {
+  if (tab === 'clubs') { openClubPage(); return; }
   discoverTab = tab;
   document.querySelectorAll('.discover-main-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.discover-main-tab').forEach(t => {
@@ -130,7 +131,6 @@ async function showActivityDetail(id) {
         </div>
         ${a.description ? '<div class="discover-detail-desc"><div class="discover-detail-section-title">活动详情</div><div class="discover-detail-text">' + escHtml(a.description).replace(/\\n/g, '<br>') + '</div></div>' : ''}
         <div class="discover-detail-actions">${actionBtn}</div>
-        <button onclick="openActivityPoster()" style="width:100%;padding:10px;border-radius:10px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;cursor:pointer;margin-top:8px">📤 分享海报</button>
       </div>
     `;
     openSubPage('discoverDetail_sub');
@@ -528,7 +528,6 @@ async function showClubDetail(id) {
         <div class="discover-detail-section-title" style="margin-top:16px">👥 社团成员 (${c.members ? c.members.length : 0})</div>
         <div class="discover-members-list">${membersHtml}</div>
         <div class="discover-detail-actions">${actionBtn}</div>
-        <button onclick="openClubPoster()" style="width:100%;padding:10px;border-radius:10px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;cursor:pointer;margin-top:8px">📤 分享海报</button>
       </div>
     `;
     openSubPage('discoverDetail_sub');
@@ -1102,222 +1101,6 @@ async function toggleClubRecruitment() {
   } catch(e) { showToast(e.message || '操作失败'); }
 }
 
-// ─── 海报生成 ──────────────────────────────────────────
-let _posterData = null; // { type:'club'|'activity', data }
-
-function openClubPoster() {
-  const club = _currentClubDetail;
-  if (!club) return;
-  _posterData = { type: 'club', data: club };
-  document.getElementById('posterModal').style.display = 'flex';
-  setTimeout(() => drawClubPoster(club), 100);
-}
-
-function openActivityPoster() {
-  const act = _currentActivityDetail;
-  if (!act) return;
-  _posterData = { type: 'activity', data: act };
-  document.getElementById('posterModal').style.display = 'flex';
-  setTimeout(() => drawActivityPoster(act), 100);
-}
-
-function closePosterModal() {
-  document.getElementById('posterModal').style.display = 'none';
-}
-
-function drawClubPoster(c) {
-  const canvas = document.getElementById('posterCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = 300, H = 450;
-  canvas.width = W; canvas.height = H;
-
-  // 背景渐变
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#667eea');
-  grad.addColorStop(0.5, '#764ba2');
-  grad.addColorStop(1, '#f093fb');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  // 装饰圆
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  ctx.beginPath(); ctx.arc(W-30, 50, 80, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(40, H-60, 60, 0, Math.PI*2); ctx.fill();
-
-  // 标题
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('校园社团', W/2, 60);
-
-  // 分隔线
-  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(50, 80); ctx.lineTo(W-50, 80); ctx.stroke();
-
-  // 社团名
-  ctx.font = 'bold 20px sans-serif';
-  ctx.fillText(c.name || '未命名社团', W/2, 120);
-
-  // 分类
-  ctx.font = '14px sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.fillText((c.category || '其他') + ' · ' + (c.member_count || 0) + '人', W/2, 148);
-
-  // 白色卡片区域
-  ctx.fillStyle = '#fff';
-  roundRect(ctx, 20, 170, W-40, 200, 14);
-  ctx.fill();
-
-  // 简介
-  ctx.fillStyle = '#333';
-  ctx.font = '14px sans-serif';
-  ctx.textAlign = 'left';
-  const desc = c.description || '欢迎加入我们的社团！';
-  wrapText(ctx, desc, 36, 200, W-72, 22);
-
-  // 底部信息
-  ctx.fillStyle = 'rgba(255,255,255,0.8)';
-  ctx.font = '12px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('扫码加入 · 校园懒人效率站', W/2, 400);
-  ctx.fillText('campus-lazy-station', W/2, 420);
-
-  // 底部装饰线
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-  ctx.beginPath(); ctx.moveTo(60, 435); ctx.lineTo(W-60, 435); ctx.stroke();
-}
-
-function drawActivityPoster(a) {
-  const canvas = document.getElementById('posterCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = 300, H = 450;
-  canvas.width = W; canvas.height = H;
-
-  // 背景渐变（暖色系）
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#f12711');
-  grad.addColorStop(1, '#f5af19');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  // 装饰
-  ctx.fillStyle = 'rgba(255,255,255,0.1)';
-  ctx.beginPath(); ctx.arc(W-20, 40, 70, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(30, H-40, 50, 0, Math.PI*2); ctx.fill();
-
-  // 标题
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('校园活动', W/2, 55);
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-  ctx.beginPath(); ctx.moveTo(50, 72); ctx.lineTo(W-50, 72); ctx.stroke();
-
-  // 活动名
-  ctx.font = 'bold 18px sans-serif';
-  ctx.fillText(a.title || '未命名活动', W/2, 110);
-
-  // 分类标签
-  ctx.font = '13px sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.fillText((a.category || '活动') + ' · ' + (a.location || '待定'), W/2, 135);
-
-  // 白色卡片
-  ctx.fillStyle = '#fff';
-  roundRect(ctx, 20, 155, W-40, 180, 14);
-  ctx.fill();
-
-  // 时间
-  ctx.fillStyle = '#333';
-  ctx.font = 'bold 15px sans-serif';
-  ctx.textAlign = 'left';
-  const timeStr = a.start_time ? a.start_time.replace('T', ' ').substring(0, 16) : '待定';
-  ctx.fillText('📅 ' + timeStr, 36, 185);
-
-  // 地点
-  ctx.font = '14px sans-serif';
-  ctx.fillText('📍 ' + (a.location || '待定'), 36, 212);
-
-  // 人数
-  ctx.fillText('👥 ' + (a.current_count || 0) + '/' + (a.max_participants || '∞') + '人', 36, 239);
-
-  // 简介
-  ctx.font = '13px sans-serif';
-  ctx.fillStyle = '#555';
-  const desc = a.description || '快来参加吧！';
-  wrapText(ctx, desc, 36, 270, W-72, 20);
-
-  // 底部
-  ctx.fillStyle = 'rgba(255,255,255,0.8)';
-  ctx.font = '12px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('扫码报名 · 校园懒人效率站', W/2, 400);
-  ctx.fillText('campus-lazy-station', W/2, 420);
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-  ctx.beginPath(); ctx.moveTo(60, 435); ctx.lineTo(W-60, 435); ctx.stroke();
-}
-
-// Canvas 辅助函数
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
-  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
-  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
-  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
-  ctx.closePath();
-}
-
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split('');
-  let line = '';
-  let cy = y;
-  for (let i = 0; i < words.length; i++) {
-    const testLine = line + words[i];
-    if (ctx.measureText(testLine).width > maxWidth && line.length > 0) {
-      ctx.fillText(line, x, cy);
-      line = words[i];
-      cy += lineHeight;
-      if (cy > y + lineHeight * 5) break; // 最多5行
-    } else {
-      line = testLine;
-    }
-  }
-  if (line) ctx.fillText(line, x, cy);
-}
-
-function downloadPoster() {
-  const canvas = document.getElementById('posterCanvas');
-  if (!canvas) return;
-  const link = document.createElement('a');
-  link.download = 'poster_' + Date.now() + '.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-  showToast('海报已保存');
-}
-
-async function sharePoster() {
-  const canvas = document.getElementById('posterCanvas');
-  if (!canvas) return;
-  try {
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-    if (navigator.share) {
-      await navigator.share({ files: [new File([blob], 'poster.png', { type: 'image/png' })] });
-    } else {
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      showToast('海报已复制到剪贴板');
-    }
-  } catch(e) {
-    // fallback: download
-    downloadPoster();
-  }
-}
-
 // ═══════════════════════════════════════════════════════
 // ─── 创建活动弹窗 ──────────────────────────────────────
 function openCreateActivityModal() {
@@ -1470,11 +1253,6 @@ function initDiscoverPage() {
   window.closeClubTransferModal = closeClubTransferModal;
   window.confirmTransferClub = confirmTransferClub;
   window.dissolveClub = dissolveClub;
-  window.openClubPoster = openClubPoster;
-  window.openActivityPoster = openActivityPoster;
-  window.closePosterModal = closePosterModal;
-  window.downloadPoster = downloadPoster;
-  window.sharePoster = sharePoster;
   window.toggleActView = toggleActView;
   window.calendarPrevMonth = calendarPrevMonth;
   window.calendarNextMonth = calendarNextMonth;
@@ -1491,4 +1269,171 @@ function initDiscoverPage() {
   window._clubReplySet = _clubReplySet;
   window._clubReplyClear = _clubReplyClear;
 window.loadMyClubs = loadMyClubs;
+
+  
+
+  // ═══ 社团子页面（融合版） ═══
+
+  // 打开社团子页面
+  function openClubPage() {
+    document.getElementById('clubPage_sub').classList.add('active');
+    loadClubPage();
+    switchClubTab('my');
+  }
+  window.openClubPage = openClubPage;
+
+  var _clubPageCategory = '';
+  var _clubPageRankingOpen = false;
+
+  // Tab切换
+  function switchClubTab(tab) {
+    // 更新tab样式
+    document.querySelectorAll('#clubPage_sub .club-tab').forEach(function(t) {
+      if (t.dataset.tab === tab) {
+        t.style.background = 'var(--card)';
+        t.style.color = '#e91e63';
+        t.style.fontWeight = '600';
+        t.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+      } else {
+        t.style.background = 'transparent';
+        t.style.color = 'var(--text-muted)';
+        t.style.fontWeight = '500';
+        t.style.boxShadow = 'none';
+      }
+    });
+    // 切换面板
+    document.querySelectorAll('#clubPage_sub .club-tab-panel').forEach(function(p) {
+      p.style.display = 'none';
+    });
+    var panelMap = { my: 'clubTabMy', activities: 'clubTabActivities', all: 'clubTabAll' };
+    var panel = document.getElementById(panelMap[tab]);
+    if (panel) panel.style.display = 'block';
+    // 触发加载
+    if (tab === 'my') loadClubPageMy();
+    if (tab === 'activities') loadClubPageActivities();
+    if (tab === 'all') loadClubPageList();
+  }
+  window.switchClubTab = switchClubTab;
+
+  // 加载社团子页面所有内容
+  function loadClubPage() {
+    // 预加载所有tab内容
+    loadClubPageMy();
+    loadClubPageActivities();
+    loadClubPageList();
+  }
+  window.loadClubPage = loadClubPage;
+
+  // 我的社团
+  function loadClubPageMy() {
+    var section = document.getElementById('clubPageMyClubs');
+    var list = document.getElementById('clubPageMyList');
+    var countEl = document.getElementById('clubPageMyCount');
+    var emptyEl = document.getElementById('clubTabMyEmpty');
+    if (!section || !list || !currentUser) { if (section) section.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'block'; return; }
+    API.getMyClubs().then(function(res) {
+      var clubs = (res && res.list) ? res.list : (Array.isArray(res) ? res : []);
+      if (!clubs.length) { section.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'block'; return; }
+      if (emptyEl) emptyEl.style.display = 'none';
+      section.style.display = '';
+      if (countEl) countEl.textContent = clubs.length;
+      list.innerHTML = clubs.map(function(c) {
+        var avatar = c.logo ? '<img src="' + c.logo + '" />' : '🎭';
+        var name = escHtml(c.name || '');
+        if (name.length > 6) name = name.substring(0, 6) + '…';
+        return '<div onclick="showClubDetail(' + c.id + ')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 12px;border-radius:14px;background:var(--card);cursor:pointer;flex-shrink:0;min-width:72px;border:1px solid var(--border);transition:all 0.15s" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'">' +
+          '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(145deg,#fce4ec,#f8bbd0);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:20px">' + avatar + '</div>' +
+          '<div style="font-size:12px;font-weight:500;color:var(--text);text-align:center;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + name + '</div>' +
+          '<div style="font-size:10px;color:var(--text-muted)">' + (c.role === 'owner' ? '👑' : '') + '</div>' +
+          '</div>';
+      }).join('');
+    }).catch(function() { section.style.display = 'none'; });
+  }
+
+  // 社团活动横向滚动
+  function loadClubPageActivities() {
+    var el = document.getElementById('clubPageActivities');
+    if (!el) return;
+    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px;width:100%">加载中...</div>';
+    API.getActivities({ publisher_type: 'club', status: 'open', page: 1, limit: 10 }).then(function(res) {
+      var list = Array.isArray(res) ? res : (res && res.list || []);
+      if (!list.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;width:100%">暂无社团活动</div>'; return; }
+      el.innerHTML = list.map(function(a) {
+        var title = escHtml(a.title || '');
+        if (title.length > 12) title = title.substring(0, 12) + '…';
+        var dateStr = a.start_time ? a.start_time.replace('T', ' ').substring(0, 16) : '';
+        var coverIcon = a.category === '讲座' ? '🎤' : a.category === '比赛' ? '🏆' : a.category === '演出' ? '🎭' : a.category === '运动' ? '⚽' : a.category === '志愿' ? '🤝' : '📅';
+        var coverStyle = a.cover
+          ? 'background:url(' + a.cover + ') center/cover'
+          : 'background:linear-gradient(135deg,' + (['#667eea,#764ba2','#f12711,#f5af19','#11998e,#38ef7d','#fc4a1a,#f7b733','#4facfe,#00f2fe','#43e97b,#38f9d7'])[a.id % 6] + ');display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff';
+        return '<div onclick="showActivityDetail(' + a.id + ')" style="display:flex;flex-direction:column;gap:4px;padding:10px;border-radius:14px;background:var(--card);cursor:pointer;border:1px solid var(--border);transition:all 0.15s" onmouseover="this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.transform=\'translateY(0)\'">' +
+          '<div style="height:80px;border-radius:10px;overflow:hidden;' + coverStyle + '">' + (a.cover ? '' : coverIcon) + '</div>' +
+          '<div style="font-size:13px;font-weight:500;color:var(--text);line-height:1.3">' + title + '</div>' +
+          '<div style="font-size:11px;color:var(--text-muted);display:flex;justify-content:space-between">' +
+            '<span>' + (a.publisher_name ? escHtml(a.publisher_name).substring(0,6) : '社团') + '</span>' +
+            '<span>' + (a.current_participants || 0) + '人</span>' +
+          '</div>' +
+          '<div style="font-size:10px;color:var(--text-muted)">🕐 ' + fmtTime(dateStr) + '</div>' +
+        '</div>';
+      }).join('');
+    }).catch(function() { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px;width:100%">加载失败</div>'; });
+  }
+
+  // 推荐社团
+  function loadClubPageHot() {
+    var el = document.getElementById('clubPageHotList');
+    if (!el) return;
+    API.getClubs({ page: 1, limit: 6, sort: 'hot' }).then(function(res) {
+      var list = Array.isArray(res) ? res : (res && res.list || []);
+      if (!list.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px">暂无推荐社团</div>'; return; }
+      el.innerHTML = list.map(function(c) {
+        var avatar = c.logo ? '<img src="' + c.logo + '" />' : '🎭';
+        var name = escHtml(c.name || '');
+        if (name.length > 5) name = name.substring(0, 5) + '…';
+        return '<div onclick="showClubDetail(' + c.id + ')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 12px;border-radius:14px;background:var(--card);cursor:pointer;flex-shrink:0;min-width:72px;border:1px solid var(--border);transition:all 0.15s" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'">' +
+          '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(145deg,#e8eaf6,#c5cae9);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:20px">' + avatar + '</div>' +
+          '<div style="font-size:12px;font-weight:500;color:var(--text);text-align:center;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + name + '</div>' +
+          '<div style="font-size:10px;color:var(--text-muted)">' + (c.member_count || 0) + '人</div>' +
+          '</div>';
+      }).join('');
+    }).catch(function() {});
+  }
+
+  // 分类筛选
+  function filterClubPageCategory(cat) {
+    _clubPageCategory = cat;
+    document.querySelectorAll('.club-page-cat').forEach(function(el) {
+      el.classList.toggle('active', el.dataset.cat === cat);
+    });
+    loadClubPageList();
+  }
+  window.filterClubPageCategory = filterClubPageCategory;
+
+  // 加载社团列表
+  function loadClubPageList() {
+    var container = document.getElementById('clubPageList');
+    if (!container) return;
+    container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px">加载中...</div>';
+
+    var sortEl = document.getElementById('clubPageSort');
+    var params = { page: 1, limit: 20, sort: sortEl ? sortEl.value : 'hot' };
+    if (_clubPageCategory) params.category = _clubPageCategory;
+
+    API.getClubs(params).then(function(res) {
+      var list = Array.isArray(res) ? res : (res && res.list || []);
+      if (!list.length) { container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:14px">🎭 暂无社团</div>'; return; }
+      container.innerHTML = list.map(function(c) {
+        var badge = c.recruitment_open ? '<span style="background:#E74C3C;color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;margin-left:4px">🔥招新</span>' : '';
+        return '<div class="club-page-club-card" onclick="showClubDetail(' + c.id + ')">' +
+          '<div class="club-page-avatar">' + (c.logo ? '<img src="' + c.logo + '" />' : '🎭') + '</div>' +
+          '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px">' + escHtml(c.name) + badge + '</div>' +
+          '<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">' + escHtml(c.category||'其他') + ' · ' + (c.description||'').slice(0, 36) + '</div>' +
+          '<div style="font-size:11px;color:var(--text-secondary)">👥 ' + (c.member_count||0) + '人' + (c.activity_count ? ' · 📅 ' + c.activity_count + '活动' : '') + '</div>' +
+          '</div></div>';
+      }).join('');
+    }).catch(function() {
+      container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px">加载失败</div>';
+    });
+  }
 })();

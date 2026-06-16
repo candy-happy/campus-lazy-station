@@ -5,6 +5,70 @@
   var reviewPage = 1;
   var reviewHasMore = false;
 
+  // ══════ 快速选择科目 ══════
+  window.quickSelectSubject = function (subject) {
+    var input = document.getElementById('uploadSubject');
+    if (!input) return;
+    // 切换选中
+    var chips = document.querySelectorAll('.review-subject-chip');
+    if (input.value.trim() === subject) {
+      input.value = '';
+      chips.forEach(function(c) { c.classList.remove('selected'); });
+    } else {
+      input.value = subject;
+      chips.forEach(function(c) {
+        c.classList.toggle('selected', c.textContent === subject);
+      });
+    }
+    input.focus();
+  };
+
+  // ══════ 文件选择 ══════
+  window.onFileSelected = function () {
+    var fileInput = document.getElementById('uploadFile');
+    var info = document.getElementById('fileSelectedInfo');
+    var label = document.getElementById('fileUploadLabel');
+    var zone = document.getElementById('fileUploadZone');
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+    var file = fileInput.files[0];
+    var size = formatFileSize(file.size);
+    document.getElementById('fileSelectedName').textContent = file.name;
+    document.getElementById('fileSelectedSize').textContent = size;
+    if (info) info.style.display = 'flex';
+    if (zone) { zone.style.borderColor = '#2ECC71'; zone.style.borderStyle = 'solid'; zone.style.background = 'linear-gradient(135deg, rgba(46,204,113,0.04), rgba(88,214,141,0.04))'; }
+    if (label) label.textContent = '✅ 已选择文件';
+  };
+
+  window.clearUploadFile = function () {
+    var fileInput = document.getElementById('uploadFile');
+    var info = document.getElementById('fileSelectedInfo');
+    var label = document.getElementById('fileUploadLabel');
+    var zone = document.getElementById('fileUploadZone');
+    if (fileInput) fileInput.value = '';
+    if (info) info.style.display = 'none';
+    if (zone) { zone.style.borderColor = ''; zone.style.borderStyle = 'dashed'; zone.style.background = ''; }
+    if (label) label.textContent = '点击选择文件或拖拽到此处';
+  };
+
+  // ══════ 字符计数 ══════
+  window.updateUploadCharCount = function () {
+    var input = document.getElementById('uploadTitle');
+    var count = document.getElementById('titleCharCount');
+    if (!input || !count) return;
+    var len = input.value.length;
+    count.textContent = len + '/100';
+    count.style.color = len >= 90 ? '#E74C3C' : len >= 70 ? '#F39C12' : '';
+  };
+
+  window.updateUploadDescCount = function () {
+    var input = document.getElementById('uploadDesc');
+    var count = document.getElementById('descCharCount');
+    if (!input || !count) return;
+    var len = input.value.length;
+    count.textContent = len;
+    count.style.color = len >= 450 ? '#E74C3C' : len >= 350 ? '#F39C12' : '';
+  };
+
   // ══════ 加载复习资料列表 ══════
   window.loadReviewMaterials = function (page) {
     reviewPage = page || 1;
@@ -103,11 +167,29 @@
       if (typeof showToast === 'function') showToast('请先登录');
       return;
     }
+    // 重置表单
     document.getElementById('uploadSubject').value = '';
     document.getElementById('uploadTitle').value = '';
     document.getElementById('uploadDesc').value = '';
     document.getElementById('uploadFile').value = '';
-    document.getElementById('uploaderName').value = currentUser.nickname || currentUser.name || '';
+    // 重置UI状态
+    document.querySelectorAll('.review-subject-chip').forEach(function(c) { c.classList.remove('selected'); });
+    var info = document.getElementById('fileSelectedInfo');
+    var zone = document.getElementById('fileUploadZone');
+    var label = document.getElementById('fileUploadLabel');
+    if (info) info.style.display = 'none';
+    if (zone) { zone.style.borderColor = ''; zone.style.borderStyle = 'dashed'; zone.style.background = ''; }
+    if (label) label.textContent = '点击选择文件或拖拽到此处';
+    // 重置计数器
+    var titleCount = document.getElementById('titleCharCount');
+    var descCount = document.getElementById('descCharCount');
+    if (titleCount) { titleCount.textContent = '0/100'; titleCount.style.color = ''; }
+    if (descCount) { descCount.textContent = '0'; descCount.style.color = ''; }
+    // 重置提交按钮
+    var submitText = document.getElementById('uploadSubmitText');
+    var submitLoading = document.getElementById('uploadSubmitLoading');
+    if (submitText) submitText.style.display = '';
+    if (submitLoading) submitLoading.style.display = 'none';
     document.getElementById('uploadMaterialModal').style.display = 'flex';
   };
 
@@ -117,10 +199,18 @@
     var title = document.getElementById('uploadTitle').value.trim();
     var desc = document.getElementById('uploadDesc').value.trim();
     var fileInput = document.getElementById('uploadFile');
-    var uploaderName = document.getElementById('uploaderName').value.trim();
+    var uploaderName = currentUser.nickname || currentUser.name || '';
 
     if (!subject) { if (typeof showToast === 'function') showToast('请填写科目'); return; }
     if (!title) { if (typeof showToast === 'function') showToast('请填写标题'); return; }
+
+    // 显示加载状态
+    var submitText = document.getElementById('uploadSubmitText');
+    var submitLoading = document.getElementById('uploadSubmitLoading');
+    var submitBtn = document.getElementById('uploadSubmitBtn');
+    if (submitText) submitText.style.display = 'none';
+    if (submitLoading) submitLoading.style.display = '';
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.7'; submitBtn.style.cursor = 'default'; submitBtn.onmouseover = null; submitBtn.onmouseout = null; }
 
     var formData = new FormData();
     formData.append('subject', subject);
@@ -138,8 +228,13 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {
+        // 恢复按钮
+        if (submitText) submitText.style.display = '';
+        if (submitLoading) submitLoading.style.display = 'none';
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; submitBtn.style.cursor = 'pointer'; submitBtn.onmouseover = function() { this.style.transform = 'translateY(-2px)'; this.style.boxShadow = '0 6px 24px rgba(255,107,53,0.4)'; }; submitBtn.onmouseout = function() { this.style.transform = ''; this.style.boxShadow = '0 4px 16px rgba(255,107,53,0.3)'; }; }
+
         if (data.success) {
-          if (typeof showToast === 'function') showToast('资料已提交，等待审核');
+          if (typeof showToast === 'function') showToast('✅ 资料已提交，等待管理员审核');
           document.getElementById('uploadMaterialModal').style.display = 'none';
           loadReviewMaterials(1);
         } else {
@@ -148,6 +243,10 @@
       })
       .catch(function (e) {
         console.error('upload error:', e);
+        // 恢复按钮
+        if (submitText) submitText.style.display = '';
+        if (submitLoading) submitLoading.style.display = 'none';
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; submitBtn.style.cursor = 'pointer'; submitBtn.onmouseover = function() { this.style.transform = 'translateY(-2px)'; this.style.boxShadow = '0 6px 24px rgba(255,107,53,0.4)'; }; submitBtn.onmouseout = function() { this.style.transform = ''; this.style.boxShadow = '0 4px 16px rgba(255,107,53,0.3)'; }; }
         if (typeof showToast === 'function') showToast('上传失败，请重试');
       });
   };

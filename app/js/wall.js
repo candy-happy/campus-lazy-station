@@ -1,4 +1,4 @@
-// wall.js - 校园墙 v3.0.33
+// wall.js - 校园墙 v3.0.35
 // 依赖: core.js (需先加载)
 // 新功能请添加为独立JS模块，不要在骨架文件中添加代码
 
@@ -1110,7 +1110,7 @@
       const el = document.getElementById('chatListBody');
       // 并行拉取私信 + 通知 + 我的社团群聊
       const [list, notifs, clubs] = await Promise.all([
-        API.chatConversations(currentUser.phone),
+        API.chatConversations(currentUser.phone).catch(() => []),
         API.getNotifications(currentUser.phone).catch(() => []),
         API.getMyClubs().catch(() => [])
       ]);
@@ -1150,6 +1150,17 @@
         </div>
       </div>`;
       // 私信条目渲染
+      function _shareFriendlyPreview(msg) {
+        if (!msg) return '';
+        var prefix = '';
+        if (msg.startsWith('[SHARE_STAR]')) {
+          try { var d = JSON.parse(msg.substring(12)); prefix = '🌸 分享了 ' + (d.name || '一位校花校草'); }
+          catch(e) { prefix = '🌸 分享了一位校花校草'; }
+          return prefix;
+        }
+        if (msg.startsWith('[SHARE_POST]')) return '📣 分享了一条校园墙';
+        return msg;
+      }
       const chatItems = (list || []).map(c => `
         <div class="chat-item" onclick="${window._pendingSharePostId ? 'window.shareAndOpenConv' : 'openChatConv'}(${c.id},'${escHtml(c.other_phone)}','${escHtml(c.other_name)}')">
           <div class="chat-item-avatar">${(c.other_name||'?')[0]}</div>
@@ -1159,7 +1170,7 @@
               <span class="chat-item-time">${timeAgo(c.last_message_at)}</span>
             </div>
             <div class="chat-item-bottom">
-              <span class="chat-item-msg">${escHtml((c.last_sender===currentUser.phone?'我:':'')+ (c.last_message||''))}</span>
+              <span class="chat-item-msg">${escHtml((c.last_sender===currentUser.phone?'我:':'') + _shareFriendlyPreview(c.last_message||''))}</span>
               ${c.unread? '<span class="chat-item-badge">' + c.unread + '</span>':''}
             </div>
           </div>
@@ -1471,6 +1482,8 @@
           content = '<video src="'+escHtml(c)+'" style="max-width:100%;border-radius:8px;display:block" controls preload="metadata"></video>';
         } else if (m.type === 'share_post') {
           content = renderSharePostCard(c);
+        } else if (m.type === 'share_star' || (c && c.indexOf('[SHARE_STAR]') === 0)) {
+          content = renderShareStarCard(c);
         } else if (c.startsWith('[ANIM:')) {
           const p=c.slice(6,c.length-1).split(':');
           content = '<span class="anim-'+p[1]+'" style="font-size:36px;display:inline-block">'+p[0]+'</span>';
@@ -1479,7 +1492,7 @@
         } else {
           content = escHtml(c);
         }
-        var dataContent = (c||'').replace(/(\[SHARE_POST\]|\[GIF\]|\[ANIM:[^\]]*\])/g,'[分享]');
+        var dataContent = (c||'').replace(/(\[SHARE_POST\]|\[SHARE_STAR\]|\[GIF\]|\[ANIM:[^\]]*\])/g,'[分享]');
         return `
           <div class="message-bubble ${isMe?'me':'other'}" data-time="${time}" data-content="${escHtml(dataContent)}">
             <div class="message-content">${content}<div class="message-time">${time}</div></div>
@@ -1522,6 +1535,28 @@
       }
     }
 
+    // 渲染分享校花校草卡片
+    function renderShareStarCard(content) {
+      if (content.indexOf('[SHARE_STAR]') !== 0) {
+        return escHtml(content);
+      }
+      try {
+        var data = JSON.parse(content.substring(12));
+        var photo = data.photo || '';
+        var imgHtml = photo
+          ? '<img src="' + escHtml(photo) + '" style="width:100%;max-height:180px;border-radius:10px;object-fit:cover;margin-top:8px" />'
+          : '';
+        return '<div style="background:#fff;border-radius:12px;padding:12px;border:1px solid #e0e0e0;max-width:280px;cursor:pointer" onclick="openStarFromShare(' + data.id + ')">'
+          + '<div style="font-size:12px;color:#999;margin-bottom:6px">🌸 分享了一位校花校草</div>'
+          + (data.intro ? '<div style="font-size:14px;line-height:1.5;margin-bottom:4px;color:#333">' + escHtml(data.intro) + '</div>' : '')
+          + '<div style="font-size:12px;color:#999;margin-bottom:4px">——' + escHtml(data.name || '') + (data.votes ? ' · 🗳 ' + data.votes + ' 票' : '') + '</div>'
+          + imgHtml
+          + '<button onclick="event.stopPropagation();openStarFromShare(' + data.id + ')" style="margin-top:8px;padding:6px 14px;border-radius:8px;background:var(--primary);color:#fff;border:none;font-size:13px;cursor:pointer;width:100%">查看详情</button>'
+          + '</div>';
+      } catch(e) {
+        return escHtml(content);
+      }
+    }
 
 
     async function sendChatMsg() {
