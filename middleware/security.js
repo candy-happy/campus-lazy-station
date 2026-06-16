@@ -22,7 +22,7 @@ function securityHeaders(req, res, next) {
   res.setHeader('Content-Security-Policy',
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline'; " +
-    "style-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+    "style-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; " +
     "img-src 'self' data: blob: https:; " +
     "media-src 'self' blob:; " +
     "connect-src 'self'; " +
