@@ -49,8 +49,8 @@ router.post('/user/login', userLoginRateLimit, (req, res) => JSON_RES(res, () =>
     if (password !== 'shoujihao') return makeError('账号不存在，首次登录请使用默认密码 shoujihao', ErrorCode.PASSWORD_WRONG);
 
     const defaultHash = bcrypt.hashSync('shoujihao', 10);
-    db.prepare('INSERT INTO users (name, phone, student_id, password) VALUES (?, ?, ?, ?)')
-      .run('同学', student_id, student_id, defaultHash);
+    db.prepare('INSERT INTO users (name, phone, student_id, password, avatar) VALUES (?, ?, ?, ?, ?)')
+      .run('同学', student_id, student_id, defaultHash, '/default-avatar.png');
     user = db.prepare('SELECT * FROM users WHERE student_id = ?').get(student_id);
 
     // 注册奖励积分（用 student_id 代替 phone）

@@ -195,7 +195,7 @@ var _petCommentsPage = 0;
 var _PET_PAGE_INIT = { sightings: 5, related: 3, comments: 5 };
 
 function renderSightingItem(s) {
-  var sAvatar = (s.user_avatar && s.user_avatar.startsWith('/')) ? '<img src="' + escHtml(s.user_avatar) + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover">' : '<span style="font-size:1rem">\u{1F464}</span>';
+  var sAvatar = (s.user_avatar && s.user_avatar.startsWith('/')) ? '<img src="' + escHtml(s.user_avatar) + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:28px;height:28px;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />';
   var sName = escHtml(s.user_nickname || s.nickname || '匿名');
   var sLoc = s.location ? ' \u{1F4CD}' + escHtml(s.location) : '';
   var sNote = s.note ? '<span style="color:#666;font-size:12px"> - ' + escHtml(s.note) + '</span>' : '';

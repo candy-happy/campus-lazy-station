@@ -56,7 +56,7 @@ function renderTeachersTable(teachers) {
   tbody.innerHTML = teachers.map(function(t) {
     var avatarHtml = t.avatar
       ? '<img src="' + escHtml(t.avatar) + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\'">'
-      : '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#FFE0B2,#FFCC80);display:flex;align-items:center;justify-content:center;font-size:1.1rem">👤</div>';
+      : '<img src="/default-avatar.png" style="width:40px;height:40px;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\'">';
     return '<tr>' +
       '<td>' + avatarHtml + '</td>' +
       '<td style="font-weight:600">' + escHtml(t.name) + '</td>' +

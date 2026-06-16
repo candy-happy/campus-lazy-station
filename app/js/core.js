@@ -672,10 +672,9 @@
 
     function renderAvatarHtml(avatar, name) {
       if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
-        return '<img src="' + avatar + '" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle" />';
+        return '<img src="' + avatar + '" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle" onerror="this.style.display=&apos;none&apos;" />';
       }
-      if (avatar && avatar.length <= 2) return '<span style="font-size:14px">' + avatar + '</span>';
-      return '<span style="font-size:12px;color:var(--text-light)">' + escHtml((name || '?')[0]) + '</span>';
+      return '<img src="/default-avatar.png" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle" onerror="this.style.display=&apos;none&apos;" />';
     }
 
 
@@ -731,8 +730,8 @@
       }
       el.innerHTML = wallPosts.map(p => {
         const avatarHtml = p.avatar && (p.avatar.startsWith('/') || p.avatar.startsWith('http'))
-          ? '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="'+escHtml(p.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" /></div>'
-          : '<div class="wall-avatar" style="cursor:pointer" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页">'+(p.avatar && /\p{Emoji}/u.test(p.avatar) && p.avatar.length<=2 ? p.avatar : (p.nickname||'匿')[0])+'</div>';
+          ? '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="'+escHtml(p.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" /></div>'
+          : '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" /></div>';
         const hasImages = p.images && p.images.length;
         // 图片布局：1张大图/2张并排/3+宫格
         let imageGrid = '';
@@ -937,12 +936,12 @@
         if (headerTitle && pdata?.nickname) headerTitle.textContent = '你好, ' + pdata.nickname;
         if (phoneEl) phoneEl.textContent = fmtPhone(currentUser.phone);
         if (avatarEl) {
-          const av = pdata?.avatar || avatars[parseInt(currentUser.phone.slice(-2)) % avatars.length];
+          const av = pdata?.avatar;
           const isUrl = av && (av.startsWith('/') || av.startsWith('http'));
           if (isUrl) {
-            avatarEl.innerHTML = '<img src="' + av + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />';
+            avatarEl.innerHTML = '<img src="' + av + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" />';
           } else {
-            avatarEl.textContent = av;
+            avatarEl.innerHTML = '<img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" />';
           }
         }
         const bioEl = document.getElementById('meBio');
@@ -954,8 +953,10 @@
             cardEl.style.backgroundImage = 'url(' + pdata.bg_image + ')';
             cardEl.style.backgroundSize = 'cover';
             cardEl.style.backgroundPosition = 'center';
-          } else if (pdata?.bg_color) {
-            cardEl.style.background = pdata.bg_color;
+          } else {
+            cardEl.style.backgroundImage = 'url(/default-cover.png)';
+            cardEl.style.backgroundSize = 'cover';
+            cardEl.style.backgroundPosition = 'center';
           }
         }
       } catch(e) {
@@ -1289,8 +1290,8 @@ window.showToast = showToast;
 
     function renderWallPostCard(p) {
       const avatarHtml = p.avatar && (p.avatar.startsWith('/') || p.avatar.startsWith('http'))
-        ? '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="'+escHtml(p.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" /></div>'
-        : '<div class="wall-avatar" style="cursor:pointer" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页">'+(p.avatar && /\p{Emoji}/u.test(p.avatar) && p.avatar.length<=2 ? p.avatar : (p.nickname||'匿')[0])+'</div>';
+        ? '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="'+escHtml(p.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" /></div>'
+        : '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" /></div>';
       const hasImages = p.images && p.images.length;
       let imageGrid = '';
       if (hasImages) {

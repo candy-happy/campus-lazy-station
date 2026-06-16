@@ -418,7 +418,7 @@
       const avatarPreviewHtml = isUrl
         ? '<img src="' + curAvatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />'
         : (curAvatar || '\u{1F9A5}');
-      const bgStyle = curBg ? ' style="background:url(' + escHtml(curBg) + ') center/cover no-repeat"' : '';
+      const bgStyle = curBg ? ' style="background:url(' + escHtml(curBg) + ') center/cover no-repeat"' : ' style="background:url(/default-cover.png) center/cover no-repeat"';
       let el = document.getElementById('profilePage_sub');
       if (!el) {
         el = document.createElement('div');
@@ -660,7 +660,7 @@ window.showTermsModal = showTermsModal;
               const nickname = b.nickname || b.blocked_phone || '未知';
               const avatarHtml = avatar
                 ? `<img src="${escHtml(avatar)}" style="width:40px;height:40px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'" />`
-                : `<div style="width:40px;height:40px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">${(nickname[0]||'?').toUpperCase()}</div>`;
+                : `<img src="/default-avatar.png" style="width:40px;height:40px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'" />`;
               return `
                 <div class="block-list-item" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
                   ${avatarHtml}

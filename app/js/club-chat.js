@@ -84,8 +84,8 @@ function loadClubRoomMessages(clubId) {
       var avatarInitial = (m.sender_name || '?')[0];
       // 发送者头像
       var avatarHtml = m.sender_avatar
-        ? '<img src="' + escHtml(m.sender_avatar) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
-        : '<span style="font-size:12px;color:#fff">' + avatarInitial + '</span>';
+        ? '<img src="' + escHtml(m.sender_avatar) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" />'
+        : '<img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" />';
 
       var senderHtml = isMe ? '' :
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">' +

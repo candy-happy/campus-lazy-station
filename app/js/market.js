@@ -93,7 +93,7 @@
         if (item.error) { showToast(item.error); return; }
         renderItemDetail(item);
         openSubPage('itemDetailPage_sub');
-      } catch(e) { showToast(_t('teacherLoadFailed')); }
+      } catch(e) { console.error('openItemDetail error:', e); showToast('加载商品失败，请重试'); }
     }
 
 
@@ -229,14 +229,14 @@
 
     function renderCommentCard(c, itemId) {
       const avatarHtml = c.user_avatar && c.user_avatar.startsWith('http') ?
-        '<img src="' + c.user_avatar + '" />' :
-        '<span>' + escHtml((c.user_name || 'U').charAt(0)) + '</span>';
+        '<img src="' + c.user_avatar + '" onerror="this.style.display=&apos;none&apos;" />' :
+        '<img src="/default-avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />';
       const isMine = currentUser && c.user_phone === currentUser.phone;
       let repliesHtml = '';
       if (c.replies && c.replies.length) {
         repliesHtml = '<div class="comment-replies">' + c.replies.map(r => {
           const rAvatar = r.user_avatar && r.user_avatar.startsWith('http') ?
-            '<img src="' + r.user_avatar + '" />' : '<span>' + escHtml((r.user_name || 'U').charAt(0)) + '</span>';
+            '<img src="' + r.user_avatar + '" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />';
           const rMine = currentUser && r.user_phone === currentUser.phone;
           return '<div class="comment-reply">' +
             '<div class="comment-top">' +
@@ -358,23 +358,31 @@
     // 打开聊天会话（委托给 wall.js 的 window.openChatConv）
     function openChatWithId(convId, otherPhone, otherName) {
       if (typeof window.openChatConv === 'function') {
+        // chatConversation 嵌套在 messagePage 内，必须先激活 messagePage
+        document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+        document.getElementById('messagePage').classList.add('active');
         window.openChatConv(convId, otherPhone, otherName);
-        document.getElementById('marketListPage_sub').classList.remove('active');
+        // 关闭所有活跃的 sub-page，确保聊天不被遮挡
+        document.querySelectorAll('.sub-page.active').forEach(function(p) { p.classList.remove('active'); });
       } else {
         showToast('聊天功能加载中，请稍后再试');
       }
     }
 
     async function chatWithSeller(itemId) {
+      console.log('[chatWithSeller] called with itemId:', itemId, 'currentUser:', currentUser?.phone);
       if (!currentUser) { showToast('请先登录'); return; }
       try {
+        console.log('[chatWithSeller] calling API.marketItemChat...');
         const res = await API.marketItemChat(itemId);
+        console.log('[chatWithSeller] API response:', res);
         if (res.ok && res.conversation_id) {
+          console.log('[chatWithSeller] opening chat:', res.conversation_id);
           openChatWithId(res.conversation_id, res.other_phone, res.other_name);
         } else {
           showToast(res.error || '创建会话失败');
         }
-      } catch(e) { showToast('操作失败'); }
+      } catch(e) { console.error('[chatWithSeller] error:', e); showToast('操作失败'); }
     }
 
 
@@ -556,7 +564,7 @@
         if (wallProfile.bg_image) {
           bgStyle = 'style="background-image:url(' + escHtml(wallProfile.bg_image) + ');background-size:cover;background-position:center"';
         } else if (wallProfile.bg_color) {
-          bgStyle = 'style="background:' + escHtml(wallProfile.bg_color) + '"';
+          bgStyle = 'style="background-image:url(/default-cover.png);background-size:cover;background-position:center"';
         }
         document.getElementById('sellerRatingCount').textContent = ratingCount + '条';
         // 渲染信息卡

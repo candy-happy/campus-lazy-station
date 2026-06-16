@@ -73,7 +73,7 @@
         var rowBg = p.alert_level === 'urgent' ? 'background:#FFF8F0;' : '';
         var avatarBorder = p.alert_level === 'urgent' ? '#FF9800' : '#FFE0B2';
         var nameColor = '#E65100';
-        var avatarHtml = (p.avatar && p.avatar.charAt(0) === '/') ? '<img src="' + esc(p.avatar) + '" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ' + avatarBorder + '">' : '<span style="font-size:1.8rem">' + (speciesEmoji[p.species] || '\u{1F43E}') + '</span>';
+        var avatarHtml = (p.avatar && p.avatar.charAt(0) === '/') ? '<img src="' + esc(p.avatar) + '" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ' + avatarBorder + '" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ' + avatarBorder + '" onerror="this.style.display=&apos;none&apos;" />';
         var statusHtml = statusMap[p.status] || statusMap.active;
         var sightingBtn = '<button class="btn" style="padding:4px 8px;font-size:0.75rem;border-color:#81C784;color:#2E7D32;border-radius:8px" onclick="showSightings(' + p.id + ',\'' + esc(p.code_name).replace(/'/g, "\\'") + '\')">\u{1F4CD}</button>';
         var statusBtn = '<button class="btn" style="padding:4px 8px;font-size:0.75rem;border-color:#90CAF9;color:#1565C0;border-radius:8px" onclick="showStatusModal(' + p.id + ',\'' + esc(p.code_name).replace(/'/g, "\\'") + '\')">📋</button>';
@@ -212,7 +212,7 @@
         return;
       }
       var html = sightings.map(function(s) {
-        var avatarHtml = (s.user_avatar && s.user_avatar.charAt(0) === '/') ? '<img src="' + esc(s.user_avatar) + '" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid #C8E6C9">' : '<div style="width:36px;height:36px;border-radius:50%;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:1rem">\u{1F464}</div>';
+        var avatarHtml = (s.user_avatar && s.user_avatar.charAt(0) === '/') ? '<img src="' + esc(s.user_avatar) + '" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid #C8E6C9" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid #C8E6C9" onerror="this.style.display=&apos;none&apos;" />';
         var nickname = esc(s.user_nickname || s.nickname || s.phone);
         var loc = s.location ? ' <span style="color:#999;font-size:0.8rem">\u{1F4CD} ' + esc(s.location) + '</span>' : '';
         var note = s.note ? '<div style="margin-top:4px;color:#555;font-size:0.85rem">' + esc(s.note) + '</div>' : '';
@@ -333,7 +333,7 @@
         }
         var speciesEmoji = { cat: '\u{1F431}', dog: '\u{1F436}' };
         var html = list.map(function(s) {
-          var avatarHtml = (s.user_avatar && s.user_avatar.charAt(0) === '/') ? '<img src="' + esc(s.user_avatar) + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1.5px solid #C8E6C9">' : '<div style="width:40px;height:40px;border-radius:50%;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:1rem">\u{1F464}</div>';
+          var avatarHtml = (s.user_avatar && s.user_avatar.charAt(0) === '/') ? '<img src="' + esc(s.user_avatar) + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1.5px solid #C8E6C9" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1.5px solid #C8E6C9" onerror="this.style.display=&apos;none&apos;" />';
           var petEmoji = speciesEmoji[s.species] || '\u{1F43E}';
           var petName = esc(s.code_name || '未知');
           var nickname = esc(s.user_nickname || s.phone || '匿名');

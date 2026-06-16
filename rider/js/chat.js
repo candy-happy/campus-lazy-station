@@ -47,7 +47,7 @@ function renderChatItems(list, el) {
     const preview = escHtml((isMe ? '我: ' : '') + (c.last_message || ''));
     const unreadBadge = c.unread ? '<span class="chat-item-badge">'+c.unread+'</span>' : '';
     return '<div class="chat-item" onclick="openRiderConv('+c.id+',\''+escAttr(c.other_phone)+'\',\''+escAttr(c.other_name||'')+'\')">' +
-      '<div class="chat-item-avatar '+ac+'">'+(c.other_avatar ? '<img src="'+escAttr(c.other_avatar)+'" />' : initial)+'</div>' +
+      '<div class="chat-item-avatar '+ac+'">'+(c.other_avatar ? '<img src="'+escAttr(c.other_avatar)+'" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />')+'</div>' +
       '<div class="chat-item-info">' +
       '<div class="chat-item-top"><span class="chat-item-name">'+name+'</span><span class="chat-item-time">'+t+'</span></div>' +
       '<div class="chat-item-bottom">'+orderTag+'<span class="chat-item-msg">'+preview+'</span>'+unreadBadge+'</div>' +
@@ -160,7 +160,7 @@ async function loadRiderChatMessages() {
     // 对方消息：头像在左
     if (!isMe && showAvatar) {
       const initial = (m.sender_name || m.sender_phone || '?')[0];
-      html += '<div class="chat-msg-avatar you-av">'+(m.sender_avatar ? '<img src="'+escAttr(m.sender_avatar)+'" />' : initial)+'</div>';
+      html += '<div class="chat-msg-avatar you-av">'+(m.sender_avatar ? '<img src="'+escAttr(m.sender_avatar)+'" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />')+'</div>';
     } else if (!isMe) {
       html += '<div class="chat-msg-avatar you-av" style="visibility:hidden"></div>';
     }
@@ -180,7 +180,7 @@ async function loadRiderChatMessages() {
     // 自己消息：头像在右
     if (isMe && showAvatar) {
       const myInitial = (currentRider.name || currentRider.phone || '?')[0];
-      html += '<div class="chat-msg-avatar me-av">'+(currentRider.avatar ? '<img src="'+escAttr(currentRider.avatar)+'" />' : myInitial)+'</div>';
+      html += '<div class="chat-msg-avatar me-av">'+(currentRider.avatar ? '<img src="'+escAttr(currentRider.avatar)+'" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />')+'</div>';
     } else if (isMe) {
       html += '<div class="chat-msg-avatar me-av" style="visibility:hidden"></div>';
     }

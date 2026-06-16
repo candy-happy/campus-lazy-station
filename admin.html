@@ -9,7 +9,7 @@
  <title>校园圈 - 管理后台</title>
  <script src="admin/js/chart.min.js"></script>
 <script src="api.js"></script>
-<link rel="stylesheet" href="admin/css/style.css?v=2026061623" />
+<link rel="stylesheet" href="admin/css/style.css?v=2026061701" />
 </head>
 <body>
  <div class="login-container" id="loginScreen">
@@ -107,7 +107,7 @@
  <button class="btn btn-primary" onclick="exportData()">📥 导出数据</button>
  </div>
  </div>
- <!-- 订单与收入面板 -->
+<!-- 订单与收入面板 -->
  <div class="chart-card" style="margin-bottom:20px">
  <div class="chart-header" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
  <span class="chart-title" style="font-size:1.1rem">📦 订单与收入</span>
@@ -922,6 +922,12 @@
       <button class="market-tab active" data-tab="market" onclick="switchAiTab('market',this)">🛒 二手市场</button>
       <button class="market-tab" data-tab="wall" onclick="switchAiTab('wall',this)">📢 校园墙</button>
       <button class="market-tab" data-tab="wall-comments" onclick="switchAiTab('wall-comments',this)">💬 校园墙评论</button>
+      <button class="market-tab" data-tab="pets-comments" onclick="switchAiTab('pets-comments',this)">🐱 猫狗留言</button>
+      <button class="market-tab" data-tab="teachers" onclick="switchAiTab('teachers',this)">👨‍🏫 教师评价</button>
+      <button class="market-tab" data-tab="campus-star" onclick="switchAiTab('campus-star',this)">⭐ 校花校草</button>
+      <button class="market-tab" data-tab="clubs" onclick="switchAiTab('clubs',this)">🏠 社团</button>
+      <button class="market-tab" data-tab="activities" onclick="switchAiTab('activities',this)">🎉 活动</button>
+      <button class="market-tab" data-tab="review-materials" onclick="switchAiTab('review-materials',this)">📚 复习资料</button>
       <button class="market-tab" data-tab="logs" onclick="switchAiTab('logs',this)">📋 审核记录</button>
     </div>
 
@@ -1039,17 +1045,180 @@
       </div>
     </div>
 
+
+    <!-- Tab: 猫狗留言批量审核 -->
+    <div class="market-admin-panel" id="aiPanel-pets-comments">
+      <div class="market-admin-toolbar">
+        <div class="market-admin-filters">
+          <span style="font-size:13px;color:var(--text-secondary)">数量：</span>
+          <select id="aiPetsCommentsLimit" class="form-input" style="width:80px;padding:6px 8px">
+            <option value="10">10</option><option value="20">20</option><option value="50" selected>50</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" id="aiPetsCommentsBtn" onclick="runAiPetsCommentsCheck()">🔍 开始检测</button>
+      </div>
+      <div id="aiPetsCommentsProgress" style="display:none;padding:16px;background:var(--card);border-radius:8px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px"><div class="ai-spinner"></div><span id="aiPetsCommentsProgressText" style="font-size:14px">正在检测猫狗留言...</span></div>
+        <div style="background:var(--border);height:4px;border-radius:2px;margin-top:10px;overflow:hidden"><div id="aiPetsCommentsProgressBar" style="background:var(--orange);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div></div>
+      </div>
+      <div id="aiPetsCommentsResult" style="display:none">
+        <div class="stats-cards" style="margin-bottom:16px">
+          <div class="stat-card"><div class="stat-icon" style="background:#3498DB">📊</div><div class="stat-info"><div class="stat-value" id="aiPetsCommentsTotal">0</div><div class="stat-label">检测总数</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#E74C3C">⚠️</div><div class="stat-info"><div class="stat-value" id="aiPetsCommentsViolations">0</div><div class="stat-label">违规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#2ECC71">✅</div><div class="stat-info"><div class="stat-value" id="aiPetsCommentsClean">0</div><div class="stat-label">合规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#F39C12">⏱️</div><div class="stat-info"><div class="stat-value" id="aiPetsCommentsTime">0s</div><div class="stat-label">耗时</div></div></div>
+        </div>
+        <div class="table-card"><table class="data-table"><thead><tr><th>ID</th><th>内容</th><th>留言者</th><th>违规</th><th>等级</th><th>分类</th><th>原因</th></tr></thead><tbody id="aiPetsCommentsTable"></tbody></table></div>
+      </div>
+    </div>
+    <!-- Tab: 教师评价批量审核 -->
+    <div class="market-admin-panel" id="aiPanel-teachers">
+      <div class="market-admin-toolbar">
+        <div class="market-admin-filters">
+          <span style="font-size:13px;color:var(--text-secondary)">数量：</span>
+          <select id="aiTeachersLimit" class="form-input" style="width:80px;padding:6px 8px">
+            <option value="10">10</option><option value="20">20</option><option value="50" selected>50</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" id="aiTeachersBtn" onclick="runAiTeachersCheck()">🔍 开始检测</button>
+      </div>
+      <div id="aiTeachersProgress" style="display:none;padding:16px;background:var(--card);border-radius:8px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px"><div class="ai-spinner"></div><span id="aiTeachersProgressText" style="font-size:14px">正在检测教师评价...</span></div>
+        <div style="background:var(--border);height:4px;border-radius:2px;margin-top:10px;overflow:hidden"><div id="aiTeachersProgressBar" style="background:var(--orange);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div></div>
+      </div>
+      <div id="aiTeachersResult" style="display:none">
+        <div class="stats-cards" style="margin-bottom:16px">
+          <div class="stat-card"><div class="stat-icon" style="background:#3498DB">📊</div><div class="stat-info"><div class="stat-value" id="aiTeachersTotal">0</div><div class="stat-label">检测总数</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#E74C3C">⚠️</div><div class="stat-info"><div class="stat-value" id="aiTeachersViolations">0</div><div class="stat-label">违规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#2ECC71">✅</div><div class="stat-info"><div class="stat-value" id="aiTeachersClean">0</div><div class="stat-label">合规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#F39C12">⏱️</div><div class="stat-info"><div class="stat-value" id="aiTeachersTime">0s</div><div class="stat-label">耗时</div></div></div>
+        </div>
+        <div class="table-card"><table class="data-table"><thead><tr><th>ID</th><th>内容</th><th>评价者</th><th>违规</th><th>等级</th><th>分类</th><th>原因</th></tr></thead><tbody id="aiTeachersTable"></tbody></table></div>
+      </div>
+    </div>
+    <!-- Tab: 校花校草批量审核 -->
+    <div class="market-admin-panel" id="aiPanel-campus-star">
+      <div class="market-admin-toolbar">
+        <div class="market-admin-filters">
+          <span style="font-size:13px;color:var(--text-secondary)">类型：</span>
+          <select id="aiCampusStarType" class="form-input" style="width:120px;padding:6px 8px">
+            <option value="registrations">报名信息</option><option value="comments">评论内容</option>
+          </select>
+          <span style="font-size:13px;color:var(--text-secondary);margin-left:12px">数量：</span>
+          <select id="aiCampusStarLimit" class="form-input" style="width:80px;padding:6px 8px">
+            <option value="10">10</option><option value="20">20</option><option value="50" selected>50</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" id="aiCampusStarBtn" onclick="runAiCampusStarCheck()">🔍 开始检测</button>
+      </div>
+      <div id="aiCampusStarProgress" style="display:none;padding:16px;background:var(--card);border-radius:8px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px"><div class="ai-spinner"></div><span id="aiCampusStarProgressText" style="font-size:14px">正在检测校花校草...</span></div>
+        <div style="background:var(--border);height:4px;border-radius:2px;margin-top:10px;overflow:hidden"><div id="aiCampusStarProgressBar" style="background:var(--orange);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div></div>
+      </div>
+      <div id="aiCampusStarResult" style="display:none">
+        <div class="stats-cards" style="margin-bottom:16px">
+          <div class="stat-card"><div class="stat-icon" style="background:#3498DB">📊</div><div class="stat-info"><div class="stat-value" id="aiCampusStarTotal">0</div><div class="stat-label">检测总数</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#E74C3C">⚠️</div><div class="stat-info"><div class="stat-value" id="aiCampusStarViolations">0</div><div class="stat-label">违规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#2ECC71">✅</div><div class="stat-info"><div class="stat-value" id="aiCampusStarClean">0</div><div class="stat-label">合规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#F39C12">⏱️</div><div class="stat-info"><div class="stat-value" id="aiCampusStarTime">0s</div><div class="stat-label">耗时</div></div></div>
+        </div>
+        <div class="table-card"><table class="data-table" id="aiCampusStarTabTable"><thead><tr><th>ID</th><th>姓名/介绍</th><th>学号</th><th>违规</th><th>等级</th><th>分类</th><th>原因</th></tr></thead><tbody id="aiCampusStarTable"></tbody></table></div>
+      </div>
+    </div>
+    <!-- Tab: 社团批量审核 -->
+    <div class="market-admin-panel" id="aiPanel-clubs">
+      <div class="market-admin-toolbar">
+        <div class="market-admin-filters">
+          <span style="font-size:13px;color:var(--text-secondary)">数量：</span>
+          <select id="aiClubsLimit" class="form-input" style="width:80px;padding:6px 8px">
+            <option value="10">10</option><option value="20">20</option><option value="50" selected>50</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" id="aiClubsBtn" onclick="runAiClubsCheck()">🔍 开始检测</button>
+      </div>
+      <div id="aiClubsProgress" style="display:none;padding:16px;background:var(--card);border-radius:8px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px"><div class="ai-spinner"></div><span style="font-size:14px">正在检测社团信息...</span></div>
+        <div style="background:var(--border);height:4px;border-radius:2px;margin-top:10px;overflow:hidden"><div style="background:var(--orange);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div></div>
+      </div>
+      <div id="aiClubsResult" style="display:none">
+        <div class="stats-cards" style="margin-bottom:16px">
+          <div class="stat-card"><div class="stat-icon" style="background:#3498DB">📊</div><div class="stat-info"><div class="stat-value" id="aiClubsTotal">0</div><div class="stat-label">检测总数</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#E74C3C">⚠️</div><div class="stat-info"><div class="stat-value" id="aiClubsViolations">0</div><div class="stat-label">违规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#2ECC71">✅</div><div class="stat-info"><div class="stat-value" id="aiClubsClean">0</div><div class="stat-label">合规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#F39C12">⏱️</div><div class="stat-info"><div class="stat-value" id="aiClubsTime">0s</div><div class="stat-label">耗时</div></div></div>
+        </div>
+        <div class="table-card"><table class="data-table"><thead><tr><th>ID</th><th>名称</th><th>创建者</th><th>违规</th><th>等级</th><th>分类</th><th>原因</th></tr></thead><tbody id="aiClubsTable"></tbody></table></div>
+      </div>
+    </div>
+    <!-- Tab: 活动批量审核 -->
+    <div class="market-admin-panel" id="aiPanel-activities">
+      <div class="market-admin-toolbar">
+        <div class="market-admin-filters">
+          <span style="font-size:13px;color:var(--text-secondary)">数量：</span>
+          <select id="aiActivitiesLimit" class="form-input" style="width:80px;padding:6px 8px">
+            <option value="10">10</option><option value="20">20</option><option value="50" selected>50</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" id="aiActivitiesBtn" onclick="runAiActivitiesCheck()">🔍 开始检测</button>
+      </div>
+      <div id="aiActivitiesProgress" style="display:none;padding:16px;background:var(--card);border-radius:8px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px"><div class="ai-spinner"></div><span style="font-size:14px">正在检测活动信息...</span></div>
+        <div style="background:var(--border);height:4px;border-radius:2px;margin-top:10px;overflow:hidden"><div style="background:var(--orange);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div></div>
+      </div>
+      <div id="aiActivitiesResult" style="display:none">
+        <div class="stats-cards" style="margin-bottom:16px">
+          <div class="stat-card"><div class="stat-icon" style="background:#3498DB">📊</div><div class="stat-info"><div class="stat-value" id="aiActivitiesTotal">0</div><div class="stat-label">检测总数</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#E74C3C">⚠️</div><div class="stat-info"><div class="stat-value" id="aiActivitiesViolations">0</div><div class="stat-label">违规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#2ECC71">✅</div><div class="stat-info"><div class="stat-value" id="aiActivitiesClean">0</div><div class="stat-label">合规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#F39C12">⏱️</div><div class="stat-info"><div class="stat-value" id="aiActivitiesTime">0s</div><div class="stat-label">耗时</div></div></div>
+        </div>
+        <div class="table-card"><table class="data-table"><thead><tr><th>ID</th><th>标题</th><th>发布者</th><th>违规</th><th>等级</th><th>分类</th><th>原因</th></tr></thead><tbody id="aiActivitiesTable"></tbody></table></div>
+      </div>
+    </div>
+    <!-- Tab: 复习资料批量审核 -->
+    <div class="market-admin-panel" id="aiPanel-review-materials">
+      <div class="market-admin-toolbar">
+        <div class="market-admin-filters">
+          <span style="font-size:13px;color:var(--text-secondary)">数量：</span>
+          <select id="aiReviewMaterialsLimit" class="form-input" style="width:80px;padding:6px 8px">
+            <option value="10">10</option><option value="20">20</option><option value="50" selected>50</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" id="aiReviewMaterialsBtn" onclick="runAiReviewMaterialsCheck()">🔍 开始检测</button>
+      </div>
+      <div id="aiReviewMaterialsProgress" style="display:none;padding:16px;background:var(--card);border-radius:8px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px"><div class="ai-spinner"></div><span style="font-size:14px">正在检测复习资料...</span></div>
+        <div style="background:var(--border);height:4px;border-radius:2px;margin-top:10px;overflow:hidden"><div style="background:var(--orange);height:100%;width:0%;border-radius:2px;transition:width 0.3s"></div></div>
+      </div>
+      <div id="aiReviewMaterialsResult" style="display:none">
+        <div class="stats-cards" style="margin-bottom:16px">
+          <div class="stat-card"><div class="stat-icon" style="background:#3498DB">📊</div><div class="stat-info"><div class="stat-value" id="aiReviewMaterialsTotal">0</div><div class="stat-label">检测总数</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#E74C3C">⚠️</div><div class="stat-info"><div class="stat-value" id="aiReviewMaterialsViolations">0</div><div class="stat-label">违规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#2ECC71">✅</div><div class="stat-info"><div class="stat-value" id="aiReviewMaterialsClean">0</div><div class="stat-label">合规内容</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:#F39C12">⏱️</div><div class="stat-info"><div class="stat-value" id="aiReviewMaterialsTime">0s</div><div class="stat-label">耗时</div></div></div>
+        </div>
+        <div class="table-card"><table class="data-table"><thead><tr><th>ID</th><th>标题</th><th>上传者</th><th>违规</th><th>等级</th><th>分类</th><th>原因</th></tr></thead><tbody id="aiReviewMaterialsTable"></tbody></table></div>
+      </div>
+    </div>
     <!-- Tab: 审核记录 -->
     <div class="market-admin-panel" id="aiPanel-logs">
       <div class="market-admin-toolbar">
         <div class="market-admin-filters">
           <span style="font-size:13px;color:var(--text-secondary)">来源：</span>
-          <select id="aiLogSource" class="form-input" style="width:120px;padding:6px 8px">
+          <select id="aiLogSource" class="form-input" style="width:150px;padding:6px 8px">
             <option value="all">全部</option>
             <option value="wall_post">校园墙帖子</option>
             <option value="wall_comment">校园墙评论</option>
             <option value="market_item">二手商品</option>
             <option value="market_comment">二手评论</option>
+            <option value="pet_comment">猫狗留言</option>
+            <option value="teacher_review">教师评价</option>
+            <option value="chat_message">私聊消息</option>
+            <option value="campus_star">校花校草</option>
+            <option value="campus_star_comment">校花校草评论</option>
+            <option value="club">社团创建</option>
+            <option value="activity">活动创建</option>
+            <option value="review_material">复习资料</option>
           </select>
           <span style="font-size:13px;color:var(--text-secondary);margin-left:12px">等级：</span>
           <select id="aiLogLevel" class="form-input" style="width:90px;padding:6px 8px">
@@ -1274,7 +1443,7 @@
 
  
  <!-- 模块化JS加载（按依赖顺序） -->
- <script src="admin/js/core.js?v=2026061623"></script>
+ <script src="admin/js/core.js?v=2026061703"></script>
  <script src="admin/js/stats.js?v=202606082310"></script>
  <script src="admin/js/charts.js?v=202606082320"></script>
  <script src="admin/js/orders.js?v=202606082320"></script>
@@ -1284,7 +1453,7 @@
  <script src="admin/js/withdraw.js?v=202606082310"></script>
  <script src="admin/js/ads.js?v=202606082310"></script>
  <script src="admin/js/market.js?v=202606082310"></script>
- <script src="admin/js/ai.js?v=202606082310"></script>
+ <script src="admin/js/ai.js?v=20260617"></script>
  <script src="admin/js/pets.js?v=202606082310"></script>
  <script src="admin/js/feedback.js?v=202606082310"></script>
  <script src="admin/js/reports.js?v=20260609"></script>

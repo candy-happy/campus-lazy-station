@@ -788,7 +788,9 @@ const initData = db.transaction(() => {
   `);
   try { db.exec('CREATE INDEX IF NOT EXISTS idx_ub_phone ON user_badges(phone)'); } catch(e) {}
   try { db.exec('ALTER TABLE user_badges ADD COLUMN seen INTEGER DEFAULT 1'); } catch(e) { /* 旧记录默认已查看 */ }
+
 });
+
 initData();
 
 module.exports = db;

@@ -205,7 +205,7 @@
      '<div class="sub-page-body">' +
      // Avatar hero card
      '<div class="settings-avatar-row">' +
-       '<div class="settings-avatar-circle" onclick="document.getElementById(\'riderAvatarInput\').click()">' + (currentRider.avatar ? '<img src="' + escHtml(currentRider.avatar) + '" />' : '\u{1F6F5}') + '</div>' +
+       '<div class="settings-avatar-circle" onclick="document.getElementById(\'riderAvatarInput\').click()">' + (currentRider.avatar ? '<img src="' + escHtml(currentRider.avatar) + '" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />') + '</div>' +
        '<div class="settings-avatar-info">' +
          '<div class="settings-avatar-name">' + escHtml(currentRider.name || '骑手') + '</div>' +
          '<div class="settings-avatar-sub">点击头像更换照片</div>' +

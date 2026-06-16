@@ -112,12 +112,12 @@ router.get('/conversations', requireAuth, (req, res) => JSON_RES(res, () => {
     // 尝试获取关联订单的状态和标题
     let orderStatus = null, orderTitle = c.item_title || '';
     if (c.item_id) {
-      const order = db.prepare('SELECT status, title, pickup_location, type FROM orders WHERE id=? OR order_no=?').get(c.item_id, c.item_id);
+      const order = db.prepare('SELECT status, pickup_location, type FROM orders WHERE id=? OR order_no=?').get(c.item_id, c.item_id);
       if (order) {
         orderStatus = order.status;
         if (!orderTitle) {
           const sn = { express: '📦快递', shopping: '🛒代购', food: '🍔外卖', document: '📄文件', errand: '🏃跑腿', other: '🔧其他' };
-          orderTitle = (sn[order.type] || '订单') + ' - ' + (order.pickup_location || order.title || '');
+          orderTitle = (sn[order.type] || '订单') + ' - ' + (order.pickup_location || '');
         }
       }
     }
