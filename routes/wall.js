@@ -931,6 +931,35 @@ router.get('/admin/posts', requireAdmin, (req, res) => JSON_RES(res, () => {
   return { posts: posts.map(p => ({ ...p, pendingReports: reportMap.get(p.id) || 0 })), total, page: parseInt(page) };
 }));
 
+// ─── 管理端批量删除帖子 ──────────────────────────────────
+router.delete('/admin/posts/batch', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return makeError('请选择要删除的帖子', ErrorCode.PARAM_INVALID);
+  const validIds = ids.filter(id => Number.isInteger(id) && id > 0);
+  if (validIds.length === 0) return makeError('无效的帖子ID', ErrorCode.PARAM_INVALID);
+
+  const { auditFromReq } = require('../utils/audit');
+  let deleted = 0;
+  const stmts = {
+    delComments: db.prepare('DELETE FROM wall_comments WHERE post_id = ?'),
+    delLikes: db.prepare('DELETE FROM wall_likes WHERE post_id = ?'),
+    delReports: db.prepare('DELETE FROM wall_reports WHERE target_type = ? AND target_id = ?'),
+    delPost: db.prepare('DELETE FROM wall_posts WHERE id = ?')
+  };
+  const batchRun = db.transaction(() => {
+    for (const id of validIds) {
+      stmts.delComments.run(id);
+      stmts.delLikes.run(id);
+      stmts.delReports.run('post', id);
+      const r = stmts.delPost.run(id);
+      deleted += r.changes;
+    }
+  });
+  batchRun();
+  auditFromReq(req, 'post.batch_delete', { ids: validIds }, `批量删除 ${deleted} 个帖子`);
+  return { ok: true, deleted };
+}));
+
 // ─── 管理端删除帖子（级联删评论、点赞、举报） ──────────
 router.delete('/admin/posts/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
   const post = db.prepare('SELECT * FROM wall_posts WHERE id = ?').get(req.params.id);

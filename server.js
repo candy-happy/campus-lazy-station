@@ -325,9 +325,11 @@ app.listen(PORT, () => {
     try {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) { walk(full); try { fs.rmdirSync(full); } catch(_){} }
+        if (entry.isDirectory()) { walk(full); }
         else if (fs.statSync(full).mtimeMs < cutoff) { fs.unlinkSync(full); cleaned++; }
       }
+      // After cleaning files, remove directory only if it became empty (not if it was always empty)
+      try { fs.rmdirSync(dir); } catch(_) {}
     } catch(_) {}
   };
   walk(uploadsDir);

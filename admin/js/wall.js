@@ -2,6 +2,8 @@
 let _wallPostPage = 1, _wallPostFilter = 'all';
 let _wallCommentPage = 1;
 let _wallDetailPostId = null;
+let _selectedWallPosts = new Set();
+let _wallPostAllIds = []; // 当前页所有帖子ID，用于全选
 
 // ══════════════════════════════════════════════════════
 // Tab 切换
@@ -24,6 +26,7 @@ function filterWallPosts(filter, btn) {
   if (btn) btn.classList.add('active');
   _wallPostFilter = filter;
   _wallPostPage = 1;
+  _selectedWallPosts.clear();
   loadWallPosts();
 }
 
@@ -37,29 +40,35 @@ async function loadWallPosts(page) {
     document.getElementById('wallPostCount').textContent = `共 ${res.total || 0} 条`;
 
     if (!res.posts || res.posts.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text-secondary)">暂无帖子</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:40px;color:var(--text-secondary)">暂无帖子</td></tr>';
       document.getElementById('wallPostsPager').innerHTML = '';
       return;
     }
 
+    _wallPostAllIds = res.posts.map(p => p.id);
+    const selectAllChecked = _wallPostAllIds.length > 0 && _wallPostAllIds.every(id => _selectedWallPosts.has(id));
+    const selectAllIndeterminate = !selectAllChecked && _wallPostAllIds.some(id => _selectedWallPosts.has(id));
+
     tbody.innerHTML = res.posts.map(p => {
+      const checked = _selectedWallPosts.has(p.id) ? 'checked' : '';
       const content = (p.content || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const tags = (p.tags || '').replace(/,/g, ', ');
       const hasMedia = (p.images && p.images !== '[]') || (p.video && p.video !== '[]') ? '📷' : '-';
       const reportColor = p.pendingReports > 0 ? 'color:#E74C3C;font-weight:bold' : '';
 
-      return `<tr style="cursor:pointer" onclick="showWallPostDetail(${p.id})" title="点击查看详情">
-        <td>${p.id}</td>
-        <td title="${p.phone}">${p.nickname || p.phone?.slice(-4) || '-'}</td>
-        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${content}">${(p.content||'').substring(0,50)}</td>
-        <td style="max-width:100px;font-size:12px;color:var(--text-secondary)">${tags.substring(0,30) || '-'}</td>
-        <td>${hasMedia}</td>
-        <td>${p.like_count||0}</td>
-        <td>${p.comment_count||0}</td>
-        <td>${p.is_pinned ? '✅' : '—'}</td>
-        <td>${p.is_featured ? '⭐' : '—'}</td>
-        <td style="${reportColor}">${p.pendingReports > 0 ? '🚫'+p.pendingReports : '—'}</td>
-        <td style="font-size:12px">${(p.created_at||'').slice(0,16)}</td>
+      return `<tr style="cursor:pointer">
+        <td style="width:30px" onclick="event.stopPropagation()"><input type="checkbox" ${checked} onchange="toggleWallPostSelect(${p.id},this.checked)" style="cursor:pointer;width:16px;height:16px"></td>
+        <td onclick="showWallPostDetail(${p.id})" title="点击查看详情">${p.id}</td>
+        <td onclick="showWallPostDetail(${p.id})" title="${p.phone}">${p.nickname || p.phone?.slice(-4) || '-'}</td>
+        <td onclick="showWallPostDetail(${p.id})" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${content}">${(p.content||'').substring(0,50)}</td>
+        <td onclick="showWallPostDetail(${p.id})" style="max-width:100px;font-size:12px;color:var(--text-secondary)">${tags.substring(0,30) || '-'}</td>
+        <td onclick="showWallPostDetail(${p.id})">${hasMedia}</td>
+        <td onclick="showWallPostDetail(${p.id})">${p.like_count||0}</td>
+        <td onclick="showWallPostDetail(${p.id})">${p.comment_count||0}</td>
+        <td onclick="showWallPostDetail(${p.id})">${p.is_pinned ? '✅' : '—'}</td>
+        <td onclick="showWallPostDetail(${p.id})">${p.is_featured ? '⭐' : '—'}</td>
+        <td onclick="showWallPostDetail(${p.id})" style="${reportColor}">${p.pendingReports > 0 ? '🚫'+p.pendingReports : '—'}</td>
+        <td onclick="showWallPostDetail(${p.id})" style="font-size:12px">${(p.created_at||'').slice(0,16)}</td>
         <td style="white-space:nowrap" onclick="event.stopPropagation()">
           <button onclick="toggleWallPin(${p.id})" style="padding:3px 7px;border-radius:4px;background:var(--border);border:none;cursor:pointer;font-size:11px;margin-right:3px" title="置顶/取消置顶">📌</button>
           <button onclick="toggleWallFeature(${p.id})" style="padding:3px 7px;border-radius:4px;background:var(--border);border:none;cursor:pointer;font-size:11px;margin-right:3px" title="精华/取消精华">⭐</button>
@@ -67,6 +76,14 @@ async function loadWallPosts(page) {
         </td>
       </tr>`;
     }).join('');
+
+    // 更新全选复选框状态
+    const selectAllEl = document.getElementById('wallSelectAll');
+    if (selectAllEl) {
+      selectAllEl.checked = selectAllChecked;
+      selectAllEl.indeterminate = selectAllIndeterminate;
+    }
+    updateWallBatchBar();
 
     // 分页
     const totalPages = Math.ceil((res.total || 0) / 20);
@@ -103,9 +120,72 @@ async function deleteWallPost(id) {
   if (!confirm('确定删除该帖子？帖子下的所有评论、点赞、举报也会被一并删除。')) return;
   try {
     const res = await fetch(`/api/wall/admin/posts/${id}`, { method: 'DELETE', headers: API._headers() }).then(r => r.json());
-    if (res.ok) { loadWallPosts(_wallPostPage); closeWallDetail(); }
+    if (res.ok) { _selectedWallPosts.delete(id); loadWallPosts(_wallPostPage); closeWallDetail(); }
     else alert(res.error || '删除失败');
   } catch(e) { alert('删除失败'); }
+}
+
+// ══════════════════════════════════════════════════════
+// 批量选择与删除
+// ══════════════════════════════════════════════════════
+function toggleWallPostSelect(id, checked) {
+  if (checked) _selectedWallPosts.add(id);
+  else _selectedWallPosts.delete(id);
+  // 更新全选复选框状态
+  const selectAllEl = document.getElementById('wallSelectAll');
+  if (selectAllEl) {
+    selectAllEl.checked = _wallPostAllIds.length > 0 && _wallPostAllIds.every(pid => _selectedWallPosts.has(pid));
+    selectAllEl.indeterminate = !selectAllEl.checked && _wallPostAllIds.some(pid => _selectedWallPosts.has(pid));
+  }
+  updateWallBatchBar();
+}
+
+function toggleSelectAllWallPosts(checked) {
+  if (checked) {
+    _wallPostAllIds.forEach(id => _selectedWallPosts.add(id));
+  } else {
+    _wallPostAllIds.forEach(id => _selectedWallPosts.delete(id));
+  }
+  // 重新渲染当前页复选框
+  document.querySelectorAll('#wallPostsTable input[type=checkbox]').forEach(cb => {
+    cb.checked = checked;
+  });
+  const selectAllEl = document.getElementById('wallSelectAll');
+  if (selectAllEl) { selectAllEl.checked = checked; selectAllEl.indeterminate = false; }
+  updateWallBatchBar();
+}
+
+function updateWallBatchBar() {
+  const bar = document.getElementById('wallBatchBar');
+  const countEl = document.getElementById('wallBatchCount');
+  if (!bar) return;
+  if (_selectedWallPosts.size > 0) {
+    bar.style.display = 'flex';
+    if (countEl) countEl.textContent = `已选 ${_selectedWallPosts.size} 条`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+async function batchDeleteWallPosts() {
+  if (_selectedWallPosts.size === 0) return;
+  if (!confirm(`确定删除选中的 ${_selectedWallPosts.size} 个帖子？所有评论、点赞、举报也会一并删除，此操作不可撤销。`)) return;
+  try {
+    const ids = Array.from(_selectedWallPosts);
+    const res = await fetch('/api/wall/admin/posts/batch', {
+      method: 'DELETE',
+      headers: { ...API._headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    }).then(r => r.json());
+    if (res.ok) {
+      alert(`已成功删除 ${res.deleted || ids.length} 个帖子`);
+      _selectedWallPosts.clear();
+      loadWallPosts(_wallPostPage);
+      closeWallDetail();
+    } else {
+      alert(res.error || '批量删除失败');
+    }
+  } catch(e) { alert('批量删除失败: ' + e.message); }
 }
 
 // ══════════════════════════════════════════════════════
@@ -244,3 +324,6 @@ window.showWallPostDetail = showWallPostDetail;
 window.closeWallDetail = closeWallDetail;
 window.loadWallComments = loadWallComments;
 window.deleteWallComment = deleteWallComment;
+window.toggleWallPostSelect = toggleWallPostSelect;
+window.toggleSelectAllWallPosts = toggleSelectAllWallPosts;
+window.batchDeleteWallPosts = batchDeleteWallPosts;

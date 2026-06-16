@@ -894,8 +894,14 @@
         </div>
       </div>
       <span class="ads-filter-count" id="wallPostCount"></span>
+      <!-- 批量操作栏 -->
+      <div id="wallBatchBar" style="display:none;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:8px;margin:4px 0 8px">
+        <span id="wallBatchCount" style="font-size:13px;font-weight:600;color:var(--primary)">已选 0 条</span>
+        <button class="btn btn-danger btn-sm" onclick="batchDeleteWallPosts()">🗑️ 批量删除</button>
+        <button class="btn btn-secondary btn-sm" onclick="_selectedWallPosts.clear();loadWallPosts();" style="margin-left:auto">✕ 取消选择</button>
+      </div>
       <div class="table-card">
-        <table class="data-table"><thead><tr><th>ID</th><th>发布者</th><th>内容</th><th>标签</th><th>图/视频</th><th>👍点赞</th><th>💬评论</th><th>📌置顶</th><th>⭐精华</th><th>🚫举报</th><th>时间</th><th>操作</th></tr></thead><tbody id="wallPostsTable"></tbody></table>
+        <table class="data-table"><thead><tr><th style="width:30px"><input type="checkbox" id="wallSelectAll" onchange="toggleSelectAllWallPosts(this.checked)" style="cursor:pointer;width:16px;height:16px" title="全选"></th><th>ID</th><th>发布者</th><th>内容</th><th>标签</th><th>图/视频</th><th>👍点赞</th><th>💬评论</th><th>📌置顶</th><th>⭐精华</th><th>🚫举报</th><th>时间</th><th>操作</th></tr></thead><tbody id="wallPostsTable"></tbody></table>
       </div>
       <div class="pagination" id="wallPostsPager"></div>
     </div>
@@ -1457,7 +1463,7 @@
  <script src="admin/js/pets.js?v=202606082310"></script>
  <script src="admin/js/feedback.js?v=202606082310"></script>
  <script src="admin/js/reports.js?v=20260609"></script>
-<script src="admin/js/wall.js?v=202606121830"></script>
+<script src="admin/js/wall.js?v=2026061705"></script>
 <script src="admin/js/teachers.js?v=202606150135"></script>
 <script src="admin/js/review.js?v=2026061501"></script>
 <script src="admin/js/star.js?v=2026061623"></script>

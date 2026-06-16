@@ -65,7 +65,7 @@ router.get('/badges', requireAdmin, (req, res) => JSON_RES(res, () => {
   // AI审核：最近24h所有待审核项
   counts.ai = db.prepare("SELECT COUNT(*) as c FROM ai_review_logs WHERE created_at > datetime('now','-24 hours') AND level='high' AND (action IS NULL OR action='')").get()?.c || 0;
   // 猫狗：告警+待审核目击
-  const petAlerts = db.prepare("SELECT COUNT(*) as c FROM pets WHERE last_seen IS NOT NULL AND julianday('now')-julianday(last_seen)>=7").get()?.c || 0;
+  const petAlerts = db.prepare("SELECT COUNT(*) as c FROM pets WHERE last_seen_at IS NOT NULL AND julianday('now')-julianday(last_seen_at)>=7").get()?.c || 0;
   const petSightings = db.prepare("SELECT COUNT(*) as c FROM pet_sightings WHERE status='pending'").get()?.c || 0;
   counts.pets = petAlerts + petSightings;
   // 问题反馈：未处理
