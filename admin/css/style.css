@@ -25,8 +25,15 @@
  .admin-layout { display: flex; min-height: 100vh; }
  .sidebar-subtitle { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 4px; margin-left: 52px; }
  .sidebar-nav { padding: 16px 12px; flex: 1; overflow-y: auto; }
- .nav-section { margin-bottom: 24px; }
- .nav-section-title { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; padding: 0 12px; margin-bottom: 8px; }
+ .nav-section { margin-bottom: 16px; }
+ .nav-section-title { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; padding: 0 12px; margin-bottom: 8px; display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; transition:color .2s; }
+ .nav-section-title:hover { color: rgba(255,255,255,0.7); }
+ .nav-section-title .arrow { font-size:0.6rem; transition:transform .25s; display:inline-block; }
+ .nav-section.collapsed .nav-section-title .arrow { transform:rotate(-90deg); }
+ .nav-section-body { overflow:hidden; transition:max-height .3s ease, opacity .2s; }
+ .nav-section.collapsed .nav-section-body { max-height:0 !important; opacity:0; }
+ .nav-section-static .nav-section-title { cursor:default; }
+ .nav-section-static .nav-section-title:hover { color: rgba(255,255,255,0.4); }
  .nav-item-icon { font-size: 1.2rem; width: 24px; text-align: center; }
  .nav-item-label { font-size: 0.9rem; font-weight: 500; }
  .admin-user { display: flex; align-items: center; gap: 12px; }

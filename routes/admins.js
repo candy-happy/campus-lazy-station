@@ -57,4 +57,24 @@ router.get('/me', requireAdmin, (req, res) => JSON_RES(res, () => {
   return { admin: { id: req.user.id, username: req.user.username, type: req.user.type } };
 }));
 
+// ─── 管理端红点计数 ─────────────────────────────────────
+router.get('/badges', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const counts = {};
+  // 校园墙：AI审核拦截的帖子/评论（待管理员审核）
+  counts.wall = db.prepare("SELECT COUNT(*) as c FROM ai_review_logs WHERE source IN ('wall_post','wall_comment') AND level='high' AND (action IS NULL OR action='')").get()?.c || 0;
+  // AI审核：最近24h所有待审核项
+  counts.ai = db.prepare("SELECT COUNT(*) as c FROM ai_review_logs WHERE created_at > datetime('now','-24 hours') AND level='high' AND (action IS NULL OR action='')").get()?.c || 0;
+  // 猫狗：告警+待审核目击
+  const petAlerts = db.prepare("SELECT COUNT(*) as c FROM pets WHERE last_seen IS NOT NULL AND julianday('now')-julianday(last_seen)>=7").get()?.c || 0;
+  const petSightings = db.prepare("SELECT COUNT(*) as c FROM pet_sightings WHERE status='pending'").get()?.c || 0;
+  counts.pets = petAlerts + petSightings;
+  // 问题反馈：未处理
+  counts.feedback = db.prepare("SELECT COUNT(*) as c FROM feedback WHERE status='pending' OR status IS NULL").get()?.c || 0;
+  // 举报：待处理
+  counts.reports = db.prepare("SELECT COUNT(*) as c FROM reports WHERE status='pending'").get()?.c || 0;
+  // 复习资料：待审核
+  counts.review = db.prepare("SELECT COUNT(*) as c FROM review_materials WHERE status='pending'").get()?.c || 0;
+  return counts;
+}));
+
 module.exports = router;

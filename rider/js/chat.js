@@ -6,17 +6,9 @@ function avatarClass(phone) { return riderAvatarColors[Math.abs(hashCode(phone |
 function hashCode(s) { let h = 0; for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; } return h; }
 
 async function loadChatList() {
-  console.log('[loadChatList] called, currentRider:', !!currentRider, currentRider ? currentRider.phone : 'N/A');
-  if (!currentRider) { console.warn('[loadChatList] no currentRider'); return; }
+  if (!currentRider) return;
   try {
-    // DEBUG: 直接fetch绕过API封装
-    const rawRes = await fetch('/api/chat/conversations?phone=' + currentRider.phone, {
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('lazy_rider_token') || 'NO_TOKEN') }
-    });
-    console.log('[loadChatList] RAW fetch status:', rawRes.status, 'ok:', rawRes.ok);
-    const list = await rawRes.json();
-    console.log('[loadChatList] raw type:', typeof list, Array.isArray(list), 'val:', JSON.stringify(list)?.slice(0,300));
-    // const list = await API.chatConversations(currentRider.phone);
+    const list = await API.chatConversations(currentRider.phone);
     const el = document.getElementById('chatListBody');
     const countEl = document.getElementById('msgCount');
     const arr = Array.isArray(list) ? list : [];

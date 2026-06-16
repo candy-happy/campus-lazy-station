@@ -9,7 +9,7 @@ const API = {
   _token: null,
   _dbConnected: true, // 数据库连接状态
   _connectionCheckInterval: null,
-  _headers() { const h = { 'Content-Type': 'application/json' }; if (this._token) h['Authorization'] = 'Bearer ' + this._token; if (window.__debug_headers) console.log('[API:_headers] token:', this._token ? this._token.substring(0,30)+'...' : 'null'); return h; },
+  _headers() { const h = { 'Content-Type': 'application/json' }; if (this._token) h['Authorization'] = 'Bearer ' + this._token; return h; },
   _authHeaders() { const h = {}; if (this._token) h['Authorization'] = 'Bearer ' + this._token; return h; },
 
   // ─── 数据库连接状态检测 ──────────────────────────────────────
@@ -389,7 +389,7 @@ const API = {
 
   // ─── 聊天 ───
   async chatGetOrCreateConversation(data) { return fetch('/api/chat/conversation', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },
-  async chatConversations(phone) { return fetch('/api/chat/conversations?phone=' + phone, { headers: this._headers() }).then(async r => { console.log('[API:chatConversations] status:', r.status, 'phone:', phone); const data = await r.json(); console.log('[API:chatConversations] data type:', typeof data, 'isArray:', Array.isArray(data), 'len:', Array.isArray(data)?data.length:'N/A'); return data; }); },
+  async chatConversations(phone) { return fetch('/api/chat/conversations?phone=' + phone, { headers: this._headers() }).then(r => r.json()); },
 
   async chatSend(data) { return fetch('/api/chat/send', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },
   async chatClear(conversationId, phone) { return fetch('/api/chat/clear/' + conversationId, { method: 'POST', headers: this._headers(), body: JSON.stringify({ phone }) }).then(r => r.json()); },

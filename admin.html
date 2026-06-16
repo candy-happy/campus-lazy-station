@@ -9,7 +9,7 @@
  <title>校园圈 - 管理后台</title>
  <script src="admin/js/chart.min.js"></script>
 <script src="api.js"></script>
-<link rel="stylesheet" href="admin/css/style.css" />
+<link rel="stylesheet" href="admin/css/style.css?v=2026061623" />
 </head>
 <body>
  <div class="login-container" id="loginScreen">
@@ -44,31 +44,47 @@
  </div>
  </div>
  <nav class="sidebar-nav">
- <div class="nav-section">
- <div class="nav-section-title">主菜单</div>
- <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><span class="nav-item-icon">📊</span><span class="nav-item-label">数据概览</span></div>
+ <div class="nav-section nav-section-static">
+ <div class="nav-section-title">📊 数据概览</div>
+ <div class="nav-section-body" style="max-height:60px"><div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><span class="nav-item-icon">📊</span><span class="nav-item-label">数据概览</span></div></div>
+ </div>
+ <div class="nav-section" id="secMain">
+ <div class="nav-section-title" onclick="toggleNavSection('secMain')"><span class="arrow">▼</span> 主要功能</div>
+ <div class="nav-section-body" id="secMainBody" style="max-height:360px">
+ <div class="nav-item" data-page="wall" onclick="switchPage('wall')"><span class="nav-item-icon">📝</span><span class="nav-item-label">校园墙管理</span><span class="pending-badge" id="wallBadge" style="display:none">0</span></div>
+ <div class="nav-item" data-page="ads" onclick="switchPage('ads')"><span class="nav-item-icon">🖼️</span><span class="nav-item-label">广告管理</span></div>
+ <div class="nav-item" data-page="feedback" onclick="switchPage('feedback')"><span class="nav-item-icon">💬</span><span class="nav-item-label">问题反馈</span><span class="pending-badge" id="feedbackBadge" style="display:none">0</span></div>
+ <div class="nav-item" data-page="reports" onclick="switchPage('reports')"><span class="nav-item-icon">🚫</span><span class="nav-item-label">举报管理</span><span class="pending-badge" id="reportBadge" style="display:none">0</span></div>
+ <div class="nav-item" data-page="ai" onclick="switchPage('ai')"><span class="nav-item-icon">🤖</span><span class="nav-item-label">AI审核</span><span class="pending-badge" id="aiBadge" style="display:none">0</span></div>
+ </div>
+ </div>
+ <div class="nav-section collapsed" id="secFeature">
+ <div class="nav-section-title" onclick="toggleNavSection('secFeature')"><span class="arrow">▼</span> 特色功能</div>
+ <div class="nav-section-body" id="secFeatureBody" style="max-height:360px">
+ <div class="nav-item" data-page="market" onclick="switchPage('market')"><span class="nav-item-icon">🛒</span><span class="nav-item-label">二手市场</span></div>
+ <div class="nav-item" data-page="pets" onclick="switchPage('pets')"><span class="nav-item-icon">🐱</span><span class="nav-item-label">猫狗管理</span><span class="pending-badge" id="petBadge" style="display:none">0</span></div>
+ <div class="nav-item" data-page="teachers" onclick="switchPage('teachers')"><span class="nav-item-icon">👨‍🏫</span><span class="nav-item-label">师说管理</span></div>
+ <div class="nav-item" data-page="review-materials" onclick="switchPage('review-materials')"><span class="nav-item-icon">📚</span><span class="nav-item-label">复习资料</span><span class="pending-badge" id="reviewBadge" style="display:none">0</span></div>
+ <div class="nav-item" data-page="campus-star" onclick="switchPage('campus-star')"><span class="nav-item-icon">⭐</span><span class="nav-item-label">校花校草</span></div>
+ </div>
+ </div>
+ <div class="nav-section" id="secErrand">
+ <div class="nav-section-title" onclick="toggleNavSection('secErrand')"><span class="arrow">▼</span> 跑腿服务</div>
+ <div class="nav-section-body" id="secErrandBody" style="max-height:220px">
  <div class="nav-item" data-page="orders" onclick="switchPage('orders')"><span class="nav-item-icon">📋</span><span class="nav-item-label">订单管理</span></div>
  <div class="nav-item" data-page="riders" onclick="switchPage('riders')"><span class="nav-item-icon">🛵</span><span class="nav-item-label">骑手管理</span></div>
-<div class="nav-item" data-page="ads" onclick="switchPage('ads')"><span class="nav-item-icon">🖼️</span><span class="nav-item-label">广告管理</span></div>
-<div class="nav-item" data-page="market" onclick="switchPage('market')"><span class="nav-item-icon">🛒</span><span class="nav-item-label">二手市场</span></div>
-<div class="nav-item" data-page="ai" onclick="switchPage('ai')"><span class="nav-item-icon">🤖</span><span class="nav-item-label">AI审核</span><span class="pending-badge" id="aiBadge" style="display:none">0</span></div>
-<div class="nav-item" data-page="wall" onclick="switchPage('wall')"><span class="nav-item-icon">📝</span><span class="nav-item-label">校园墙管理</span><span class="pending-badge" id="wallBadge" style="display:none">0</span></div>
-<div class="nav-item" data-page="pets" onclick="switchPage('pets')"><span class="nav-item-icon">🐱</span><span class="nav-item-label">猫狗管理</span><span class="pending-badge" id="petBadge" style="display:none">0</span></div>
-<div class="nav-item" data-page="teachers" onclick="switchPage('teachers')"><span class="nav-item-icon">👨‍🏫</span><span class="nav-item-label">师说管理</span></div>
-<div class="nav-item" data-page="withdraw" onclick="switchPage('withdraw')"><span class="nav-item-icon">💸</span><span class="nav-item-label">提现审核</span><span class="pending-badge" id="withdrawBadge" style="display:none">0</span></div>
-<div class="nav-item" data-page="feedback" onclick="switchPage('feedback')"><span class="nav-item-icon">💬</span><span class="nav-item-label">问题反馈</span><span class="pending-badge" id="feedbackBadge" style="display:none">0</span></div>
-<div class="nav-item" data-page="reports" onclick="switchPage('reports')"><span class="nav-item-icon">🚫</span><span class="nav-item-label">举报管理</span><span class="pending-badge" id="reportBadge" style="display:none">0</span></div>
+ <div class="nav-item" data-page="withdraw" onclick="switchPage('withdraw')"><span class="nav-item-icon">💸</span><span class="nav-item-label">提现审核</span><span class="pending-badge" id="withdrawBadge" style="display:none">0</span></div>
  </div>
- <div class="nav-section" id="adminSection">
- <div class="nav-section-title">系统管理</div>
- <div class="nav-item" data-page="admins" onclick="switchPage('admins')"><span class="nav-item-icon">👥</span><span class="nav-item-label">管理员</span><span class="pending-badge" id="pendingBadge" style="display: none;">0</span></div>
+ </div>
+ <div class="nav-section collapsed" id="secSystem">
+ <div class="nav-section-title" onclick="toggleNavSection('secSystem')"><span class="arrow">▼</span> 系统管理</div>
+ <div class="nav-section-body" id="secSystemBody" style="max-height:160px">
  <div class="nav-item" data-page="audit" onclick="switchPage('audit');loadAuditLogs(1);loadAuditStats()"><span class="nav-item-icon">📋</span><span class="nav-item-label">操作日志</span></div>
- <div class="nav-item" data-page="review-materials" onclick="switchPage('review-materials')"><span class="nav-item-icon">📚</span><span class="nav-item-label">复习资料</span><span class="pending-badge" id="reviewBadge" style="display:none">0</span></div>
-<div class="nav-item" data-page="campus-star" onclick="switchPage('campus-star')"><span class="nav-item-icon">⭐</span><span class="nav-item-label">校花校草</span></div>
+ <div class="nav-item" data-page="admins" onclick="switchPage('admins')"><span class="nav-item-icon">👥</span><span class="nav-item-label">管理员</span><span class="pending-badge" id="pendingBadge" style="display: none;">0</span></div>
  </div>
- <div class="nav-section">
- <div class="nav-section-title">其他</div>
- <div class="nav-item" onclick="window.location.href='app.html'"><span class="nav-item-icon">🏠</span><span class="nav-item-label">返回首页</span></div>
+ </div>
+ <div class="nav-section nav-section-static">
+ <div class="nav-section-body"><div class="nav-item" onclick="window.location.href='app.html'"><span class="nav-item-icon">🏠</span><span class="nav-item-label">返回首页</span></div></div>
  </div>
  </nav>
  <div class="sidebar-footer">
@@ -1258,7 +1274,7 @@
 
  
  <!-- 模块化JS加载（按依赖顺序） -->
- <script src="admin/js/core.js?v=202606082320"></script>
+ <script src="admin/js/core.js?v=2026061623"></script>
  <script src="admin/js/stats.js?v=202606082310"></script>
  <script src="admin/js/charts.js?v=202606082320"></script>
  <script src="admin/js/orders.js?v=202606082320"></script>
@@ -1275,6 +1291,6 @@
 <script src="admin/js/wall.js?v=202606121830"></script>
 <script src="admin/js/teachers.js?v=202606150135"></script>
 <script src="admin/js/review.js?v=2026061501"></script>
-<script src="admin/js/star.js?v=2026061622"></script>
+<script src="admin/js/star.js?v=2026061623"></script>
 </body>
 </html>

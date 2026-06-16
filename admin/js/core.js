@@ -115,6 +115,7 @@ function TK() { return API._token || ''; }
 function AUTH() { return API._authHeaders(); }
 
 function switchPage(page) {
+  clearBadgeForPage(page);
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const target = document.getElementById('page-' + page);
@@ -203,32 +204,33 @@ async function showDashboard() {
 }
 
 // ─── 导航徽章 ───
+const PAGE_BADGE_MAP = { wall:'wallBadge', ai:'aiBadge', pets:'petBadge', feedback:'feedbackBadge', reports:'reportBadge', 'review-materials':'reviewBadge' };
+
 async function updateNavBadges() {
   try {
-    const [alertRes, pendingRes] = await Promise.all([
-      fetch('/api/pets/alert-check', { headers: AUTH() }).then(r => r.json()).catch(() => ({ summary: { warning:0, urgent:0 } })),
-      fetch('/api/pets/admin/pending-sightings', { headers: AUTH() }).then(r => r.json()).catch(() => [])
-    ]);
-    var as = alertRes.summary || { warning:0, urgent:0 };
-    var pl = Array.isArray(pendingRes) ? pendingRes : [];
-    var petNavCount = (as.warning||0) + (as.urgent||0) + pl.length;
-    var petBadgeEl = document.getElementById('petBadge');
-    if (petBadgeEl) {
-      if (petNavCount > 0) { petBadgeEl.textContent = petNavCount; petBadgeEl.style.display = 'inline'; }
-      else { petBadgeEl.style.display = 'none'; }
+    const res = await fetch('/api/admins/badges', { headers: AUTH() });
+    if (!res.ok) return;
+    const counts = await res.json();
+    const badgeMap = { wall:'wallBadge', ai:'aiBadge', pets:'petBadge', feedback:'feedbackBadge', reports:'reportBadge', review:'reviewBadge' };
+    for (const [key, badgeId] of Object.entries(badgeMap)) {
+      const el = document.getElementById(badgeId);
+      if (!el) continue;
+      const count = counts[key] || 0;
+      if (count > 0) { el.textContent = count; el.style.display = 'inline'; }
+      else { el.style.display = 'none'; }
     }
-  } catch(e) { console.error('updateNavBadges pets error:', e); }
-  try {
-    const aiRes = await fetch('/api/ai/stats', { headers: { 'Authorization': 'Bearer ' + TK() } });
-    const aiStats = await aiRes.json();
-    var aiBadgeEl = document.getElementById('aiBadge');
-    if (aiBadgeEl) {
-      var aiCount = aiStats.recent24h || 0;
-      if (aiCount > 0) { aiBadgeEl.textContent = aiCount; aiBadgeEl.style.display = 'inline'; }
-      else { aiBadgeEl.style.display = 'none'; }
-    }
-  } catch(e) { console.error('updateNavBadges ai error:', e); }
+  } catch(e) { console.error('updateNavBadges error:', e); }
 }
+
+function clearBadgeForPage(page) {
+  const badgeId = PAGE_BADGE_MAP[page];
+  if (!badgeId) return;
+  const el = document.getElementById(badgeId);
+  if (el) el.style.display = 'none';
+}
+
+// 每30秒刷新红点
+setInterval(updateNavBadges, 30000);
 
 // ─── 刷新数据 ───
 async function refreshData() {
@@ -285,6 +287,12 @@ document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('cli
 
 // ─── 全局导出（供 HTML onclick 调用） ───
 window.login = login;
+function toggleNavSection(sectionId) {
+  const sec = document.getElementById(sectionId);
+  if (!sec) return;
+  sec.classList.toggle('collapsed');
+}
+window.toggleNavSection = toggleNavSection;
 window.switchPage = switchPage;
 window.refreshData = refreshData;
 window.exportData = exportData;
