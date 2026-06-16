@@ -35,6 +35,18 @@ function logAiReview(source, sourceId, phone, content, aiResult, action) {
   } catch(e) { console.error('[AI审核] 写入审核记录失败:', e.message); }
 }
 
+// ─── 从消息内容中提取图片URL ────────────────────────────────
+function extractImageUrls(content) {
+  if (!content) return [];
+  const urls = [];
+  const re = /\/uploads\/[^\s"'<>]+?\.(jpg|jpeg|png|gif|webp|bmp)/gi;
+  let m;
+  while ((m = re.exec(content)) !== null) {
+    urls.push(m[0]);
+  }
+  return [...new Set(urls)];
+}
+
 // ─── 创建社团 ─────────────────────────────────────────────
 router.post('/', requireAuth, withCompress(clubUpload.single('logo')), async (req, res) => JSON_RES(res, async () => {
   const { name, category, description } = req.body;
@@ -734,10 +746,12 @@ router.post('/:id/room/messages', requireAuth, (req, res) => JSON_RES(res, async
     room = db.prepare('SELECT * FROM club_rooms WHERE id = ?').get(info.lastInsertRowid);
   }
 
-  // AI审核
+  // AI审核（文字+图片）
   let aiCheck = { violation: false, level: 'none', category: '无', reason: '' };
   try {
-    aiCheck = await aiChecker.checkWallPost({ title: '', content: content, topic: '', images: '[]' });
+    const imgUrls = extractImageUrls(content);
+    const imagesJson = JSON.stringify(imgUrls);
+    aiCheck = await aiChecker.checkWallPost({ title: '', content: content, topic: '', images: imagesJson });
     if (aiCheck.violation && aiCheck.level === 'high') {
       logAiReview('club_room_message', 0, phone, content, aiCheck, 'block');
       return makeError('消息不符合平台规范：' + (aiCheck.reason || ''), 'AI_001');

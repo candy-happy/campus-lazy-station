@@ -33,6 +33,19 @@ function isConversationParticipant(convId, phone) {
   return conv.user1_phone === phone || conv.user2_phone === phone;
 }
 
+// ─── 从消息内容中提取图片URL ────────────────────────────────
+function extractImageUrls(content) {
+  if (!content) return [];
+  const urls = [];
+  // 匹配 /uploads/ 路径的图片
+  const re = /\/uploads\/[^\s"'<>]+?\.(jpg|jpeg|png|gif|webp|bmp)/gi;
+  let m;
+  while ((m = re.exec(content)) !== null) {
+    urls.push(m[0]);
+  }
+  return [...new Set(urls)];
+}
+
 // ─── 聊天文件上传配置 ──────────────────────────────────────
 const CHAT_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'chat');
 if (!fs.existsSync(CHAT_UPLOAD_DIR)) fs.mkdirSync(CHAT_UPLOAD_DIR, { recursive: true });
@@ -139,16 +152,21 @@ router.post('/send', requireAuth, (req, res) => JSON_RES(res, async () => {
     return makeError('你不是该会话的参与者', ErrorCode.PARAM_INVALID);
   }
 
-  // ── AI审核文本消息 ────────────────────────────
-  if (type === 'text' || !type) {
+  // ── AI审核消息（文字+图片，仅拦high级别，充分保护隐私） ──
+  if (type === 'text' || !type || type === 'image') {
     try {
-      const aiResult = await aiChecker.checkTextContent(content, '校园私聊');
+      const imgUrls = extractImageUrls(content);
+      // 优先用综合审核（文字+图片），私聊场景文本用 .txt 后缀脱敏
+      const aiResult = imgUrls.length > 0
+        ? await aiChecker.checkTextWithImages(content, imgUrls, '校园私聊')
+        : await aiChecker.checkTextContent(content, '校园私聊');
       if (aiResult.violation && aiResult.level === 'high') {
-        console.log(`[AI审核] 聊天消息被拦截: phone=${sender_phone}, level=${aiResult.level}, reason=${aiResult.reason}`);
+        console.log(`[AI审核] 聊天消息被拦截: level=${aiResult.level}, reason=${aiResult.reason}`);
         logAiReview('chat_message', 0, sender_phone, content, aiResult, 'block');
         return makeError('消息内容不符合平台规范：' + (aiResult.reason || '请修改后重新发送'), 'AI_001');
       }
-      if (aiResult.violation) console.log(`[AI审核] 聊天消息提醒(未拦截): phone=${sender_phone}, level=${aiResult.level}`);
+      // medium/low 只记日志，不拦截（保护私聊隐私）
+      if (aiResult.violation) console.log(`[AI审核] 聊天消息提醒(未拦截): level=${aiResult.level}`);
     } catch (e) {
       console.error('[AI审核] 聊天消息审核失败(放行):', e.message);
     }
@@ -156,9 +174,9 @@ router.post('/send', requireAuth, (req, res) => JSON_RES(res, async () => {
   const r = db.prepare(
     "INSERT INTO messages (conversation_id,sender_phone,content,type,created_at) VALUES (?,?,?,?,datetime('now','localtime'))"
   ).run(conversation_id, sender_phone, content, type || 'text');
-  // 记录AI审核日志
-  if (type === 'text' || !type) {
-    logAiReview('chat_message', r.lastInsertRowid, sender_phone, content, { violation: false, level: 'none', category: '无', reason: '' }, 'pass');
+  // 记录AI审核日志（不记phone到日志msg，只用id关联）
+  if (type === 'text' || !type || type === 'image') {
+    logAiReview('chat_message', r.lastInsertRowid, sender_phone, (content || '').slice(0, 100), { violation: false, level: 'none', category: '无', reason: '' }, 'pass');
   }
   db.prepare(
     "UPDATE conversations SET last_message=?, last_message_at=datetime('now','localtime'), last_sender=? WHERE id=?"
