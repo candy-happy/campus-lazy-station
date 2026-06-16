@@ -37,15 +37,21 @@ function securityHeaders(req, res, next) {
 }
 
 // ─── 静态文件服务 ─────────────────────────────────────────
-// 禁用缓存，确保前端始终加载最新代码
+// HTML/JS/CSS 禁用缓存确保前端始终加载最新代码
+// 图片等静态资源允许缓存（ETag/304）避免重复下载
 function staticFiles(app) {
   app.use(express.static(__dirname + '/..', {
-    etag: false,
-    maxAge: 0,
+    etag: true,
     setHeaders: (res, filepath) => {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
+      const ext = path.extname(filepath).toLowerCase();
+      if (['.html', '.js', '.css'].includes(ext)) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else {
+        // 图片等静态资源：允许缓存 7 天
+        res.setHeader('Cache-Control', 'public, max-age=604800');
+      }
     }
   }));
 }
