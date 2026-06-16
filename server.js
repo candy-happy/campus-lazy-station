@@ -328,8 +328,7 @@ app.listen(PORT, () => {
         if (entry.isDirectory()) { walk(full); }
         else if (fs.statSync(full).mtimeMs < cutoff) { fs.unlinkSync(full); cleaned++; }
       }
-      // After cleaning files, remove directory only if it became empty (not if it was always empty)
-      try { fs.rmdirSync(dir); } catch(_) {}
+
     } catch(_) {}
   };
   walk(uploadsDir);
