@@ -355,6 +355,16 @@
 
 
 
+    // 打开聊天会话（委托给 wall.js 的 window.openChatConv）
+    function openChatWithId(convId, otherPhone, otherName) {
+      if (typeof window.openChatConv === 'function') {
+        window.openChatConv(convId, otherPhone, otherName);
+        document.getElementById('marketListPage_sub').classList.remove('active');
+      } else {
+        showToast('聊天功能加载中，请稍后再试');
+      }
+    }
+
     async function chatWithSeller(itemId) {
       if (!currentUser) { showToast('请先登录'); return; }
       try {
@@ -835,9 +845,10 @@
       document.getElementById('marketEmpty').style.display = 'none';
       document.getElementById('marketMore').style.display = 'none';
       document.getElementById('marketMyListings').style.display = 'block';
-      // Activate tab
+      // Activate tab (marketTabMine may not exist since "我的" is a header button)
       document.querySelectorAll('#marketTabs .market-tab').forEach(t => t.classList.remove('active'));
-      document.getElementById('marketTabMine').classList.add('active');
+      var mineTab = document.getElementById('marketTabMine');
+      if (mineTab) mineTab.classList.add('active');
       // Switch sub-tab
       switchMyMarketTab(myMarketTab);
     }

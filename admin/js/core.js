@@ -130,6 +130,7 @@ function switchPage(page) {
   if (page === 'wall') { loadWallPosts(); }
   if (page === 'teachers') { loadTeachersAdmin(); }
   if (page === 'review-materials') { loadReviewMaterialsAdmin(1); }
+  if (page === 'campus-star') { switchStarAdminTab('candidates'); }
 }
 
 function showModal(id) { document.getElementById(id).classList.add('active'); }

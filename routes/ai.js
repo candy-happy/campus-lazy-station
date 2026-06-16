@@ -378,6 +378,178 @@ router.post('/wall/comments/batch', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── 批量检测猫狗留言 ─────────────────────────────────
+router.post('/pets/comments/batch', requireAdmin, async (req, res) => {
+  try {
+    const { limit = 50, skip_reviewed = true } = req.body;
+    let comments;
+    if (skip_reviewed) {
+      comments = db.prepare(
+        "SELECT * FROM pet_comments WHERE content IS NOT NULL AND content != '' AND id NOT IN (SELECT source_id FROM ai_review_logs WHERE source = 'pet_comment') ORDER BY created_at DESC LIMIT ?"
+      ).all(+limit);
+    } else {
+      comments = db.prepare("SELECT * FROM pet_comments WHERE content IS NOT NULL AND content != '' ORDER BY created_at DESC LIMIT ?").all(+limit);
+    }
+    const results = [];
+    for (const c of comments) {
+      let imgUrls = [];
+      try { imgUrls = JSON.parse(c.images || '[]'); } catch(e) {}
+      const result = await checkTextWithImages(c.content || '', imgUrls, '猫狗日记');
+      results.push({ commentId: c.id, content: (c.content || '').slice(0, 40), author: c.phone, ...result });
+      await new Promise(r => setTimeout(r, 500));
+    }
+    const violations = results.filter(r => r.violation);
+    res.json({ total: results.length, violations: violations.length, results });
+  } catch(e) { res.status(500).json({ error: e.message, code: 'SYS_001' }); }
+});
+
+// ─── 批量检测教师评价 ─────────────────────────────────
+router.post('/teachers/reviews/batch', requireAdmin, async (req, res) => {
+  try {
+    const { limit = 50, skip_reviewed = true } = req.body;
+    let reviews;
+    if (skip_reviewed) {
+      reviews = db.prepare(
+        "SELECT * FROM teacher_reviews WHERE content IS NOT NULL AND content != '' AND id NOT IN (SELECT source_id FROM ai_review_logs WHERE source = 'teacher_review') ORDER BY created_at DESC LIMIT ?"
+      ).all(+limit);
+    } else {
+      reviews = db.prepare("SELECT * FROM teacher_reviews WHERE content IS NOT NULL AND content != '' ORDER BY created_at DESC LIMIT ?").all(+limit);
+    }
+    const results = [];
+    for (const r of reviews) {
+      const result = await checkTextContent(r.content, '教师评价');
+      results.push({ reviewId: r.id, content: (r.content || '').slice(0, 40), author: r.phone, ...result });
+      await new Promise(r => setTimeout(r, 500));
+    }
+    const violations = results.filter(r => r.violation);
+    res.json({ total: results.length, violations: violations.length, results });
+  } catch(e) { res.status(500).json({ error: e.message, code: 'SYS_001' }); }
+});
+
+// ─── 批量检测校花校草报名 ─────────────────────────────
+router.post('/campus-star/batch', requireAdmin, async (req, res) => {
+  try {
+    const { limit = 50, skip_reviewed = true } = req.body;
+    let stars;
+    if (skip_reviewed) {
+      stars = db.prepare(
+        "SELECT * FROM campus_stars WHERE status = 'active' AND id NOT IN (SELECT source_id FROM ai_review_logs WHERE source = 'campus_star') ORDER BY created_at DESC LIMIT ?"
+      ).all(+limit);
+    } else {
+      stars = db.prepare("SELECT * FROM campus_stars WHERE status = 'active' ORDER BY created_at DESC LIMIT ?").all(+limit);
+    }
+    const results = [];
+    for (const s of stars) {
+      const photoUrls = (s.photos || '').split(',').filter(Boolean);
+      const text = `姓名：${s.name}\n自我介绍：${s.intro || ''}`;
+      const result = await checkTextWithImages(text, photoUrls, '校花校草');
+      results.push({ starId: s.id, name: s.name, intro: (s.intro || '').slice(0, 30), phone: s.phone, ...result });
+      await new Promise(r => setTimeout(r, 500));
+    }
+    const violations = results.filter(r => r.violation);
+    res.json({ total: results.length, violations: violations.length, results });
+  } catch(e) { res.status(500).json({ error: e.message, code: 'SYS_001' }); }
+});
+
+// ─── 批量检测校花校草评论 ─────────────────────────────
+router.post('/campus-star/comments/batch', requireAdmin, async (req, res) => {
+  try {
+    const { limit = 50, skip_reviewed = true } = req.body;
+    let comments;
+    if (skip_reviewed) {
+      comments = db.prepare(
+        "SELECT * FROM star_comments WHERE id NOT IN (SELECT source_id FROM ai_review_logs WHERE source = 'campus_star_comment') ORDER BY created_at DESC LIMIT ?"
+      ).all(+limit);
+    } else {
+      comments = db.prepare("SELECT * FROM star_comments ORDER BY created_at DESC LIMIT ?").all(+limit);
+    }
+    const results = [];
+    for (const c of comments) {
+      const result = await checkTextContent(c.content, '校花校草评论');
+      results.push({ commentId: c.id, content: (c.content || '').slice(0, 40), author: c.phone, ...result });
+      await new Promise(r => setTimeout(r, 500));
+    }
+    const violations = results.filter(r => r.violation);
+    res.json({ total: results.length, violations: violations.length, results });
+  } catch(e) { res.status(500).json({ error: e.message, code: 'SYS_001' }); }
+});
+
+// ─── 批量检测社团 ────────────────────────────────────
+router.post('/clubs/batch', requireAdmin, async (req, res) => {
+  try {
+    const { limit = 50, skip_reviewed = true } = req.body;
+    let clubs;
+    if (skip_reviewed) {
+      clubs = db.prepare(
+        "SELECT * FROM clubs WHERE status = 'active' AND id NOT IN (SELECT source_id FROM ai_review_logs WHERE source = 'club') ORDER BY created_at DESC LIMIT ?"
+      ).all(+limit);
+    } else {
+      clubs = db.prepare("SELECT * FROM clubs WHERE status = 'active' ORDER BY created_at DESC LIMIT ?").all(+limit);
+    }
+    const results = [];
+    for (const c of clubs) {
+      const images = c.logo ? JSON.stringify([c.logo]) : '[]';
+      const result = await checkWallPost({ title: c.name, content: c.description || '', topic: '', images });
+      results.push({ clubId: c.id, name: c.name, phone: c.president_phone, ...result });
+      await new Promise(r => setTimeout(r, 500));
+    }
+    const violations = results.filter(r => r.violation);
+    res.json({ total: results.length, violations: violations.length, results });
+  } catch(e) { res.status(500).json({ error: e.message, code: 'SYS_001' }); }
+});
+
+// ─── 批量检测活动 ────────────────────────────────────
+router.post('/activities/batch', requireAdmin, async (req, res) => {
+  try {
+    const { limit = 50, skip_reviewed = true } = req.body;
+    let activities;
+    if (skip_reviewed) {
+      activities = db.prepare(
+        "SELECT * FROM activities WHERE status = 'open' AND id NOT IN (SELECT source_id FROM ai_review_logs WHERE source = 'activity') ORDER BY created_at DESC LIMIT ?"
+      ).all(+limit);
+    } else {
+      activities = db.prepare("SELECT * FROM activities WHERE status = 'open' ORDER BY created_at DESC LIMIT ?").all(+limit);
+    }
+    const results = [];
+    for (const a of activities) {
+      const imgUrls = [a.cover, a.promo_photo, a.qr_code].filter(Boolean);
+      const result = await checkTextWithImages(
+        `活动标题：${a.title}\n活动描述：${a.description || ''}`,
+        imgUrls,
+        '校园活动'
+      );
+      results.push({ activityId: a.id, title: a.title, phone: a.phone, ...result });
+      await new Promise(r => setTimeout(r, 500));
+    }
+    const violations = results.filter(r => r.violation);
+    res.json({ total: results.length, violations: violations.length, results });
+  } catch(e) { res.status(500).json({ error: e.message, code: 'SYS_001' }); }
+});
+
+// ─── 批量检测复习资料 ─────────────────────────────────
+router.post('/review-materials/batch', requireAdmin, async (req, res) => {
+  try {
+    const { limit = 50, skip_reviewed = true } = req.body;
+    let materials;
+    if (skip_reviewed) {
+      materials = db.prepare(
+        "SELECT * FROM review_materials WHERE status = 'approved' AND id NOT IN (SELECT source_id FROM ai_review_logs WHERE source = 'review_material') ORDER BY created_at DESC LIMIT ?"
+      ).all(+limit);
+    } else {
+      materials = db.prepare("SELECT * FROM review_materials WHERE status = 'approved' ORDER BY created_at DESC LIMIT ?").all(+limit);
+    }
+    const results = [];
+    for (const m of materials) {
+      const text = `资料标题：${m.title}\n科目：${m.subject}\n描述：${m.description || ''}`;
+      const result = await checkTextContent(text, '校园复习资料');
+      results.push({ materialId: m.id, title: m.title, uploader: m.uploader_phone, ...result });
+      await new Promise(r => setTimeout(r, 500));
+    }
+    const violations = results.filter(r => r.violation);
+    res.json({ total: results.length, violations: violations.length, results });
+  } catch(e) { res.status(500).json({ error: e.message, code: 'SYS_001' }); }
+});
+
 // ─── 审核记录查询API ─────────────────────────────────
 // 查询审核记录（必须在 /:id 路由之前）
 router.get('/logs', requireAdmin, (req, res) => {
@@ -424,6 +596,60 @@ module.exports = router;
 module.exports.checkMarketItem = checkMarketItem;
 module.exports.checkWallPost = checkWallPost;
 module.exports.callDeepSeek = callDeepSeek;
+module.exports.imageToBase64 = imageToBase64;
+
+// ─── 文字+图片综合审核（用于评论等带图短文本） ────────────
+async function checkTextWithImages(text, imageUrls = [], context = '校园平台') {
+  if (!text && imageUrls.length === 0) return { violation: false, level: 'none', category: '无', reason: '' };
+
+  // 先检查图片（最多3张）
+  const imgViolations = [];
+  for (let i = 0; i < Math.min(imageUrls.length, 3); i++) {
+    const imgData = await imageToBase64(imageUrls[i]);
+    if (!imgData) continue;
+    try {
+      const imgResult = await callDeepSeek([
+        {
+          role: 'system',
+          content: `你是一个${context}的图片内容审核AI。检查这张图片是否违规。
+违规标准：涉黄/暴力/违法/低俗/不当/不适合校园环境
+严格以JSON格式回复：
+{"violation": true/false, "reason": "违规原因", "level": "high/medium/low/none", "category": "色情/暴力/违法/不当/无"}
+只返回JSON。`
+        },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: `请检查这张${context}图片是否有违规内容：` },
+            { type: 'image_url', image_url: { url: `data:${imgData.mime};base64,${imgData.base64}` } }
+          ]
+        }
+      ], 256);
+      const jsonMatch = imgResult.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.violation) {
+          if (parsed.level === 'high') return parsed; // 严重违规直接返回
+          imgViolations.push(parsed);
+        }
+      }
+    } catch(e) { /* 单张图片检测失败跳过 */ }
+  }
+
+  // 再检查文字
+  if (text) {
+    const textResult = await checkTextContent(text, context);
+    if (textResult.violation && textResult.level === 'high') return textResult;
+    // 图片有中/低违规，合并返回
+    if (imgViolations.length > 0 && !textResult.violation) return imgViolations[0];
+    return textResult;
+  }
+
+  // 只有图片、无文字
+  if (imgViolations.length > 0) return imgViolations[0];
+  return { violation: false, level: 'none', category: '无', reason: '' };
+}
+module.exports.checkTextWithImages = checkTextWithImages;
 
 // ─── 纯文字快速审核（用于评论等短文本） ────────────────────
 async function checkTextContent(text, context = '校园平台') {

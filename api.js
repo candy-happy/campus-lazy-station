@@ -9,7 +9,7 @@ const API = {
   _token: null,
   _dbConnected: true, // 数据库连接状态
   _connectionCheckInterval: null,
-  _headers() { const h = { 'Content-Type': 'application/json' }; if (this._token) h['Authorization'] = 'Bearer ' + this._token; return h; },
+  _headers() { const h = { 'Content-Type': 'application/json' }; if (this._token) h['Authorization'] = 'Bearer ' + this._token; if (window.__debug_headers) console.log('[API:_headers] token:', this._token ? this._token.substring(0,30)+'...' : 'null'); return h; },
   _authHeaders() { const h = {}; if (this._token) h['Authorization'] = 'Bearer ' + this._token; return h; },
 
   // ─── 数据库连接状态检测 ──────────────────────────────────────
@@ -198,7 +198,7 @@ const API = {
   // ─── 骑手数据 ───
   async getRiders() { return fetch('/api/riders', { headers: this._headers() }).then(r => r.json()); },
   async getRider(phone) { return fetch('/api/riders/' + phone, { headers: this._headers() }).then(r => r.json()); },
-  async frozenCheck(phone) { return fetch('/api/riders/frozen-check/' + phone).then(r => r.json()); },
+  async frozenCheck(phone) { return fetch('/api/riders/frozen-check/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async riderRanking() { return fetch('/api/riders/stats/ranking', { headers: this._headers() }).then(r => r.json()); },
   async riderReviews(phone) { return fetch('/api/riders/stats/reviews/' + phone, { headers: this._headers() }).then(r => r.json()); },
   async updateRiderStatus(phone, status) { return fetch('/api/riders/' + phone, {
@@ -389,8 +389,11 @@ const API = {
 
   // ─── 聊天 ───
   async chatGetOrCreateConversation(data) { return fetch('/api/chat/conversation', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },
-  async chatConversations(phone) { return fetch('/api/chat/conversations?phone=' + phone, { headers: this._headers() }).then(r => r.json()); },
+  async chatConversations(phone) { return fetch('/api/chat/conversations?phone=' + phone, { headers: this._headers() }).then(async r => { console.log('[API:chatConversations] status:', r.status, 'phone:', phone); const data = await r.json(); console.log('[API:chatConversations] data type:', typeof data, 'isArray:', Array.isArray(data), 'len:', Array.isArray(data)?data.length:'N/A'); return data; }); },
+
   async chatSend(data) { return fetch('/api/chat/send', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json()); },
+  async chatClear(conversationId, phone) { return fetch('/api/chat/clear/' + conversationId, { method: 'POST', headers: this._headers(), body: JSON.stringify({ phone }) }).then(r => r.json()); },
+  async chatMarkRead(conversationId) { return fetch('/api/chat/read/' + conversationId, { method: 'POST', headers: this._headers() }).then(r => r.json()); },
   async chatMessages(conversationId, phone, before) { let url = '/api/chat/messages/' + conversationId + '?phone=' + phone; if (before) url += '&before=' + before; return fetch(url, { headers: this._headers() }).then(r => r.json()); },
   async chatUnread(phone) { return fetch('/api/chat/unread?phone=' + phone, { headers: this._headers() }).then(r => r.json()); },
   async getChatUnread() { return fetch('/api/chat/unread', { headers: this._headers() }).then(r => r.json()); },
@@ -609,11 +612,14 @@ const API = {
     return fetch('/api/activities' + (qs ? '?' + qs : ''), { headers: this._headers() }).then(r => r.json());
   },
   async getActivity(id) { return fetch('/api/activities/' + id, { headers: this._headers() }).then(r => r.json()); },
-  async createActivity(data, file) {
-    if (file) {
+  async createActivity(data, coverFile, promoFile, qrFile) {
+    const hasFiles = coverFile || promoFile || qrFile;
+    if (hasFiles) {
       const fd = new FormData();
       Object.entries(data).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v); });
-      fd.append('cover', file);
+      if (coverFile) fd.append('cover', coverFile);
+      if (promoFile) fd.append('promo_photo', promoFile);
+      if (qrFile) fd.append('qr_code', qrFile);
       return fetch('/api/activities', { method: 'POST', headers: this._authHeaders(), body: fd }).then(r => r.json());
     }
     return fetch('/api/activities', { method: 'POST', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());
@@ -622,11 +628,14 @@ const API = {
   async cancelActivitySignup(id) { return fetch('/api/activities/' + id + '/cancel-signup', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
   async checkinActivity(id) { return fetch('/api/activities/' + id + '/checkin', { method: 'POST', headers: this._headers() }).then(r => r.json()); },
   async getActivityParticipants(id) { return fetch('/api/activities/' + id + '/participants', { headers: this._headers() }).then(r => r.json()); },
-  async updateActivity(id, data, file) {
-    if (file) {
+  async updateActivity(id, data, coverFile, promoFile, qrFile) {
+    const hasFiles = coverFile || promoFile || qrFile;
+    if (hasFiles) {
       const fd = new FormData();
       Object.entries(data || {}).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v); });
-      fd.append('cover', file);
+      if (coverFile) fd.append('cover', coverFile);
+      if (promoFile) fd.append('promo_photo', promoFile);
+      if (qrFile) fd.append('qr_code', qrFile);
       return fetch('/api/activities/' + id, { method: 'PUT', headers: this._authHeaders(), body: fd }).then(r => r.json());
     }
     return fetch('/api/activities/' + id, { method: 'PUT', headers: this._headers(), body: JSON.stringify(data) }).then(r => r.json());

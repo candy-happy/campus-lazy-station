@@ -126,7 +126,7 @@
         el = document.createElement('div');
         el.id = 'errandPage_sub';
         el.className = 'sub-page';
-        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'errandPage_sub\')">←</button><span class="sub-page-title">🏃 跑腿服务</span></div><div class="sub-page-body"></div>';
+        el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'errandPage_sub\')">←</button><span class="sub-page-title"><img src="/uploads/icons/rider-icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">跑腿服务</span></div><div class="sub-page-body"></div>';
         document.body.appendChild(el);
       }
       const services = [
@@ -146,7 +146,6 @@
         'linear-gradient(135deg, #96CEB4, #B8E0C8)'
       ];
       let h = '<div class="errand-hero">';
-      h += '<div class="errand-hero-icon">🏃</div>';
       h += '<div class="errand-hero-title">跑腿服务</div>';
       h += '<div class="errand-hero-desc">选择你需要的服务，骑手即刻出发</div>';
       h += '</div>';

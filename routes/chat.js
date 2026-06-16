@@ -88,15 +88,16 @@ router.post('/conversation', requireAuth, (req, res) => JSON_RES(res, () => {
     conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(r.lastInsertRowid);
   }
   const otherPhone = conv.user1_phone === authPhone ? conv.user2_phone : conv.user1_phone;
-  const otherUser = db.prepare('SELECT name FROM users WHERE phone=?').get(otherPhone)
+  const otherUser = db.prepare('SELECT name, nickname FROM users WHERE phone=?').get(otherPhone)
     || db.prepare('SELECT name FROM riders WHERE phone=?').get(otherPhone)
     || { name: '未知用户' };
-  return { id: conv.id, other_phone: otherPhone, other_name: otherUser.name };
+  return { id: conv.id, other_phone: otherPhone, other_name: otherUser.name, other_nickname: otherUser.nickname || '' };
 }));
 
 // ─── 会话列表 ──────────────────────────────────────────────
 router.get('/conversations', requireAuth, (req, res) => JSON_RES(res, () => {
   const phone = getAuthPhone(req);
+  console.log('[CHAT-CONV] req.user:', JSON.stringify(req.user), '→ phone:', phone);
   if (!phone) return [];
   const convs = db.prepare(
     "SELECT c.*, " +
@@ -105,10 +106,22 @@ router.get('/conversations', requireAuth, (req, res) => JSON_RES(res, () => {
   ).all(phone, phone, phone);
   return convs.map(c => {
     const otherPhone = c.user1_phone === phone ? c.user2_phone : c.user1_phone;
-    const otherUser = db.prepare('SELECT name,phone,avatar FROM users WHERE phone=?').get(otherPhone)
-      || db.prepare('SELECT name,phone,avatar FROM riders WHERE phone=?').get(otherPhone)
+    const otherUser = db.prepare('SELECT name, nickname, phone, avatar FROM users WHERE phone=?').get(otherPhone)
+      || db.prepare('SELECT name, phone, avatar FROM riders WHERE phone=?').get(otherPhone)
       || { name: '未知用户', phone: otherPhone };
-    return { ...c, other_name: otherUser.name, other_phone: otherPhone, other_avatar: otherUser.avatar || '' };
+    // 尝试获取关联订单的状态和标题
+    let orderStatus = null, orderTitle = c.item_title || '';
+    if (c.item_id) {
+      const order = db.prepare('SELECT status, title, pickup_location, type FROM orders WHERE id=? OR order_no=?').get(c.item_id, c.item_id);
+      if (order) {
+        orderStatus = order.status;
+        if (!orderTitle) {
+          const sn = { express: '📦快递', shopping: '🛒代购', food: '🍔外卖', document: '📄文件', errand: '🏃跑腿', other: '🔧其他' };
+          orderTitle = (sn[order.type] || '订单') + ' - ' + (order.pickup_location || order.title || '');
+        }
+      }
+    }
+    return { ...c, other_name: otherUser.name, other_nickname: otherUser.nickname || '', other_phone: otherPhone, other_avatar: otherUser.avatar || '', order_status: orderStatus, order_title: orderTitle };
   });
 }));
 
@@ -172,7 +185,14 @@ router.get('/messages/:conversation_id', requireAuth, (req, res) => JSON_RES(res
   if (phone) {
     db.prepare('UPDATE messages SET is_read=1 WHERE conversation_id=? AND sender_phone!=? AND is_read=0').run(cid, phone);
   }
-  return msgs.reverse();
+  // 附加上发送者信息
+  const enriched = msgs.reverse().map(m => {
+    const sender = db.prepare('SELECT name, nickname, avatar FROM users WHERE phone=?').get(m.sender_phone)
+      || db.prepare('SELECT name, avatar FROM riders WHERE phone=?').get(m.sender_phone)
+      || { name: m.sender_phone };
+    return { ...m, sender_name: sender.name || sender.nickname, sender_avatar: sender.avatar || '' };
+  });
+  return enriched;
 }));
 
 // ─── 未读消息数 ────────────────────────────────────────────
@@ -257,6 +277,26 @@ router.put('/chat-privacy', requireAuth, (req, res) => JSON_RES(res, () => {
   if (!['all', 'mutual', 'followers'].includes(privacy)) return makeError('无效的隐私设置', ErrorCode.PARAM_INVALID);
   db.prepare('UPDATE users SET chat_privacy=? WHERE phone=?').run(privacy, phone);
   return { ok: true, privacy };
+}));
+
+// 标记会话已读
+router.post('/read/:conversation_id', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { conversation_id } = req.params;
+  const phone = getAuthPhone(req);
+  if (!isConversationParticipant(conversation_id, phone)) return makeError('无权操作此会话', ErrorCode.PARAM_INVALID);
+  db.prepare('UPDATE messages SET is_read=1 WHERE conversation_id=? AND sender_phone!=? AND is_read=0').run(conversation_id, phone);
+  return { ok: true };
+}));
+
+// 清空聊天记录
+router.post('/clear/:conversation_id', requireAuth, (req, res) => JSON_RES(res, () => {
+  const { conversation_id } = req.params;
+  const phone = getAuthPhone(req);
+  // 验证参与者身份
+  const conv = db.prepare('SELECT * FROM conversations WHERE id=? AND (user1_phone=? OR user2_phone=?)').get(conversation_id, phone, phone);
+  if (!conv) return makeError('会话不存在', ErrorCode.NOT_FOUND);
+  db.prepare('DELETE FROM messages WHERE conversation_id=? AND sender_phone=?').run(conversation_id, phone);
+  return { ok: true };
 }));
 
 module.exports = router;

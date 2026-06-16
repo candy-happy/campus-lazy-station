@@ -259,7 +259,7 @@ router.post('/like/:id', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 留言 ────────────────────────────────────────────────
-router.post('/comment/:id', requireAuth, upload.array('media', 6), (req, res) => JSON_RES(res, async () => {
+router.post('/comment/:id', requireAuth, withCompress(upload.array('media', 6)), (req, res) => JSON_RES(res, async () => {
   const { phone, nickname, content, parent_id } = req.body;
   if (!phone) return makeError('请先登录', ErrorCode.AUTH_001, 401);
   if (!content && (!req.files || req.files.length === 0)) return makeError('请输入内容或上传媒体', ErrorCode.PARAM_001, 400);
@@ -267,12 +267,13 @@ router.post('/comment/:id', requireAuth, upload.array('media', 6), (req, res) =>
   const pet = db.prepare('SELECT id FROM pets WHERE id = ?').get(req.params.id);
   if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
 
-  // ── AI审核留言文字 ────────────────────────────
-  if (content) {
+  // ── AI审核留言（文字+图片） ────────────────────
+  let aiResult = { violation: false, level: 'none', category: '无', reason: '' };
+  if (content || (req.files && req.files.length > 0)) {
     try {
-      const aiResult = await aiChecker.checkTextContent(content, '猫狗日记');
+      const imageUrls = (req.files || []).filter(f => f.mimetype.startsWith('image/')).map(f => '/uploads/pets/' + f.filename);
+      aiResult = await aiChecker.checkTextWithImages(content || '', imageUrls, '猫狗日记');
       if (aiResult.violation && aiResult.level === 'high') {
-        // 删除已上传的文件
         if (req.files && req.files.length > 0) {
           req.files.forEach(f => { try { fs.unlinkSync(f.path); } catch(e) {} });
         }
@@ -309,9 +310,7 @@ router.post('/comment/:id', requireAuth, upload.array('media', 6), (req, res) =>
   db.prepare(`UPDATE pets SET comment_count = comment_count + 1, updated_at = datetime('now','localtime') WHERE id = ?`).run(req.params.id);
 
   // 记录AI审核日志
-  if (content) {
-    logAiReview('pet_comment', result.lastInsertRowid, phone, content, { violation: false, level: 'none', category: '无', reason: '' }, 'pass');
-  }
+  logAiReview('pet_comment', result.lastInsertRowid, phone, content || '(media)', aiResult, 'pass');
 
   return { id: result.lastInsertRowid, message: '留言成功' };
 }));
@@ -328,7 +327,7 @@ router.delete('/comment/:commentId', requireAuth, (req, res) => JSON_RES(res, ()
 }));
 
 // ─── 管理端：添加猫狗 ────────────────────────────────────
-router.post('/admin/add', requireAdmin, upload.array('images', 6), (req, res) => JSON_RES(res, () => {
+router.post('/admin/add', requireAdmin, withCompress(upload.array('images', 6)), (req, res) => JSON_RES(res, () => {
   const { code_name, species, breed, gender, age, color, location, personality, tags, bio, health_status, health_note } = req.body;
   if (!code_name) return makeError('代号必填', ErrorCode.PARAM_001, 400);
 
@@ -352,7 +351,7 @@ router.post('/admin/add', requireAdmin, upload.array('images', 6), (req, res) =>
 }));
 
 // ─── 管理端：更新猫狗 ────────────────────────────────────
-router.put('/admin/update/:id', requireAdmin, upload.array('images', 6), (req, res) => JSON_RES(res, () => {
+router.put('/admin/update/:id', requireAdmin, withCompress(upload.array('images', 6)), (req, res) => JSON_RES(res, () => {
   const pet = db.prepare('SELECT * FROM pets WHERE id = ?').get(req.params.id);
   if (!pet) return makeError('猫狗不存在', ErrorCode.WALL_POST_NOT_FOUND, 404);
 
@@ -434,7 +433,7 @@ router.get('/sightings/:id', (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 目击打卡：用户看到猫狗时记录 ──────────────────────
-router.post('/sight/:id', requireAuth, upload.single('photo'), (req, res) => JSON_RES(res, () => {
+router.post('/sight/:id', requireAuth, withCompress(upload.single('photo')), (req, res) => JSON_RES(res, () => {
   const { phone, location, note, health_status } = req.body;
   if (!phone) return makeError('请先登录', ErrorCode.AUTH_001, 401);
   if (!location || !location.trim()) return makeError('请填写目击地点', ErrorCode.PARAM_INVALID, 400);

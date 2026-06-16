@@ -125,8 +125,12 @@ async function loadTeachers(reset = true) {
         // 评分星星
         const stars = t.avg_rating ? '⭐'.repeat(Math.round(t.avg_rating)) : '';
 
+        const avatarUrl = t.avatar ? '/uploads/teacher_avatars/' + t.avatar : '';
+          const avatarHtml = avatarUrl
+          ? '<img src="' + escHtml(avatarUrl) + '" class="teacher-avatar-img" alt="' + escHtml(t.name) + '" onerror="this.replaceWith(avatarFallback(this,\'' + escHtml(t.name.charAt(0)) + '\',\'teacher-avatar-lg\'))">'
+          : '<div class="teacher-avatar-lg">' + escHtml(t.name.charAt(0)) + '</div>';
         html += '<div class="teacher-card" onclick="openTeacherDetail(' + t.id + ')">' +
-          '<div class="teacher-avatar-lg">' + escHtml(t.name.charAt(0)) + '</div>' +
+          avatarHtml +
           '<div class="teacher-info">' +
             '<div class="teacher-name-row">' +
               '<span class="teacher-name">' + escHtml(t.name) + '</span>' +
@@ -161,9 +165,13 @@ async function openTeacherDetail(id) {
     if (!t) return showToast('教师不存在');
 
     // ── 头部卡片 ──
+    const detailAvatarUrl = t.avatar ? '/uploads/teacher_avatars/' + t.avatar : '';
+      const detailAvatar = detailAvatarUrl
+        ? '<img src="' + escHtml(detailAvatarUrl) + '" class="t-detail-avatar" style="object-fit:cover" onerror="this.replaceWith(avatarFallback(this,\'' + escHtml(t.name.charAt(0)) + '\',\'t-detail-avatar\'))">'
+        : '<div class="t-detail-avatar">' + escHtml(t.name.charAt(0)) + '</div>';
     document.getElementById('teacherInfoHeader').innerHTML =
       '<div class="t-detail-header">' +
-        '<div class="t-detail-avatar">' + escHtml(t.name.charAt(0)) + '</div>' +
+        detailAvatar +
         '<div class="t-detail-name">' + escHtml(t.name) + '</div>' +
         '<div class="t-detail-sub">' + escHtml(t.college) + (t.title ? ' · ' + escHtml(t.title) : '') + '</div>' +
         '<div class="t-detail-stats">' +
@@ -221,10 +229,24 @@ async function openTeacherDetail(id) {
         cleanBio = cleanBio.trim();
       }
       if (cleanBio.length > 10) {
-        // 截取前150字
-        const shortBio = cleanBio.length > 150 ? cleanBio.substring(0, 150) + '…' : cleanBio;
+        // 智能摘要：提取完整句子，去重，最多保留前3句
+        const sentences = cleanBio.split(/(?<=[。；?!；])/).map(s => s.trim()).filter(s => s.length > 4);
+        // 去重（保留首次出现）
+        const seen = new Set();
+        const unique = sentences.filter(s => {
+          const key = s.substring(0, 10); // 按前10字去重
+          if (seen.has(key)) return false;
+          seen.add(key); return true;
+        });
+        // 最多取前3句，超长内容截断到最后一句末（不在中间断句）
+        let displayBio = unique.slice(0, 3).join(' ');
+        if (displayBio.length > 300) {
+          // 找最后一句的结尾位置，在300字以内尽量保持完整句
+          const lastFullStop = displayBio.lastIndexOf('。', 300);
+          displayBio = lastFullStop > 50 ? displayBio.substring(0, lastFullStop + 1) : displayBio.substring(0, 300);
+        }
         sections.push('<div class="t-info-section"><div class="t-info-title">📝 简介</div>' +
-          '<div class="t-bio-text">' + escHtml(shortBio) + '</div></div>');
+          '<div class="t-bio-text">' + escHtml(displayBio) + '</div></div>');
       }
     }
 
@@ -443,3 +465,11 @@ window.insertReviewEmoji = insertReviewEmoji;
 window.handleReviewMedia = handleReviewMedia;
 window.removeReviewMedia = removeReviewMedia;
 window.submitTeacherReview = submitTeacherReview;
+
+// ── 头像加载失败回退（避免 onerror 中 outerHTML 引号嵌套导致 HTML 标签泄露为文本）──
+window.avatarFallback = function(img, char, cls) {
+  var d = document.createElement('div');
+  d.className = cls;
+  d.textContent = char;
+  return d;
+};

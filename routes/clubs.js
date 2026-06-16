@@ -54,9 +54,10 @@ router.post('/', requireAuth, withCompress(clubUpload.single('logo')), async (re
   const reviewContent = `社团名称：${name}\n社团描述：${description || ''}`;
   let aiResult = { violation: false, level: 'none', category: '无', reason: '' };
   try {
+    const logoUrl = req.file ? '/uploads/clubs/' + req.file.filename : null;
     aiResult = await aiChecker.checkWallPost({
       title: name, content: description || '', topic: '',
-      images: '[]'
+      images: logoUrl ? JSON.stringify([logoUrl]) : '[]'
     });
     if (aiResult.violation && aiResult.level === 'high') {
       if (req.file) { try { fs.unlinkSync(req.file.path); } catch(e) {} }
@@ -734,15 +735,20 @@ router.post('/:id/room/messages', requireAuth, (req, res) => JSON_RES(res, async
   }
 
   // AI审核
+  let aiCheck = { violation: false, level: 'none', category: '无', reason: '' };
   try {
-    const check = await aiChecker.checkWallPost({ title: '', content: content, topic: '', images: '[]' });
-    if (check.violation && check.level === 'high') {
-      return makeError('消息不符合平台规范：' + (check.reason || ''), 'AI_001');
+    aiCheck = await aiChecker.checkWallPost({ title: '', content: content, topic: '', images: '[]' });
+    if (aiCheck.violation && aiCheck.level === 'high') {
+      logAiReview('club_room_message', 0, phone, content, aiCheck, 'block');
+      return makeError('消息不符合平台规范：' + (aiCheck.reason || ''), 'AI_001');
     }
   } catch(e) { /* 审核失败放行 */ }
 
   const info = db.prepare('INSERT INTO club_room_messages (room_id, sender_phone, content) VALUES (?,?,?)')
     .run(room.id, phone, content.trim());
+
+  // 记录审核日志
+  logAiReview('club_room_message', info.lastInsertRowid, phone, content, aiCheck, 'pass');
 
   // 更新最后消息
   db.prepare('UPDATE club_rooms SET last_message = ?, last_message_at = datetime(\'now\',\'localtime\') WHERE id = ?')

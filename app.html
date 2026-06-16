@@ -22,7 +22,8 @@
   <script src="app/js/discover.js?v=3.0.31"></script>
   <script src="app/js/review.js?v=3.0.1"></script>
   <script src="app/js/wall-share.js?v=3.0.1"></script>
-  <script src="app/js/campus-star.js?v=1781589341676"></script>
+  <script src="app/js/campus-star.js?v=1781600005268"></script>
+  <script src="app/js/badges.js?v=3.0.1"></script>
 </head>
 <body>
   <div class="app">
@@ -129,6 +130,7 @@
                 <span class="discover-act-cat-chip" data-cat="演出" onclick="filterActCategory('演出')">🎭 演出</span>
                 <span class="discover-act-cat-chip" data-cat="运动" onclick="filterActCategory('运动')">⚽ 运动</span>
                 <span class="discover-act-view-toggle" id="discoverActViewToggle" onclick="toggleActView()" style="margin-left:auto;padding:6px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:13px;cursor:pointer">📅 日历</span>
+                <button onclick="openCreateActivityModal()" style="padding:6px 14px;border-radius:8px;background:var(--gradient);color:white;border:none;font-size:12px;font-weight:600;cursor:pointer">+ 发布</button>
               </div>
               <!-- 日历视图 -->
               <div id="discoverCalendarView" style="display:none;margin-bottom:12px">
@@ -142,8 +144,6 @@
               </div>
               <!-- 活动列表 -->
               <div id="discoverActivityList"></div>
-              <!-- 发布活动按钮 -->
-              <button onclick="openCreateActivityModal()" style="width:100%;padding:12px;border-radius:12px;background:var(--gradient);color:white;border:none;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px">+ 发布活动</button>
             </div>
 
             <!-- 社团区域 -->
@@ -188,7 +188,7 @@
     <div class="sub-page" id="clubPage_sub">
       <div class="sub-page-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91,#f06292)">
         <button class="sub-page-back" onclick="closeSubPage('clubPage_sub')">←</button>
-        <span class="sub-page-title" style="color:#fff">🎭 校园社团</span>
+        <span class="sub-page-title" style="color:#fff"><img src="/uploads/icons/club-icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">校园社团</span>
         <button onclick="openCreateClubModal()" style="padding:4px 12px;border-radius:16px;background:rgba(255,255,255,0.25);color:#fff;border:none;font-size:12px;cursor:pointer">+ 创建</button>
         <button onclick="openCreateActivityModal()" style="padding:4px 12px;border-radius:16px;background:rgba(255,255,255,0.25);color:#fff;border:none;font-size:12px;cursor:pointer;margin-left:6px">发布活动</button>
       </div>
@@ -251,7 +251,7 @@
     <div class="sub-page" id="reviewPage_sub">
       <div class="sub-page-header" style="background:var(--gradient)">
         <button class="sub-page-back" onclick="closeSubPage('reviewPage_sub')">←</button>
-        <span class="sub-page-title">📚 期末复习资料</span>
+        <span class="sub-page-title"><img src="/uploads/icons/review-icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">期末复习资料</span>
         <button onclick="openUploadMaterial()" style="padding:4px 12px;border-radius:16px;background:rgba(255,255,255,0.25);color:#fff;border:none;font-size:12px;cursor:pointer">+ 上传</button>
       </div>
       <div class="sub-page-body" style="padding:12px 16px">
@@ -397,9 +397,10 @@
             <span class="me-menu-text" data-i18n="menuAddresses">常用地址</span>
             <span class="me-menu-arrow">›</span>
           </div>
-          <div class="me-menu-item" onclick="showSettings()">
-            <span class="me-menu-icon">⚙️</span>
-            <span class="me-menu-text" data-i18n="menuSettings">设置</span>
+          <div class="me-menu-item" onclick="showBadgeWall()">
+            <span class="me-menu-icon">🏅</span>
+            <span class="me-menu-text">勋章墙</span>
+            <span class="me-menu-badge" id="meBadgeCount" style="display:none">0</span>
             <span class="me-menu-arrow">›</span>
           </div>
           <div class="me-menu-item" onclick="showFeedback()">
@@ -407,7 +408,26 @@
             <span class="me-menu-text">问题反馈</span>
             <span class="me-menu-arrow">›</span>
           </div>
+          <div class="me-menu-item" onclick="showSettings()">
+            <span class="me-menu-icon">⚙️</span>
+            <span class="me-menu-text" data-i18n="menuSettings">设置</span>
+            <span class="me-menu-arrow">›</span>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <!-- 🏅 勋章墙子页面 -->
+    <div class="sub-page" id="badgeWallPage_sub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('badgeWallPage_sub')">←</button>
+        <span class="sub-page-title">🏅 勋章墙</span>
+      </div>
+      <div class="sub-page-body">
+        <div class="badge-summary" id="badgeSummary">
+          <span>已获得 <strong id="badgeEarnedNum">0</strong> / <span id="badgeTotalNum">15</span> 枚勋章</span>
+        </div>
+        <div class="badge-grid" id="badgeGrid"></div>
       </div>
     </div>
 
@@ -577,6 +597,7 @@
       <div class="chat-conversation" id="chatConversation" style="display:none">
         <div class="chat-header">
           <button class="chat-back" onclick="backToChatList()">←</button>
+          <div class="chat-header-avatar" id="chatConvAvatar"></div>
           <span class="chat-title" id="chatConvTitle">对话</span>
           <button class="chat-settings-btn-icon" onclick="openChatSettings()" title="聊天设置">⚙️</button>
         </div>
@@ -585,27 +606,53 @@
         <div class="chat-settings-page" id="chatSettingsPage" style="display:none">
           <div class="chat-settings-header">
             <button class="chat-back" onclick="closeChatSettings()">←</button>
-            <span style="font-weight:600;font-size:16px">⚙️ 聊天设置</span>
+            <span style="font-weight:700;font-size:16px">⚙️ 聊天设置</span>
           </div>
           <div class="chat-settings-body">
-            <div class="chat-settings-section">
-              <div class="chat-settings-label">📝 备注名称</div>
-              <div style="display:flex;gap:8px">
+            <!-- 备注名称 -->
+            <div class="chat-settings-card">
+              <div class="chat-settings-label"><span class="label-icon">📝</span> 备注名称</div>
+              <div class="chat-settings-input-row">
                 <input id="chatNicknameInput" class="chat-settings-input" placeholder="给对方设置备注..." onkeydown="if(event.key==='Enter')saveChatNickname()">
                 <button class="chat-settings-btn" onclick="saveChatNickname()">保存</button>
-                <button class="chat-settings-btn" style="background:transparent;border:1px solid var(--border);color:var(--text-secondary)" onclick="resetChatNickname()">重置</button>
+                <button class="chat-settings-btn outline" onclick="resetChatNickname()">重置</button>
               </div>
             </div>
-            <div class="chat-settings-section">
-              <div class="chat-settings-label">🖼️ 聊天背景</div>
-              <label class="chat-settings-btn" style="cursor:pointer">选择照片<input type="file" accept="image/*" style="display:none" onchange="handleChatBgUpload(this)"></label>
-            </div>
-            <div class="chat-settings-section">
-              <div class="chat-settings-label">🔍 查找聊天记录</div>
-              <input id="chatSearchInput" class="chat-settings-input" placeholder="输入关键词搜索..." oninput="searchChatMessages(this.value)">
-              <div id="chatSearchResults" style="margin-top:8px;max-height:300px;overflow-y:auto;border-radius:10px;background:var(--bg);padding:8px">
-                <div style="padding:12px;color:var(--text-secondary);font-size:13px;text-align:center">输入关键词开始搜索</div>
+
+            <!-- 聊天背景 -->
+            <div class="chat-settings-card">
+              <div class="chat-settings-label"><span class="label-icon">🎨</span> 聊天背景</div>
+              <div class="chat-bg-grid" id="chatBgGrid">
+                <div class="chat-bg-preset active" style="background:#f5f6fa" onclick="setChatBg('default',this)">
+                  <span style="font-size:24px;display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#ccc">✕</span>
+                </div>
+                <div class="chat-bg-preset" style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9)" onclick="setChatBg('#e8f5e9',this)"></div>
+                <div class="chat-bg-preset" style="background:linear-gradient(135deg,#fff3e0,#ffe0b2)" onclick="setChatBg('#fff3e0',this)"></div>
+                <div class="chat-bg-preset" style="background:linear-gradient(135deg,#f3e5f5,#e1bee7)" onclick="setChatBg('#f3e5f5',this)"></div>
+                <div class="chat-bg-preset" style="background:linear-gradient(135deg,#e3f2fd,#bbdefb)" onclick="setChatBg('#e3f2fd',this)"></div>
+                <div class="chat-bg-preset" style="background:linear-gradient(135deg,#fff9c4,#fff176)" onclick="setChatBg('#fff9c4',this)"></div>
+                <div class="chat-bg-preset" style="background:linear-gradient(135deg,#ffcdd2,#ef9a9a)" onclick="setChatBg('#ffcdd2',this)"></div>
+                <div class="chat-bg-preset" style="background:linear-gradient(135deg,#d7ccc8,#bcaaa4)" onclick="setChatBg('#d7ccc8',this)"></div>
+                <label class="chat-bg-preset chat-bg-preset-upload" title="自定义图片">
+                  📷<input type="file" accept="image/*" style="display:none" onchange="handleChatBgUpload(this)">
+                </label>
               </div>
+            </div>
+
+            <!-- 聊天记录搜索 -->
+            <div class="chat-settings-card">
+              <div class="chat-settings-label"><span class="label-icon">🔍</span> 查找聊天记录</div>
+              <input id="chatSearchInput" class="chat-settings-input" placeholder="输入关键词搜索..." oninput="searchChatMessages(this.value)" style="margin-bottom:8px">
+              <div id="chatSearchResults" style="max-height:300px;overflow-y:auto;font-size:13px">
+                <div style="padding:20px;color:#bbb;font-size:13px;text-align:center">输入关键词开始搜索</div>
+              </div>
+            </div>
+
+            <!-- 清空聊天记录 -->
+            <div class="chat-settings-card" style="text-align:center;padding:14px">
+              <button class="chat-settings-btn outline" onclick="clearChatHistory()" style="color:#f44336;border-color:#ffcdd2;width:100%">
+                🗑️ 清空聊天记录
+              </button>
             </div>
           </div>
         </div>
@@ -692,7 +739,7 @@
     <div class="sub-page" id="marketListPage_sub">
       <div class="sub-page-header">
         <button class="sub-page-back" onclick="closeSubPage('marketListPage_sub')">←</button>
-        <span class="sub-page-title">🛒 二手市场</span>
+        <span class="sub-page-title"><img src="/uploads/icons/market-icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">二手市场</span>
         <button onclick="openMyMarket()" style="padding:4px 10px;border-radius:16px;background:var(--card);color:var(--primary);border:1.5px solid var(--primary);font-size:12px;cursor:pointer;font-weight:600">📦 我的</button>
         <button onclick="openSubPage('publishItemPage_sub')" style="margin-left:4px;padding:4px 12px;border-radius:16px;background:var(--gradient);color:white;border:none;font-size:12px;cursor:pointer">✏️ 发布</button>
       </div>
@@ -706,6 +753,7 @@
           <div class="market-tab" onclick="switchMarketCategory('clothing')">👔 服饰</div>
           <div class="market-tab" onclick="switchMarketCategory('beauty')">💄 美妆</div>
           <div class="market-tab" onclick="switchMarketCategory('other')">📦 其他</div>
+          <div class="market-tab" id="marketTabMine" onclick="openMyMarket()" style="margin-left:auto;background:var(--primary);color:#fff;border-radius:14px;padding:5px 14px;font-weight:600">📦 我的</div>
         </div>
         <!-- 商品网格 -->
         <div class="market-grid" id="marketGrid">
@@ -888,7 +936,7 @@
     <div class="sub-page" id="teacherListPage_sub">
       <div class="sub-page-header" style="background:var(--gradient)">
         <button class="sub-page-back" onclick="closeSubPage('teacherListPage_sub')" style="color:#fff">←</button>
-        <span class="sub-page-title" style="color:#fff" data-i18n="teacherPageTitle">📖 师说</span>
+        <span class="sub-page-title" style="color:#fff" data-i18n="teacherPageTitle"><img src="/uploads/icons/teacher-icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">师说</span>
       </div>
       <div class="sub-page-body" style="padding:0">
         <!-- 顶部氛围区 -->
@@ -942,7 +990,7 @@
     <div class="sub-page" id="petListPage_sub">
       <div class="sub-page-header" style="background:linear-gradient(135deg,#ff9a56,#ff6a88)">
         <button class="sub-page-back" onclick="closeSubPage('petListPage_sub')" style="color:#fff">←</button>
-        <span class="sub-page-title" style="color:#fff">🐱 猫狗日记</span>
+        <span class="sub-page-title" style="color:#fff"><img src="/uploads/icons/pet-icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">猫狗日记</span>
       </div>
       <div class="sub-page-body" style="padding:0">
         <div style="padding:12px 16px;display:flex;gap:8px">
@@ -958,7 +1006,7 @@
     <div class="sub-page" id="petDetailPage_sub">
       <div class="sub-page-header" style="background:linear-gradient(135deg,#ff9a56,#ff6a88)">
         <button class="sub-page-back" onclick="closeSubPage('petDetailPage_sub')" style="color:#fff">←</button>
-        <span class="sub-page-title" style="color:#fff" id="petDetailTitle">🐱 详情</span>
+        <span class="sub-page-title" style="color:#fff" id="petDetailTitle"><img src="/uploads/icons/pet-icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">详情</span>
       </div>
       <div class="sub-page-body" style="padding:0;padding-bottom:70px">
         <div id="petProfileCard"></div>
@@ -1038,7 +1086,7 @@
     </div>
 
     <!-- 创建活动弹窗 -->
-    <div id="createActivityModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center">
+    <div id="createActivityModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:210;align-items:flex-end;justify-content:center">
       <div style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;padding:20px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <span style="font-size:17px;font-weight:700">发布活动</span>
@@ -1099,7 +1147,15 @@
           </div>
           <div class="form-group">
             <label class="form-label">封面图</label>
-            <input type="file" name="actCover" style="font-size:13px" />
+            <input type="file" name="actCover" accept="image/*" style="font-size:13px" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">📸 宣传照片 <span style="font-size:11px;color:var(--sub)">（可选，活动宣传图）</span></label>
+            <input type="file" name="actPromoPhoto" accept="image/*" style="font-size:13px" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">📱 群二维码 <span style="font-size:11px;color:var(--sub)">（可选，QQ/微信群二维码）</span></label>
+            <input type="file" name="actQrCode" accept="image/*" style="font-size:13px" />
           </div>
           <button type="submit" class="submit-btn">发布活动</button>
         </form>
@@ -1107,7 +1163,7 @@
     </div>
 
     <!-- 创建社团弹窗 -->
-    <div id="createClubModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center">
+    <div id="createClubModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:210;align-items:flex-end;justify-content:center">
       <div style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:80vh;overflow-y:auto;padding:20px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <span style="font-size:17px;font-weight:700">创建社团</span>
@@ -1145,7 +1201,7 @@
     </div>
 
     <!-- 社团申请加入弹窗 -->
-    <div id="clubApplyModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center">
+    <div id="clubApplyModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:210;align-items:center;justify-content:center">
       <div style="background:var(--card);border-radius:16px;width:90%;max-width:380px;padding:20px">
         <div style="font-size:17px;font-weight:700;margin-bottom:4px">📝 申请加入</div>
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">向社长介绍自己，提高通过率</div>
@@ -1160,7 +1216,7 @@
     </div>
 
     <!-- 社团发布公告弹窗 -->
-    <div id="clubPostModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center">
+    <div id="clubPostModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:210;align-items:center;justify-content:center">
       <div style="background:var(--card);border-radius:16px;width:90%;max-width:380px;padding:20px">
         <div style="font-size:17px;font-weight:700;margin-bottom:4px">✏️ 发布公告</div>
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">向社团成员发布重要信息或动态</div>
@@ -1175,7 +1231,7 @@
     </div>
 
     <!-- 社团编辑信息弹窗 -->
-    <div id="clubEditModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center">
+    <div id="clubEditModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:210;align-items:center;justify-content:center">
       <div style="background:var(--card);border-radius:16px;width:90%;max-width:380px;padding:20px">
         <div style="font-size:17px;font-weight:700;margin-bottom:14px">✏️ 编辑社团信息</div>
         <div class="form-group"><label class="form-label">社团名称</label><input id="clubEditName" class="form-input" placeholder="社团名称" /></div>
@@ -1190,7 +1246,7 @@
     </div>
 
     <!-- 社团转让弹窗 -->
-    <div id="clubTransferModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center">
+    <div id="clubTransferModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:210;align-items:center;justify-content:center">
       <div style="background:var(--card);border-radius:16px;width:90%;max-width:380px;padding:20px;max-height:70vh;overflow-y:auto">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <div style="font-size:17px;font-weight:700">🔄 转让社长</div>
@@ -1216,6 +1272,18 @@
       </div>
     </div>
 
+    <!-- 社团功能开发中弹窗 -->
+    <div id="clubComingSoonModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:220;align-items:center;justify-content:center" onclick="event.target===this && closeClubComingSoon()">
+      <div style="background:var(--card);border-radius:20px;width:90%;max-width:360px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <img src="/uploads/club-coming-soon.jpg" style="width:100%;display:block" alt="功能开发中" />
+        <div style="padding:16px 20px 20px;text-align:center">
+          <div style="font-size:17px;font-weight:700;margin-bottom:6px;color:var(--text)">🚧 社团功能开发中</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">精彩即将上线，敬请期待 ✨</div>
+          <button onclick="closeClubComingSoon()" style="width:100%;padding:11px;border-radius:12px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">我知道了</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 社团管理子页面 -->
     <div class="sub-page" id="clubManageSub">
       <div class="sub-page-header">
@@ -1231,7 +1299,7 @@
     <div class="sub-page" id="campusStarPage_sub">
       <div class="sub-page-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91)">
         <button class="sub-page-back" onclick="closeSubPage('campusStarPage_sub')" style="color:#fff">←</button>
-        <span class="sub-page-title" style="color:#fff">🌸 校花校草</span>
+        <span class="sub-page-title" style="color:#fff"><img src="/uploads/icons/star-icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">校花校草</span>
         <button id="starJoinBtn" onclick="openStarJoin()" style="padding:6px 16px;border-radius:20px;background:rgba(255,255,255,0.22);color:#fff;border:1.5px solid rgba(255,255,255,0.3);font-size:13px;cursor:pointer;font-weight:500">📸 报名参加</button>
       </div>
       <div class="sub-page-body" style="padding:0">
@@ -1256,7 +1324,7 @@
     <div class="sub-page" id="starDetailPage_sub">
       <div class="sub-page-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91)">
         <button class="sub-page-back" onclick="closeSubPage('starDetailPage_sub')" style="color:#fff">←</button>
-        <span class="sub-page-title" style="color:#fff" id="starDetailTitle">候选人详情</span>
+        <span class="sub-page-title" style="color:#fff" id="starDetailTitle"><img src="/uploads/icons/star-icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">候选人详情</span>
       </div>
       <div class="sub-page-body" id="starDetailBody" style="padding:0"></div>
     </div>

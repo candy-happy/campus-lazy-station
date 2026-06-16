@@ -3,11 +3,14 @@ const { RATE_LIMIT_CATEGORIES = {} } = require('../config');
 
 // 分类限流默认配置
 const DEFAULTS = {
-  login:   { windowMs: 15 * 60 * 1000, max: 10 },   // 登录: 15分钟10次
-  post:    { windowMs: 1 * 60 * 1000,  max: 20 },   // 发帖/评论: 1分钟20次
-  upload:  { windowMs: 1 * 60 * 1000,  max: 10 },   // 上传: 1分钟10次
-  admin:   { windowMs: 1 * 60 * 1000,  max: 60 },   // 管理端: 1分钟60次
-  browse:  { windowMs: 1 * 60 * 1000,  max: 300 },  // 浏览: 1分钟300次
+  user_login:  { windowMs: 60 * 1000,       max: 5 },    // 用户登录: 1分钟5次
+  rider_login: { windowMs: 60 * 1000,       max: 5 },    // 骑手登录: 1分钟5次
+  admin_login: { windowMs: 15 * 60 * 1000,  max: 10 },   // 管理端登录: 15分钟10次(bruteForce)
+  login:       { windowMs: 15 * 60 * 1000,  max: 10 },   // 通用登录(兜底)
+  post:        { windowMs: 1 * 60 * 1000,   max: 20 },   // 发帖/评论: 1分钟20次
+  upload:      { windowMs: 1 * 60 * 1000,   max: 10 },   // 上传: 1分钟10次
+  admin:       { windowMs: 1 * 60 * 1000,   max: 60 },   // 管理端: 1分钟60次
+  browse:      { windowMs: 1 * 60 * 1000,   max: 300 },  // 浏览: 1分钟300次
 };
 
 // 合并配置与默认值
@@ -24,10 +27,10 @@ const windows = new Map();
 
 // 路由已有专用限流器 → 全局限流不再重复计数
 const DEDICATED_LIMITERS = [
-  /^\/api\/user\/login/,   // routes/auth.js → loginRateLimit (5/min)
-  /^\/api\/rider\/login/,  // routes/auth.js → loginRateLimit (5/min)
-  /^\/api\/admin\/login/,  // routes/auth.js → bruteForceGuard
-  /^\/api\/captcha/,        // routes/auth.js → captchaRateLimit (10/min)
+  /^\/api\/user\/login/,      // routes/auth.js → userLoginRateLimit
+  /^\/api\/rider\/login/,     // routes/auth.js → riderLoginRateLimit
+  /^\/api\/admin\/login/,     // routes/auth.js → bruteForceGuard
+  /^\/api\/captcha/,           // routes/auth.js → captchaRateLimit (10/min)
 ];
 
 // 自动推断请求所属分类

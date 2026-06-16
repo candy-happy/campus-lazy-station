@@ -268,7 +268,7 @@ const avatarUpload = multer({
 });
 
 // ── 管理端：上传教师头像 ──────────────────────────
-router.post('/upload-avatar', requireAdmin, avatarUpload.single('avatar'), (req, res) => {
+router.post('/upload-avatar', requireAdmin, withCompress(avatarUpload.single('avatar')), (req, res) => {
   if (!req.file) return res.status(400).json({ error: '请选择图片文件' });
   res.json({ url: '/uploads/teacher_avatars/' + req.file.filename });
 });

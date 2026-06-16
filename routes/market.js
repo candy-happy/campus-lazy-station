@@ -160,7 +160,7 @@ router.get('/items/:id', (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 上架商品 ─────────────────────────────────────────────
-router.post('/items', requireAuth, upload.array('images', 9), async (req, res) => {
+router.post('/items', requireAuth, withCompress(upload.array('images', 9)), async (req, res) => {
   try {
     const phone = req.user.phone;
     if (!phone) return res.status(401).json({ error: '请先登录', code: 'AUTH_001' });
@@ -211,7 +211,7 @@ router.post('/items', requireAuth, upload.array('images', 9), async (req, res) =
 });;
 
 // ─── 编辑商品 ─────────────────────────────────────────────
-router.put('/items/:id', requireAuth, upload.array('images', 9), (req, res) => JSON_RES(res, () => {
+router.put('/items/:id', requireAuth, withCompress(upload.array('images', 9)), (req, res) => JSON_RES(res, () => {
   const phone = req.user.phone;
   const item = db.prepare('SELECT * FROM market_items WHERE id = ?').get(req.params.id);
   if (!item) return notFound('商品不存在');
@@ -486,16 +486,22 @@ router.post('/items/:id/comments', requireAuth, withCompress(commentUpload.singl
       if (parent.item_id !== parseInt(itemId)) return res.status(400).json({ error: '回复的评论不属于该商品', code: 'MKT_010' });
     }
 
-    // AI审核评论内容
-    if (content) {
+    // AI审核评论内容（文字+图片）
+    let aiResult = { violation: false, level: 'none', category: '无', reason: '' };
+    if (content || (req.file && req.file.mimetype.startsWith('image/'))) {
       try {
-        const check = await aiChecker.checkTextContent(content, '校园二手交易平台');
-        if (check.violation && check.level === 'high') {
-          logAiReview('market_comment', 0, phone, content, check, 'block');
-          return res.status(403).json({ error: '评论内容不符合平台规范：' + (check.reason || '请修改后重新发布'), code: 'AI_001' });
+        const imageUrls = [];
+        if (req.file && req.file.mimetype.startsWith('image/')) {
+          imageUrls.push('/uploads/market/' + req.file.filename);
         }
-        if (check.violation) console.log(`[AI审核] 市场评论提醒(未拦截): level=${check.level}, reason=${check.reason}`);
-        req._aiResult = check;
+        aiResult = await aiChecker.checkTextWithImages(content || '', imageUrls, '校园二手交易平台');
+        if (aiResult.violation && aiResult.level === 'high') {
+          // 删除已上传的文件
+          if (req.file) { try { fs.unlinkSync(req.file.path); } catch(e) {} }
+          logAiReview('market_comment', 0, phone, content, aiResult, 'block');
+          return res.status(403).json({ error: '评论内容不符合平台规范：' + (aiResult.reason || '请修改后重新发布'), code: 'AI_001' });
+        }
+        if (aiResult.violation) console.log(`[AI审核] 市场评论提醒(未拦截): level=${aiResult.level}, reason=${aiResult.reason}`);
       } catch (e) {
         console.error('[AI审核] 市场评论审核失败:', e.message);
       }
@@ -507,7 +513,7 @@ router.post('/items/:id/comments', requireAuth, withCompress(commentUpload.singl
     const result = db.prepare(
       "INSERT INTO market_comments (item_id, user_phone, content, parent_id, media_url, media_type, created_at) VALUES (?,?,?,?,?,?,datetime('now','localtime'))"
     ).run(itemId, phone, content || '', parent_id, media_url, media_type);
-    logAiReview('market_comment', result.lastInsertRowid, phone, content, req._aiResult || {violation:false,level:'none',category:'无',reason:''}, 'pass');
+    logAiReview('market_comment', result.lastInsertRowid, phone, content, aiResult, 'pass');
 
   // 给卖家发通知（非自己评论自己商品时）
   if (item.seller_phone !== phone && !parent_id) {

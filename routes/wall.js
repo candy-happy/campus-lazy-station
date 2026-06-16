@@ -81,7 +81,7 @@ function cleanupUploadedFiles(files) {
 }
 
 // ─── 发帖（含AI自动审核） ────────────────────────────────
-router.post('/posts', requireAuth, withCompress(withCompress(wallUpload.array('files', 9))), async (req, res) => {
+router.post('/posts', requireAuth, withCompress(wallUpload.array('files', 9)), async (req, res) => {
   try {
     const { phone, nickname, avatar, content, gif_urls, tags } = req.body;
     if (!phone || !content) {

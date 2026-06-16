@@ -7,7 +7,9 @@ const fs = require('fs');
 const db = require('../config/database');
 const { optionalAuth, requireAdmin } = require('../middleware/auth');
 const { error } = require('../utils/response');
+const { withCompress } = require('../utils/upload');
 const { compressFile } = require('../utils/compress');
+const aiChecker = require('./ai');
 
 // ─── 文件上传配置 ────────────────────────────────────
 const uploadDir = path.join(__dirname, '..', 'uploads', 'review');
@@ -81,7 +83,7 @@ router.get('/', optionalAuth, (req, res) => {
 });
 
 // ─── 用户端：上传复习资料（待审核） ──────────────
-router.post('/', optionalAuth, upload.single('file'), (req, res) => {
+router.post('/', optionalAuth, withCompress(upload.single('file')), async (req, res) => {
   try {
     const { subject, title, description, uploader_name } = req.body;
     const phone = req.user?.phone || '';
@@ -91,6 +93,26 @@ router.post('/', optionalAuth, upload.single('file'), (req, res) => {
       // 删除已上传的文件
       if (req.file) fs.unlinkSync(req.file.path);
       return error(res, 'PARAM_MISSING', '请填写科目和标题');
+    }
+
+    // AI审核资料标题和描述
+    try {
+      const aiResult = await aiChecker.checkTextContent(
+        `资料标题：${title}\n科目：${subject}\n描述：${description || ''}`,
+        '校园复习资料'
+      );
+      if (aiResult.violation && aiResult.level === 'high') {
+        if (req.file) fs.unlinkSync(req.file.path);
+        console.log(`[AI审核] 复习资料被拦截: title=${title}, level=${aiResult.level}, reason=${aiResult.reason}`);
+        db.prepare(`INSERT INTO ai_review_logs (source, source_id, phone, content_preview, violation, level, category, reason, action)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+          'review_material', 0, phone, title.slice(0, 200),
+          aiResult.violation ? 1 : 0, aiResult.level, aiResult.category, aiResult.reason, 'block'
+        );
+        return error(res, 'AI_001', '资料内容不符合平台规范：' + (aiResult.reason || '请修改后重新提交'));
+      }
+    } catch (e) {
+      console.error('[AI审核] 复习资料审核失败(放行):', e.message);
     }
 
     // 文件上传后自动压缩
@@ -197,7 +219,7 @@ router.get('/admin/list', requireAdmin, (req, res) => {
 });
 
 // ─── 管理端：直接添加资料（无需审核） ────────────
-router.post('/admin', requireAdmin, upload.single('file'), (req, res) => {
+router.post('/admin', requireAdmin, withCompress(upload.single('file')), (req, res) => {
   try {
     const { subject, title, description } = req.body;
 

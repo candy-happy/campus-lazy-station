@@ -335,7 +335,77 @@
         });
         html += `</div></div>`;
       });
+
+      // ── 动态标签区：校花校草 + 猫狗日记 ──
+      html += '<div class="post-tag-dynamic-section">';
+      // 校花校草
+      html += '<div class="post-tag-dynamic-title">🌸 校花校草（宣传TA）</div>';
+      html += '<div class="post-tag-dynamic-list" id="postTagStarList"><span class="post-tag-dynamic-loading">加载中...</span></div>';
+      // 猫狗日记
+      html += '<div class="post-tag-dynamic-title" style="margin-top:6px">🐾 猫狗日记（选择宠物）</div>';
+      html += '<div class="post-tag-dynamic-list" id="postTagPetList"><span class="post-tag-dynamic-loading">加载中...</span></div>';
+      html += '</div>';
+
       grid.innerHTML = html;
+      updateSelectedTagPreview();
+      // 异步加载动态标签
+      loadDynamicPostTags();
+    }
+
+    // 加载校花校草+猫狗动态标签
+    async function loadDynamicPostTags() {
+      // 并行请求
+      const [starRes, petRes] = await Promise.allSettled([
+        fetch('/api/campus-star/candidates?limit=20&sort=random').then(r => r.json()).catch(() => ({ candidates: [] })),
+        fetch('/api/pets/list?limit=20').then(r => r.json()).catch(() => ([]))
+      ]);
+
+      // 渲染校花校草
+      const starEl = document.getElementById('postTagStarList');
+      if (starEl) {
+        if (starRes.status === 'fulfilled' && starRes.value.candidates) {
+          let h = '';
+          starRes.value.candidates.forEach(c => {
+            const name = c.nickname || c.name || ('候选人' + c.id);
+            const sel = _selectedTags.includes('[🌸]' + name) ? ' selected' : '';
+            h += '<span class="post-tag-dynamic-item' + sel + '" onclick="toggleDynamicTag(this,\x27🌸\x27,\x27' + name + '\x27)">🌸 ' + name + '</span>';
+          });
+          starEl.innerHTML = h || '<span style="font-size:11px;color:var(--text-light)">暂无候选人</span>';
+        } else {
+          starEl.innerHTML = '<span style="font-size:11px;color:var(--text-light)">加载失败</span>';
+        }
+      }
+
+      // 渲染猫狗
+      const petEl = document.getElementById('postTagPetList');
+      if (petEl) {
+        if (petRes.status === 'fulfilled' && Array.isArray(petRes.value)) {
+          let h = '';
+          petRes.value.forEach(p => {
+            const name = p.code_name || ('宠物' + p.id);
+            const icon = p.species === 'cat' ? '🐱' : '🐶';
+            const sel = _selectedTags.includes('[🐾]' + name) ? ' selected' : '';
+            h += '<span class="post-tag-dynamic-item' + sel + '" onclick="toggleDynamicTag(this,\x27🐾\x27,\x27' + name + '\x27)">' + icon + ' ' + name + '</span>';
+          });
+          petEl.innerHTML = h || '<span style="font-size:11px;color:var(--text-light)">暂无宠物</span>';
+        } else {
+          petEl.innerHTML = '<span style="font-size:11px;color:var(--text-light)">加载失败</span>';
+        }
+      }
+    }
+
+    // 动态标签切换
+    function toggleDynamicTag(el, emoji, name) {
+      const fullTag = '[' + emoji + ']' + name;
+      const idx = _selectedTags.indexOf(fullTag);
+      if (idx > -1) {
+        _selectedTags.splice(idx, 1);
+        el.classList.remove('selected');
+      } else {
+        if (_selectedTags.length >= 5) return showToast('最多选择5个标签');
+        _selectedTags.push(fullTag);
+        el.classList.add('selected');
+      }
       updateSelectedTagPreview();
     }
 
@@ -884,6 +954,8 @@
       const profile = await API.wallUserProfile(otherPhone);
       const otherName = profile.nickname || profile.name || otherPhone;
       document.getElementById('chatConvTitle').textContent = otherName;
+      // 设置头部头像
+      setChatConvAvatar(otherPhone, otherName, profile.avatar);
       // 切换到消息页面并显示聊天对话
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById('messagePage').classList.add('active');
@@ -1104,10 +1176,27 @@
       await loadChatList();
     }
 
+    // 全局未读轮询（每15秒更新底部导航红点）
+    function startBadgePoll() {
+      if (window._badgePollTimer) clearInterval(window._badgePollTimer);
+      window._badgePollTimer = setInterval(async function(){
+        if (!currentUser) return;
+        try {
+          var list = await API.chatConversations(currentUser.phone);
+          if (!Array.isArray(list)) return;
+          window._unreadMap = {};
+          list.forEach(function(c){ if(c.unread>0) window._unreadMap[c.id]=c.unread; });
+          updateChatBadge();
+        } catch(e) {}
+      }, 15000);
+    }
+
 
 
     async function loadChatList() {
       const el = document.getElementById('chatListBody');
+      // 重置未读计数
+      window._unreadMap = {};
       // 并行拉取私信 + 通知 + 我的社团群聊
       const [list, notifs, clubs] = await Promise.all([
         API.chatConversations(currentUser.phone).catch(() => []),
@@ -1161,23 +1250,33 @@
         if (msg.startsWith('[SHARE_POST]')) return '📣 分享了一条校园墙';
         return msg;
       }
-      const chatItems = (list || []).map(c => `
-        <div class="chat-item" onclick="${window._pendingSharePostId ? 'window.shareAndOpenConv' : 'openChatConv'}(${c.id},'${escHtml(c.other_phone)}','${escHtml(c.other_name)}')">
-          <div class="chat-item-avatar">${(c.other_name||'?')[0]}</div>
+      const chatItems = (list || []).map(c => {
+        // 记录未读到全局
+        if (c.unread > 0) window._unreadMap[c.id] = c.unread;
+        var nick = getSavedNickname(c.other_phone);
+        var displayName = nick || c.other_nickname || c.other_name || c.other_phone;
+        var avatarHtml = c.other_avatar
+          ? '<img src="'+escHtml(c.other_avatar)+'" class="chat-item-avatar-img" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'\'" /><span class="chat-item-avatar-fallback" style="display:none">'+escHtml(displayName[0]||'?')+'</span>'
+          : '<span class="chat-item-avatar-fallback">'+escHtml(displayName[0]||'?')+'</span>';
+        return `
+        <div class="chat-item" data-conv-id="${c.id}" onclick="${window._pendingSharePostId ? 'window.shareAndOpenConv' : 'openChatConv'}(${c.id},'${escHtml(c.other_phone)}','${escHtml(displayName)}')">
+          <div class="chat-item-avatar">${avatarHtml}</div>
           <div class="chat-item-info">
             <div class="chat-item-top">
-              <span class="chat-item-name">${escHtml(c.other_name||c.other_phone)}</span>
+              <span class="chat-item-name">${escHtml(displayName)}${nick?' <small style="color:var(--text-secondary);font-weight:400">('+escHtml(c.other_name||c.other_phone)+')</small>':''}</span>
               <span class="chat-item-time">${timeAgo(c.last_message_at)}</span>
             </div>
             <div class="chat-item-bottom">
               <span class="chat-item-msg">${escHtml((c.last_sender===currentUser.phone?'我:':'') + _shareFriendlyPreview(c.last_message||''))}</span>
-              ${c.unread? '<span class="chat-item-badge">' + c.unread + '</span>':''}
+              ${c.unread? '<span class="chat-item-badge">' + (c.unread>99?'99+':c.unread) + '</span>':''}
             </div>
           </div>
         </div>
-      `);
-      // 通知在前，社团群聊在中间，私信在后
+      `;
+      });
+      // 渲染后更新底部导航红点
       el.innerHTML = shareBanner + notifItem + clubChatItems + chatItems.join('');
+      updateChatBadge();
       // 导出分享+打开会话的组合函数
       window.shareAndOpenConv = function(convId, otherPhone, otherName) {
         if (window._pendingSharePostId) {
@@ -1220,7 +1319,7 @@
       if (fp === _notifFingerprint) return;
       _notifFingerprint = fp;
       const el = document.getElementById('notifMessages');
-      const iconMap = {order:'📦',wall_like:'❤️',wall_comment:'💬',rating:'⭐',promo:'🎉'};
+      const iconMap = {order:'📦',wall_like:'❤️',wall_comment:'💬',rating:'⭐',promo:'🎉',system:'🏅'};
       el.innerHTML = arr.map(n => {
         const icon = iconMap[n.type] || '🔔';
         const time = new Date(n.created_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
@@ -1244,16 +1343,90 @@
       // 加载已保存的备注和背景
       var settings = loadChatSettings();
       document.getElementById('chatConvTitle').textContent = settings.nickname || otherName || otherPhone;
+      // 设置头部头像
+      setChatConvAvatar(otherPhone, settings.nickname || otherName || otherPhone);
       document.getElementById('chatConversation').style.display = 'flex';
       await loadChatMessages();
       applyChatBg(settings.bg);
+      // 标记该会话为已读
+      await API.chatMarkRead(convId).catch(function(){});
+      // 清除该会话未读计数并更新红点
+      delete window._unreadMap[convId];
+      updateChatBadge();
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
-      chatRefreshTimer = setInterval(loadChatMessages, 5000);
+      chatRefreshTimer = setInterval(async function(){
+        await loadChatMessages();
+        updateChatBadge();
+      }, 5000);
+    }
+
+    // ─── 未读红点系统 ──────────────────────────────────────
+    window._unreadMap = {}; // { convId: unreadCount }
+
+    function updateChatBadge() {
+      var total = 0;
+      for (var k in window._unreadMap) total += (window._unreadMap[k]||0);
+      var badge = document.getElementById('chatBadge');
+      if (!badge) return;
+      if (total > 0) {
+        badge.textContent = total > 99 ? '99+' : total;
+        badge.style.display = '';
+        badge.classList.add('badge-pulse');
+      } else {
+        badge.style.display = 'none';
+        badge.classList.remove('badge-pulse');
+      }
+      // 更新列表项红点
+      document.querySelectorAll('.chat-item[data-conv-id]').forEach(function(el){
+        var cid = el.getAttribute('data-conv-id');
+        var count = window._unreadMap[cid]||0;
+        var b = el.querySelector('.chat-item-badge');
+        if (!b && count>0) {
+          b = document.createElement('span');
+          b.className = 'chat-item-badge';
+          el.querySelector('.chat-item-bottom').appendChild(b);
+        }
+        if (b) {
+          b.textContent = count>99?'99+':count;
+          b.style.display = count>0?'':'none';
+        }
+      });
+    }
+
+    // 设置聊天头部头像
+    function setChatConvAvatar(phone, name, avatarUrl) {
+      var el = document.getElementById('chatConvAvatar');
+      if (!el) return;
+      var displayName = name || phone || '?';
+      // 尝试从 profile 获取头像
+      if (avatarUrl) {
+        el.innerHTML = '<img src="'+escHtml(avatarUrl)+'" class="chat-header-avatar-img" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'\'" /><span class="chat-header-avatar-fallback" style="display:none">'+escHtml(displayName[0]||'?')+'</span>';
+      } else {
+        // 异步获取用户头像
+        API.wallUserProfile(phone).then(function(p){
+          if (p && p.avatar) {
+            el.innerHTML = '<img src="'+escHtml(p.avatar)+'" class="chat-header-avatar-img" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'\'" /><span class="chat-header-avatar-fallback" style="display:none">'+escHtml(displayName[0]||'?')+'</span>';
+          } else {
+            el.innerHTML = '<span class="chat-header-avatar-fallback">'+escHtml(displayName[0]||'?')+'</span>';
+          }
+        }).catch(function(){
+          el.innerHTML = '<span class="chat-header-avatar-fallback">'+escHtml(displayName[0]||'?')+'</span>';
+        });
+      }
     }
 
     // ─── 聊天设置 ────────────────────────────────────────
     function getChatSettingsKey() {
       return 'chat_settings_' + (currentConvPhone || '');
+    }
+
+    // 按手机号获取已保存的备注名
+    function getSavedNickname(phone) {
+      try {
+        var key = 'chat_settings_' + phone;
+        var s = JSON.parse(localStorage.getItem(key) || '{}');
+        return s.nickname || '';
+      } catch(e) { return ''; }
     }
 
     function loadChatSettings() {
@@ -1273,7 +1446,11 @@
     function applyChatBg(bgVal) {
       var el = document.getElementById('chatMessages');
       if (!el) return;
-      if (!bgVal) {
+      // 存储到全局变量供 loadChatMessages 使用
+      if (!window._chatBackgrounds) window._chatBackgrounds = {};
+      if (currentConvId) window._chatBackgrounds[currentConvId] = bgVal || 'default';
+
+      if (!bgVal || bgVal === 'default') {
         el.style.background = '';
         el.style.backgroundImage = '';
         el.style.backgroundSize = '';
@@ -1286,19 +1463,10 @@
         el.style.backgroundSize = 'cover';
         el.style.backgroundPosition = 'center';
         el.style.backgroundRepeat = 'no-repeat';
-      } else if (bgVal.indexOf('linear') === 0) {
-        el.style.background = bgVal;
-        el.style.backgroundImage = '';
-        el.style.backgroundSize = '';
       } else {
         el.style.background = bgVal;
         el.style.backgroundImage = '';
         el.style.backgroundSize = '';
-      }
-      if (bgVal && bgVal.indexOf('#2A') >= 0) {
-        el.style.color = '#eee';
-      } else {
-        el.style.color = '';
       }
     }
 
@@ -1354,8 +1522,10 @@
       saveChatSettings(settings);
       if (nickname) {
         document.getElementById('chatConvTitle').textContent = nickname;
+        setChatConvAvatar(currentConvPhone, nickname);
       } else {
         document.getElementById('chatConvTitle').textContent = currentConvPhone || '对话';
+        setChatConvAvatar(currentConvPhone, currentConvPhone);
       }
       closeChatSettings();
       loadChatList();
@@ -1365,6 +1535,60 @@
       var input = document.getElementById('chatNicknameInput');
       if (input) input.value = '';
       window.saveChatNickname();
+    };
+
+    // 背景预设切换
+    window.setChatBg = function(val, el) {
+      // 标记选中
+      var presets = document.querySelectorAll('.chat-bg-preset');
+      presets.forEach(function(p) { p.classList.remove('active'); });
+      if (el) el.classList.add('active');
+      // 保存并应用
+      var settings = loadChatSettings();
+      settings.bg = val;
+      saveChatSettings(settings);
+      applyChatBg(val);
+      if (typeof showToast === 'function') showToast('背景已更新');
+    };
+
+    // 清空聊天记录
+    window.clearChatHistory = function() {
+      if (!currentConvId || !currentUser) return;
+      if (!confirm('确定要清空与该用户的聊天记录吗？此操作不可恢复。')) return;
+      API.chatClear(currentConvId, currentUser.phone).then(function(res) {
+        if (res.error) return showToast(res.error);
+        document.getElementById('chatMessages').innerHTML = '';
+        closeChatSettings();
+        loadChatList();
+        showToast('聊天记录已清空');
+      }).catch(function(e) {
+        showToast('清空失败: ' + e.message);
+      });
+    };
+
+    // 打开设置时高亮当前背景预设
+    var _origOpenChatSettings = openChatSettings;
+    openChatSettings = function() {
+      _origOpenChatSettings();
+      var settings = loadChatSettings();
+      var currentBg = settings.bg || 'default';
+      setTimeout(function() {
+        var presets = document.querySelectorAll('.chat-bg-preset');
+        presets.forEach(function(p) {
+          var onclick = p.getAttribute('onclick') || '';
+          if (currentBg === 'default') {
+            p.classList.toggle('active', onclick.indexOf("setChatBg('default'") >= 0 || p.classList.contains('chat-bg-preset-upload'));
+          } else {
+            p.classList.toggle('active', onclick.indexOf(currentBg) >= 0);
+          }
+        });
+        // 自定义图片背景特殊处理
+        if (currentBg && currentBg !== 'default' && (currentBg.indexOf('data:image') === 0 || currentBg.indexOf('url(') === 0)) {
+          presets.forEach(function(p) { p.classList.remove('active'); });
+          var uploadBtn = document.querySelector('.chat-bg-preset-upload');
+          if (uploadBtn) uploadBtn.classList.add('active');
+        }
+      }, 100);
     };
 
     window.searchChatMessages = function(query) {
@@ -1470,16 +1694,36 @@
       if (fp === _chatMessagesFingerprint) return;
       _chatMessagesFingerprint = fp;
 
+      // 应用聊天背景
+      const bgs = window._chatBackgrounds || {};
+      const bg = bgs[currentConvId] || null;
+      const chatBg = bg && bg !== 'default' ? bg : '';
+
       const el = document.getElementById('chatMessages');
+      if (chatBg) {
+        if (chatBg.startsWith('url(') || chatBg.startsWith('http')) {
+          el.style.backgroundImage = chatBg.startsWith('url(') ? chatBg : 'url(' + chatBg + ')';
+          el.style.backgroundSize = 'cover';
+          el.style.backgroundPosition = 'center';
+          el.style.backgroundRepeat = 'no-repeat';
+        } else {
+          el.style.background = chatBg;
+          el.style.backgroundImage = '';
+        }
+      } else {
+        el.style.background = '';
+        el.style.backgroundImage = '';
+      }
+
       el.innerHTML = msgs.map(m => {
         const isMe = m.sender_phone === currentUser.phone;
         let content;
         const c = m.content;
         const time = new Date(m.created_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         if (m.type === 'image') {
-          content = '<img src="'+escHtml(c)+'" style="max-width:100%;border-radius:8px;display:block;cursor:pointer" onclick="window.open(this.src)" />';
+          content = '<img src="'+escHtml(c)+'" style="max-width:100%;border-radius:10px;display:block;cursor:pointer;margin:2px 0" onclick="window.open(this.src)" />';
         } else if (m.type === 'video') {
-          content = '<video src="'+escHtml(c)+'" style="max-width:100%;border-radius:8px;display:block" controls preload="metadata"></video>';
+          content = '<video src="'+escHtml(c)+'" style="max-width:100%;border-radius:10px;display:block" controls preload="metadata"></video>';
         } else if (m.type === 'share_post') {
           content = renderSharePostCard(c);
         } else if (m.type === 'share_star' || (c && c.indexOf('[SHARE_STAR]') === 0)) {
@@ -1493,8 +1737,11 @@
           content = escHtml(c);
         }
         var dataContent = (c||'').replace(/(\[SHARE_POST\]|\[SHARE_STAR\]|\[GIF\]|\[ANIM:[^\]]*\])/g,'[分享]');
+        var otherName = (window._chatNicks || {})[currentConvId] || m.sender_name || '';
+        var avatarChar = otherName ? otherName.charAt(0) : '?';
         return `
           <div class="message-bubble ${isMe?'me':'other'}" data-time="${time}" data-content="${escHtml(dataContent)}">
+            ${!isMe ? '<div class="message-avatar">'+escHtml(avatarChar)+'</div>' : ''}
             <div class="message-content">${content}<div class="message-time">${time}</div></div>
           </div>
         `;
@@ -2803,9 +3050,13 @@ window.promptAddSubTag = promptAddSubTag;
 window.removeCustomSubTag = removeCustomSubTag;
 window.deleteSubTag = deleteSubTag;
 window.togglePostTagSection = togglePostTagSection;
+window.toggleDynamicTag = toggleDynamicTag;
+window.loadDynamicPostTags = loadDynamicPostTags;
 window.onTagPillDragStart = onTagPillDragStart;
 window.onTagPillDragEnd = onTagPillDragEnd;
 window.onTagPillDragOver = onTagPillDragOver;
 window.onTagPillDrop = onTagPillDrop;
 window.resetTagOrder = resetTagOrder;
 window.scrollWallChannels = scrollWallChannels;
+window.updateChatBadge = updateChatBadge;
+window.startBadgePoll = startBadgePoll;

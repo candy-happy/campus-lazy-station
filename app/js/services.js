@@ -2,13 +2,13 @@
 
 // 所有可用功能定义
 const ALL_SERVICES = [
-  { key: 'errand',  icon: '🏃', name: '跑腿服务', action: "showErrandServices()" },
-  { key: 'teacher', icon: '👨‍🏫', name: '师说',     action: "openSubPage('teacherListPage_sub')" },
-  { key: 'pet',     icon: '🐱', name: '猫狗日记', action: "openSubPage('petListPage_sub')" },
-  { key: 'market',  icon: '🛒', name: '二手市场', action: "loadMarketItems(true);openSubPage('marketListPage_sub')" },
-  { key: 'review',  icon: '📚', name: '复习资料', action: "openSubPage('reviewPage_sub')" },
-  { key: 'club',    icon: '🌟', name: '社团',     action: "openClubPage()" },
-  { key: 'star',    icon: '🌸', name: '校花校草', action: "openCampusStar()" },
+  { key: 'errand',  icon: '<img src=\"/uploads/icons/rider-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '跑腿服务', action: "showErrandServices()" },
+  { key: 'teacher', icon: '<img src=\"/uploads/icons/teacher-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '师说',     action: "openSubPage('teacherListPage_sub')" },
+  { key: 'pet',     icon: '<img src=\"/uploads/icons/pet-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '猫狗日记', action: "openSubPage('petListPage_sub')" },
+  { key: 'market',  icon: '<img src=\"/uploads/icons/market-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '二手市场', action: "loadMarketItems(true);openSubPage('marketListPage_sub')" },
+  { key: 'review',  icon: '<img src=\"/uploads/icons/review-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '复习资料', action: "openSubPage('reviewPage_sub')" },
+  { key: 'club',    icon: '<img src=\"/uploads/icons/club-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '社团',     action: "openClubPage()" },
+  { key: 'star',    icon: '<img src=\"/uploads/icons/star-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '校花校草', action: "openCampusStar()" },
 ];
 
 const SERVICE_STORAGE_KEY = 'homeServicesOrder';
@@ -52,7 +52,7 @@ function renderHomeServices() {
 
   // "更多功能"按钮始终在最右边
   html += `<div class="service-item" onclick="openServiceManage()" style="opacity:0.85">
-    <div class="service-icon">⚙️</div>
+    <div class="service-icon"><img src=\"/uploads/icons/more-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\"></div>
     <div class="service-name">更多功能</div>
   </div>`;
 

@@ -56,6 +56,7 @@ router.get('/check-uid/:uid', requireAdmin, (req, res) => JSON_RES(res, () => {
 
 // ─── 骑手冻结状态检查（骑手端轮询用，只能检查自己） ────────────
 router.get('/frozen-check/:phone', requireAuth, (req, res) => {
+  console.log('[FROZEN-CHECK] req.user.phone:', JSON.stringify(req.user.phone), 'params.phone:', JSON.stringify(req.params.phone), 'match:', req.user.phone === req.params.phone);
   // 只能检查自己的冻结状态
   if (req.user.phone !== req.params.phone) {
     return res.status(403).json({ error: '无权查看', code: 'FORBIDDEN' });

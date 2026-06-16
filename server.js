@@ -105,7 +105,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 app.use(optionalAuth);
 
 // ─── 根路径返回宣传页面 ──────────────────────────────────
-app.get('/', (req, res) => res.redirect('/app.html'));
+app.get('/', (req, res) => res.redirect('/promo/'));
 
 // ─── 分享页OG标签（QQ/微信预览卡片）────────────────────
 app.get('/share/:id', (req, res) => {
@@ -224,6 +224,7 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/audit', require('./routes/audit'));
 app.use('/api/review-materials', require('./routes/review-materials'));
 app.use('/api/campus-star', require('./routes/campus-star'));
+app.use('/api/badges', require('./routes/badges'));
 
 // ─── 404 + SPA 兜底 ───────────────────────────────────
 app.use('/api', (req, res) => {
@@ -295,7 +296,7 @@ process.on('unhandledRejection', (reason) => {
 // ─── 确保上传目录存在 ──────────────────────────────────
 (() => {
   const fs = require('fs');
-  const dirs = ['uploads', 'uploads/wall', 'uploads/market', 'uploads/pets', 'uploads/wall_originals', 'uploads/avatars', 'uploads/review', 'uploads/stars'];
+  const dirs = ['uploads', 'uploads/wall', 'uploads/market', 'uploads/pets', 'uploads/wall_originals', 'uploads/avatars', 'uploads/review', 'uploads/stars', 'uploads/activities', 'uploads/chat', 'uploads/clubs', 'uploads/ads', 'uploads/teacher_avatars', 'uploads/teacher_reviews', 'uploads/covers'];
   for (const d of dirs) {
     const full = path.join(__dirname, d);
     if (!fs.existsSync(full)) { fs.mkdirSync(full, { recursive: true }); console.log(`[init] 创建目录: ${d}`); }

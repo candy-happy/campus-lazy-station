@@ -27,9 +27,10 @@ router.get('/captcha', captchaRateLimit, (req, res) => {
 
 // ─── 用户登录（学号+密码） ────────────────────────────────
 // 登录接口严格限速：每IP每分钟最多5次
-const loginRateLimit = rateLimit(5, 60 * 1000);
+const userLoginRateLimit = rateLimit('user_login');
+const riderLoginRateLimit = rateLimit('rider_login');
 
-router.post('/user/login', loginRateLimit, (req, res) => JSON_RES(res, () => {
+router.post('/user/login', userLoginRateLimit, (req, res) => JSON_RES(res, () => {
   const { student_id, password, captcha: captchaInput, captchaKey } = req.body;
 
   // 输入验证
@@ -143,7 +144,7 @@ router.post('/user/change-password', requireAuth, (req, res) => JSON_RES(res, ()
 }));
 
 // ─── 骑手登录 ─────────────────────────────────────────────
-router.post('/rider/login', loginRateLimit, (req, res) => JSON_RES(res, () => {
+router.post('/rider/login', riderLoginRateLimit, (req, res) => JSON_RES(res, () => {
   const { uid, student_id, phone } = req.body;
   if (!uid) return makeError('请输入UID编号', ErrorCode.PARAM_MISSING);
   if (!student_id) return makeError('请输入学号', ErrorCode.PARAM_MISSING);

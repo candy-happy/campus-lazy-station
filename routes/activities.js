@@ -35,20 +35,37 @@ function logAiReview(source, sourceId, phone, content, aiResult, action) {
   } catch(e) { console.error('[AI审核] 写入审核记录失败:', e.message); }
 }
 
+// ─── 活动图片上传中间件（3字段：封面/宣传照/二维码） ──────
+const actUploadFields = actUpload.fields([
+  { name: 'cover', maxCount: 1 },
+  { name: 'promo_photo', maxCount: 1 },
+  { name: 'qr_code', maxCount: 1 }
+]);
+
+// 辅助：提取单个文件
+function getFile(files, name) {
+  return (files && files[name] && files[name].length) ? files[name][0] : null;
+}
+
 // ─── 创建活动 ─────────────────────────────────────────────
-router.post('/', requireAuth, withCompress(actUpload.single('cover')), async (req, res) => JSON_RES(res, async () => {
+router.post('/', requireAuth, withCompress(actUploadFields), async (req, res) => JSON_RES(res, async () => {
   const { title, description, location, start_time, end_time, signup_deadline, max_participants, category, publisher_type, publisher_id, publisher_name } = req.body;
   const phone = req.user.phone;
 
   if (!title) return makeError('活动标题不能为空', ErrorCode.PARAM_MISSING);
   if (!start_time) return makeError('请设置活动开始时间', ErrorCode.PARAM_MISSING);
 
-  // 文件魔数校验
-  if (req.file) {
-    const validation = validateUploadFile(req.file);
-    if (!validation.valid) {
-      try { fs.unlinkSync(req.file.path); } catch(e) {}
-      return makeError(validation.error, ErrorCode.PARAM_INVALID);
+  // 文件魔数校验（3个文件字段统一校验）
+  const coverFile = getFile(req.files, 'cover');
+  const promoFile = getFile(req.files, 'promo_photo');
+  const qrFile = getFile(req.files, 'qr_code');
+  for (const f of [coverFile, promoFile, qrFile]) {
+    if (f) {
+      const validation = validateUploadFile(f);
+      if (!validation.valid) {
+        try { fs.unlinkSync(f.path); } catch(e) {}
+        return makeError(validation.error, ErrorCode.PARAM_INVALID);
+      }
     }
   }
 
@@ -56,12 +73,15 @@ router.post('/', requireAuth, withCompress(actUpload.single('cover')), async (re
   const reviewContent = `活动标题：${title}\n活动描述：${description || ''}\n活动地点：${location || ''}`;
   let aiResult = { violation: false, level: 'none', category: '无', reason: '' };
   try {
+    const activityImageUrls = [coverFile, promoFile, qrFile]
+      .filter(f => f && f.mimetype && f.mimetype.startsWith('image/'))
+      .map(f => '/uploads/activities/' + f.filename);
     aiResult = await aiChecker.checkWallPost({
       title, content: description || '', topic: '',
-      images: '[]'
+      images: activityImageUrls.length > 0 ? JSON.stringify(activityImageUrls) : '[]'
     });
     if (aiResult.violation && aiResult.level === 'high') {
-      if (req.file) { try { fs.unlinkSync(req.file.path); } catch(e) {} }
+      [coverFile, promoFile, qrFile].forEach(f => { if (f) { try { fs.unlinkSync(f.path); } catch(e) {} } });
       console.log(`[AI审核] 活动创建被拦截: title=${title}, level=${aiResult.level}, reason=${aiResult.reason}`);
       logAiReview('activity', 0, phone, reviewContent, aiResult, 'block');
       return makeError('活动信息不符合平台规范：' + (aiResult.reason || '请修改后重新提交'), 'AI_001');
@@ -72,7 +92,9 @@ router.post('/', requireAuth, withCompress(actUpload.single('cover')), async (re
     console.error('[AI审核] 活动创建审核失败(放行):', e.message);
   }
 
-  const cover = req.file ? '/uploads/activities/' + req.file.filename : null;
+  const cover = coverFile ? '/uploads/activities/' + coverFile.filename : null;
+  const promo_photo = promoFile ? '/uploads/activities/' + promoFile.filename : null;
+  const qr_code = qrFile ? '/uploads/activities/' + qrFile.filename : null;
   const pType = publisher_type || 'user';
   const pId = publisher_id || null;
   const pName = publisher_name || '';
@@ -85,9 +107,9 @@ router.post('/', requireAuth, withCompress(actUpload.single('cover')), async (re
   }
 
   const info = db.prepare(`INSERT INTO activities
-    (title, cover, description, location, start_time, end_time, signup_deadline, max_participants, category, publisher_type, publisher_id, publisher_name, phone)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .run(title, cover, description || '', location || '', start_time, end_time || null, signup_deadline || null,
+    (title, cover, promo_photo, qr_code, description, location, start_time, end_time, signup_deadline, max_participants, category, publisher_type, publisher_id, publisher_name, phone)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(title, cover, promo_photo, qr_code, description || '', location || '', start_time, end_time || null, signup_deadline || null,
       max_participants || 0, category || '其他', pType, pId, pName, phone);
 
   logAiReview('activity', info.lastInsertRowid, phone, reviewContent, aiResult, 'pass');
@@ -238,14 +260,19 @@ router.get('/:id/participants', requireAuth, (req, res) => JSON_RES(res, () => {
 }));
 
 // ─── 更新活动 ─────────────────────────────────────────────
-router.put('/:id', requireAuth, withCompress(actUpload.single('cover')), (req, res) => JSON_RES(res, () => {
+router.put('/:id', requireAuth, withCompress(actUploadFields), (req, res) => JSON_RES(res, () => {
   const phone = req.user.phone;
   const activity = db.prepare('SELECT * FROM activities WHERE id = ?').get(req.params.id);
   if (!activity) return makeError('活动不存在', ErrorCode.ORDER_NOT_FOUND, 404);
   if (activity.phone !== phone) return makeError('无权修改该活动', ErrorCode.FORBIDDEN);
 
   const { title, description, location, start_time, end_time, signup_deadline, max_participants, category, status } = req.body;
-  const cover = req.file ? '/uploads/activities/' + req.file.filename : null;
+  const coverFilePut = getFile(req.files, 'cover');
+  const promoFilePut = getFile(req.files, 'promo_photo');
+  const qrFilePut = getFile(req.files, 'qr_code');
+  const cover = coverFilePut ? '/uploads/activities/' + coverFilePut.filename : null;
+  const promo_photo = promoFilePut ? '/uploads/activities/' + promoFilePut.filename : null;
+  const qr_code = qrFilePut ? '/uploads/activities/' + qrFilePut.filename : null;
 
   const sets = [];
   const params = [];
@@ -259,6 +286,8 @@ router.put('/:id', requireAuth, withCompress(actUpload.single('cover')), (req, r
   if (category) { sets.push('category = ?'); params.push(category); }
   if (status) { sets.push('status = ?'); params.push(status); }
   if (cover) { sets.push('cover = ?'); params.push(cover); }
+  if (promo_photo) { sets.push('promo_photo = ?'); params.push(promo_photo); }
+  if (qr_code) { sets.push('qr_code = ?'); params.push(qr_code); }
   if (!sets.length) return makeError('没有需要更新的内容');
 
   db.prepare('UPDATE activities SET ' + sets.join(', ') + ' WHERE id = ?').run(...params, req.params.id);

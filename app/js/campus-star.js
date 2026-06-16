@@ -366,7 +366,7 @@ async function showStarDetail(id) {
       + '</div>'
       + '';
 
-    document.getElementById('starDetailTitle').textContent = c.name;
+    document.getElementById('starDetailTitle').innerHTML = '<img src="/uploads/icons/star-icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">' + escHtml(c.name);
     document.getElementById('starDetailBody').innerHTML = content;
 
     // 加载评论
@@ -426,14 +426,12 @@ async function shareStarCandidate(id) {
   var phone = currentUser && currentUser.phone;
   if (!phone) { showToast('请先登录'); return; }
 
-  // 获取候选人信息
-  var candidate = _starCandidates.find(function(c) { return c.id === id; });
-  if (!candidate) {
-    try {
-      var r = await starFetch('/api/campus-star/candidate/' + id);
-      candidate = r.candidate || r;
-    } catch(e) {}
-  }
+  // 获取候选人最新信息（不依赖缓存，确保照片与详情页一致）
+  var candidate = null;
+  try {
+    var r = await starFetch('/api/campus-star/candidate/' + id);
+    candidate = r.candidate || r;
+  } catch(e) {}
   if (!candidate) {
     var url = window.location.origin + '/app.html?page=campus-star&candidate=' + id;
     if (navigator.clipboard) {

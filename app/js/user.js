@@ -43,6 +43,7 @@
           showMainApp();
           await loadData();
           startOrderPolling();
+          if (typeof loadBadgeCount === 'function') loadBadgeCount();
         }
       } else {
         showLoginPage();
@@ -192,6 +193,7 @@
         showMainApp();
         await loadData();
         startOrderPolling();
+        if (typeof loadBadgeCount === 'function') loadBadgeCount();
         showToast(res.isNewUser ? '🎉 首次登录，默认密码为 shoujihao，记得去设置修改哦' : '欢迎回来！');
       } catch(e) {
         const msg = e.message || '';

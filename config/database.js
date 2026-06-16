@@ -492,6 +492,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     cover TEXT,
+    promo_photo TEXT,
+    qr_code TEXT,
     description TEXT,
     location TEXT,
     start_time TEXT,
@@ -517,6 +519,11 @@ db.exec(`
     UNIQUE(activity_id, phone)
   );
 `);
+
+  // v3.6 活动宣传照+二维码列（兼容旧库，已存在则跳过）
+  for (const col of ['promo_photo', 'qr_code']) {
+    try { db.exec('ALTER TABLE activities ADD COLUMN ' + col + ' TEXT'); } catch(e) { /* already exists */ }
+  }
 
   // ─── 校园期末复习资料 ───────────────────────────
   db.exec(`
@@ -767,6 +774,20 @@ const initData = db.transaction(() => {
   // 补充 clubs 表可能缺失的列 (ALM 增量迁移)
   try { db.exec("ALTER TABLE clubs ADD COLUMN recruitment_open INTEGER DEFAULT 0"); } catch(e) {}
   try { db.exec("ALTER TABLE clubs ADD COLUMN activity_count INTEGER DEFAULT 0"); } catch(e) {}
+
+  // 勋章表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_badges (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      badge_id TEXT NOT NULL,
+      earned_at TEXT DEFAULT (datetime('now','localtime')),
+      seen INTEGER DEFAULT 0,
+      UNIQUE(phone, badge_id)
+    )
+  `);
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_ub_phone ON user_badges(phone)'); } catch(e) {}
+  try { db.exec('ALTER TABLE user_badges ADD COLUMN seen INTEGER DEFAULT 1'); } catch(e) { /* 旧记录默认已查看 */ }
 });
 initData();
 

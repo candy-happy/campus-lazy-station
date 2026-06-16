@@ -120,6 +120,9 @@ async function showActivityDetail(id) {
         <div class="discover-detail-title">${escHtml(a.title)}</div>
       </div>
       <div class="discover-detail-body">
+        ${a.cover ? '<div style="margin-bottom:12px;border-radius:12px;overflow:hidden"><img src="' + escHtml(a.cover) + '" style="width:100%;max-height:240px;object-fit:cover;display:block" alt="封面图" onerror="this.style.display=\'none\'"></div>' : ''}
+        ${a.promo_photo ? '<div style="margin-bottom:12px;border-radius:12px;overflow:hidden"><div style="font-size:13px;color:var(--sub);margin-bottom:4px">📸 宣传照片</div><img src="' + escHtml(a.promo_photo) + '" style="width:100%;max-height:300px;object-fit:cover;display:block;border-radius:10px" alt="宣传照" onerror="this.style.display=\'none\'"></div>' : ''}
+        ${a.qr_code ? '<div style="margin-bottom:12px;border-radius:12px;overflow:hidden"><div style="font-size:13px;color:var(--sub);margin-bottom:4px">📱 群二维码</div><img src="' + escHtml(a.qr_code) + '" style="width:200px;height:200px;object-fit:contain;display:block;border-radius:10px;border:1px solid var(--border)" alt="群二维码" onerror="this.style.display=\'none\'"></div>' : ''}
         <div class="discover-detail-info">
           <div class="discover-detail-row"><span>🕐 开始时间</span><span>${fmtTime(a.start_time)}</span></div>
           <div class="discover-detail-row"><span>🕐 结束时间</span><span>${fmtTime(a.end_time) || '未定'}</span></div>
@@ -1150,6 +1153,8 @@ async function submitCreateActivity() {
   const description = form.actDescription.value.trim();
   const clubSelect = form.actPublisherClub;
   const coverFile = form.actCover.files[0];
+  const promoFile = form.actPromoPhoto.files[0];
+  const qrFile = form.actQrCode.files[0];
 
   if (!title) return showToast('请填写活动标题');
   if (!start_time) return showToast('请设置开始时间');
@@ -1168,7 +1173,7 @@ async function submitCreateActivity() {
   }
 
   try {
-    const res = await API.createActivity(data, coverFile || null);
+    const res = await API.createActivity(data, coverFile || null, promoFile || null, qrFile || null);
     if (res.error) return showToast(res.error);
     showToast('活动发布成功！');
     closeCreateActivityModal();
@@ -1274,11 +1279,25 @@ window.loadMyClubs = loadMyClubs;
 
   // ═══ 社团子页面（融合版） ═══
 
-  // 打开社团子页面
+  // 社团功能开发中 → 显示占位弹窗
+  function openClubComingSoon() {
+    var modal = document.getElementById('clubComingSoonModal');
+    if (modal) { modal.style.display = 'flex'; }
+  }
+  function closeClubComingSoon() {
+    var modal = document.getElementById('clubComingSoonModal');
+    if (modal) { modal.style.display = 'none'; }
+  }
+  window.openClubComingSoon = openClubComingSoon;
+  window.closeClubComingSoon = closeClubComingSoon;
+
+  // 打开社团子页面（暂未开放，显示占位弹窗）
   function openClubPage() {
-    document.getElementById('clubPage_sub').classList.add('active');
-    loadClubPage();
-    switchClubTab('my');
+    openClubComingSoon();
+    // 以下为正式开放后的代码：
+    // document.getElementById('clubPage_sub').classList.add('active');
+    // loadClubPage();
+    // switchClubTab('my');
   }
   window.openClubPage = openClubPage;
 

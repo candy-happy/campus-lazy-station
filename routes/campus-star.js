@@ -5,8 +5,10 @@ const path = require('path');
 const fs = require('fs');
 const router = express.Router();
 const db = require('../config/database');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { JSON_RES, ErrorCode, makeError } = require('../utils/response');
+const { withCompress } = require('../utils/upload');
+const aiChecker = require('./ai');
 
 // ─── 上传配置 ────────────────────────────────────────────
 const upload = multer({
@@ -34,9 +36,9 @@ function currentMonth() {
 
 // ─── 报名参加 ────────────────────────────────────────────
 // POST /api/campus-star/join
-router.post('/join', requireAuth, upload.array('photos', 3), (req, res) => {
+router.post('/join', requireAuth, withCompress(upload.array('photos', 3)), async (req, res) => {
     console.log('[CampusStar] 开始报名', { body: req.body, filesCount: req.files ? req.files.length : 0 });
-    JSON_RES(res, () => {
+    JSON_RES(res, async () => {
       const { name, intro } = req.body;
       const { phone, student_id } = req.user;
       console.log('[CampusStar] 用户信息', { phone, student_id, name, intro });
@@ -51,6 +53,28 @@ router.post('/join', requireAuth, upload.array('photos', 3), (req, res) => {
       // 检查本月是否已报名
       const existing = db.prepare('SELECT id FROM campus_stars WHERE phone = ? AND month = ?').get(phone, month);
       if (existing) return makeError('你本月已经报名了，请下个月再来', 'DUPLICATE');
+
+      // AI审核报名信息（文字+照片）
+      const photoUrls = req.files.filter(f => f.mimetype.startsWith('image/')).map(f => '/uploads/stars/' + f.filename);
+      try {
+        const aiResult = await aiChecker.checkTextWithImages(
+          `姓名：${name}\n自我介绍：${intro}`,
+          photoUrls,
+          '校花校草报名'
+        );
+        if (aiResult.violation && aiResult.level === 'high') {
+          req.files.forEach(f => { try { fs.unlinkSync(f.path); } catch(e) {} });
+          console.log(`[AI审核] 校花校草报名被拦截: phone=${phone}, level=${aiResult.level}, reason=${aiResult.reason}`);
+          db.prepare(`INSERT INTO ai_review_logs (source, source_id, phone, content_preview, violation, level, category, reason, action)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+            'campus_star', 0, phone, (name + ' ' + intro).slice(0, 200),
+            aiResult.violation ? 1 : 0, aiResult.level, aiResult.category, aiResult.reason, 'block'
+          );
+          return makeError('报名信息不符合平台规范：' + (aiResult.reason || '请修改后重新提交'), 'AI_001');
+        }
+      } catch (e) {
+        console.error('[AI审核] 校花校草报名审核失败(放行):', e.message);
+      }
 
       const photos = req.files.map(f => '/uploads/stars/' + f.filename).join(',');
       console.log('[CampusStar] 准备插入', { phone, name, photos, month });
@@ -306,7 +330,7 @@ const commentImageUpload = multer({
 });
 
 // POST /api/campus-star/comment-image
-router.post('/comment-image', requireAuth, commentImageUpload.single('image'), (req, res) => {
+router.post('/comment-image', requireAuth, withCompress(commentImageUpload.single('image')), (req, res) => {
   JSON_RES(res, () => {
     if (!req.file) return makeError('请上传图片', 'PARAM_MISSING');
     return { ok: true, url: '/uploads/stars/' + req.file.filename };
@@ -332,8 +356,8 @@ router.get('/comments/:candidateId', (req, res) => {
 
 // ─── 发表评论 ──────────────────────────────────────────
 // POST /api/campus-star/comments
-router.post('/comments', requireAuth, (req, res) => {
-  JSON_RES(res, () => {
+router.post('/comments', requireAuth, async (req, res) => {
+  JSON_RES(res, async () => {
     const { candidate_id, content, image } = req.body;
     const { phone } = req.user;
 
@@ -345,9 +369,36 @@ router.post('/comments', requireAuth, (req, res) => {
     const candidate = db.prepare('SELECT id FROM campus_stars WHERE id = ?').get(candidate_id);
     if (!candidate) return makeError('候选人不存在', 'NOT_FOUND', 404);
 
+    // AI审核评论（文字+图片）
+    let aiResult = { violation: false, level: 'none', category: '无', reason: '' };
+    try {
+      const imageUrls = image ? [image] : [];
+      aiResult = await aiChecker.checkTextWithImages(content.trim(), imageUrls, '校花校草评论区');
+      if (aiResult.violation && aiResult.level === 'high') {
+        console.log(`[AI审核] 校花校草评论被拦截: phone=${phone}, level=${aiResult.level}, reason=${aiResult.reason}`);
+        db.prepare(`INSERT INTO ai_review_logs (source, source_id, phone, content_preview, violation, level, category, reason, action)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+          'campus_star_comment', 0, phone, content.trim().slice(0, 200),
+          aiResult.violation ? 1 : 0, aiResult.level, aiResult.category, aiResult.reason, 'block'
+        );
+        return makeError('评论内容不符合平台规范：' + (aiResult.reason || '请修改后重新提交'), 'AI_001');
+      }
+    } catch (e) {
+      console.error('[AI审核] 校花校草评论审核失败(放行):', e.message);
+    }
+
     const result = db.prepare(
       'INSERT INTO star_comments (candidate_id, phone, content, image) VALUES (?, ?, ?, ?)'
     ).run(candidate_id, phone, content.trim(), image || null);
+
+    // 记录审核通过日志
+    try {
+      db.prepare(`INSERT INTO ai_review_logs (source, source_id, phone, content_preview, violation, level, category, reason, action)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        'campus_star_comment', result.lastInsertRowid, phone, content.trim().slice(0, 200),
+        aiResult.violation ? 1 : 0, aiResult.level, aiResult.category, aiResult.reason, 'pass'
+      );
+    } catch(e) {}
 
     return { ok: true, id: result.lastInsertRowid, message: '评论成功' };
   });
@@ -385,5 +436,152 @@ router.delete('/comments/:id', requireAuth, (req, res) => {
 // ─── 确保上传目录存在 ────────────────────────────────────
 const uploadsDir = path.join(__dirname, '..', 'uploads', 'stars');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+// ══════ 管理端API ═══════════════════════════════════
+
+// ─── 管理端：获取所有候选人列表（含筛选）───
+router.get('/admin/list', requireAdmin, (req, res) => {
+  JSON_RES(res, () => {
+    const { status, month, page = 1, limit = 20, search } = req.query;
+    const p = Math.max(1, parseInt(page) || 1);
+    const l = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (p - 1) * l;
+
+    let where = 'WHERE 1=1';
+    const params = [];
+    
+    if (status === 'active') { where += " AND cs.status = 'active'"; }
+    else if (status === 'champion') { where += " AND cs.status = 'champion'"; }
+    else if (status === 'runner_up') { where += " AND cs.status = 'runner_up'"; }
+    else if (status === 'archived') { where += " AND cs.status = 'archived'"; }
+    
+    if (month) { where += ' AND cs.month = ?'; params.push(month); }
+    if (search) {
+      where += ' AND (cs.name LIKE ? OR cs.intro LIKE ? OR cs.student_id LIKE ?)';
+      const q = '%' + search + '%';
+      params.push(q, q, q);
+    }
+
+    const countRow = db.prepare(`SELECT COUNT(*) as total FROM campus_stars cs ${where}`).get(...params);
+    const total = countRow ? countRow.total : 0;
+
+    const rows = db.prepare(`
+      SELECT cs.*, u.nickname, u.avatar
+      FROM campus_stars cs
+      LEFT JOIN users u ON cs.phone = u.phone
+      ${where}
+      ORDER BY cs.created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(...params, l, offset);
+
+    const statusCounts = {
+      active: db.prepare("SELECT COUNT(*) as cnt FROM campus_stars WHERE status='active'").get().cnt,
+      champion: db.prepare("SELECT COUNT(*) as cnt FROM campus_stars WHERE status='champion'").get().cnt,
+      runner_up: db.prepare("SELECT COUNT(*) as cnt FROM campus_stars WHERE status='runner_up'").get().cnt,
+      archived: db.prepare("SELECT COUNT(*) as cnt FROM campus_stars WHERE status='archived'").get().cnt
+    };
+
+    const months = db.prepare("SELECT DISTINCT month FROM campus_stars ORDER BY month DESC").all();
+
+    return { ok: true, list: rows, total, page: p, hasMore: offset + l < total, statusCounts, months: months.map(m => m.month) };
+  });
+});
+
+// ─── 管理端：更新候选人状态 ───
+router.put('/admin/:id/status', requireAdmin, (req, res) => {
+  JSON_RES(res, () => {
+    const { status } = req.body;
+    if (!['active','champion','runner_up','archived'].includes(status)) {
+      return makeError('无效的状态值', 'PARAM_INVALID');
+    }
+    db.prepare('UPDATE campus_stars SET status = ? WHERE id = ?').run(status, req.params.id);
+    return { ok: true, message: '状态已更新' };
+  });
+});
+
+// ─── 管理端：删除候选人（含关联数据）───
+router.delete('/admin/:id', requireAdmin, (req, res) => {
+  JSON_RES(res, () => {
+    const entry = db.prepare('SELECT * FROM campus_stars WHERE id = ?').get(req.params.id);
+    if (!entry) return makeError('记录不存在', 'NOT_FOUND', 404);
+
+    const transaction = db.transaction(() => {
+      db.prepare('DELETE FROM star_comments WHERE candidate_id = ?').run(entry.id);
+      db.prepare('DELETE FROM star_votes WHERE candidate_id = ?').run(entry.id);
+      db.prepare('DELETE FROM campus_stars WHERE id = ?').run(entry.id);
+    });
+    transaction();
+
+    return { ok: true, message: '已删除' };
+  });
+});
+
+// ─── 管理端：获取评论列表 ───
+router.get('/admin/comments', requireAdmin, (req, res) => {
+  JSON_RES(res, () => {
+    const { page = 1, limit = 20, search } = req.query;
+    const p = Math.max(1, parseInt(page) || 1);
+    const l = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (p - 1) * l;
+
+    let where = 'WHERE 1=1';
+    const params = [];
+    if (search) {
+      where += ' AND (sc.content LIKE ? OR u.nickname LIKE ?)';
+      const q = '%' + search + '%';
+      params.push(q, q);
+    }
+
+    const countRow = db.prepare(`SELECT COUNT(*) as total FROM star_comments sc ${where}`).get(...params);
+    const total = countRow ? countRow.total : 0;
+
+    const rows = db.prepare(`
+      SELECT sc.*, u.nickname, u.avatar, cs.name as candidate_name
+      FROM star_comments sc
+      LEFT JOIN users u ON sc.phone = u.phone
+      LEFT JOIN campus_stars cs ON sc.candidate_id = cs.id
+      ${where}
+      ORDER BY sc.created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(...params, l, offset);
+
+    return { ok: true, list: rows, total, page: p, hasMore: offset + l < total };
+  });
+});
+
+// ─── 管理端：删除评论 ───
+router.delete('/admin/comments/:id', requireAdmin, (req, res) => {
+  JSON_RES(res, () => {
+    db.prepare('DELETE FROM star_comments WHERE id = ?').run(req.params.id);
+    return { ok: true, message: '已删除' };
+  });
+});
+
+// ─── 管理端：批量结算 ───
+router.post('/admin/batch-settle', requireAdmin, (req, res) => {
+  JSON_RES(res, () => {
+    const { month } = req.body;
+    if (!month) return makeError('请指定月份', 'PARAM_MISSING');
+
+    const top3 = db.prepare(`
+      SELECT id, name, votes FROM campus_stars
+      WHERE month = ? AND status = 'active'
+      ORDER BY votes DESC LIMIT 3
+    `).all(month);
+
+    if (top3.length === 0) return { ok: true, message: '该月份无参赛者', settled: false };
+
+    const updateStatus = db.prepare('UPDATE campus_stars SET status = ? WHERE id = ?');
+    const transaction = db.transaction(() => {
+      updateStatus.run('champion', top3[0].id);
+      if (top3[1]) updateStatus.run('runner_up', top3[1].id);
+      if (top3[2]) updateStatus.run('runner_up', top3[2].id);
+      db.prepare(`UPDATE campus_stars SET status = 'archived' WHERE month = ? AND status = 'active'`).run(month);
+    });
+    transaction();
+
+    return { ok: true, message: `结算完成，冠军：${top3[0].name}(${top3[0].votes}票)`, champions: top3, settled: true };
+  });
+});
 
 module.exports = router;

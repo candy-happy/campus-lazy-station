@@ -64,6 +64,7 @@
  <div class="nav-item" data-page="admins" onclick="switchPage('admins')"><span class="nav-item-icon">👥</span><span class="nav-item-label">管理员</span><span class="pending-badge" id="pendingBadge" style="display: none;">0</span></div>
  <div class="nav-item" data-page="audit" onclick="switchPage('audit');loadAuditLogs(1);loadAuditStats()"><span class="nav-item-icon">📋</span><span class="nav-item-label">操作日志</span></div>
  <div class="nav-item" data-page="review-materials" onclick="switchPage('review-materials')"><span class="nav-item-icon">📚</span><span class="nav-item-label">复习资料</span><span class="pending-badge" id="reviewBadge" style="display:none">0</span></div>
+<div class="nav-item" data-page="campus-star" onclick="switchPage('campus-star')"><span class="nav-item-icon">⭐</span><span class="nav-item-label">校花校草</span></div>
  </div>
  <div class="nav-section">
  <div class="nav-section-title">其他</div>
@@ -1102,6 +1103,56 @@
     <div style="display:flex;justify-content:center;gap:8px;align-items:center;padding:16px;font-size:13px;color:var(--text-secondary)" id="reviewMaterialsPager"></div>
   </div>
 
+  <!-- 校花校草管理页面 -->
+  <div class="page-section" id="page-campus-star">
+    <div class="page-header" style="background:linear-gradient(135deg,#FFF8E1,#FFE082,#FFD54F);border-radius:16px;padding:28px 32px;margin-bottom:20px">
+      <h1 class="page-title" style="font-size:1.6rem;background:linear-gradient(135deg,#F57F17,#FF8F00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">⭐ 校花校草管理</h1>
+      <p class="page-desc" style="color:#E65100;margin-top:4px">管理参赛候选人 / 评论管理 / 月度结算</p>
+    </div>
+    
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="star-admin-tab-btn active" data-tab="candidates" onclick="switchStarAdminTab('candidates')" style="padding:10px 22px;border-radius:12px;border:1.5px solid #FFD54F;background:var(--card-bg);color:var(--text);cursor:pointer;font-size:14px;font-weight:600;transition:all .2s">👥 候选人</button>
+      <button class="star-admin-tab-btn" data-tab="comments" onclick="switchStarAdminTab('comments')" style="padding:10px 22px;border-radius:12px;border:1.5px solid #FFD54F;background:var(--card-bg);color:var(--text);cursor:pointer;font-size:14px;font-weight:600;transition:all .2s">💬 评论管理</button>
+    </div>
+    <div id="starCandidatesPanel">
+      <div class="market-admin-toolbar" style="background:linear-gradient(135deg,#FFFDE7,#FFF8E1);border-color:#FFE082">
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="starStatusCounts" style="font-size:12px;color:var(--text-secondary);white-space:nowrap"></span>
+          <button onclick="settleStarMonth()" style="padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,#F57F17,#FF8F00);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 4px 14px rgba(245,127,23,0.3)">🏆 批量结算</button>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <select id="starAdminStatus" onchange="loadStarCandidates()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFD54F;background:#fff;font-size:0.9rem;cursor:pointer">
+            <option value="">👥 全部状态</option>
+            <option value="active">🟢 活跃</option>
+            <option value="champion">👑 冠军</option>
+            <option value="runner_up">🥈 亚军</option>
+            <option value="archived">📦 归档</option>
+          </select>
+          <select id="starAdminMonth" onchange="loadStarCandidates()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFD54F;background:#fff;font-size:0.9rem;cursor:pointer">
+            <option value="">📅 全部月份</option>
+          </select>
+          <input type="text" id="starAdminSearch" placeholder="🔍 搜索姓名/学号/简介..." oninput="loadStarCandidates()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FFD54F;background:#fff;width:220px;font-size:0.9rem">
+        </div>
+      </div>
+      <div class="table-card" style="border-color:#FFE082">
+        <table class="data-table"><thead><tr><th>照片</th><th>姓名</th><th>身份</th><th>简介</th><th>票数</th><th>分享</th><th>状态</th><th>月份/时间</th><th>操作</th></tr></thead>
+        <tbody id="starCandidatesTable"><tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-secondary)">点击 👥 候选人 加载数据</td></tr></tbody></table>
+      </div>
+      <div style="display:flex;justify-content:center;gap:8px;align-items:center;padding:16px;font-size:13px;color:var(--text-secondary)" id="starCandidatesPager"></div>
+    </div>
+    <div id="starCommentsPanel" style="display:none">
+      <div class="market-admin-toolbar" style="background:linear-gradient(135deg,#F3E5F5,#E1BEE7);border-color:#CE93D8">
+        <input type="text" id="starCommentSearch" placeholder="🔍 搜索评论内容/用户..." style="padding:8px 14px;border-radius:10px;border:1.5px solid #CE93D8;background:#fff;width:280px;font-size:0.9rem">
+        <button onclick="loadStarComments()" style="padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,#7B1FA2,#9C27B0);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600">🔍 搜索</button>
+      </div>
+      <div class="table-card" style="border-color:#E1BEE7">
+        <table class="data-table"><thead><tr><th>候选人</th><th>评论者</th><th>内容</th><th>时间</th><th>操作</th></tr></thead>
+        <tbody id="starCommentsTable"><tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-secondary)">点击 💬 评论管理 加载数据</td></tr></tbody></table>
+      </div>
+      <div style="display:flex;justify-content:center;gap:8px;align-items:center;padding:16px;font-size:13px;color:var(--text-secondary)" id="starCommentsPager"></div>
+    </div>
+  </div>
+
  </main>
  </div>
  <div class="modal-overlay" id="addAdminModal">
@@ -1224,5 +1275,6 @@
 <script src="admin/js/wall.js?v=202606121830"></script>
 <script src="admin/js/teachers.js?v=202606150135"></script>
 <script src="admin/js/review.js?v=2026061501"></script>
+<script src="admin/js/star.js?v=2026061622"></script>
 </body>
 </html>
