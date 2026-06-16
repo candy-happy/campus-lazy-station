@@ -296,7 +296,7 @@ process.on('unhandledRejection', (reason) => {
 // ─── 确保上传目录存在 ──────────────────────────────────
 (() => {
   const fs = require('fs');
-  const dirs = ['uploads', 'uploads/wall', 'uploads/market', 'uploads/pets', 'uploads/wall_originals', 'uploads/avatars', 'uploads/review', 'uploads/stars', 'uploads/activities', 'uploads/chat', 'uploads/clubs', 'uploads/ads', 'uploads/teacher_avatars', 'uploads/teacher_reviews', 'uploads/covers'];
+  const dirs = ['uploads', 'uploads/wall', 'uploads/market', 'uploads/pets', 'uploads/wall_originals', 'uploads/icons', 'uploads/avatars', 'uploads/review', 'uploads/stars', 'uploads/activities', 'uploads/chat', 'uploads/clubs', 'uploads/ads', 'uploads/teacher_avatars', 'uploads/teacher_reviews', 'uploads/covers'];
   for (const d of dirs) {
     const full = path.join(__dirname, d);
     if (!fs.existsSync(full)) { fs.mkdirSync(full, { recursive: true }); console.log(`[init] 创建目录: ${d}`); }
