@@ -57,19 +57,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ─── 静态文件服务（禁用缓存） ────────────────────────────
-app.use(express.static(path.join(__dirname), {
-  etag: true,
-  maxAge: config.NODE_ENV === 'production' ? 3600000 : 0,
-  setHeaders: (res, filePath) => {
-    // 统一禁用缓存（生产/开发一致），方便调试和迭代
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-  }
-}));
-
-// ─── uploads 目录静态服务 ────────────────────────────────
+// ─── uploads 目录静态服务（必须放在通用静态之前！） ─────
 // 先添加路径遍历防护 + 文件缺失fallback中间件
 app.use('/uploads', (req, res, next) => {
   // 防止路径遍历攻击
@@ -92,11 +80,25 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   dotfiles: 'ignore', // 忽略隐藏文件
   index: false, // 禁用目录索引（防止目录遍历）
   setHeaders: (res, filePath) => {
-    // 为静态资源设置安全头
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    // 图片/视频文件设置缓存控制
+    // 图片/视频允许浏览器缓存
     if (/\.(jpg|jpeg|png|gif|webp|mp4|webm)$/i.test(filePath)) {
       res.setHeader('Cache-Control', 'public, max-age=604800');
+    }
+  }
+}));
+
+// ─── 通用静态文件服务（仅禁用代码文件缓存） ─────────────
+app.use(express.static(path.join(__dirname), {
+  etag: true,
+  maxAge: config.NODE_ENV === 'production' ? 3600000 : 0,
+  setHeaders: (res, filePath) => {
+    // 仅 HTML/JS/CSS 禁用缓存，确保前端始终加载最新代码
+    const ext = path.extname(filePath).toLowerCase();
+    if (['.html', '.js', '.css'].includes(ext)) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
     }
   }
 }));
