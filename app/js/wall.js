@@ -1368,19 +1368,7 @@
     window._unreadMap = {}; // { convId: unreadCount }
 
     function updateChatBadge() {
-      var total = 0;
-      for (var k in window._unreadMap) total += (window._unreadMap[k]||0);
-      var badge = document.getElementById('chatBadge');
-      if (!badge) return;
-      if (total > 0) {
-        badge.textContent = total > 99 ? '99+' : total;
-        badge.style.display = '';
-        badge.classList.add('badge-pulse');
-      } else {
-        badge.style.display = 'none';
-        badge.classList.remove('badge-pulse');
-      }
-      // 更新列表项红点
+      // 更新列表项红点（仅限聊天私信，不计入通知）
       document.querySelectorAll('.chat-item[data-conv-id]').forEach(function(el){
         var cid = el.getAttribute('data-conv-id');
         var count = window._unreadMap[cid]||0;
@@ -1395,6 +1383,8 @@
           b.style.display = count>0?'':'none';
         }
       });
+      // 导航栏红点委托给 core.js 的 updateMsgBadge（含通知未读）
+      if (typeof updateMsgBadge === 'function') updateMsgBadge();
     }
 
     // 设置聊天头部头像
