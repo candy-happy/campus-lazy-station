@@ -3,8 +3,13 @@
 let _userPage = 1;
 const _userSize = 15;
 let _userSearchTimer = null;
+let _selectedUsers = new Set(); // 批量选中
 
 function _userAuth() { return API._authHeaders(); }
+
+// ─── 辅助：JS字符串安全转义 ─────────────────────────────
+// 用 JSON.stringify 处理 onclick 参数，避免昵称含引号导致JS语法错误
+function _js(s) { return JSON.stringify(String(s)); }
 
 // ─── 加载用户列表 ──────────────────────────────────────
 async function loadUserList(page) {
@@ -24,12 +29,13 @@ async function loadUserList(page) {
     const tbody = document.getElementById('userTableBody');
     if (!tbody) return;
     if (!list || list.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:32px">暂无用户</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:32px">暂无用户</td></tr>';
     } else {
       tbody.innerHTML = list.map(u => {
         const name = u.nickname || u.name || '';
         const phoneDisp = u.phoneDisplay || u.phone || '';
         return `<tr>
+          <td style="width:36px;text-align:center"><input type="checkbox" class="user-checkbox" value="${_js(u.phone)}" onchange="onUserCheckChange()" ${_selectedUsers.has(u.phone)?'checked':''}></td>
           <td>${escHtml(name)}</td>
           <td style="font-size:12px;color:var(--text-secondary)">${escHtml(phoneDisp)}</td>
           <td style="font-size:12px">${escHtml(u.student_id || '-')}</td>
@@ -37,8 +43,8 @@ async function loadUserList(page) {
           <td>${u.total_orders || 0}</td>
           <td style="font-size:11px;color:var(--text-muted)">${(u.created_at || '').slice(0,10)}</td>
           <td style="white-space:nowrap">
-            <button onclick="showUserDetail('${u.phone}')" style="padding:4px 10px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">详情</button>
-            <button onclick="confirmPurgeUser('${u.phone}','${escHtml(name)}')" style="padding:4px 10px;background:#E74C3C;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">删除</button>
+            <button onclick="showUserDetail(${_js(u.phone)})" style="padding:4px 10px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">详情</button>
+            <button onclick="confirmPurgeUser(${_js(u.phone)},${_js(name)})" style="padding:4px 10px;background:#E74C3C;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">删除</button>
           </td>
         </tr>`;
       }).join('');
@@ -48,10 +54,15 @@ async function loadUserList(page) {
     const totalPages = Math.ceil(total / _userSize);
     const pager = document.getElementById('userPager');
     if (!pager) return;
+    let batchHtml = '';
+    if (_selectedUsers.size > 0) {
+      batchHtml = `<span style="font-size:13px;color:#E74C3C;margin-right:12px">已选${_selectedUsers.size}人</span>
+        <button onclick="batchPurgeUsers()" style="padding:6px 16px;background:#E74C3C;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600">🗑️ 批量删除</button>`;
+    }
     if (totalPages <= 1) {
-      pager.innerHTML = '<span style="font-size:13px;color:var(--text-secondary)">共 ' + total + ' 条</span>';
+      pager.innerHTML = batchHtml + '<span style="font-size:13px;color:var(--text-secondary)">共 ' + total + ' 条</span>';
     } else {
-      pager.innerHTML = `
+      pager.innerHTML = batchHtml + `
         <button onclick="loadUserList(1)" ${_userPage<=1?'disabled':''} style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);cursor:pointer;font-size:12px">首页</button>
         <button onclick="loadUserList(${_userPage-1})" ${_userPage<=1?'disabled':''} style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);cursor:pointer;font-size:12px">上页</button>
         <span style="font-size:13px;color:var(--text-secondary)">${_userPage}/${totalPages} · ${total}条</span>
@@ -61,7 +72,79 @@ async function loadUserList(page) {
   } catch(e) {
     console.error('loadUserList:', e);
     const tbody = document.getElementById('userTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#E74C3C;padding:24px">加载失败: ' + escHtml(e.message) + '</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#E74C3C;padding:24px">加载失败: ' + escHtml(e.message) + '</td></tr>';
+  }
+}
+
+// ─── 批量选择逻辑 ─────────────────────────────────────
+function onUserCheckChange() {
+  const checks = document.querySelectorAll('#userTableBody .user-checkbox');
+  _selectedUsers.clear();
+  checks.forEach(cb => { if (cb.checked) _selectedUsers.add(cb.value); });
+  updateSelectAllState();
+  loadUserList(_userPage); // 刷新分页栏显示批量删除按钮
+}
+
+function toggleSelectAll() {
+  const selectAll = document.getElementById('userSelectAll');
+  const checks = document.querySelectorAll('#userTableBody .user-checkbox');
+  if (selectAll.checked) {
+    checks.forEach(cb => { cb.checked = true; _selectedUsers.add(cb.value); });
+  } else {
+    checks.forEach(cb => { cb.checked = false; });
+    _selectedUsers.clear();
+  }
+  loadUserList(_userPage);
+}
+
+function updateSelectAllState() {
+  const selectAll = document.getElementById('userSelectAll');
+  if (!selectAll) return;
+  const checks = document.querySelectorAll('#userTableBody .user-checkbox');
+  if (checks.length === 0) { selectAll.checked = false; selectAll.indeterminate = false; return; }
+  const allChecked = [...checks].every(c => c.checked);
+  const anyChecked = [...checks].some(c => c.checked);
+  selectAll.checked = allChecked;
+  selectAll.indeterminate = anyChecked && !allChecked;
+}
+
+// ─── 批量删除 ────────────────────────────────────────
+function batchPurgeUsers() {
+  if (_selectedUsers.size === 0) { showToast('请先选择用户'); return; }
+  const names = [];
+  const phones = [..._selectedUsers];
+  document.querySelectorAll('#userTableBody .user-checkbox').forEach(cb => {
+    if (cb.checked) {
+      const tr = cb.closest('tr');
+      if (tr) names.push(tr.children[1]?.textContent || cb.value);
+    }
+  });
+
+  if (!confirm('⚠️ 确定批量删除 ' + phones.length + ' 个用户的所有数据吗？\n\n此操作不可撤销！')) return;
+  if (!confirm('⚠️ 最后确认：真的永久删除这 ' + phones.length + ' 位用户吗？')) return;
+
+  doBatchPurge(phones);
+}
+
+async function doBatchPurge(phones) {
+  try {
+    const res = await fetch('/api/users/batch-purge', {
+      method: 'POST',
+      headers: { ..._userAuth(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phones })
+    }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+
+    const r = res.results || {};
+    if (r.failed > 0) {
+      showToast('成功 ' + (r.success||0) + ' 个，失败 ' + r.failed + ' 个');
+    } else {
+      showToast('已批量删除 ' + (r.success||0) + ' 个用户 ✅');
+    }
+    _selectedUsers.clear();
+    loadUserList(1);
+  } catch(e) {
+    showToast('批量删除失败: ' + (e.message || ''));
   }
 }
 
@@ -128,7 +211,7 @@ async function showUserDetail(phone) {
         `).join('')}
       </div>
       <div style="text-align:center;margin-top:16px">
-        <button onclick="confirmPurgeUser('${user.phone}','${escHtml(name)}')" style="padding:10px 24px;background:#E74C3C;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">🗑️ 删除该用户所有数据</button>
+        <button onclick="confirmPurgeUser(${_js(user.phone)},${_js(name)})" style="padding:10px 24px;background:#E74C3C;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">🗑️ 删除该用户所有数据</button>
       </div>
     `;
   } catch(e) {
@@ -144,9 +227,7 @@ function closeUserDetail() {
 // ─── 确认删除用户 ──────────────────────────────────────
 function confirmPurgeUser(phone, name) {
   if (!confirm('⚠️ 确定删除用户「' + name + '」的所有数据吗？\n\n此操作将删除：\n- 该用户所有帖子、评论、点赞\n- 该用户所有订单\n- 该用户所有私聊消息\n- 该用户所有其他关联数据\n\n此操作不可撤销！')) return;
-
   if (!confirm('请再次确认：\n真的要永久删除「' + name + '」(' + phone + ') 的全部数据吗？')) return;
-
   doPurgeUser(phone);
 }
 
@@ -158,6 +239,7 @@ async function doPurgeUser(phone) {
     }).then(r => r.json());
     if (res.error) throw new Error(res.error);
     showToast('已删除用户所有数据 ✅');
+    _selectedUsers.delete(phone);
     closeUserDetail();
     loadUserList();
   } catch(e) {
@@ -178,3 +260,7 @@ window.showUserDetail = showUserDetail;
 window.closeUserDetail = closeUserDetail;
 window.confirmPurgeUser = confirmPurgeUser;
 window.doPurgeUser = doPurgeUser;
+window.onUserCheckChange = onUserCheckChange;
+window.toggleSelectAll = toggleSelectAll;
+window.batchPurgeUsers = batchPurgeUsers;
+window.doBatchPurge = doBatchPurge;

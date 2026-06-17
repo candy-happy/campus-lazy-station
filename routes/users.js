@@ -93,6 +93,67 @@ router.get('/:phone/summary', requireAdmin, (req, res) => JSON_RES(res, () => {
   return { user: { ...user, phoneDisplay: fmtPhone(user.phone) }, counts };
 }));
 
+// ─── 管理端：批量删除用户 ─────────────────────────────
+router.post('/batch-purge', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { phones } = req.body;
+  if (!Array.isArray(phones) || phones.length === 0) return makeError('请选择要删除的用户', 'PARAM_001');
+  if (phones.length > 50) return makeError('单次最多删除50个用户', 'PARAM_001');
+
+  const del = (sql, phone) => { try { db.prepare(sql).run(phone); } catch(e) {} };
+  const del2 = (sql, phone) => { try { db.prepare(sql).run(phone, phone); } catch(e) {} };
+
+  const results = { success: 0, failed: 0, errors: [] };
+
+  for (const phone of phones) {
+    const user = db.prepare('SELECT 1 FROM users WHERE phone=?').get(phone);
+    if (!user) { results.failed++; results.errors.push(phone + ': 用户不存在'); continue; }
+
+    try {
+      db.transaction(() => {
+        del('DELETE FROM wall_exposures WHERE phone=?', phone);
+        del('DELETE FROM wall_comment_likes WHERE phone=?', phone);
+        del2('DELETE FROM wall_follows WHERE follower_phone=? OR following_phone=?', phone);
+        del2('DELETE FROM wall_blocks WHERE blocker_phone=? OR blocked_phone=?', phone);
+        del('DELETE FROM wall_likes WHERE phone=?', phone);
+        del('DELETE FROM wall_comments WHERE phone=?', phone);
+        del('DELETE FROM wall_reports WHERE reporter_phone=?', phone);
+        del('DELETE FROM wall_posts WHERE phone=?', phone);
+        del('DELETE FROM orders WHERE phone=?', phone);
+        del('DELETE FROM market_items WHERE phone=?', phone);
+        del('DELETE FROM pet_sightings WHERE phone=?', phone);
+        del('DELETE FROM pet_comments WHERE phone=?', phone);
+        del('DELETE FROM pet_likes WHERE phone=?', phone);
+        del('DELETE FROM teacher_reviews WHERE phone=?', phone);
+        del('DELETE FROM teacher_likes WHERE phone=?', phone);
+        del2('DELETE FROM conversations WHERE user1_phone=? OR user2_phone=?', phone);
+        del('DELETE FROM messages WHERE sender_phone=?', phone);
+        del('DELETE FROM feedback WHERE phone=?', phone);
+        del('DELETE FROM reports WHERE reporter_phone=?', phone);
+        del('DELETE FROM notifications WHERE phone=?', phone);
+        del('DELETE FROM ai_review_logs WHERE phone=?', phone);
+        del('DELETE FROM review_materials WHERE phone=?', phone);
+        del('DELETE FROM campus_star WHERE phone=?', phone);
+        del('DELETE FROM club_members WHERE phone=?', phone);
+        del('DELETE FROM activity_participants WHERE phone=?', phone);
+        del('DELETE FROM points WHERE phone=?', phone);
+        del('DELETE FROM point_logs WHERE phone=?', phone);
+        del('DELETE FROM wallet WHERE phone=?', phone);
+        del('DELETE FROM withdraw_logs WHERE phone=?', phone);
+        del('DELETE FROM badges_earned WHERE phone=?', phone);
+        del('DELETE FROM login_logs WHERE phone=?', phone);
+        del('DELETE FROM ad_views WHERE phone=?', phone);
+        del('DELETE FROM ads WHERE phone=?', phone);
+        del('DELETE FROM users WHERE phone=?', phone);
+      })();
+      results.success++;
+    } catch(e) {
+      results.failed++;
+      results.errors.push(phone + ': ' + e.message);
+    }
+  }
+  return { ok: true, results };
+}));
+
 // ─── 管理端：删除用户及其所有数据 ───────────────────────
 router.delete('/:phone/purge', requireAdmin, (req, res) => JSON_RES(res, () => {
   const phone = req.params.phone;
