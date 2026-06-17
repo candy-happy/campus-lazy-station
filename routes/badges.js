@@ -18,9 +18,9 @@ const BADGE_DEFS = [
   { id: 'pet_guardian',  name: '猫狗守护者', icon: '🐾', desc: '发布3条以上猫狗目击',   color: '#FF6F00' },
   { id: 'knowledge_sharer', name: '知识分享者', icon: '📚', desc: '上传3份以上复习资料', color: '#3F51B5', hidden: true },
   { id: 'club_active',   name: '社团活跃',   icon: '🎭', desc: '加入社团并参与活动',     color: '#009688', hidden: true },
-  { id: 'judge_l1',      name: '一级判官',   icon: '/images/badges/judge-l1.png', desc: '成功提交问题反馈', color: '#D32F2F', hidden: true, isImage: true },
-  { id: 'judge_l2',      name: '二级判官',   icon: '/images/badges/judge-l2.png', desc: '反馈通过10次以上', color: '#B71C1C', hidden: true, isImage: true },
-  { id: 'judge_l3',      name: '三级判官',   icon: '/images/badges/judge-l3.png', desc: '反馈通过30次以上', color: '#880E4F', hidden: true, isImage: true },
+  { id: 'judge_l1',      name: '一级判官',   icon: '/images/badges/judge-l1.png', desc: '反馈被审核通过1次', color: '#D32F2F', hidden: true, isImage: true },
+  { id: 'judge_l2',      name: '二级判官',   icon: '/images/badges/judge-l2.png', desc: '反馈被审核通过10次', color: '#B71C1C', hidden: true, isImage: true },
+  { id: 'judge_l3',      name: '三级判官',   icon: '/images/badges/judge-l3.png', desc: '反馈被审核通过30次', color: '#880E4F', hidden: true, isImage: true },
 ];
 
 // ─── 检查并颁发勋章 ──────────────────────────────────
@@ -89,11 +89,11 @@ function checkBadges(phone) {
   `).get(phone)?.c || 0;
   if (clubActive >= 1) earned.push('club_active');
 
-  // 11. 一级判官：提交过问题反馈
-  const feedbackCount = db.prepare('SELECT COUNT(*) as c FROM feedback WHERE phone = ?').get(phone)?.c || 0;
-  if (feedbackCount >= 1) earned.push('judge_l1');
-  if (feedbackCount >= 10) earned.push('judge_l2');
-  if (feedbackCount >= 30) earned.push('judge_l3');
+  // 11. 判官勋章：提交的反馈被管理端审核通过
+  const approvedFeedbackCount = db.prepare("SELECT COUNT(*) as c FROM feedback WHERE phone = ? AND status = 'approved'").get(phone)?.c || 0;
+  if (approvedFeedbackCount >= 1) earned.push('judge_l1');
+  if (approvedFeedbackCount >= 10) earned.push('judge_l2');
+  if (approvedFeedbackCount >= 30) earned.push('judge_l3');
 
   // 写入 user_badges 表，并检测新获得的勋章用于生成通知
   const existingBadges = new Set(
@@ -225,3 +225,4 @@ router.get('/:phone', (req, res) => {
 });
 
 module.exports = router;
+module.exports.checkBadges = checkBadges;

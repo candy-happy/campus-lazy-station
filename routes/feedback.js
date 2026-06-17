@@ -89,10 +89,48 @@ router.post('/:id/reply', requireAdmin, (req, res) => JSON_RES(res, () => {
   return { ok: true };
 }));
 
+// ─── 管理端：通过反馈（触发判官勋章） ───
+router.post('/:id/approve', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const fb = db.prepare('SELECT * FROM feedback WHERE id = ?').get(req.params.id);
+  if (!fb) return makeError('反馈不存在');
+  db.prepare("UPDATE feedback SET status = 'approved', reply_by = ?, reply_at = datetime('now','localtime') WHERE id = ?")
+    .run(req.admin.username || 'admin', req.params.id);
+
+  // 触发勋章检查（判官勋章按 approved 计数）
+  try { const { checkBadges } = require('./badges'); if (checkBadges) checkBadges(fb.phone); } catch (e) { /* ignore */ }
+
+  // 通知用户
+  try {
+    db.prepare(
+      "INSERT INTO notifications (phone, type, title, content, created_at) VALUES (?, 'system', ?, ?, datetime('now','localtime'))"
+    ).run(fb.phone, '反馈已通过', '你的问题反馈已被审核通过，感谢贡献！');
+  } catch(e) { /* 通知失败不影响主流程 */ }
+
+  return { ok: true };
+}));
+
+// ─── 管理端：驳回反馈 ───
+router.post('/:id/reject', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { reason } = req.body;
+  const fb = db.prepare('SELECT * FROM feedback WHERE id = ?').get(req.params.id);
+  if (!fb) return makeError('反馈不存在');
+  db.prepare("UPDATE feedback SET status = 'rejected', reply = ?, reply_by = ?, reply_at = datetime('now','localtime') WHERE id = ?")
+    .run(reason || '暂不处理', req.admin.username || 'admin', req.params.id);
+
+  // 通知用户
+  try {
+    db.prepare(
+      "INSERT INTO notifications (phone, type, title, content, created_at) VALUES (?, 'system', ?, ?, datetime('now','localtime'))"
+    ).run(fb.phone, '反馈已驳回', reason || '你的问题反馈暂未通过审核');
+  } catch(e) { /* ignore */ }
+
+  return { ok: true };
+}));
+
 // ─── 管理端：更新反馈状态 ───
 router.patch('/:id', requireAdmin, (req, res) => JSON_RES(res, () => {
   const { status } = req.body;
-  const validStatus = ['pending', 'processing', 'replied', 'closed'];
+  const validStatus = ['pending', 'processing', 'replied', 'closed', 'approved', 'rejected'];
   if (!validStatus.includes(status)) return makeError('无效状态');
   const fb = db.prepare('SELECT * FROM feedback WHERE id = ?').get(req.params.id);
   if (!fb) return makeError('反馈不存在');
@@ -113,8 +151,10 @@ router.get('/stats/summary', requireAdmin, (req, res) => JSON_RES(res, () => {
   const replied = db.prepare("SELECT COUNT(*) as n FROM feedback WHERE status='replied'").get().n;
   const closed = db.prepare("SELECT COUNT(*) as n FROM feedback WHERE status='closed'").get().n;
   const processing = db.prepare("SELECT COUNT(*) as n FROM feedback WHERE status='processing'").get().n;
+  const approved = db.prepare("SELECT COUNT(*) as n FROM feedback WHERE status='approved'").get().n;
+  const rejected = db.prepare("SELECT COUNT(*) as n FROM feedback WHERE status='rejected'").get().n;
   const byCategory = db.prepare('SELECT category, COUNT(*) as count FROM feedback GROUP BY category').all();
-  return { total, pending, replied, closed, processing, by_category: byCategory };
+  return { total, pending, replied, closed, processing, approved, rejected, by_category: byCategory };
 }));
 
 module.exports = router;

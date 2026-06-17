@@ -1,8 +1,8 @@
 // admin/js/feedback.js - 问题反馈管理模块
 
 const FB_CAT_MAP = { bug: '🐛 Bug报告', feature: '💡 功能建议', complaint: '😤 投诉', other: '📝 其他' };
-const FB_STATUS_COLORS = { pending: '#F39C12', processing: '#3498DB', replied: '#27AE60', closed: '#95A5A6' };
-const FB_STATUS_LABELS = { pending: '待处理', processing: '处理中', replied: '已回复', closed: '已关闭' };
+const FB_STATUS_COLORS = { pending: '#F39C12', processing: '#3498DB', replied: '#27AE60', closed: '#95A5A6', approved: '#27AE60', rejected: '#E74C3C' };
+const FB_STATUS_LABELS = { pending: '待处理', processing: '处理中', replied: '已回复', closed: '已关闭', approved: '已通过', rejected: '已驳回' };
 let _fbPage = 1;
 const _fbPageSize = 15;
 
@@ -43,9 +43,11 @@ async function loadFeedbackList(page) {
           <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(fb.content || '')}">${escHtml(contentPreview)}</td>
           <td><span style="color:${stColor};font-weight:600;font-size:12px;padding:3px 8px;background:${stColor}15;border-radius:10px">${stLabel}</span></td>
           <td style="font-size:12px;color:var(--text-muted)">${fb.created_at ? fb.created_at.slice(0,16).replace('T',' ') : ''}</td>
-          <td>
+          <td style="white-space:nowrap">
             <button onclick="showFbReplyModal(${fb.id}, '${fb.status}')" style="padding:4px 10px;background:var(--orange);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">回复</button>
-            ${fb.status !== 'closed' ? `<button onclick="closeFeedback(${fb.id})" style="padding:4px 10px;background:#95A5A6;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">关闭</button>` : ''}
+            ${(fb.status === 'pending' || fb.status === 'processing') ? `<button onclick="approveFeedback(${fb.id})" style="padding:4px 10px;background:#27AE60;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">通过</button>` : ''}
+            ${(fb.status === 'pending' || fb.status === 'processing') ? `<button onclick="rejectFeedback(${fb.id})" style="padding:4px 10px;background:#E74C3C;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">驳回</button>` : ''}
+            ${fb.status !== 'closed' && fb.status !== 'approved' && fb.status !== 'rejected' ? `<button onclick="closeFeedback(${fb.id})" style="padding:4px 10px;background:#95A5A6;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">关闭</button>` : ''}
           </td>
         </tr>`;
       }).join('');
@@ -81,6 +83,8 @@ async function loadFeedbackStats() {
     if (el('statFbPending')) el('statFbPending').textContent = s.pending || 0;
     if (el('statFbReplied')) el('statFbReplied').textContent = s.replied || 0;
     if (el('statFbClosed')) el('statFbClosed').textContent = s.closed || 0;
+    if (el('statFbApproved')) el('statFbApproved').textContent = s.approved || 0;
+    if (el('statFbRejected')) el('statFbRejected').textContent = s.rejected || 0;
     // 更新导航badge
     const badge = document.getElementById('feedbackBadge');
     if (badge) {
@@ -141,6 +145,38 @@ async function closeFeedback(id) {
   }
 }
 
+async function approveFeedback(id) {
+  if (!confirm('确定通过此反馈？通过后会触发判官勋章统计。')) return;
+  try {
+    const res = await fetch('/api/feedback/' + id + '/approve', {
+      method: 'POST',
+      headers: _fbAuth()
+    }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    showToast('已通过 ✅');
+    loadFeedbackList();
+  } catch(e) {
+    showToast(e.message || '操作失败');
+  }
+}
+
+async function rejectFeedback(id) {
+  const reason = prompt('驳回理由（可选）：');
+  if (reason === null) return; // 用户取消
+  try {
+    const res = await fetch('/api/feedback/' + id + '/reject', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ..._fbAuth() },
+      body: JSON.stringify({ reason: reason || '暂不处理' })
+    }).then(r => r.json());
+    if (res.error) throw new Error(res.error);
+    showToast('已驳回 ❌');
+    loadFeedbackList();
+  } catch(e) {
+    showToast(e.message || '操作失败');
+  }
+}
+
 // 注册到 switchPage - 在 core.js 的 switchPage 基础上追加 feedback 页面逻辑
 const _origSwitchPage = window.switchPage;
 window.switchPage = function(page) {
@@ -153,3 +189,5 @@ window.showFbReplyModal = showFbReplyModal;
 window.closeFbReplyModal = closeFbReplyModal;
 window.submitFbReply = submitFbReply;
 window.closeFeedback = closeFeedback;
+window.approveFeedback = approveFeedback;
+window.rejectFeedback = rejectFeedback;

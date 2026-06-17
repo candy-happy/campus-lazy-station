@@ -722,6 +722,8 @@
    <div class="stat-card"><div class="stat-icon" style="background:#FFF8E1">⏳</div><div class="stat-info"><div class="stat-value" id="statFbPending">0</div><div class="stat-label">待处理</div></div></div>
    <div class="stat-card"><div class="stat-icon" style="background:#E8F5E9">✅</div><div class="stat-info"><div class="stat-value" id="statFbReplied">0</div><div class="stat-label">已回复</div></div></div>
    <div class="stat-card"><div class="stat-icon" style="background:#F3E5F5">🔒</div><div class="stat-info"><div class="stat-value" id="statFbClosed">0</div><div class="stat-label">已关闭</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#E8F5E9">✅</div><div class="stat-info"><div class="stat-value" id="statFbApproved">0</div><div class="stat-label">已通过</div></div></div>
+   <div class="stat-card"><div class="stat-icon" style="background:#FFEBEE">❌</div><div class="stat-info"><div class="stat-value" id="statFbRejected">0</div><div class="stat-label">已驳回</div></div></div>
  </div>
  <div class="table-card">
  <div class="table-header">
@@ -732,6 +734,8 @@
        <option value="pending">待处理</option>
        <option value="processing">处理中</option>
        <option value="replied">已回复</option>
+       <option value="approved">已通过</option>
+       <option value="rejected">已驳回</option>
        <option value="closed">已关闭</option>
      </select>
      <select id="fbFilterCategory" onchange="loadFeedbackList()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--text)">
