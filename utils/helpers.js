@@ -191,4 +191,41 @@ async function compressImage(filePath, maxSize = 1200) {
   } catch(e) { /* 压缩失败静默跳过，不影响上传 */ }
 }
 
-module.exports = { fmtPhone, maskPhone, maskPhoneList, genOrderNo, safeJSON, calcRiderLevel, normalizePagination, escHtml, parseImageUrls, validateUploadFile, compressImage, isValidPhone, sanitizeString, sanitizeNumber, isValidEmail, sanitizePath };
+// ─── 视频压缩（上传后自动转码，最大720p/30fps）────────────
+const { execSync } = require('child_process');
+let _ffmpegOk = null;
+function _checkFfmpeg() {
+  if (_ffmpegOk !== null) return _ffmpegOk;
+  try { execSync('ffmpeg -version', { stdio: 'ignore', timeout: 5000 }); _ffmpegOk = true; } catch { _ffmpegOk = false; }
+  return _ffmpegOk;
+}
+
+async function compressVideo(filePath) {
+  if (!_checkFfmpeg()) return; // ffmpeg 未安装则跳过
+  const ext = require('path').extname(filePath).toLowerCase();
+  if (!['.mp4','.mov','.webm','.avi','.mkv'].includes(ext)) return;
+  try {
+    // 先检查原视频大小和分辨率，小于 5MB 且 ≤720p 则跳过
+    const { statSync } = require('fs');
+    const st = statSync(filePath);
+    if (st.size < 5 * 1024 * 1024) return; // <5MB 不压缩
+
+    const tmpPath = filePath + '.tmp.mp4';
+    // ffmpeg: 最长边720p, CRF28, 30fps, AAC 128k, fast preset
+    execSync(
+      `ffmpeg -i "${filePath}" -vf "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease" ` +
+      `-c:v libx264 -preset fast -crf 28 -r 30 -c:a aac -b:a 128k -movflags +faststart ` +
+      `-y "${tmpPath}" 2>&1`,
+      { stdio: 'ignore', timeout: 60000 }
+    );
+    // 压缩后更小才替换，否则保留原文件
+    const stNew = statSync(tmpPath);
+    if (stNew.size < st.size) {
+      require('fs').renameSync(tmpPath, filePath);
+    } else {
+      require('fs').unlinkSync(tmpPath); // 压缩无效果，删掉临时文件
+    }
+  } catch(e) { /* 压缩失败静默跳过，不影响上传 */ }
+}
+
+module.exports = { fmtPhone, maskPhone, maskPhoneList, genOrderNo, safeJSON, calcRiderLevel, normalizePagination, escHtml, parseImageUrls, validateUploadFile, compressImage, compressVideo, isValidPhone, sanitizeString, sanitizeNumber, isValidEmail, sanitizePath };
