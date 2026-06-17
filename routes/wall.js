@@ -438,7 +438,7 @@ router.get('/user/:phone', optionalAuth, (req, res) => JSON_RES(res, () => {
 
   // 解析用户隐私设置
   let wp = {};
-  try { if (user.wall_privacy) wp = JSON.parse(user.wall_privacy); } catch(e) {}
+  try { if (user.wall_privacy) { const p = JSON.parse(user.wall_privacy); if (p && typeof p === 'object') wp = p; } } catch(e) {}
 
   return {
     nickname: user.nickname || user.name,

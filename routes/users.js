@@ -78,7 +78,7 @@ router.put('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
   if (show_phone_on_wall !== undefined) { sets.push('show_phone_on_wall=?'); vals.push(show_phone_on_wall ? 1 : 0); }
   if (show_wechat_on_wall !== undefined) { sets.push('show_wechat_on_wall=?'); vals.push(show_wechat_on_wall ? 1 : 0); }
   if (show_qq_on_wall !== undefined) { sets.push('show_qq_on_wall=?'); vals.push(show_qq_on_wall ? 1 : 0); }
-  if (wall_privacy !== undefined) { sets.push('wall_privacy=?'); vals.push(typeof wall_privacy === 'string' ? wall_privacy : JSON.stringify(wall_privacy)); }
+  if (wall_privacy != null) { sets.push('wall_privacy=?'); vals.push(typeof wall_privacy === 'string' ? wall_privacy : JSON.stringify(wall_privacy || {})); }
   if (!sets.length) return makeError('无更新内容', ErrorCode.USER_NO_UPDATE);
 
   vals.push(req.params.phone);

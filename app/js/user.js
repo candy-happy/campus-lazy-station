@@ -587,7 +587,7 @@ window.showTermsModal = showTermsModal;
       if (!currentUser) return showToast('请先登录');
       const u = await API.getUser(currentUser.phone);
       let wp = {};
-      try { if (u.wall_privacy) wp = JSON.parse(u.wall_privacy); } catch(e) {}
+      try { if (u.wall_privacy) { const p = JSON.parse(u.wall_privacy); if (p && typeof p === 'object') wp = p; } } catch(e) {}
       _wallPrivacyDraft = JSON.parse(JSON.stringify(wp));
 
       const fields = [
@@ -640,7 +640,7 @@ window.showTermsModal = showTermsModal;
     async function saveWallPrivacy() {
       if (!currentUser) return;
       try {
-        const res = await API.updateUser(currentUser.phone, { wall_privacy: _wallPrivacyDraft });
+        const res = await API.updateUser(currentUser.phone, { wall_privacy: _wallPrivacyDraft || {} });
         if (res.error) return showToast(res.error);
         showToast('✅ 隐私设置已保存');
         closeSubPage('wallPrivacyPage_sub');
