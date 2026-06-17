@@ -736,8 +736,8 @@
             const url = typeof imgs[0] === 'object' ? imgs[0].url : imgs[0];
             const isVid = typeof imgs[0] === 'object' ? imgs[0].isVideo : /\.mp4|\.mov|\.webm/i.test(url);
             imageGrid = isVid
-              ? '<video src="' + url + '" controls style="width:100%;border-radius:12px;margin-top:8px" muted></video>'
-              : '<img src="' + url + '" style="width:100%;max-height:280px;object-fit:cover;border-radius:12px;margin-top:8px" loading="lazy" onclick="showWallDetail('+p.id+')" />';
+              ? '<video src="' + url + '" controls style="width:100%;max-height:250px;border-radius:12px;margin-top:8px;background:#000" muted playsinline></video>'
+              : '<img src="' + url + '" style="width:100%;max-height:250px;object-fit:cover;border-radius:12px;margin-top:8px" loading="lazy" onclick="showWallDetail('+p.id+')" />';
           } else if (imgCount === 2) {
             imageGrid = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px">' + imgs.map(img => {
               const url = typeof img === 'object' ? img.url : img;

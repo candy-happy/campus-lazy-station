@@ -586,20 +586,20 @@
           const url = typeof imgs[0] === 'object' ? imgs[0].url : imgs[0];
           const isVid = typeof imgs[0] === 'object' ? imgs[0].isVideo : /\.mp4|\.mov|\.webm/i.test(url);
           imagesHtml = isVid
-            ? `<video src="${url}" controls style="width:100%;border-radius:16px;margin-top:14px;box-shadow:0 2px 12px rgba(0,0,0,0.08)" muted></video>`
-            : `<img src="${url}" style="width:100%;max-height:420px;object-fit:cover;border-radius:16px;margin-top:14px;cursor:zoom-in;box-shadow:0 2px 12px rgba(0,0,0,0.08)" loading="lazy" onclick="window.open(this.src)" />`;
+            ? `<video src="${url}" controls style="width:100%;max-height:300px;border-radius:16px;margin-top:14px;box-shadow:0 2px 12px rgba(0,0,0,0.08);background:#000" muted playsinline></video>`
+            : `<img src="${url}" style="width:100%;max-height:300px;object-fit:cover;border-radius:16px;margin-top:14px;cursor:zoom-in;box-shadow:0 2px 12px rgba(0,0,0,0.08)" loading="lazy" onclick="window.open(this.src)" />`;
         } else if (imgCount === 2) {
           imagesHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">${imgs.map(img => {
             const url = typeof img === 'object' ? img.url : img;
             const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
-            return isVid ? `<video src="${url}" style="width:100%;height:220px;object-fit:cover;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06)" muted></video>` : `<img src="${url}" style="width:100%;height:220px;object-fit:cover;border-radius:14px;cursor:zoom-in;box-shadow:0 2px 8px rgba(0,0,0,0.06)" loading="lazy" onclick="window.open(this.src)" />`;
+            return isVid ? `<video src="${url}" style="width:100%;height:180px;object-fit:cover;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);background:#000" muted playsinline></video>` : `<img src="${url}" style="width:100%;height:180px;object-fit:cover;border-radius:14px;cursor:zoom-in;box-shadow:0 2px 8px rgba(0,0,0,0.06)" loading="lazy" onclick="window.open(this.src)" />`;
           }).join('')}</div>`;
         } else {
           imagesHtml = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">${imgs.slice(0,9).map(img => {
             const url = typeof img === 'object' ? img.url : img;
             const isVid = typeof img === 'object' ? img.isVideo : /\.mp4|\.mov|\.webm/i.test(url);
-            return isVid ? `<video src="${url}" style="width:100%;height:130px;object-fit:cover;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.05)" muted></video>` : `<img src="${url}" style="width:100%;height:130px;object-fit:cover;border-radius:12px;cursor:zoom-in;box-shadow:0 1px 6px rgba(0,0,0,0.05)" loading="lazy" onclick="window.open(this.src)" />`;
-          }).join('')}${imgCount > 9 ? `<div style="width:100%;height:130px;background:var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--text-secondary)">+${imgCount-9}</div>` : ''}</div>`;
+            return isVid ? `<video src="${url}" style="width:100%;height:110px;object-fit:cover;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.05);background:#000" muted playsinline></video>` : `<img src="${url}" style="width:100%;height:110px;object-fit:cover;border-radius:12px;cursor:zoom-in;box-shadow:0 1px 6px rgba(0,0,0,0.05)" loading="lazy" onclick="window.open(this.src)" />`;
+          }).join('')}${imgCount > 9 ? `<div style="width:100%;height:110px;background:var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--text-secondary)">+${imgCount-9}</div>` : ''}</div>`;
         }
       }
 
