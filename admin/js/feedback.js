@@ -45,8 +45,8 @@ async function loadFeedbackList(page) {
           <td style="font-size:12px;color:var(--text-muted)">${fb.created_at ? fb.created_at.slice(0,16).replace('T',' ') : ''}</td>
           <td style="white-space:nowrap">
             <button onclick="showFbReplyModal(${fb.id}, '${fb.status}')" style="padding:4px 10px;background:var(--orange);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">回复</button>
-            ${(fb.status === 'pending' || fb.status === 'processing') ? `<button onclick="approveFeedback(${fb.id})" style="padding:4px 10px;background:#27AE60;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">通过</button>` : ''}
-            ${(fb.status === 'pending' || fb.status === 'processing') ? `<button onclick="rejectFeedback(${fb.id})" style="padding:4px 10px;background:#E74C3C;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">驳回</button>` : ''}
+            ${(fb.status === 'pending' || fb.status === 'processing' || fb.status === 'replied') ? `<button onclick="approveFeedback(${fb.id})" style="padding:4px 10px;background:#27AE60;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">通过</button>` : ''}
+            ${(fb.status === 'pending' || fb.status === 'processing' || fb.status === 'replied') ? `<button onclick="rejectFeedback(${fb.id})" style="padding:4px 10px;background:#E74C3C;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">驳回</button>` : ''}
             ${fb.status !== 'closed' && fb.status !== 'approved' && fb.status !== 'rejected' ? `<button onclick="closeFeedback(${fb.id})" style="padding:4px 10px;background:#95A5A6;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">关闭</button>` : ''}
           </td>
         </tr>`;
