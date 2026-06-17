@@ -178,16 +178,31 @@ async function compressImage(filePath, maxSize = 1200) {
   const ext = require('path').extname(filePath).toLowerCase();
   if (!['.jpg','.jpeg','.png','.webp'].includes(ext)) return;
   try {
+    const fs = require('fs');
+    const st = fs.statSync(filePath);
+    if (st.size < 50 * 1024) return; // <50KB 小文件（头像等）跳过
     const img = _sharp(filePath);
     const meta = await img.metadata();
     const longest = Math.max(meta.width || 0, meta.height || 0);
-    if (longest <= maxSize) return; // 已足够小，不处理
     const tmpPath = filePath + '.tmp';
-    await img
-      .resize(maxSize, maxSize, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 80, progressive: true })
-      .toFile(tmpPath);
-    require('fs').renameSync(tmpPath, filePath);
+    if (longest > maxSize) {
+      // 超大图：缩尺寸 + JPEG Q80
+      await img
+        .resize(maxSize, maxSize, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 80, progressive: true })
+        .toFile(tmpPath);
+    } else {
+      // 小尺寸但可能大体积（PNG截图等）：仅转 JPEG progressive Q85，不缩尺寸
+      await img
+        .jpeg({ quality: 85, progressive: true })
+        .toFile(tmpPath);
+    }
+    const stNew = fs.statSync(tmpPath);
+    if (stNew.size < st.size) {
+      fs.renameSync(tmpPath, filePath);
+    } else {
+      fs.unlinkSync(tmpPath); // 压缩无效果（如原图已是优化JPEG），保留原文件
+    }
   } catch(e) { /* 压缩失败静默跳过，不影响上传 */ }
 }
 
@@ -205,10 +220,10 @@ async function compressVideo(filePath) {
   const ext = require('path').extname(filePath).toLowerCase();
   if (!['.mp4','.mov','.webm','.avi','.mkv'].includes(ext)) return;
   try {
-    // 先检查原视频大小和分辨率，小于 5MB 且 ≤720p 则跳过
+    // 先检查原视频大小，<2MB 不压缩
     const { statSync } = require('fs');
     const st = statSync(filePath);
-    if (st.size < 5 * 1024 * 1024) return; // <5MB 不压缩
+    if (st.size < 2 * 1024 * 1024) return; // <2MB 不压缩
 
     const tmpPath = filePath + '.tmp.mp4';
     // ffmpeg: 最长边720p, CRF28, 30fps, AAC 128k, fast preset

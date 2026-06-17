@@ -804,7 +804,7 @@
     function uploadWallCommentMedia(input) {
       const file = input.files && input.files[0];
       if (!file) return;
-      if (file.size > 5 * 1024 * 1024) { showToast('文件不能超过5MB'); input.value = ''; return; }
+      if (file.size > 20 * 1024 * 1024) { showToast('文件不能超过20MB'); input.value = ''; return; }
       if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) { showToast('仅支持图片/视频'); input.value = ''; return; }
       _wallCommentMediaFile = file;
       const preview = document.getElementById('wallCommentMediaPreview');
