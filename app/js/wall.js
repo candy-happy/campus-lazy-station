@@ -1179,27 +1179,12 @@
       await loadChatList();
     }
 
-    // 全局未读轮询（每15秒更新底部导航红点）
-    function startBadgePoll() {
-      if (window._badgePollTimer) clearInterval(window._badgePollTimer);
-      window._badgePollTimer = setInterval(async function(){
-        if (!currentUser) return;
-        try {
-          var list = await API.chatConversations(currentUser.phone);
-          if (!Array.isArray(list)) return;
-          window._unreadMap = {};
-          list.forEach(function(c){ if(c.unread>0) window._unreadMap[c.id]=c.unread; });
-          updateChatBadge();
-        } catch(e) {}
-      }, 15000);
-    }
+
 
 
 
     async function loadChatList() {
       const el = document.getElementById('chatListBody');
-      // 重置未读计数
-      window._unreadMap = {};
       // 并行拉取私信 + 通知 + 我的社团群聊
       const [list, notifs, clubs] = await Promise.all([
         API.chatConversations(currentUser.phone).catch(() => null),
@@ -1255,8 +1240,6 @@
         return msg;
       }
       const chatItems = (chatList || []).map(c => {
-        // 记录未读到全局
-        if (c.unread > 0) window._unreadMap[c.id] = c.unread;
         var nick = getSavedNickname(c.other_phone);
         var displayName = nick || c.other_nickname || c.other_name || c.other_phone;
         var avatarHtml = c.other_avatar
@@ -1278,9 +1261,7 @@
         </div>
       `;
       });
-      // 渲染后更新底部导航红点
       el.innerHTML = shareBanner + notifItem + clubChatItems + chatItems.join('');
-      updateChatBadge();
       // 导出分享+打开会话的组合函数
       window.shareAndOpenConv = function(convId, otherPhone, otherName) {
         if (window._pendingSharePostId) {
@@ -1296,13 +1277,11 @@
     async function markNotifRead(id) {
       try { await API.markRead(currentUser.phone); } catch(e) {}
       loadChatList();
-      if (typeof updateMsgBadge === 'function') updateMsgBadge();
     }
 
     // 打开通知对话
     async function openNotifConv() {
       try { await API.markRead(currentUser.phone); } catch(e) {}
-      if (typeof updateMsgBadge === 'function') updateMsgBadge();
       document.getElementById('chatConversation').style.display = 'none';
       document.getElementById('notifConversation').style.display = 'flex';
       await loadNotifMessages();
@@ -1354,37 +1333,10 @@
       applyChatBg(settings.bg);
       // 标记该会话为已读
       await API.chatMarkRead(convId).catch(function(){});
-      // 清除该会话未读计数并更新红点
-      delete window._unreadMap[convId];
-      updateChatBadge();
       if (chatRefreshTimer) clearInterval(chatRefreshTimer);
       chatRefreshTimer = setInterval(async function(){
         await loadChatMessages();
-        updateChatBadge();
       }, 5000);
-    }
-
-    // ─── 未读红点系统 ──────────────────────────────────────
-    window._unreadMap = {}; // { convId: unreadCount }
-
-    function updateChatBadge() {
-      // 更新列表项红点（仅限聊天私信，不计入通知）
-      document.querySelectorAll('.chat-item[data-conv-id]').forEach(function(el){
-        var cid = el.getAttribute('data-conv-id');
-        var count = window._unreadMap[cid]||0;
-        var b = el.querySelector('.chat-item-badge');
-        if (!b && count>0) {
-          b = document.createElement('span');
-          b.className = 'chat-item-badge';
-          el.querySelector('.chat-item-bottom').appendChild(b);
-        }
-        if (b) {
-          b.textContent = count>99?'99+':count;
-          b.style.display = count>0?'':'none';
-        }
-      });
-      // 导航栏红点委托给 core.js 的 updateMsgBadge（含通知未读）
-      if (typeof updateMsgBadge === 'function') updateMsgBadge();
     }
 
     // 设置聊天头部头像
@@ -3052,5 +3004,4 @@ window.onTagPillDragOver = onTagPillDragOver;
 window.onTagPillDrop = onTagPillDrop;
 window.resetTagOrder = resetTagOrder;
 window.scrollWallChannels = scrollWallChannels;
-window.updateChatBadge = updateChatBadge;
-window.startBadgePoll = startBadgePoll;
+

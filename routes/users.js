@@ -36,6 +36,114 @@ router.get('/', requireAdmin, (req, res) => JSON_RES(res, () =>
     .map(u => ({ ...u, phone: u.phone, phoneDisplay: fmtPhone(u.phone) }))
 ));
 
+
+
+// ─── 管理端：用户搜索（支持搜索） ─────────────────────────
+router.get('/search', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const { q, page = 1, size = 20 } = req.query;
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const siz = Math.min(100, Math.max(1, parseInt(size) || 20));
+  const offset = (pageNum - 1) * siz;
+
+  let where = 'WHERE 1=1';
+  let params = [];
+  if (q && q.trim()) {
+    const kw = '%' + q.trim() + '%';
+    where += ' AND (phone LIKE ? OR name LIKE ? OR nickname LIKE ? OR student_id LIKE ? OR dormitory LIKE ?)';
+    params.push(kw, kw, kw, kw, kw);
+  }
+
+  const total = db.prepare(`SELECT COUNT(*) as n FROM users ${where}`).get(...params).n;
+  const list = db.prepare(
+    `SELECT * FROM users ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+  ).all(...params, siz, offset);
+
+  return { total, page: pageNum, size: siz, list: list.map(u => ({ ...u, phoneDisplay: fmtPhone(u.phone) })) };
+}));
+
+// ─── 管理端：用户数据总览 ────────────────────────────────
+router.get('/:phone/summary', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const phone = req.params.phone;
+  const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(phone);
+  if (!user) return makeError('用户不存在', ErrorCode.USER_NOT_FOUND);
+
+  const counts = {};
+  counts.wall_posts = db.prepare('SELECT COUNT(*) as n FROM wall_posts WHERE phone=?').get(phone).n;
+  counts.wall_comments = db.prepare('SELECT COUNT(*) as n FROM wall_comments WHERE phone=?').get(phone).n;
+  counts.wall_likes = db.prepare('SELECT COUNT(*) as n FROM wall_likes WHERE phone=?').get(phone).n;
+  counts.orders = db.prepare('SELECT COUNT(*) as n FROM orders WHERE phone=?').get(phone).n;
+  counts.market_items = db.prepare('SELECT COUNT(*) as n FROM market_items WHERE phone=?').get(phone).n;
+  counts.pet_sightings = db.prepare('SELECT COUNT(*) as n FROM pet_sightings WHERE phone=?').get(phone).n;
+  counts.pet_comments = db.prepare('SELECT COUNT(*) as n FROM pet_comments WHERE phone=?').get(phone).n;
+  counts.teacher_reviews = db.prepare('SELECT COUNT(*) as n FROM teacher_reviews WHERE phone=?').get(phone).n;
+  counts.teacher_likes = db.prepare('SELECT COUNT(*) as n FROM teacher_likes WHERE phone=?').get(phone).n;
+  counts.messages = db.prepare('SELECT COUNT(*) as n FROM messages WHERE sender_phone=?').get(phone).n;
+  counts.conversations = db.prepare("SELECT COUNT(*) as n FROM conversations WHERE user1_phone=? OR user2_phone=?").get(phone, phone).n;
+  counts.feedback = db.prepare('SELECT COUNT(*) as n FROM feedback WHERE phone=?').get(phone).n;
+  counts.reports = db.prepare('SELECT COUNT(*) as n FROM reports WHERE reporter_phone=?').get(phone).n;
+  counts.notifications = db.prepare('SELECT COUNT(*) as n FROM notifications WHERE phone=?').get(phone).n;
+  counts.following = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE follower_phone=?').get(phone).n;
+  counts.followers = db.prepare('SELECT COUNT(*) as n FROM wall_follows WHERE following_phone=?').get(phone).n;
+  counts.blocks = db.prepare('SELECT COUNT(*) as n FROM wall_blocks WHERE blocker_phone=?').get(phone).n;
+  counts.blocked_by = db.prepare('SELECT COUNT(*) as n FROM wall_blocks WHERE blocked_phone=?').get(phone).n;
+  counts.review_materials = db.prepare('SELECT COUNT(*) as n FROM review_materials WHERE phone=?').get(phone).n;
+  try { counts.campus_star = db.prepare('SELECT COUNT(*) as n FROM campus_star WHERE phone=?').get(phone).n; } catch(e) { counts.campus_star = 0; }
+  try { counts.club_members = db.prepare('SELECT COUNT(*) as n FROM club_members WHERE phone=?').get(phone).n; } catch(e) { counts.club_members = 0; }
+
+  return { user: { ...user, phoneDisplay: fmtPhone(user.phone) }, counts };
+}));
+
+// ─── 管理端：删除用户及其所有数据 ───────────────────────
+router.delete('/:phone/purge', requireAdmin, (req, res) => JSON_RES(res, () => {
+  const phone = req.params.phone;
+  const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(phone);
+  if (!user) return makeError('用户不存在', ErrorCode.USER_NOT_FOUND);
+
+  const del = (sql) => db.prepare(sql).run(phone);
+  const del2 = (sql) => db.prepare(sql).run(phone, phone);
+
+  const transaction = db.transaction(() => {
+    del('DELETE FROM wall_exposures WHERE phone=?');
+    del('DELETE FROM wall_comment_likes WHERE phone=?');
+    del2('DELETE FROM wall_follows WHERE follower_phone=? OR following_phone=?');
+    del2('DELETE FROM wall_blocks WHERE blocker_phone=? OR blocked_phone=?');
+    del('DELETE FROM wall_likes WHERE phone=?');
+    del('DELETE FROM wall_comments WHERE phone=?');
+    del('DELETE FROM wall_reports WHERE reporter_phone=?');
+    del('DELETE FROM wall_posts WHERE phone=?');
+    del('DELETE FROM orders WHERE phone=?');
+    del('DELETE FROM market_items WHERE phone=?');
+    del('DELETE FROM pet_sightings WHERE phone=?');
+    del('DELETE FROM pet_comments WHERE phone=?');
+    try { del('DELETE FROM pet_likes WHERE phone=?'); } catch(e) {}
+    del('DELETE FROM teacher_reviews WHERE phone=?');
+    del('DELETE FROM teacher_likes WHERE phone=?');
+    del2("DELETE FROM conversations WHERE user1_phone=? OR user2_phone=?");
+    del('DELETE FROM messages WHERE sender_phone=?');
+    del('DELETE FROM feedback WHERE phone=?');
+    del('DELETE FROM reports WHERE reporter_phone=?');
+    del('DELETE FROM notifications WHERE phone=?');
+    del('DELETE FROM ai_review_logs WHERE phone=?');
+    try { del('DELETE FROM review_materials WHERE phone=?'); } catch(e) {}
+    try { del('DELETE FROM campus_star WHERE phone=?'); } catch(e) {}
+    try { del('DELETE FROM club_members WHERE phone=?'); } catch(e) {}
+    try { del('DELETE FROM activity_participants WHERE phone=?'); } catch(e) {}
+    try { del('DELETE FROM points WHERE phone=?'); } catch(e) {}
+    try { del('DELETE FROM point_logs WHERE phone=?'); } catch(e) {}
+    try { del('DELETE FROM wallet WHERE phone=?'); } catch(e) {}
+    try { del('DELETE FROM withdraw_logs WHERE phone=?'); } catch(e) {}
+    try { del('DELETE FROM badges_earned WHERE phone=?'); } catch(e) {}
+    try { del('DELETE FROM login_logs WHERE phone=?'); } catch(e) {}
+    try { del('DELETE FROM ad_views WHERE phone=?'); } catch(e) {}
+    try { del('DELETE FROM ads WHERE phone=?'); } catch(e) {}
+    del('DELETE FROM users WHERE phone=?');
+  });
+
+  transaction();
+  return { ok: true, deleted: phone };
+}));
+
+
 // ─── 用户详情 ─────────────────────────────────────────────
 router.get('/:phone', requireAuth, (req, res) => JSON_RES(res, () => {
   const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(req.params.phone);

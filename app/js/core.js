@@ -654,13 +654,7 @@
         renderAds(Array.isArray(ads) ? ads : []);
         renderOrders();
         updateMePage();
-        updateMsgBadge();
-        // 初始化聊天未读数
-        if (API.getChatUnread) {
-          API.getChatUnread().then(d => { _lastUnreadCount = d.count || 0; updateMsgBadge(); }).catch(() => {});
-        }
         loadMarketItems(true); // 加载二手市场
-        startChatPolling(); // 启动消息轮询
         startNotifPolling(); // 启动通知轮询
       } catch(e) {
         console.error('loadData error:', e);
@@ -966,16 +960,7 @@
 
 
 
-    // 合并通知+消息未读数，更新导航栏"消息"徽章
-    function updateMsgBadge() {
-      const notifUnread = notifications.filter(n => !n.read).length;
-      const totalUnread = notifUnread + _lastUnreadCount;
-      const navBadge = document.getElementById('chatBadge');
-      if (navBadge) {
-        navBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
-        navBadge.style.display = totalUnread > 0 ? 'inline-block' : 'none';
-      }
-    }
+
 
 
 
@@ -1223,7 +1208,6 @@ window.escHtml = escHtml;
 window.fmtTime = fmtTime;
 window.switchPage = switchPage;
 window.updateMePage = updateMePage;
-window.updateMsgBadge = updateMsgBadge;
 window.setNotifications = function(v) { notifications = Array.isArray(v) ? v : []; };
 window.openNotifModal = openNotifModal;
 
@@ -1570,38 +1554,7 @@ window.showToast = showToast;
     window.hideGlobalSearchHints = hideGlobalSearchHints;
 
     // ═══════════════════════════════════════════════════════
-    // 💬 消息轮询（私聊未读提醒）
-    // ═══════════════════════════════════════════════════════
-    let _chatPollTimer = null;
-    let _lastUnreadCount = 0;
-
-    function startChatPolling() {
-      if (_chatPollTimer) clearInterval(_chatPollTimer);
-      pollChatUnread();
-      _chatPollTimer = setInterval(pollChatUnread, 15000); // 每15秒轮询
-    }
-
-    async function pollChatUnread() {
-      if (!currentUser) return;
-      try {
-        const data = await API.getChatUnread();
-        const count = data.count || 0;
-        // 新消息提醒（仅当数量增加时）
-        if (count > _lastUnreadCount && _lastUnreadCount >= 0) {
-          const newMsgs = count - _lastUnreadCount;
-          if (newMsgs > 0 && _lastUnreadCount > 0) {
-            showToast('收到 ' + newMsgs + ' 条新消息');
-          }
-        }
-        _lastUnreadCount = count;
-        updateMsgBadge();
-      } catch(e) {}
-    }
-
-    window.startChatPolling = startChatPolling;
-
-    // ═══════════════════════════════════════════════════════
-    // 🔔 通知轮询（实时更新通知徽章）
+    // 🔔 通知轮询
     // ═══════════════════════════════════════════════════════
     let _notifPollTimer = null;
     let _lastNotifCount = 0;
@@ -1609,7 +1562,7 @@ window.showToast = showToast;
     function startNotifPolling() {
       if (_notifPollTimer) clearInterval(_notifPollTimer);
       pollNotifications();
-      _notifPollTimer = setInterval(pollNotifications, 30000); // 每30秒轮询
+      _notifPollTimer = setInterval(pollNotifications, 30000);
     }
 
     async function pollNotifications() {
@@ -1618,14 +1571,12 @@ window.showToast = showToast;
         const data = await API.getNotifications(currentUser.phone);
         const newNotifs = Array.isArray(data) ? data : [];
         const newUnread = newNotifs.filter(n => !n.read).length;
-        // 新通知提醒
         if (newUnread > _lastNotifCount && _lastNotifCount >= 0 && _lastNotifCount > 0) {
           const diff = newUnread - _lastNotifCount;
           showToast('收到 ' + diff + ' 条新通知');
         }
         _lastNotifCount = newUnread;
         notifications = newNotifs;
-        updateMsgBadge();
       } catch(e) {}
     }
 
