@@ -920,6 +920,8 @@
       if (res.error) return showToast(res.error);
       showToast(res.following ? '已关注' : '已取消关注');
       showWallUser(phone);
+      // 刷新"我的"页面的关注/粉丝计数
+      if (typeof updateMePage === 'function') updateMePage();
     }
 
 
@@ -939,6 +941,8 @@
       if (profilePage && profilePage.classList.contains('active')) {
         showWallUser(phone);
       }
+      // 刷新"我的"页面的关注/粉丝计数
+      if (typeof updateMePage === 'function') updateMePage();
  }
 
     // 校园墙私信（带隐私检查+友好提示）
@@ -1083,6 +1087,8 @@
       if (profilePage && profilePage.classList.contains('active')) {
         showWallUser(phone);
       }
+      // 刷新"我的"页面的关注/粉丝计数
+      if (typeof updateMePage === 'function') updateMePage();
     }
 
 
