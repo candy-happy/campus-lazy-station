@@ -227,6 +227,7 @@ function closeUserDetail() {
 
 // ─── 确认删除（模板字符串，无字符串拼接引号问题）─────────
 function confirmPurgeUser(phone, name) {
+  console.log('[DEBUG] confirmPurgeUser called, phone:', phone, 'name:', name);
   if (!confirm(`⚠️ 确定删除用户「${name}」的所有数据吗？
 
 此操作将删除：
@@ -244,17 +245,26 @@ function confirmPurgeUser(phone, name) {
 }
 
 async function doPurgeUser(phone) {
+  console.log('[DEBUG] doPurgeUser called, phone:', phone);
   try {
-    const res = await fetch('/api/users/' + phone + '/purge', {
+    const headers = _userAuth();
+    console.log('[DEBUG] Auth headers:', JSON.stringify(headers));
+    const url = '/api/users/' + encodeURIComponent(phone) + '/purge';
+    console.log('[DEBUG] Fetch URL:', url, 'method: DELETE');
+    const res = await fetch(url, {
       method: 'DELETE',
-      headers: _userAuth()
-    }).then(r => r.json());
-    if (res.error) throw new Error(res.error);
+      headers
+    });
+    console.log('[DEBUG] Response status:', res.status, res.statusText);
+    const data = await res.json();
+    console.log('[DEBUG] Response body:', JSON.stringify(data));
+    if (data.error) throw new Error(data.error);
     showToast('已删除用户所有数据 ✅');
     _selectedUsers.delete(phone);
     closeUserDetail();
     loadUserList();
   } catch(e) {
+    console.error('[DEBUG] doPurgeUser error:', e);
     showToast(`删除失败: ${e.message || ''}`);
   }
 }
