@@ -3,17 +3,16 @@
 let _userPage = 1;
 const _userSize = 15;
 let _userSearchTimer = null;
-let _selectedUsers = new Set(); // 批量选中
+let _selectedUsers = new Set();
 let _userTotal = 0;
 let _userTotalPages = 1;
 
 function _userAuth() { return API._authHeaders(); }
 
-// ─── 辅助：JS字符串安全转义 ─────────────────────────────
-// 用 JSON.stringify 处理 onclick 参数，避免昵称含引号导致JS语法错误
-function _js(s) { return JSON.stringify(String(s)); }
+// HTML属性安全值：先JSON.stringify保证JS字符串合法，再escHtml保证HTML属性合法
+function _attr(v) { return escHtml(JSON.stringify(v)); }
 
-// ─── 渲染分页栏（独立函数，避免重建整表破坏复选框状态）────
+// ─── 渲染分页栏 ──────────────────────────────────────
 function renderUserPager() {
   const pager = document.getElementById('userPager');
   if (!pager) return;
@@ -65,7 +64,7 @@ async function loadUserList(page) {
         const phoneDisp = u.phoneDisplay || u.phone || '';
         const checked = _selectedUsers.has(u.phone) ? ' checked' : '';
         return `<tr>
-          <td style="width:36px;text-align:center"><input type="checkbox" class="user-checkbox" value="${_js(u.phone)}" onchange="onUserCheckChange()"${checked}></td>
+          <td style="width:36px;text-align:center"><input type="checkbox" class="user-checkbox" value="${escHtml(u.phone)}" onchange="onUserCheckChange()"${checked}></td>
           <td>${escHtml(name)}</td>
           <td style="font-size:12px;color:var(--text-secondary)">${escHtml(phoneDisp)}</td>
           <td style="font-size:12px">${escHtml(u.student_id || '-')}</td>
@@ -73,8 +72,8 @@ async function loadUserList(page) {
           <td>${u.total_orders || 0}</td>
           <td style="font-size:11px;color:var(--text-muted)">${(u.created_at || '').slice(0,10)}</td>
           <td style="white-space:nowrap">
-            <button onclick="showUserDetail(${_js(u.phone)})" style="padding:4px 10px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">详情</button>
-            <button onclick="confirmPurgeUser(${_js(u.phone)},${_js(name)})" style="padding:4px 10px;background:#E74C3C;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">删除</button>
+            <button onclick="showUserDetail(${_attr(u.phone)})" style="padding:4px 10px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-right:4px">详情</button>
+            <button onclick="confirmPurgeUser(${_attr(u.phone)},${_attr(name)})" style="padding:4px 10px;background:#E74C3C;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">删除</button>
           </td>
         </tr>`;
       }).join('');
@@ -89,14 +88,13 @@ async function loadUserList(page) {
   }
 }
 
-// ─── 批量选择逻辑 ─────────────────────────────────────
+// ─── 批量选择 ─────────────────────────────────────────
 function onUserCheckChange() {
-  // 只更新 _selectedUsers 和 UI，不重建表格
   const checks = document.querySelectorAll('#userTableBody .user-checkbox');
   _selectedUsers.clear();
   checks.forEach(cb => { if (cb.checked) _selectedUsers.add(cb.value); });
   updateSelectAllState();
-  renderUserPager(); // 只刷新分页栏（批量删除按钮）
+  renderUserPager();
 }
 
 function toggleSelectAll() {
@@ -127,10 +125,8 @@ function updateSelectAllState() {
 function batchPurgeUsers() {
   if (_selectedUsers.size === 0) { showToast('请先选择用户'); return; }
   const phones = [..._selectedUsers];
-
-  if (!confirm('⚠️ 确定批量删除 ' + phones.length + ' 个用户的所有数据吗？\n\n此操作不可撤销！')) return;
-  if (!confirm('⚠️ 最后确认：真的永久删除这 ' + phones.length + ' 位用户吗？')) return;
-
+  if (!confirm(`⚠️ 确定批量删除 ${phones.length} 个用户的所有数据吗？\n\n此操作不可撤销！`)) return;
+  if (!confirm(`⚠️ 最后确认：真的永久删除这 ${phones.length} 位用户吗？`)) return;
   doBatchPurge(phones);
 }
 
@@ -144,15 +140,12 @@ async function doBatchPurge(phones) {
     if (res.error) throw new Error(res.error);
 
     const r = res.results || {};
-    if (r.failed > 0) {
-      showToast('成功 ' + (r.success||0) + ' 个，失败 ' + r.failed + ' 个');
-    } else {
-      showToast('已批量删除 ' + (r.success||0) + ' 个用户 ✅');
-    }
+    const msg = r.failed > 0 ? `成功 ${r.success||0} 个，失败 ${r.failed} 个` : `已批量删除 ${r.success||0} 个用户 ✅`;
+    showToast(msg);
     _selectedUsers.clear();
     loadUserList(1);
   } catch(e) {
-    showToast('批量删除失败: ' + (e.message || ''));
+    showToast(`批量删除失败: ${e.message || ''}`);
   }
 }
 
@@ -161,7 +154,7 @@ function onUserSearchInput() {
   _userSearchTimer = setTimeout(() => loadUserList(1), 400);
 }
 
-// ─── 查看用户详情 ──────────────────────────────────────
+// ─── 用户详情 ─────────────────────────────────────────
 async function showUserDetail(phone) {
   const modal = document.getElementById('userDetailModal');
   if (!modal) return;
@@ -194,7 +187,7 @@ async function showUserDetail(phone) {
       { label: '🔔 通知', v: counts.notifications },
       { label: '👥 关注', v: counts.following },
       { label: '👥 粉丝', v: counts.followers },
-      { label: '🚫 拉黑他人', v: counts.blocks },
+      { label: '🚫 拉黑', v: counts.blocks },
       { label: '🚫 被拉黑', v: counts.blocked_by },
       { label: '📚 复习资料', v: counts.review_materials },
       { label: '⭐ 校花校草', v: counts.campus_star },
@@ -219,11 +212,11 @@ async function showUserDetail(phone) {
         `).join('')}
       </div>
       <div style="text-align:center;margin-top:16px">
-        <button onclick="confirmPurgeUser(${_js(user.phone)},${_js(name)})" style="padding:10px 24px;background:#E74C3C;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">🗑️ 删除该用户所有数据</button>
+        <button onclick="confirmPurgeUser(${_attr(user.phone)},${_attr(name)})" style="padding:10px 24px;background:#E74C3C;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">🗑️ 删除该用户所有数据</button>
       </div>
     `;
   } catch(e) {
-    body.innerHTML = '<div style="text-align:center;padding:24px;color:#E74C3C">加载失败: ' + escHtml(e.message) + '</div>';
+    body.innerHTML = `<div style="text-align:center;padding:24px;color:#E74C3C">加载失败: ${escHtml(e.message)}</div>`;
   }
 }
 
@@ -232,10 +225,21 @@ function closeUserDetail() {
   if (modal) modal.style.display = 'none';
 }
 
-// ─── 确认删除用户 ──────────────────────────────────────
+// ─── 确认删除（模板字符串，无字符串拼接引号问题）─────────
 function confirmPurgeUser(phone, name) {
-  if (!confirm('⚠️ 确定删除用户「' + name + '」的所有数据吗？\n\n此操作将删除：\n- 该用户所有帖子、评论、点赞\n- 该用户所有订单\n- 该用户所有私聊消息\n- 该用户所有其他关联数据\n\n此操作不可撤销！')) return;
-  if (!confirm('请再次确认：\n真的要永久删除「' + name + '」(' + phone + ') 的全部数据吗？')) return;
+  if (!confirm(`⚠️ 确定删除用户「${name}」的所有数据吗？
+
+此操作将删除：
+- 该用户所有帖子、评论、点赞
+- 该用户所有订单
+- 该用户所有私聊消息
+- 该用户所有其他关联数据
+
+此操作不可撤销！`)) return;
+
+  if (!confirm(`请再次确认：
+真的要永久删除「${name}」(${phone}) 的全部数据吗？`)) return;
+
   doPurgeUser(phone);
 }
 
@@ -251,7 +255,7 @@ async function doPurgeUser(phone) {
     closeUserDetail();
     loadUserList();
   } catch(e) {
-    showToast('删除失败: ' + (e.message || ''));
+    showToast(`删除失败: ${e.message || ''}`);
   }
 }
 
