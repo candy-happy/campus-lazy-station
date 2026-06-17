@@ -123,15 +123,19 @@ function switchPage(page) {
   const nav = document.querySelector(`.nav-item[data-page="${page}"]`);
   if (nav) nav.classList.add('active');
   if (page === 'ads') loadAds();
+  if (page === 'ai') { const t = document.querySelector('#page-ai .market-tab.active'); if (t && typeof switchAiTab === 'function') switchAiTab(t.dataset.tab, t); }
+  if (page === 'audit') { loadAuditLogs(1); loadAuditStats(); }
+  if (page === 'campus-star') { switchStarAdminTab('candidates'); }
+  if (page === 'dashboard') { if (typeof refreshData === 'function') refreshData(); }
   if (page === 'market') { loadMarketItems(); }
   if (page === 'orders') { loadOrdersPage(); }
-  if (page === 'riders') { loadRidersPage(); }
   if (page === 'pets') { loadPetsAdmin(); }
   if (page === 'reports') { loadReports(); }
-  if (page === 'wall') { loadWallPosts(); }
-  if (page === 'teachers') { loadTeachersAdmin(); }
   if (page === 'review-materials') { loadReviewMaterialsAdmin(1); }
-  if (page === 'campus-star') { switchStarAdminTab('candidates'); }
+  if (page === 'riders') { loadRidersPage(); }
+  if (page === 'teachers') { loadTeachersAdmin(); }
+  if (page === 'wall') { loadWallPosts(); }
+  if (page === 'withdraw') { if (typeof renderWithdrawTable === 'function') renderWithdrawTable(); }
 }
 
 function showModal(id) { document.getElementById(id).classList.add('active'); }
