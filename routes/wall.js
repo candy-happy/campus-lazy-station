@@ -38,6 +38,20 @@ function resolveAvatar(postPhone, postAvatar, avatarMap) {
   return postAvatar || '';
 }
 
+// ─── 批量昵称加载（优先昵称，备用真实姓名） ────────────
+function batchLoadNicknames(phones) {
+  const unique = [...new Set(phones)].filter(Boolean);
+  if (unique.length === 0) return new Map();
+  const map = new Map();
+  const placeholders = unique.map(() => '?').join(',');
+  try {
+    db.prepare(`SELECT phone, nickname, name FROM users WHERE phone IN (${placeholders})`)
+      .all(...unique)
+      .forEach(r => map.set(r.phone, r.nickname || r.name));
+  } catch(e) {}
+  return map;
+}
+
 // ─── AI审核记录写入辅助 ────────────────────────────────
 function logAiReview(source, sourceId, phone, contentPreview, check, action) {
   try {
@@ -224,13 +238,17 @@ router.get('/feed', (req, res) => JSON_RES(res, () => {
   if (phone) {
     db.prepare('SELECT following_phone FROM wall_follows WHERE follower_phone = ?').all(phone).forEach(f => followSet.add(f.following_phone));
   }
-  // 批量加载所有帖子作者头像（避免 N+1）
+  // 批量加载所有帖子作者头像和昵称（避免 N+1）
   const avatarMap = batchLoadAvatars(posts.map(p => p.phone));
+  const nicknameMap = batchLoadNicknames(posts.map(p => p.phone));
   const resultPosts = posts.map(p => {
     // 帖子头像从批量查询的结果中取
     let avatar = resolveAvatar(p.phone, p.avatar, avatarMap);
+    // 昵称优先用用户当前昵称, 其次用帖子存储的昵称, 最后用真实姓名兜底
+    let nickname = nicknameMap.get(p.phone) || p.nickname || '匿名';
     return {
       ...p,
+      nickname,
       avatar,
       tags: p.tags ? p.tags.split(',').filter(Boolean) : [],
       ai_tags: p.ai_tags ? p.ai_tags.split(',').filter(Boolean) : [],

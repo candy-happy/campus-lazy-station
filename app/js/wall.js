@@ -470,7 +470,7 @@
       
       const data = { 
         phone: currentUser.phone, 
-        nickname: currentUser.name, 
+        nickname: currentUser.nickname || currentUser.name, 
         avatar: currentUser.avatar || '', 
         content: content, 
         tags: hashTags.join(',')
@@ -709,7 +709,7 @@
         if (mediaUrl) {
           finalContent = content ? content + '\n' + mediaUrl : mediaUrl;
         }
-        const data = { phone: currentUser.phone, nickname: currentUser.name, avatar: currentUser.avatar || '', content: finalContent };
+        const data = { phone: currentUser.phone, nickname: currentUser.nickname || currentUser.name, avatar: currentUser.avatar || '', content: finalContent };
         if (_replyContext) {
           data.parent_id = _replyContext.parentId;
           data.reply_to_nickname = _replyContext.replyToNickname;
