@@ -4,12 +4,39 @@ let _userPage = 1;
 const _userSize = 15;
 let _userSearchTimer = null;
 let _selectedUsers = new Set(); // 批量选中
+let _userTotal = 0;
+let _userTotalPages = 1;
 
 function _userAuth() { return API._authHeaders(); }
 
 // ─── 辅助：JS字符串安全转义 ─────────────────────────────
 // 用 JSON.stringify 处理 onclick 参数，避免昵称含引号导致JS语法错误
 function _js(s) { return JSON.stringify(String(s)); }
+
+// ─── 渲染分页栏（独立函数，避免重建整表破坏复选框状态）────
+function renderUserPager() {
+  const pager = document.getElementById('userPager');
+  if (!pager) return;
+  const total = _userTotal;
+  const totalPages = Math.max(1, _userTotalPages);
+
+  let batchHtml = '';
+  if (_selectedUsers.size > 0) {
+    batchHtml = `<span style="font-size:13px;color:#E74C3C;margin-right:12px">已选${_selectedUsers.size}人</span>
+      <button onclick="batchPurgeUsers()" style="padding:6px 16px;background:#E74C3C;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600">🗑️ 批量删除</button>`;
+  }
+
+  if (totalPages <= 1) {
+    pager.innerHTML = batchHtml + '<span style="font-size:13px;color:var(--text-secondary)">共 ' + total + ' 条</span>';
+  } else {
+    pager.innerHTML = batchHtml + `
+      <button onclick="loadUserList(1)" ${_userPage<=1?'disabled':''} style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);cursor:pointer;font-size:12px">首页</button>
+      <button onclick="loadUserList(${_userPage-1})" ${_userPage<=1?'disabled':''} style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);cursor:pointer;font-size:12px">上页</button>
+      <span style="font-size:13px;color:var(--text-secondary)">${_userPage}/${totalPages} · ${total}条</span>
+      <button onclick="loadUserList(${_userPage+1})" ${_userPage>=totalPages?'disabled':''} style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);cursor:pointer;font-size:12px">下页</button>
+      <button onclick="loadUserList(${totalPages})" ${_userPage>=totalPages?'disabled':''} style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);cursor:pointer;font-size:12px">末页</button>`;
+  }
+}
 
 // ─── 加载用户列表 ──────────────────────────────────────
 async function loadUserList(page) {
@@ -24,6 +51,8 @@ async function loadUserList(page) {
 
     const { total, page: cp, list } = res;
     _userPage = cp || 1;
+    _userTotal = total;
+    _userTotalPages = Math.ceil(total / _userSize);
     document.getElementById('userTotalCount').textContent = total;
 
     const tbody = document.getElementById('userTableBody');
@@ -34,8 +63,9 @@ async function loadUserList(page) {
       tbody.innerHTML = list.map(u => {
         const name = u.nickname || u.name || '';
         const phoneDisp = u.phoneDisplay || u.phone || '';
+        const checked = _selectedUsers.has(u.phone) ? ' checked' : '';
         return `<tr>
-          <td style="width:36px;text-align:center"><input type="checkbox" class="user-checkbox" value="${_js(u.phone)}" onchange="onUserCheckChange()" ${_selectedUsers.has(u.phone)?'checked':''}></td>
+          <td style="width:36px;text-align:center"><input type="checkbox" class="user-checkbox" value="${_js(u.phone)}" onchange="onUserCheckChange()"${checked}></td>
           <td>${escHtml(name)}</td>
           <td style="font-size:12px;color:var(--text-secondary)">${escHtml(phoneDisp)}</td>
           <td style="font-size:12px">${escHtml(u.student_id || '-')}</td>
@@ -50,25 +80,8 @@ async function loadUserList(page) {
       }).join('');
     }
 
-    // 分页
-    const totalPages = Math.ceil(total / _userSize);
-    const pager = document.getElementById('userPager');
-    if (!pager) return;
-    let batchHtml = '';
-    if (_selectedUsers.size > 0) {
-      batchHtml = `<span style="font-size:13px;color:#E74C3C;margin-right:12px">已选${_selectedUsers.size}人</span>
-        <button onclick="batchPurgeUsers()" style="padding:6px 16px;background:#E74C3C;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600">🗑️ 批量删除</button>`;
-    }
-    if (totalPages <= 1) {
-      pager.innerHTML = batchHtml + '<span style="font-size:13px;color:var(--text-secondary)">共 ' + total + ' 条</span>';
-    } else {
-      pager.innerHTML = batchHtml + `
-        <button onclick="loadUserList(1)" ${_userPage<=1?'disabled':''} style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);cursor:pointer;font-size:12px">首页</button>
-        <button onclick="loadUserList(${_userPage-1})" ${_userPage<=1?'disabled':''} style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);cursor:pointer;font-size:12px">上页</button>
-        <span style="font-size:13px;color:var(--text-secondary)">${_userPage}/${totalPages} · ${total}条</span>
-        <button onclick="loadUserList(${_userPage+1})" ${_userPage>=totalPages?'disabled':''} style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);cursor:pointer;font-size:12px">下页</button>
-        <button onclick="loadUserList(${totalPages})" ${_userPage>=totalPages?'disabled':''} style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);cursor:pointer;font-size:12px">末页</button>`;
-    }
+    renderUserPager();
+    updateSelectAllState();
   } catch(e) {
     console.error('loadUserList:', e);
     const tbody = document.getElementById('userTableBody');
@@ -78,23 +91,25 @@ async function loadUserList(page) {
 
 // ─── 批量选择逻辑 ─────────────────────────────────────
 function onUserCheckChange() {
+  // 只更新 _selectedUsers 和 UI，不重建表格
   const checks = document.querySelectorAll('#userTableBody .user-checkbox');
   _selectedUsers.clear();
   checks.forEach(cb => { if (cb.checked) _selectedUsers.add(cb.value); });
   updateSelectAllState();
-  loadUserList(_userPage); // 刷新分页栏显示批量删除按钮
+  renderUserPager(); // 只刷新分页栏（批量删除按钮）
 }
 
 function toggleSelectAll() {
   const selectAll = document.getElementById('userSelectAll');
   const checks = document.querySelectorAll('#userTableBody .user-checkbox');
+  _selectedUsers.clear();
   if (selectAll.checked) {
     checks.forEach(cb => { cb.checked = true; _selectedUsers.add(cb.value); });
   } else {
     checks.forEach(cb => { cb.checked = false; });
-    _selectedUsers.clear();
   }
-  loadUserList(_userPage);
+  updateSelectAllState();
+  renderUserPager();
 }
 
 function updateSelectAllState() {
@@ -111,14 +126,7 @@ function updateSelectAllState() {
 // ─── 批量删除 ────────────────────────────────────────
 function batchPurgeUsers() {
   if (_selectedUsers.size === 0) { showToast('请先选择用户'); return; }
-  const names = [];
   const phones = [..._selectedUsers];
-  document.querySelectorAll('#userTableBody .user-checkbox').forEach(cb => {
-    if (cb.checked) {
-      const tr = cb.closest('tr');
-      if (tr) names.push(tr.children[1]?.textContent || cb.value);
-    }
-  });
 
   if (!confirm('⚠️ 确定批量删除 ' + phones.length + ' 个用户的所有数据吗？\n\n此操作不可撤销！')) return;
   if (!confirm('⚠️ 最后确认：真的永久删除这 ' + phones.length + ' 位用户吗？')) return;
@@ -264,3 +272,4 @@ window.onUserCheckChange = onUserCheckChange;
 window.toggleSelectAll = toggleSelectAll;
 window.batchPurgeUsers = batchPurgeUsers;
 window.doBatchPurge = doBatchPurge;
+window.renderUserPager = renderUserPager;
