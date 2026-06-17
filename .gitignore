@@ -66,6 +66,11 @@ uploads/
 logs/*.log
 logs/*.log.*
 
+# 工作记忆 / 临时脚本（不跟踪）
+memory/
+scripts/loadtest*
+scripts/load_test_report*
+
 # Python
 *.py
 !scripts/*.py

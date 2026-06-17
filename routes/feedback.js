@@ -77,7 +77,7 @@ router.post('/:id/reply', requireAdmin, (req, res) => JSON_RES(res, () => {
   const newStatus = status || 'replied';
   db.prepare(
     "UPDATE feedback SET reply = ?, reply_by = ?, reply_at = datetime('now','localtime'), status = ? WHERE id = ?"
-  ).run(reply.trim(), req.admin.username || 'admin', newStatus, id);
+  ).run(reply.trim(), (req.user && req.user.username) || 'admin', newStatus, id);
 
   // 给用户发通知
   try {
@@ -94,7 +94,7 @@ router.post('/:id/approve', requireAdmin, (req, res) => JSON_RES(res, () => {
   const fb = db.prepare('SELECT * FROM feedback WHERE id = ?').get(req.params.id);
   if (!fb) return makeError('反馈不存在');
   db.prepare("UPDATE feedback SET status = 'approved', reply_by = ?, reply_at = datetime('now','localtime') WHERE id = ?")
-    .run(req.admin.username || 'admin', req.params.id);
+    .run((req.user && req.user.username) || 'admin', req.params.id);
 
   // 触发勋章检查（判官勋章按 approved 计数）
   try { const { checkBadges } = require('./badges'); if (checkBadges) checkBadges(fb.phone); } catch (e) { /* ignore */ }
@@ -115,7 +115,7 @@ router.post('/:id/reject', requireAdmin, (req, res) => JSON_RES(res, () => {
   const fb = db.prepare('SELECT * FROM feedback WHERE id = ?').get(req.params.id);
   if (!fb) return makeError('反馈不存在');
   db.prepare("UPDATE feedback SET status = 'rejected', reply = ?, reply_by = ?, reply_at = datetime('now','localtime') WHERE id = ?")
-    .run(reason || '暂不处理', req.admin.username || 'admin', req.params.id);
+    .run(reason || '暂不处理', (req.user && req.user.username) || 'admin', req.params.id);
 
   // 通知用户
   try {

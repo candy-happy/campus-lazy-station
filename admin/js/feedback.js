@@ -150,7 +150,7 @@ async function approveFeedback(id) {
   try {
     const res = await fetch('/api/feedback/' + id + '/approve', {
       method: 'POST',
-      headers: _fbAuth()
+      headers: { 'Content-Type': 'application/json', ..._fbAuth() }
     }).then(r => r.json());
     if (res.error) throw new Error(res.error);
     showToast('已通过 ✅');
