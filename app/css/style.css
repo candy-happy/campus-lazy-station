@@ -2658,8 +2658,8 @@
     }
     .badge-card {
       background: var(--card);
-      border-radius: 14px;
-      padding: 16px 8px;
+      border-radius: 16px;
+      padding: 20px 10px;
       text-align: center;
       box-shadow: var(--shadow);
       transition: transform 0.2s, box-shadow 0.2s;
@@ -2673,17 +2673,26 @@
       filter: grayscale(1);
     }
     .badge-icon {
-      font-size: 36px;
+      font-size: 48px;
       display: block;
       margin-bottom: 8px;
     }
     .badge-img-icon {
-      width: 48px;
-      height: 48px;
+      width: 72px;
+      height: 72px;
       display: block;
       margin: 0 auto 8px;
       object-fit: contain;
-      border-radius: 10px;
+      border-radius: 14px;
+    }
+    /* 勋章详情弹窗放大 */
+    .badge-detail-icon .badge-icon {
+      font-size: 80px;
+    }
+    .badge-detail-icon .badge-img-icon {
+      width: 120px;
+      height: 120px;
+      border-radius: 20px;
     }
     .badge-img-locked {
       opacity: 0.3;
