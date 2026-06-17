@@ -934,6 +934,11 @@
       showToast(res.following ? '已关注' : '已取消关注');
       const post = wallPosts.find(p => p.id === postId);
       if (post) post.isFollowing = res.following;
+      // 如果用户主页开着，刷新粉丝/关注计数
+      var profilePage = document.getElementById('wallProfilePage_sub');
+      if (profilePage && profilePage.classList.contains('active')) {
+        showWallUser(phone);
+      }
  }
 
     // 校园墙私信（带隐私检查+友好提示）
@@ -1004,14 +1009,22 @@
         el.className = 'sub-page';
         document.body.appendChild(el);
       }
+      // 保存列表元数据，供 toggleFollowFromList 刷新用
+      el.dataset.listPhone = phone;
+      el.dataset.listType = type;
       el.innerHTML = '<div class="sub-page-header"><button class="sub-page-back" onclick="closeSubPage(\'followListPage_sub\')">←</button><span class="sub-page-title">' + title + '</span></div>' +
         '<div class="sub-page-body" style="padding:0">' +
         '<div class="follow-list-hero"><span class="follow-list-hero-icon">' + heroIcon + '</span><div class="follow-list-hero-title">' + title + '</div></div>' +
         '<div id="followListContent" style="padding:8px 12px"><div style="text-align:center;padding:24px;color:var(--text-secondary)"><div class="follow-list-spinner"></div><div style="margin-top:8px;font-size:13px">加载中...</div></div></div></div>';
       openSubPage('followListPage_sub');
+      await _renderFollowListItems(phone, type);
+    }
 
+    // 渲染关注/粉丝列表项（可独立调用刷新）
+    async function _renderFollowListItems(phone, type) {
       const list = type === 'followers' ? await API.wallFollowers(phone) : await API.wallFollowing(phone);
       const container = document.getElementById('followListContent');
+      if (!container) return;
       if (list.error) {
         container.innerHTML = '<div class="sub-empty"><div class="sub-empty-icon">😕</div><div class="sub-empty-text">' + escHtml(list.error) + '</div></div>';
         return;
@@ -1046,14 +1059,30 @@
       if (!currentUser) return showLoginPage();
       const res = await API.wallFollow(currentUser.phone, phone);
       if (res.error) return showToast(res.error);
-      if (res.following) {
-        btn.textContent = '已关注';
-        btn.className = 'follow-list-btn follow-list-btn-followed';
-      } else {
-        btn.textContent = '+ 关注';
-        btn.className = 'follow-list-btn follow-list-btn-follow';
+      // 即时更新按钮（响应快）
+      if (btn) {
+        btn.textContent = res.following ? '已关注' : '+ 关注';
+        if (res.following) {
+          btn.className = 'follow-list-btn follow-list-btn-followed';
+        } else {
+          btn.className = 'follow-list-btn follow-list-btn-follow';
+        }
       }
       showToast(res.following ? '已关注' : '已取消关注');
+      // 后台刷新列表（互相关注标签 + 所有按钮状态）
+      var listEl = document.getElementById('followListPage_sub');
+      if (listEl && listEl.classList.contains('active')) {
+        var listPhone = listEl.dataset.listPhone;
+        var listType = listEl.dataset.listType;
+        if (listPhone && listType) {
+          _renderFollowListItems(listPhone, listType);
+        }
+      }
+      // 如果该用户主页开着，刷新粉丝/关注计数
+      var profilePage = document.getElementById('wallProfilePage_sub');
+      if (profilePage && profilePage.classList.contains('active')) {
+        showWallUser(phone);
+      }
     }
 
 
