@@ -853,7 +853,7 @@
       const data = await API.wallUserProfile(phone);
       if (data.error) return showToast(data.error);
       const posts = data.posts || [];
-      const isMe = phone === currentUser.phone;
+      const isMe = currentUser ? phone === currentUser.phone : false;
       var bgStyle = '';
       if (data.bg_image) {
         bgStyle = 'background-image:url(' + escHtml(data.bg_image) + ');background-size:cover;background-position:center';
@@ -994,7 +994,7 @@
     // 查看关注/粉丝列表
 
     async function showFollowList(phone, type) {
-      const isMe = phone === currentUser.phone;
+      const isMe = currentUser ? phone === currentUser.phone : false;
       const title = type === 'followers' ? (isMe ? '我的粉丝' : 'TA的粉丝') : (isMe ? '我的关注' : 'TA的关注');
       const heroIcon = type === 'followers' ? '👥' : '👁';
       let el = document.getElementById('followListPage_sub');
