@@ -3764,6 +3764,7 @@
       width: 32px; height: 32px;
       min-width: 32px;
       border-radius: 50%;
+      overflow: hidden;
       background: linear-gradient(135deg, #FF6B35, #FF8C5A);
       color: #fff;
       display: flex;

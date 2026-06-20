@@ -1728,7 +1728,7 @@
         var avatarChar = otherName ? otherName.charAt(0) : '?';
         return `
           <div class="message-bubble ${isMe?'me':'other'}" data-time="${time}" data-content="${escHtml(dataContent)}">
-            ${!isMe ? '<div class="message-avatar"><img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" /></div>' : ''}
+            ${!isMe ? '<div class="message-avatar"><img src="'+escHtml(m.sender_avatar || '/uploads/avatars/default-girl.png')+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.src=\'/uploads/avatars/default-girl.png\';this.onerror=null;this.style.display=\'\'" /></div>' : ''}
             <div class="message-content">${content}<div class="message-time">${time}</div></div>
           </div>
         `;
