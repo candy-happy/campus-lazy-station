@@ -91,10 +91,10 @@ const API = {
   },
 
   // ─── 用户 ───
-  async userLogin(student_id, password) {
+  async userLogin(student_id, password, captcha, captchaKey) {
     const res = await fetch('/api/user/login', {
       method: 'POST', headers: this._headers(),
-      body: JSON.stringify({ student_id, password })
+      body: JSON.stringify({ student_id, password, captcha, captchaKey })
     }).then(r => r.json());
     if (res.error) { const e = new Error(res.error); e.code = res.code; e.retryAfter = res.retryAfter; throw e; }
     this._user = Object.assign({}, res.user, { phone_original: res.user?.phone || student_id });

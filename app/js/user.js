@@ -80,11 +80,11 @@
                 <input id="loginPassword" type="password" placeholder="请输入密码" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box" />
                 <p style="font-size:11px;color:var(--text-secondary);margin-top:4px">首次登录默认密码：shoujihao</p>
               </div>
-              <div style="text-align:left;margin-bottom:24px;display:none">
-                <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">验证码（临时禁用）</label>
+              <div style="text-align:left;margin-bottom:24px">
+                <label style="font-size:13px;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:6px">验证码</label>
                 <div style="display:flex;gap:10px;align-items:center">
-                  <input id="loginCaptcha" type="text" placeholder="汇报演示临时禁用" disabled style="flex:1;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:#f5f5f5;color:var(--text);outline:none;box-sizing:border-box;min-width:0" />
-                  <img id="captchaImg" src="" alt="验证码已禁用" style="height:44px;border-radius:10px;opacity:0.5;flex-shrink:0" />
+                  <input id="loginCaptcha" type="text" placeholder="请输入验证码" maxlength="4" style="flex:1;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:#f5f5f5;color:var(--text);outline:none;box-sizing:border-box;min-width:0" />
+                  <img id="captchaImg" src="" alt="点击刷新" onclick="refreshCaptcha()" style="height:44px;border-radius:10px;cursor:pointer;flex-shrink:0" />
                 </div>
               </div>
               <button id="loginBtn" onclick="doLogin()" style="width:100%;padding:14px;border:none;border-radius:14px;background:var(--gradient);color:white;font-size:16px;font-weight:700;cursor:pointer">
@@ -178,11 +178,14 @@
       const password = document.getElementById('loginPassword').value.trim();
       if (!/^\d{9}$/.test(studentId)) { showToast('请输入正确的9位学号'); return; }
       if (!password) { showToast('请输入密码'); return; }
+      const captchaInput = document.getElementById('loginCaptcha');
+      const captchaVal = captchaInput ? captchaInput.value.trim() : '';
+      if (!captchaVal) { showToast('请输入验证码'); return; }
       if (!document.getElementById('agreeTerms').checked) { showToast('请先阅读并同意服务条款和隐私协议'); return; }
       btn.textContent = '登录中...';
       btn.disabled = true;
       try {
-        const res = await API.userLogin(studentId, password);
+        const res = await API.userLogin(studentId, password, captchaVal, _captchaKey);
         currentUser = { student_id: studentId, phone: res.phone || studentId, name: res.name || '同学', nickname: res.nickname || '' };
         localStorage.setItem('lazy_session', JSON.stringify({ role: 'user', student_id: studentId, phone: res.phone || studentId, name: res.name || '同学', nickname: res.nickname || '' }));
         document.getElementById('loginOverlay').style.display = 'none';
@@ -195,21 +198,32 @@
       } catch(e) {
         const msg = e.message || '';
         const code = e.code || '';
-        // 密码错误 → 抖动密码框
+        // 密码错误 → 抖动密码框 + 刷新验证码
         if (msg.includes('密码')) {
           const pwEl = document.getElementById('loginPassword');
           if (pwEl) { pwEl.style.borderColor = '#e74c3c'; pwEl.style.animation = 'shake 0.4s ease'; setTimeout(() => { pwEl.style.borderColor = ''; pwEl.style.animation = ''; }, 500); }
           if (msg.includes('首次登录')) { showToast(msg + '，请重试', 4500); }
           else { showToast('密码错误，请重试'); }
           document.getElementById('loginPassword').value = '';
+          refreshCaptcha();
+          const capEl = document.getElementById('loginCaptcha');
+          if (capEl) capEl.value = '';
         }
         // 请求频繁 → 显示重试倒计时
         else if (code === 'RATE_001' && e.retryAfter) {
           showToast('登录尝试过多，请 ' + e.retryAfter + ' 秒后重试', 4000);
         }
+        // 验证码错误 → 刷新验证码 + 提示
+        else if (code === 'CAPTCHA_INVALID') {
+          showToast('验证码错误或已过期，请重新输入');
+          refreshCaptcha();
+          const capEl = document.getElementById('loginCaptcha');
+          if (capEl) { capEl.value = ''; capEl.style.borderColor = '#e74c3c'; capEl.style.animation = 'shake 0.4s ease'; setTimeout(() => { capEl.style.borderColor = ''; capEl.style.animation = ''; }, 500); }
+        }
         // 其他错误
         else {
           showToast(msg || '网络异常，请重试');
+          refreshCaptcha();
         }
         console.error('doLogin error:', e);
       } finally {
