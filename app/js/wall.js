@@ -894,7 +894,7 @@
           <div style="cursor:pointer" onclick="showFollowList('${phone}','following')" title="查看关注列表"><div style="font-size:18px;font-weight:900">${data.following}</div><div style="font-size:12px;color:var(--text-secondary,#888)">关注</div></div>
           <div><div style="font-size:18px;font-weight:900">${data.postCount}</div><div style="font-size:12px;color:var(--text-secondary,#888)">帖子</div></div>
         </div>
-        ${!isMe ? '<div style="display:flex;gap:10px;margin-bottom:16px;justify-content:center"><button onclick="doWallFollow(\''+phone+'\')" class="submit-btn" style="padding:10px 24px">' + (data.isFollowing ? '已关注' : '+ 关注') + '</button><button onclick="tryWallChat(\''+phone+'\')" class="submit-btn" style="padding:10px 24px;background:linear-gradient(135deg,#45B7D1,#6DD5ED);color:#fff">💬 私信</button></div>' : ''}
+        ${!isMe ? '<div style="display:flex;gap:10px;margin-bottom:16px;justify-content:center"><button onclick="doWallFollow(\''+phone+'\', this)" class="submit-btn" style="padding:10px 24px">' + (data.isFollowing ? '已关注' : '+ 关注') + '</button><button onclick="tryWallChat(\''+phone+'\')" class="submit-btn" style="padding:10px 24px;background:linear-gradient(135deg,#45B7D1,#6DD5ED);color:#fff">💬 私信</button></div>' : ''}
         <div style="font-weight:700;margin-bottom:12px">📝 ${isMe ? '我的' : 'TA的'}帖子</div>
         ${posts.length ? posts.map(p => `
           <div class="wall-card" style="margin-bottom:12px">
@@ -914,12 +914,18 @@
 
     // 关注/取消关注（用户主页按钮）
 
-    async function doWallFollow(phone) {
+    async function doWallFollow(phone, btn) {
       if (!currentUser) return showLoginPage();
       const res = await API.wallFollow(currentUser.phone, phone);
       if (res.error) return showToast(res.error);
       showToast(res.following ? '已关注' : '已取消关注');
-      showWallUser(phone);
+      // 手动立即更新按钮状态
+      if (btn) {
+        btn.textContent = res.following ? '已关注' : '+ 关注';
+        btn.style.background = res.following ? 'var(--text-secondary,#888)' : '';
+      }
+      // 延迟刷新页面，确保后端数据已同步
+      setTimeout(() => showWallUser(phone), 300);
       // 刷新"我的"页面的关注/粉丝计数
       if (typeof updateMePage === 'function') updateMePage();
     }
@@ -993,7 +999,7 @@
         '<div style="font-size:64px;margin-bottom:16px">🔒</div>' +
         '<div style="font-size:18px;font-weight:700;margin-bottom:8px">对方设置了私聊权限</div>' +
         '<div style="font-size:14px;color:var(--text-secondary,#888);margin-bottom:24px;line-height:1.6">' + escHtml(reason) + '</div>' +
-        '<button class="submit-btn" style="padding:12px 32px;font-size:15px" onclick="closeSubPage(\'chatBlockedPage_sub\');doWallFollow(\''+otherPhone+'\')">❤️ 关注对方</button>' +
+        '<button class="submit-btn" style="padding:12px 32px;font-size:15px" onclick="closeSubPage(\'chatBlockedPage_sub\');doWallFollow(\''+otherPhone+'\', this)">❤️ 关注对方</button>' +
         '<button style="margin-top:12px;padding:10px 24px;border:1px solid var(--border,#ddd);border-radius:8px;background:transparent;color:var(--text-secondary,#888);font-size:14px" onclick="closeSubPage(\'chatBlockedPage_sub\')">返回</button>' +
         '</div>';
       openSubPage('chatBlockedPage_sub');
