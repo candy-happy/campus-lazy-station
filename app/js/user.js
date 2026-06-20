@@ -669,7 +669,7 @@ window.showTermsModal = showTermsModal;
               const nickname = b.nickname || b.blocked_phone || '未知';
               const avatarHtml = avatar
                 ? `<img src="${escHtml(avatar)}" style="width:40px;height:40px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'" />`
-                : `<img src="/default-avatar.png" style="width:40px;height:40px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'" />`;
+                : `<img src="/uploads/avatars/default-girl.png" style="width:40px;height:40px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'" />`;
               return `
                 <div class="block-list-item" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
                   ${avatarHtml}

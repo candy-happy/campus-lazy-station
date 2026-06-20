@@ -727,7 +727,7 @@
       el.innerHTML = wallPosts.map(p => {
         const avatarHtml = p.avatar && (p.avatar.startsWith('/') || p.avatar.startsWith('http'))
           ? '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="'+escHtml(p.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" /></div>'
-          : '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" /></div>';
+          : '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" /></div>';
         const hasImages = p.images && p.images.length;
         // 图片布局：1张大图/2张并排/3+宫格
         let imageGrid = '';
@@ -937,7 +937,7 @@
           if (isUrl) {
             avatarEl.innerHTML = '<img src="' + av + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" />';
           } else {
-            avatarEl.innerHTML = '<img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" />';
+            avatarEl.innerHTML = '<img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" />';
           }
         }
         const bioEl = document.getElementById('meBio');
@@ -1277,7 +1277,7 @@ window.showToast = showToast;
     function renderWallPostCard(p) {
       const avatarHtml = p.avatar && (p.avatar.startsWith('/') || p.avatar.startsWith('http'))
         ? '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="'+escHtml(p.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" /></div>'
-        : '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" /></div>';
+        : '<div class="wall-avatar" style="cursor:pointer;overflow:hidden" onclick="showWallUser(\''+p.phone+'\')" title="查看TA的主页"><img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" /></div>';
       const hasImages = p.images && p.images.length;
       let imageGrid = '';
       if (hasImages) {

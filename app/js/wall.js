@@ -524,7 +524,7 @@
         if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
           return `<div style="width:${s}px;height:${s}px;border-radius:50%;overflow:hidden;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:2px solid rgba(255,255,255,0.8)" onclick="showWallUser('${data.phone}')"><img src="${escHtml(avatar)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'" /></div>`;
         }
-        return `<div style="width:${s}px;height:${s}px;border-radius:50%;overflow:hidden;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:2px solid rgba(255,255,255,0.8)" onclick="showWallUser('${data.phone}')"><img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'" /></div>`;
+        return `<div style="width:${s}px;height:${s}px;border-radius:50%;overflow:hidden;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:2px solid rgba(255,255,255,0.8)" onclick="showWallUser('${data.phone}')"><img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'" /></div>`;
       }
 
       // 渲染单条回复（楼中楼）
@@ -884,7 +884,7 @@
       el.innerHTML = `
         <div style="text-align:center;padding:32px 0 20px;position:relative;overflow:hidden;border-radius:16px 16px 0 0;margin-bottom:16px;${bgStyle}">
           <div style="position:relative;z-index:1">
-            <div class="wall-avatar" style="width:64px;height:64px;overflow:hidden;margin:0 auto 12px;border:3px solid rgba(255,255,255,0.6);box-shadow:0 2px 8px rgba(0,0,0,0.2)">${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? '<img src="'+escHtml(data.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" />'}</div>
+            <div class="wall-avatar" style="width:64px;height:64px;overflow:hidden;margin:0 auto 12px;border:3px solid rgba(255,255,255,0.6);box-shadow:0 2px 8px rgba(0,0,0,0.2)">${data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http')) ? '<img src="'+escHtml(data.avatar)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=&apos;none&apos;" />'}</div>
             <div style="font-size:18px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.3)">${escHtml(data.nickname)}</div>
             ${contactHtml}
           </div>
@@ -1284,8 +1284,8 @@
         var nick = getSavedNickname(c.other_phone);
         var displayName = nick || c.other_nickname || c.other_name || c.other_phone;
         var avatarHtml = c.other_avatar
-          ? '<img src="'+escHtml(c.other_avatar)+'" class="chat-item-avatar-img" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'\'" /><span class="chat-item-avatar-fallback" style="display:none"><img src="/default-avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\'" /></span>'
-          : '<span class="chat-item-avatar-fallback"><img src="/default-avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\'" /></span>';
+          ? '<img src="'+escHtml(c.other_avatar)+'" class="chat-item-avatar-img" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'\'" /><span class="chat-item-avatar-fallback" style="display:none"><img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\'" /></span>'
+          : '<span class="chat-item-avatar-fallback"><img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\'" /></span>';
         return `
         <div class="chat-item" data-conv-id="${c.id}" onclick="${window._pendingSharePostId ? 'window.shareAndOpenConv' : 'openChatConv'}(${c.id},'${escHtml(c.other_phone)}','${escHtml(displayName)}')">
           <div class="chat-item-avatar">${avatarHtml}</div>
@@ -1387,17 +1387,17 @@
       var displayName = name || phone || '?';
       // 尝试从 profile 获取头像
       if (avatarUrl) {
-        el.innerHTML = '<img src="'+escHtml(avatarUrl)+'" class="chat-header-avatar-img" onerror="this.outerHTML=\'<img src=\"/default-avatar.png\" class=\"chat-header-avatar-img\" onerror=\"this.style.display=\'none\'\" />\'" />';
+        el.innerHTML = '<img src="'+escHtml(avatarUrl)+'" class="chat-header-avatar-img" onerror="this.outerHTML=\'<img src=\"/uploads/avatars/default-girl.png\" class=\"chat-header-avatar-img\" onerror=\"this.style.display=\'none\'\" />\'" />';
       } else {
         // 异步获取用户头像
         API.wallUserProfile(phone).then(function(p){
           if (p && p.avatar) {
-            el.innerHTML = '<img src="'+escHtml(p.avatar)+'" class="chat-header-avatar-img" onerror="this.outerHTML=\'<img src=\"/default-avatar.png\" class=\"chat-header-avatar-img\" onerror=\"this.style.display=\'none\'\" />\'" />';
+            el.innerHTML = '<img src="'+escHtml(p.avatar)+'" class="chat-header-avatar-img" onerror="this.outerHTML=\'<img src=\"/uploads/avatars/default-girl.png\" class=\"chat-header-avatar-img\" onerror=\"this.style.display=\'none\'\" />\'" />';
           } else {
-            el.innerHTML = '<img src="/default-avatar.png" class="chat-header-avatar-img" onerror="this.style.display=\'none\'" />';
+            el.innerHTML = '<img src="/uploads/avatars/default-girl.png" class="chat-header-avatar-img" onerror="this.style.display=\'none\'" />';
           }
         }).catch(function(){
-          el.innerHTML = '<img src="/default-avatar.png" class="chat-header-avatar-img" onerror="this.style.display=\'none\'" />';
+          el.innerHTML = '<img src="/uploads/avatars/default-girl.png" class="chat-header-avatar-img" onerror="this.style.display=\'none\'" />';
         });
       }
     }
@@ -1728,7 +1728,7 @@
         var avatarChar = otherName ? otherName.charAt(0) : '?';
         return `
           <div class="message-bubble ${isMe?'me':'other'}" data-time="${time}" data-content="${escHtml(dataContent)}">
-            ${!isMe ? '<div class="message-avatar"><img src="/default-avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" /></div>' : ''}
+            ${!isMe ? '<div class="message-avatar"><img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" /></div>' : ''}
             <div class="message-content">${content}<div class="message-time">${time}</div></div>
           </div>
         `;

@@ -287,7 +287,7 @@ async function showStarDetail(id) {
       + '<div style="position:relative;text-align:center;padding:28px 16px 20px;' + coverStyle + '">'
       // 头像 - 优先使用个人资料头像
       + '<div style="position:relative;z-index:1;width:64px;height:64px;border-radius:50%;overflow:hidden;margin:0 auto 10px;border:3px solid rgba(255,255,255,0.6);box-shadow:0 2px 8px rgba(0,0,0,0.2)">'
-      + (userProfile.avatar ? '<img src="' + userProfile.avatar + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />')
+      + (userProfile.avatar ? '<img src="' + userProfile.avatar + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />')
       + '</div>'
       // 名字
       + '<div style="position:relative;z-index:1;font-size:18px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.3)">' + escHtml(c.name) + '</div>'
@@ -491,7 +491,7 @@ async function shareStarCandidate(id) {
   function avatarHTML(u) {
     return u.avatar
       ? '<div style="width:44px;height:44px;border-radius:50%;flex-shrink:0;overflow:hidden;background:#eee"><img src="' + escHtml(u.avatar) + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" /><span style="display:none"></span></div>'
-      : '<div style="width:44px;height:44px;border-radius:50%;flex-shrink:0;overflow:hidden"><img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" /></div>';
+      : '<div style="width:44px;height:44px;border-radius:50%;flex-shrink:0;overflow:hidden"><img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" /></div>';
   }
 
   var groups = [
@@ -869,7 +869,7 @@ async function loadStarComments(candidateId) {
       html += '<div style="display:flex;gap:10px;padding:14px 0;' + (ci > 0 ? 'border-top:1px solid rgba(0,0,0,0.05)' : '') + '">'
         // 头像 - 更大更醒目
         + '<div onclick="' + (cmPhone ? 'showWallUser(\'' + cmPhone + '\')' : '') + '" style="width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;background:linear-gradient(145deg,#fce4ec,#f8bbd0);' + (cmPhone ? 'cursor:pointer' : '') + ';box-shadow:0 2px 8px rgba(233,30,99,0.15);border:2px solid rgba(255,255,255,0.8);transition:all 0.2s" title="' + (cmPhone ? '查看TA的主页' : '') + '">'
-        + (avatar ? '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />')
+        + (avatar ? '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/uploads/avatars/default-girl.png" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />')
         + '</div>'
         + '<div style="flex:1;min-width:0">'
         // 头部行：昵称 + 时间标签
