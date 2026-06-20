@@ -12,11 +12,12 @@
 
 const express = require('express');
 const router = express.Router();
+const { requireAuth } = require('../middleware/auth');
 
 const API_KEY = process.env.DOUBAO_API_KEY || '';
 const MODEL = 'doubao-seedream-5-0-260128';
 
-router.post('/generate', async (req, res) => {
+router.post('/generate', requireAuth, async (req, res) => {
   if (!API_KEY) {
     return res.status(500).json({ error: 'DOUBAO_API_KEY 未配置', code: 'AI_001' });
   }

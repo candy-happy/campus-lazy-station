@@ -243,7 +243,7 @@ router.get('/my-status', requireAuth, (req, res) => {
 
 // ─── 月度结算（内部调用 / 定时任务）─────────────────────
 // POST /api/campus-star/settle
-router.post('/settle', (req, res) => {
+router.post('/settle', requireAdmin, (req, res) => {
   JSON_RES(res, () => {
     const lastMonth = (() => {
       const d = new Date();

@@ -292,16 +292,16 @@ function showCalendarDateActivities(dateStr) {
     container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">这天没有活动</div>`;
     return;
   }
-  container.innerHTML = `<div style="font-size:14px;font-weight:600;margin-bottom:8px">📅 ${dateStr} 的活动 (${acts.length})</div>` +
+  container.innerHTML = `<div style="font-size:14px;font-weight:600;margin-bottom:8px">📅 ${escHtml(dateStr)} 的活动 (${acts.length})</div>` +
     acts.map(a => {
       const timeStr = a.start_time ? a.start_time.substring(11, 16) : '';
       const catColors = { '讲座':'#3498DB','比赛':'#E74C3C','聚会':'#F39C12','志愿':'#2ECC71','演出':'#9B59B6','运动':'#1ABC9C' };
       const catColor = catColors[a.category] || '#95A5A6';
       return `<div onclick="showActivityDetail(${a.id})" style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:10px">
-        <div style="background:${catColor};color:#fff;border-radius:8px;padding:4px 8px;font-size:11px;white-space:nowrap">${a.category || '活动'}</div>
+        <div style="background:${catColor};color:#fff;border-radius:8px;padding:4px 8px;font-size:11px;white-space:nowrap">${escHtml(a.category || '活动')}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(a.title)}</div>
-          <div style="font-size:12px;color:var(--text-muted)">${timeStr} · ${a.location || '待定'}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${escHtml(timeStr)} · ${escHtml(a.location || '待定')}</div>
         </div>
         <span style="font-size:12px;color:var(--text-muted)">${a.current_count || 0}/${a.max_participants || '∞'}</span>
       </div>`;

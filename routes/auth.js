@@ -37,10 +37,10 @@ router.post('/user/login', userLoginRateLimit, (req, res) => JSON_RES(res, () =>
   if (!student_id || !/^\d{9}$/.test(student_id)) return makeError('请输入正确的9位学号', ErrorCode.PARAM_INVALID);
   if (!password) return makeError('请输入密码', ErrorCode.PARAM_MISSING);
 
-  // 验证码验证（临时禁用，用于汇报演示）
-  // if (!captchaInput) return makeError('请输入验证码', ErrorCode.PARAM_MISSING);
-  // const key = captchaKey || student_id;
-  // if (!captcha.verify(key, captchaInput)) return makeError('验证码错误或已过期', ErrorCode.CAPTCHA_INVALID);
+  // 验证码验证
+  if (!captchaInput) return makeError('请输入验证码', ErrorCode.PARAM_MISSING);
+  const key = captchaKey || student_id;
+  if (!captcha.verify(key, captchaInput)) return makeError('验证码错误或已过期', ErrorCode.CAPTCHA_INVALID);
 
   let user = db.prepare('SELECT * FROM users WHERE student_id = ?').get(student_id);
 
@@ -210,10 +210,11 @@ router.post('/admin/login', bruteForceGuard, (req, res) => JSON_RES(res, () => {
   }
 
   let matched = false;
-  if (admin.password.startsWith('$2a$') || admin.password.startsWith('$2b$')) {
+  if (admin.password && (admin.password.startsWith('$2a$') || admin.password.startsWith('$2b$'))) {
     matched = bcrypt.compareSync(password, admin.password);
   } else {
-    matched = admin.password === password;
+    // 明文密码兼容（仅迁移期，已用恒定时间比较）
+    matched = admin.password ? crypto.timingSafeEqual(Buffer.from(password), Buffer.from(admin.password)) && password.length === admin.password.length : false;
     if (matched) {
       const hash = bcrypt.hashSync(password, 10);
       db.prepare('UPDATE admins SET password = ? WHERE id = ?').run(hash, admin.id);
