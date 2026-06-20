@@ -689,17 +689,14 @@ async function deleteClubComment(postId, commentId, el) {
 // ─── 申请加入弹窗 ──────────────────────────────────────
 function applyJoinClub(id) {
   if (!currentUser) return showToast('请先登录');
-  const modal = document.getElementById('clubApplyModal');
-  if (!modal) return;
-  modal.style.display = 'flex';
+  _currentClubId = id;
   const input = document.getElementById('clubApplyReason');
   if (input) input.value = '';
-  _currentClubId = id;
+  openSubPage('clubApplyPage_sub');
 }
 
 function closeClubApplyModal() {
-  const modal = document.getElementById('clubApplyModal');
-  if (modal) modal.style.display = 'none';
+  closeSubPage('clubApplyPage_sub');
 }
 
 async function submitClubApply() {
@@ -729,17 +726,14 @@ async function leaveClub(id) {
 
 // ─── 社团公告发布 ──────────────────────────────────────
 function openClubPostModal() {
-  const modal = document.getElementById('clubPostModal');
-  if (!modal) return;
-  modal.style.display = 'flex';
   const input = document.getElementById('clubPostContent');
   if (input) input.value = '';
   const fileInput = document.getElementById('clubPostPhotos');
   if (fileInput) fileInput.value = '';
+  openSubPage('clubPostPage_sub');
 }
 function closeClubPostModal() {
-  const modal = document.getElementById('clubPostModal');
-  if (modal) modal.style.display = 'none';
+  closeSubPage('clubPostPage_sub');
 }
 async function submitClubPost() {
   const input = document.getElementById('clubPostContent');
@@ -1008,13 +1002,10 @@ function renderClubSettings(c) {
 
 // ─── 编辑社团信息弹窗 ──────────────────────────────────
 function openEditClubModal() {
-  const modal = document.getElementById('clubEditModal');
-  if (!modal) return;
-  modal.style.display = 'flex';
+  openSubPage('clubEditPage_sub');
 }
 function closeEditClubModal() {
-  const modal = document.getElementById('clubEditModal');
-  if (modal) modal.style.display = 'none';
+  closeSubPage('clubEditPage_sub');
 }
 async function submitEditClub() {
   const nameEl = document.getElementById('clubEditName');
@@ -1053,11 +1044,10 @@ function transferClubOwner() {
       </div>
     `).join('');
   }
-  modal.style.display = 'flex';
+  openSubPage('clubTransferPage_sub');
 }
 function closeClubTransferModal() {
-  const modal = document.getElementById('clubTransferModal');
-  if (modal) modal.style.display = 'none';
+  closeSubPage('clubTransferPage_sub');
 }
 async function confirmTransferClub(targetPhone) {
   if (!confirm('转让后你将变为普通成员，确定继续？')) return;
@@ -1185,13 +1175,11 @@ async function submitCreateActivity() {
 // ─── 创建社团弹窗 ──────────────────────────────────────
 function openCreateClubModal() {
   if (!currentUser) return showToast('请先登录');
-  const modal = document.getElementById('createClubModal');
-  if (modal) modal.style.display = 'flex';
+  openSubPage('createClubPage_sub');
 }
 
 function closeCreateClubModal() {
-  const modal = document.getElementById('createClubModal');
-  if (modal) modal.style.display = 'none';
+  closeSubPage('createClubPage_sub');
 }
 
 async function submitCreateClub() {
@@ -1278,26 +1266,11 @@ window.loadMyClubs = loadMyClubs;
   
 
   // ═══ 社团子页面（融合版） ═══
-
-  // 社团功能开发中 → 显示占位弹窗
-  function openClubComingSoon() {
-    var modal = document.getElementById('clubComingSoonModal');
-    if (modal) { modal.style.display = 'flex'; }
-  }
-  function closeClubComingSoon() {
-    var modal = document.getElementById('clubComingSoonModal');
-    if (modal) { modal.style.display = 'none'; }
-  }
-  window.openClubComingSoon = openClubComingSoon;
-  window.closeClubComingSoon = closeClubComingSoon;
-
-  // 打开社团子页面（暂未开放，显示占位弹窗）
+// 打开社团子页面
   function openClubPage() {
-    openClubComingSoon();
-    // 以下为正式开放后的代码：
-    // document.getElementById('clubPage_sub').classList.add('active');
-    // loadClubPage();
-    // switchClubTab('my');
+    document.getElementById('clubPage_sub').classList.add('active');
+    loadClubPage();
+    switchClubTab('my');
   }
   window.openClubPage = openClubPage;
 

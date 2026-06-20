@@ -1174,14 +1174,42 @@
         </form>
       </div>
     </div>
+</div>
+</div>
+</div>
+</div>
 
-    <!-- 创建社团弹窗 -->
-    <div id="createClubModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:210;align-items:flex-end;justify-content:center">
-      <div style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:80vh;overflow-y:auto;padding:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <span style="font-size:17px;font-weight:700">创建社团</span>
-          <button onclick="closeCreateClubModal()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
+    <!-- 海报生成弹窗 -->
+    <div id="posterModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:210;align-items:center;justify-content:center">
+      <div style="background:var(--card);border-radius:16px;width:90%;max-width:340px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:16px;font-weight:700">📤 分享海报</div>
+          <button onclick="closePosterModal()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
         </div>
+        <canvas id="posterCanvas" width="300" height="450" style="width:100%;border-radius:12px;margin-bottom:12px"></canvas>
+        <div style="display:flex;gap:8px">
+          <button onclick="downloadPoster()" style="flex:1;padding:10px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">💾 保存图片</button>
+          <button onclick="sharePoster()" style="flex:1;padding:10px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--border);font-size:14px;cursor:pointer">📋 复制</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+    <!-- 社团管理子页面 -->
+    <div class="sub-page" id="clubManageSub">
+      <div class="sub-page-header">
+        <button class="sub-page-back" onclick="closeSubPage('clubManageSub')">←</button>
+        <span class="sub-page-title">社团管理</span>
+      </div>
+      <div class="sub-page-body" id="clubManageContent"></div>
+    </div>
+
+        <div class="sub-page" id="createClubPage_sub">
+      <div class="sub-page-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91)">
+        <button class="sub-page-back" onclick="closeSubPage('createClubPage_sub')" style="color:#fff">←</button>
+        <span class="sub-page-title" style="color:#fff">创建社团</span>
+      </div>
+      <div class="sub-page-body" style="padding:16px">
         <form id="createClubForm" onsubmit="event.preventDefault();submitCreateClub()">
           <div class="form-group">
             <label class="form-label">社团名称 *</label>
@@ -1213,25 +1241,26 @@
       </div>
     </div>
 
-    <!-- 社团申请加入弹窗 -->
-    <div id="clubApplyModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:210;align-items:center;justify-content:center">
-      <div style="background:var(--card);border-radius:16px;width:90%;max-width:380px;padding:20px">
-        <div style="font-size:17px;font-weight:700;margin-bottom:4px">📝 申请加入</div>
+        <div class="sub-page" id="clubApplyPage_sub">
+      <div class="sub-page-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91)">
+        <button class="sub-page-back" onclick="closeSubPage('clubApplyPage_sub')" style="color:#fff">←</button>
+        <span class="sub-page-title" style="color:#fff">📝 申请加入</span>
+      </div>
+      <div class="sub-page-body" style="padding:16px">
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">向社长介绍自己，提高通过率</div>
-        <textarea id="clubApplyReason" placeholder="你好，我是...（选填）" rows="3" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:14px;resize:none;box-sizing:border-box"></textarea>
+        <textarea id="clubApplyReason" placeholder="你好，我是...（选填）" rows="4" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:14px;resize:none;box-sizing:border-box"></textarea>
         <div style="display:flex;gap:8px;margin-top:14px">
           <button onclick="closeClubApplyModal()" style="flex:1;padding:10px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--border);font-size:14px;cursor:pointer">取消</button>
           <button onclick="submitClubApply()" style="flex:1;padding:10px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">提交申请</button>
         </div>
       </div>
-    </div>
 
-    </div>
-
-    <!-- 社团发布公告弹窗 -->
-    <div id="clubPostModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:210;align-items:center;justify-content:center">
-      <div style="background:var(--card);border-radius:16px;width:90%;max-width:380px;padding:20px">
-        <div style="font-size:17px;font-weight:700;margin-bottom:4px">✏️ 发布公告</div>
+        <div class="sub-page" id="clubPostPage_sub">
+      <div class="sub-page-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91)">
+        <button class="sub-page-back" onclick="closeSubPage('clubPostPage_sub')" style="color:#fff">←</button>
+        <span class="sub-page-title" style="color:#fff">✏️ 发布公告</span>
+      </div>
+      <div class="sub-page-body" style="padding:16px">
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">向社团成员发布重要信息或动态</div>
         <textarea id="clubPostContent" placeholder="通知全体成员..." rows="4" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:14px;resize:none;box-sizing:border-box"></textarea>
         <input type="file" id="clubPostPhotos" multiple style="margin-top:8px;font-size:13px" />
@@ -1241,12 +1270,13 @@
           <button onclick="submitClubPost()" style="flex:1;padding:10px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">发布</button>
         </div>
       </div>
-    </div>
 
-    <!-- 社团编辑信息弹窗 -->
-    <div id="clubEditModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:210;align-items:center;justify-content:center">
-      <div style="background:var(--card);border-radius:16px;width:90%;max-width:380px;padding:20px">
-        <div style="font-size:17px;font-weight:700;margin-bottom:14px">✏️ 编辑社团信息</div>
+        <div class="sub-page" id="clubEditPage_sub">
+      <div class="sub-page-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91)">
+        <button class="sub-page-back" onclick="closeSubPage('clubEditPage_sub')" style="color:#fff">←</button>
+        <span class="sub-page-title" style="color:#fff">✏️ 编辑社团信息</span>
+      </div>
+      <div class="sub-page-body" style="padding:16px">
         <div class="form-group"><label class="form-label">社团名称</label><input id="clubEditName" class="form-input" placeholder="社团名称" /></div>
         <div class="form-group"><label class="form-label">分类</label><select id="clubEditCategory" class="form-input"><option value="">不修改</option><option value="文艺">🎨 文艺</option><option value="体育">⚽ 体育</option><option value="学术">📚 学术</option><option value="科技">💻 科技</option><option value="公益">💛 公益</option><option value="社交">🤝 社交</option><option value="音乐">🎵 音乐</option><option value="其他">🏷️ 其他</option></select></div>
         <div class="form-group"><label class="form-label">简介</label><textarea id="clubEditDesc" class="form-textarea" rows="3" placeholder="社团简介"></textarea></div>
@@ -1256,54 +1286,19 @@
           <button onclick="submitEditClub()" style="flex:1;padding:10px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">保存</button>
         </div>
       </div>
-    </div>
 
-    <!-- 社团转让弹窗 -->
-    <div id="clubTransferModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:210;align-items:center;justify-content:center">
-      <div style="background:var(--card);border-radius:16px;width:90%;max-width:380px;padding:20px;max-height:70vh;overflow-y:auto">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div style="font-size:17px;font-weight:700">🔄 转让社长</div>
-          <button onclick="closeClubTransferModal()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
-        </div>
+        <div class="sub-page" id="clubTransferPage_sub">
+      <div class="sub-page-header" style="background:linear-gradient(135deg,#e91e63,#ff6f91)">
+        <button class="sub-page-back" onclick="closeSubPage('clubTransferPage_sub')" style="color:#fff">←</button>
+        <span class="sub-page-title" style="color:#fff">🔄 转让社长</span>
+      </div>
+      <div class="sub-page-body" style="padding:16px">
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">选择新社长，转让后你将变为普通成员</div>
         <div id="clubTransferList"></div>
       </div>
     </div>
-
-    <!-- 海报生成弹窗 -->
-    <div id="posterModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:210;align-items:center;justify-content:center">
-      <div style="background:var(--card);border-radius:16px;width:90%;max-width:340px;padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div style="font-size:16px;font-weight:700">📤 分享海报</div>
-          <button onclick="closePosterModal()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
-        </div>
-        <canvas id="posterCanvas" width="300" height="450" style="width:100%;border-radius:12px;margin-bottom:12px"></canvas>
-        <div style="display:flex;gap:8px">
-          <button onclick="downloadPoster()" style="flex:1;padding:10px;border-radius:10px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">💾 保存图片</button>
-          <button onclick="sharePoster()" style="flex:1;padding:10px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--border);font-size:14px;cursor:pointer">📋 复制</button>
-        </div>
-      </div>
     </div>
-
-    <!-- 社团功能开发中弹窗 -->
-    <div id="clubComingSoonModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:220;align-items:center;justify-content:center" onclick="event.target===this && closeClubComingSoon()">
-      <div style="background:var(--card);border-radius:20px;width:90%;max-width:360px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-        <img src="/uploads/club-coming-soon.jpg" style="width:100%;display:block" alt="功能开发中" />
-        <div style="padding:16px 20px 20px;text-align:center">
-          <div style="font-size:17px;font-weight:700;margin-bottom:6px;color:var(--text)">🚧 社团功能开发中</div>
-          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">精彩即将上线，敬请期待 ✨</div>
-          <button onclick="closeClubComingSoon()" style="width:100%;padding:11px;border-radius:12px;background:var(--gradient);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer">我知道了</button>
-        </div>
-      </div>
     </div>
-
-    <!-- 社团管理子页面 -->
-    <div class="sub-page" id="clubManageSub">
-      <div class="sub-page-header">
-        <button class="sub-page-back" onclick="closeSubPage('clubManageSub')">←</button>
-        <span class="sub-page-title">社团管理</span>
-      </div>
-      <div class="sub-page-body" id="clubManageContent"></div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════
