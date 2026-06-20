@@ -87,7 +87,7 @@ async function showPetDetail(id) {
   window._currentPet = data;
 
   const speciesEmoji = data.species === 'cat' ? '🐱' : '🐶';
-  document.getElementById('petDetailTitle').innerHTML = '<img src="/uploads/icons/pet-icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">' + speciesEmoji + ' ' + escHtml(data.code_name);
+  document.getElementById('petDetailTitle').innerHTML = '<img src="/uploads/icons/pet-icon.png?v=2" style="width:22px;height:22px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-right:6px">' + speciesEmoji + ' ' + escHtml(data.code_name);
 
   // 身份卡
   const avatar = data.avatar && (data.avatar.startsWith('/') || data.avatar.startsWith('http'))

@@ -4,7 +4,7 @@
 const ALL_SERVICES = [
   { key: 'errand',  icon: '<img src=\"/uploads/icons/rider-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '跑腿服务', action: "showErrandServices()" },
   { key: 'teacher', icon: '<img src=\"/uploads/icons/teacher-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '师说',     action: "openSubPage('teacherListPage_sub')" },
-  { key: 'pet',     icon: '<img src=\"/uploads/icons/pet-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '猫狗日记', action: "openSubPage('petListPage_sub')" },
+  { key: 'pet',     icon: '<img src=\"/uploads/icons/pet-icon.png?v=2\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '猫狗日记', action: "openSubPage('petListPage_sub')" },
   { key: 'market',  icon: '<img src=\"/uploads/icons/market-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '二手市场', action: "loadMarketItems(true);openSubPage('marketListPage_sub')" },
   { key: 'review',  icon: '<img src=\"/uploads/icons/review-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '复习资料', action: "openSubPage('reviewPage_sub')" },
   { key: 'club',    icon: '<img src=\"/uploads/icons/club-icon.png\" style=\"width:100%;height:100%;object-fit:contain;border-radius:8px\">', name: '社团',     action: "openClubPage()" },
