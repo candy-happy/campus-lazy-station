@@ -134,41 +134,47 @@
       const overlay = document.createElement('div');
       overlay.id = 'termsOverlay';
       overlay.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column';
-      overlay.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0"><div style="display:flex;gap:0"><button id="termsTabTerms" style="padding:8px 16px;border:none;background:none;font-size:14px;font-weight:600;color:var(--primary);border-bottom:2px solid var(--primary);cursor:pointer;font-family:inherit" onclick="switchTermsTab(\'terms\')">服务条款</button><button id="termsTabPrivacy" style="padding:8px 16px;border:none;background:none;font-size:14px;font-weight:600;color:var(--text-light);cursor:pointer;font-family:inherit" onclick="switchTermsTab(\'privacy\')">隐私协议</button></div><button onclick="closeTermsModal()" style="width:32px;height:32px;border-radius:50%;border:none;background:var(--bg);font-size:16px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;justify-content:center">✕</button></div><iframe id="termsFrame" src="/public/terms.html" style="flex:1;width:100%;border:none"></iframe>';
+      overlay.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0"><div style="display:flex;gap:0"><button id="termsTabTerms" style="padding:8px 16px;border:none;background:none;font-size:14px;font-weight:600;color:var(--primary);border-bottom:2px solid var(--primary);cursor:pointer;font-family:inherit" onclick="switchTermsTab(\'terms\')">服务条款</button><button id="termsTabPrivacy" style="padding:8px 16px;border:none;background:none;font-size:14px;font-weight:600;color:var(--text-light);cursor:pointer;font-family:inherit" onclick="switchTermsTab(\'privacy\')">隐私协议</button></div><button onclick="closeTermsModal()" style="width:32px;height:32px;border-radius:50%;border:none;background:var(--bg);font-size:16px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;justify-content:center">✕</button></div><div id="termsContent" style="flex:1;overflow-y:auto;padding:20px;max-width:800px;margin:0 auto;width:100%;box-sizing:border-box"><div style="text-align:center;padding:40px;color:var(--text-secondary)">加载中...</div></div>';
       document.body.appendChild(overlay);
-      // 初始tab
-      setTimeout(() => {
-        const frame = document.getElementById('termsFrame');
-        if (frame && frame.contentWindow) {
-          frame.contentWindow.postMessage({ action: 'switchTab', tab: type }, '*');
-        }
-      }, 500);
-      window._termsMsgHandler = function(e) {
-        if (e.data === 'closeTerms' || (e.data && e.data.action === 'closeTerms')) {
-          document.getElementById('termsOverlay').remove();
-          window.removeEventListener('message', window._termsMsgHandler);
-          delete window._termsMsgHandler;
-          delete window.closeTermsModal;
-          delete window.switchTermsTab;
-        }
-      };
-      window.addEventListener('message', window._termsMsgHandler);
+      // fetch加载terms.html内容（避免iframe被浏览器拦截）
+      fetch('/public/terms.html').then(r => r.text()).then(html => {
+        const container = document.getElementById('termsContent');
+        // 提取body内容（去掉html/head/body标签）
+        const bodyMatch = html.match(/[\s\S]*<body[^>]*>([\s\S]*)<\/body>/i);
+        let bodyContent = bodyMatch ? bodyMatch[1] : html;
+        // 移除close-btn（已有外部关闭按钮）
+        bodyContent = bodyContent.replace(/<button[^>]*class="close-btn"[^>]*>[\s\S]*?<\/button>/i, '');
+        // 移除tabs（已有外部tab按钮）
+        bodyContent = bodyContent.replace(/<div[^>]*class="tabs"[^>]*>[\s\S]*?<\/div>/i, '');
+        // 移除script标签
+        bodyContent = bodyContent.replace(/<script[\s\S]*?<\/script>/gi, '');
+        container.innerHTML = bodyContent;
+        // 默认显示服务条款
+        const tp = container.querySelector('#termsPanel');
+        const pp = container.querySelector('#privacyPanel');
+        if (tp) tp.classList.add('active');
+        if (pp) pp.classList.remove('active');
+        if (type === 'privacy') switchTermsTab('privacy');
+      }).catch(() => {
+        document.getElementById('termsContent').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">加载失败，请稍后重试</div>';
+      });
       window.closeTermsModal = function() {
-        document.getElementById('termsOverlay').remove();
-        window.removeEventListener('message', window._termsMsgHandler);
-        delete window._termsMsgHandler;
+        const el = document.getElementById('termsOverlay');
+        if (el) el.remove();
         delete window.closeTermsModal;
         delete window.switchTermsTab;
       };
       window.switchTermsTab = function(tab) {
-        document.getElementById('termsTabTerms').style.color = tab==='terms'?'var(--primary)':'var(--text-light)';
-        document.getElementById('termsTabTerms').style.borderBottom = tab==='terms'?'2px solid var(--primary)':'none';
-        document.getElementById('termsTabPrivacy').style.color = tab==='privacy'?'var(--primary)':'var(--text-light)';
-        document.getElementById('termsTabPrivacy').style.borderBottom = tab==='privacy'?'2px solid var(--primary)':'none';
-        const frame = document.getElementById('termsFrame');
-        if (frame && frame.contentWindow) {
-          frame.contentWindow.postMessage({ action: 'switchTab', tab: tab }, '*');
-        }
+        const termsBtn = document.getElementById('termsTabTerms');
+        const privBtn = document.getElementById('termsTabPrivacy');
+        if (termsBtn) { termsBtn.style.color = tab==='terms'?'var(--primary)':'var(--text-light)'; termsBtn.style.borderBottom = tab==='terms'?'2px solid var(--primary)':'none'; }
+        if (privBtn) { privBtn.style.color = tab==='privacy'?'var(--primary)':'var(--text-light)'; privBtn.style.borderBottom = tab==='privacy'?'2px solid var(--primary)':'none'; }
+        const container = document.getElementById('termsContent');
+        const tp = container ? container.querySelector('#termsPanel') : null;
+        const pp = container ? container.querySelector('#privacyPanel') : null;
+        if (tp) tp.style.display = tab==='terms'?'block':'none';
+        if (pp) pp.style.display = tab==='privacy'?'block':'none';
+        if (container) container.scrollTop = 0;
       };
     }
 
