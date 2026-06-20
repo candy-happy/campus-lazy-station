@@ -104,7 +104,7 @@
       const trust = item.trust || {};
       const imgs = item.images || [];
       const isOwner = currentUser && item.seller_phone === currentUser.phone;
-      const sellerAvatar = renderAvatarHtml(item.seller_avatar, item.seller_name);
+      const sellerAvatar = renderAvatarHtml(item.seller_avatar, item.seller_name, 44);
       const relatedHtml = (item.relatedItems || []).map(r => {
         const rImg = (r.images && r.images[0]) || '';
         return '<div style="min-width:120px;background:var(--card);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);cursor:pointer" onclick="openItemDetail(' + r.id + ')">' +
@@ -228,15 +228,12 @@
 
 
     function renderCommentCard(c, itemId) {
-      const avatarHtml = c.user_avatar && c.user_avatar.startsWith('http') ?
-        '<img src="' + c.user_avatar + '" onerror="this.style.display=&apos;none&apos;" />' :
-        '<img src="/default-avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />';
+      const avatarHtml = renderAvatarHtml(c.user_avatar, c.user_name, 32);
       const isMine = currentUser && c.user_phone === currentUser.phone;
       let repliesHtml = '';
       if (c.replies && c.replies.length) {
         repliesHtml = '<div class="comment-replies">' + c.replies.map(r => {
-          const rAvatar = r.user_avatar && r.user_avatar.startsWith('http') ?
-            '<img src="' + r.user_avatar + '" onerror="this.style.display=&apos;none&apos;" />' : '<img src="/default-avatar.png" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=&apos;none&apos;" />';
+          const rAvatar = renderAvatarHtml(r.user_avatar, r.user_name, 32);
           const rMine = currentUser && r.user_phone === currentUser.phone;
           return '<div class="comment-reply">' +
             '<div class="comment-top">' +
@@ -573,7 +570,7 @@
         infoCard.innerHTML = 
           '<div class="seller-hero-bg" ' + bgStyle + '></div>' +
           '<div class="seller-hero-content">' +
-            '<div class="seller-hero-avatar">' + renderAvatarHtml(sellerAvatar, sellerName) + '</div>' +
+            '<div class="seller-hero-avatar">' + renderAvatarHtml(sellerAvatar, sellerName, 80) + '</div>' +
             '<div class="seller-hero-name">' + escHtml(sellerName || '卖家') + '</div>' +
             '<div class="seller-hero-rating">' + starsHtml + '<span class="seller-hero-rating-num">' + (avgRating > 0 ? avgRating.toFixed(1) : '暂无评分') + '</span></div>' +
             '<div class="seller-hero-stats">' +

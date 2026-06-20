@@ -664,11 +664,13 @@
 
 
 
-    function renderAvatarHtml(avatar, name) {
+    function renderAvatarHtml(avatar, name, size) {
+      var s = size || 18;
+      var defaultAvatar = '/uploads/avatars/default-girl.png';
       if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
-        return '<img src="' + avatar + '" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle" onerror="this.style.display=&apos;none&apos;" />';
+        return '<img src="' + avatar + '" style="width:' + s + 'px;height:' + s + 'px;border-radius:50%;object-fit:cover;vertical-align:middle" onerror="this.src=\'' + defaultAvatar + '\'" />';
       }
-      return '<img src="/default-avatar.png" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle" onerror="this.style.display=&apos;none&apos;" />';
+      return '<img src="' + defaultAvatar + '" style="width:' + s + 'px;height:' + s + 'px;border-radius:50%;object-fit:cover;vertical-align:middle" />';
     }
 
 
